@@ -460,7 +460,11 @@ export default function ShiftCalendar() {
                                       </Button>
                                     )}
                                     {userIsAdmin && (
-                                      <Button size="sm" variant="ghost">
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost"
+                                        onClick={() => handleEditShift(shift.id)}
+                                      >
                                         Edit
                                       </Button>
                                     )}
@@ -537,6 +541,7 @@ export default function ShiftCalendar() {
                                               key={shift.id}
                                               className={`text-xs p-1 rounded border cursor-pointer ${getStatusColor(status)}`}
                                               title={`Shift #${shift.id} - ${formatTime(shift.startTime)} ${shift.endTime ? `to ${formatTime(shift.endTime)}` : '(Ongoing)'}`}
+                                              onClick={() => handleEditShift(shift.id)}
                                             >
                                               <div className="font-medium truncate">
                                                 #{shift.id}
@@ -596,6 +601,13 @@ export default function ShiftCalendar() {
           </div>
         </main>
       </div>
+      
+      {/* Edit Shift Modal */}
+      <EditShiftModal
+        isOpen={editModalOpen}
+        onClose={handleCloseEditModal}
+        shiftId={selectedShiftId}
+      />
     </div>
   );
 }
