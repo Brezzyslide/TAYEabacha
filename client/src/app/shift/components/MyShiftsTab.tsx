@@ -35,7 +35,7 @@ export default function MyShiftsTab() {
     return shifts.filter(shift => shift.userId === user.id);
   }, [shifts, user]);
 
-  const formatShiftDate = (date: string) => {
+  const formatShiftDate = (date: Date | string) => {
     const shiftDate = new Date(date);
     if (isToday(shiftDate)) return "Today";
     if (isTomorrow(shiftDate)) return "Tomorrow";
@@ -78,7 +78,7 @@ export default function MyShiftsTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-gray-500" />
-            <span>{format(new Date(shift.startTime), "h:mm a")} - {format(new Date(shift.endTime), "h:mm a")}</span>
+            <span>{format(new Date(shift.startTime), "h:mm a")} - {shift.endTime ? format(new Date(shift.endTime), "h:mm a") : "TBD"}</span>
           </div>
           
           {shift.clientId && (
@@ -89,14 +89,14 @@ export default function MyShiftsTab() {
           )}
         </div>
 
-        {shift.description && (
+        {(shift as any).description && (
           <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-            {shift.description}
+            {(shift as any).description}
           </p>
         )}
 
         <div className="flex flex-wrap gap-2 pt-2">
-          {shift.status === "assigned" && (
+          {(shift as any).status === "assigned" && (
             <Button
               onClick={() => handleStartShift(shift)}
               size="sm"
@@ -106,7 +106,7 @@ export default function MyShiftsTab() {
             </Button>
           )}
           
-          {shift.status === "in-progress" && (
+          {(shift as any).status === "in-progress" && (
             <Button
               onClick={() => handleEndShift(shift)}
               size="sm"

@@ -39,12 +39,9 @@ export default function ShiftRequestsTab() {
 
   const acceptMutation = useMutation({
     mutationFn: async ({ shiftId, staffId }: { shiftId: number; staffId: number }) => {
-      return apiRequest(`/api/shifts/${shiftId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          userId: staffId,
-          status: "assigned"
-        }),
+      return apiRequest(`/api/shifts/${shiftId}`, "PATCH", {
+        userId: staffId,
+        status: "assigned"
       });
     },
     onSuccess: () => {
@@ -65,9 +62,7 @@ export default function ShiftRequestsTab() {
 
   const rejectMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/${shiftId}`, {
-        method: "DELETE",
-      });
+      return apiRequest(`/api/shifts/${shiftId}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
@@ -173,7 +168,7 @@ export default function ShiftRequestsTab() {
                   
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
-                    <span>{format(new Date(shift.startTime), "h:mm a")} - {format(new Date(shift.endTime), "h:mm a")}</span>
+                    <span>{format(new Date(shift.startTime), "h:mm a")} - {shift.endTime ? format(new Date(shift.endTime), "h:mm a") : "TBD"}</span>
                   </div>
 
                   {shift.clientId && (
