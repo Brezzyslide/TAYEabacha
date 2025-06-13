@@ -34,8 +34,8 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Fetch case notes data with client info and recent shifts
   const { data: caseNotesData, isLoading, error } = useQuery({
     queryKey: [`/api/clients/${clientId}/case-notes`, companyId],
-    enabled: !!clientId && !!companyId && !!user,
-    retry: false,
+    enabled: !!clientId && !!companyId,
+    retry: 1,
   });
 
   // Create case note mutation
