@@ -12,7 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { CaseNote, Client } from "@shared/schema";
 import CaseNoteFilterBar from "./components/CaseNoteFilterBar";
 import CaseNoteCard from "./components/CaseNoteCard";
-import CreateCaseNoteModal from "./components/CreateCaseNoteModal";
+import CaseNoteModal from "@/components/case-notes/CaseNoteModal";
 
 export default function CaseNoteDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,13 +43,10 @@ export default function CaseNoteDashboard() {
   // Create case note mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("/api/case-notes", {
-        method: "POST",
-        body: JSON.stringify({
-          ...data,
-          userId: user?.id,
-          tenantId: user?.tenantId
-        }),
+      const response = await apiRequest("/api/case-notes", "POST", {
+        ...data,
+        userId: user?.id,
+        tenantId: user?.tenantId
       });
       return response;
     },
