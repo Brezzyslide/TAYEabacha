@@ -142,7 +142,7 @@ export class DatabaseStorage implements IStorage {
       .update(clients)
       .set({ isActive: false, updatedAt: new Date() })
       .where(and(eq(clients.id, id), eq(clients.tenantId, tenantId)));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Form Templates
