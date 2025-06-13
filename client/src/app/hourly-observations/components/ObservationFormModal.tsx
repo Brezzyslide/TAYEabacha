@@ -51,6 +51,14 @@ const observationSchema = z.object({
     duration: z.number().min(1).max(5).optional(),
     frequency: z.number().min(1).max(5).optional(),
   }).optional(),
+  behaviorNotes: z.object({
+    setting: z.string().optional(),
+    time: z.string().optional(),
+    antecedents: z.string().optional(),
+    consequences: z.string().optional(),
+    duration: z.string().optional(),
+    frequency: z.string().optional(),
+  }).optional(),
 });
 
 type ObservationFormData = z.infer<typeof observationSchema>;
@@ -122,6 +130,14 @@ export default function ObservationFormModal({
         consequences: undefined,
         duration: undefined,
         frequency: undefined,
+      },
+      behaviorNotes: {
+        setting: "",
+        time: "",
+        antecedents: "",
+        consequences: "",
+        duration: "",
+        frequency: "",
       },
     },
   });
@@ -224,11 +240,13 @@ export default function ObservationFormModal({
     ];
 
     const StarRating = ({ categoryKey, label, description }: { categoryKey: string; label: string; description: string }) => (
-      <div className="space-y-2">
+      <div className="space-y-3 p-4 bg-white rounded-lg border border-gray-200">
         <div>
           <h4 className="font-medium text-gray-900">{label}</h4>
           <p className="text-xs text-gray-600">{description}</p>
         </div>
+        
+        {/* Star Rating */}
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((level) => {
             const currentValue = form.watch(`behaviorRatings.${categoryKey}` as any);
@@ -243,8 +261,10 @@ export default function ObservationFormModal({
                     [categoryKey]: level
                   });
                 }}
-                className={`p-1 rounded transition-all hover:scale-110 ${
-                  currentValue === level ? "bg-yellow-50" : "bg-transparent"
+                className={`p-2 rounded-lg border-2 transition-all hover:scale-110 ${
+                  currentValue === level 
+                    ? "bg-yellow-50 border-yellow-400 shadow-md" 
+                    : "bg-white border-gray-200 hover:border-gray-300"
                 }`}
               >
                 <Star
@@ -257,9 +277,31 @@ export default function ObservationFormModal({
               </button>
             );
           })}
-          <span className="ml-2 text-sm text-gray-600">
-            {form.watch(`behaviorRatings.${categoryKey}` as any) || "Not rated"}
+          <span className="ml-3 text-sm font-medium text-gray-700">
+            {form.watch(`behaviorRatings.${categoryKey}` as any) ? 
+              `${form.watch(`behaviorRatings.${categoryKey}` as any)}/5` : 
+              "Not rated"}
           </span>
+        </div>
+
+        {/* Text Box underneath each rating */}
+        <div className="mt-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {label} Notes
+          </label>
+          <input
+            type="text"
+            placeholder={`Describe ${label.toLowerCase()} details...`}
+            value={form.watch(`behaviorNotes.${categoryKey}` as any) || ""}
+            onChange={(e) => {
+              const currentNotes = form.getValues('behaviorNotes') || {};
+              form.setValue('behaviorNotes', {
+                ...currentNotes,
+                [categoryKey]: e.target.value
+              });
+            }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
         </div>
       </div>
     );
@@ -282,7 +324,7 @@ export default function ObservationFormModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg border">
+        <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
           {behaviorCategories.map((category) => (
             <StarRating
               key={category.key}
