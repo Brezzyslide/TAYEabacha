@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, ArrowLeft, Home } from "lucide-react";
 import OverviewTab from "./tabs/overview";
 import MedicationsTab from "./tabs/medications";
 import CarePlansTab from "./tabs/care-plans";
@@ -42,6 +43,25 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <Home className="w-4 h-4" />
+            Dashboard
+          </Button>
+        </Link>
+        <span>/</span>
+        <Link href="/support-work">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Support Work
+          </Button>
+        </Link>
+        <span>/</span>
+        <span className="text-foreground font-medium">Client Profile</span>
+      </div>
+
       {/* Client Header */}
       <Card>
         <CardHeader>
