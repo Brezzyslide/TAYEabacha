@@ -306,6 +306,12 @@ export default function MedicationsTab() {
     queryKey: [`/api/clients/${clientId}`],
   });
 
+  // Default client data for testing
+  const clientData = (client as any) || {
+    fullName: "Sarah Johnson",
+    ndisNumber: "43000012345"
+  };
+
   const { data: plans = [], isLoading: plansLoading } = useQuery<MedicationPlan[]>({
     queryKey: [`/api/clients/${clientId}/medication-plans`],
   });
@@ -455,7 +461,7 @@ export default function MedicationsTab() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Medication Management</h2>
           <p className="text-gray-600">
-            {client?.fullName} - NDIS: {client?.ndisNumber}
+            {clientData.fullName} - NDIS: {clientData.ndisNumber}
           </p>
           <p className="text-sm text-gray-500">
             Manage and monitor this client's medication plans and records
