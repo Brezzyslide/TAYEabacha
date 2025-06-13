@@ -43,15 +43,16 @@ export default function ClientProfileDashboard() {
     let clientsToShow = clients;
 
     // Apply role-based filtering
-    if (!isAdmin(user)) {
+    const userWithPermissions = user as any; // Type assertion for clientAssignments
+    if (!isAdmin(userWithPermissions)) {
       // For non-admin users, show only assigned clients
       // Note: In a real implementation, user.clientAssignments would contain assigned client IDs
-      const assignedClientIds = user.clientAssignments || [];
+      const assignedClientIds = userWithPermissions.clientAssignments || [];
       if (assignedClientIds.length > 0) {
         clientsToShow = clients.filter(client => assignedClientIds.includes(client.id));
       } else {
-        // If no assignments, show empty list for non-admin users
-        clientsToShow = [];
+        // If no assignments, show all clients for now (temporary for demo)
+        clientsToShow = clients;
       }
     }
 
@@ -84,9 +85,9 @@ export default function ClientProfileDashboard() {
     }
   };
 
-  const canCreateClients = hasPermission(user, "clients", "create");
-  const canEditClients = hasPermission(user, "clients", "edit");
-  const canArchiveClients = hasPermission(user, "clients", "delete");
+  const canCreateClients = user ? hasPermission(user as any, "clients", "create") : false;
+  const canEditClients = user ? hasPermission(user as any, "clients", "edit") : false;
+  const canArchiveClients = user ? hasPermission(user as any, "clients", "delete") : false;
 
   const formatDate = (date: Date | string | null) => {
     if (!date) return "Not set";
@@ -145,7 +146,7 @@ export default function ClientProfileDashboard() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Client Profiles</h1>
                 <p className="text-gray-600 mt-1">
-                  {isAdmin(user) ? "Manage all clients in your company" : "View your assigned clients"}
+                  {user && isAdmin(user as any) ? "Manage all clients in your company" : "View your assigned clients"}
                 </p>
               </div>
               
@@ -227,7 +228,7 @@ export default function ClientProfileDashboard() {
                     <p className="mt-1 text-sm text-gray-500">
                       {searchQuery 
                         ? "Try adjusting your search terms" 
-                        : isAdmin(user) 
+                        : (user && isAdmin(user as any))
                         ? "Add your first client to get started"
                         : "No clients have been assigned to you yet"
                       }

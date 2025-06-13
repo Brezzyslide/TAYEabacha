@@ -14,6 +14,7 @@ import Forms from "@/pages/forms";
 import Reports from "@/pages/reports";
 import Export from "@/pages/export";
 import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
+import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProfileDashboard";
 import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import CompanyListPage from "@/app/admin/companies/CompanyListPage";
@@ -25,6 +26,8 @@ function Router() {
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/clients" component={Clients} />
       <ProtectedRoute path="/client/:clientId" component={ClientProfileDemo} />
+      <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
+      <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/staff" component={Staff} />
       <ProtectedRoute path="/shifts" component={ShiftLogging} />
       <ProtectedRoute path="/forms" component={Forms} />
