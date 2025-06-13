@@ -234,17 +234,17 @@ export default function AllShiftsTab() {
       )}
 
       <NewShiftModal
-        isOpen={isNewShiftModalOpen}
-        onClose={() => setIsNewShiftModalOpen(false)}
+        open={isNewShiftModalOpen}
+        onOpenChange={setIsNewShiftModalOpen}
       />
 
       {selectedShift && (
         <EditShiftModal
-          shift={selectedShift}
-          isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setSelectedShift(null);
+          shiftId={selectedShift.id}
+          open={isEditModalOpen}
+          onOpenChange={(open) => {
+            setIsEditModalOpen(open);
+            if (!open) setSelectedShift(null);
           }}
         />
       )}
