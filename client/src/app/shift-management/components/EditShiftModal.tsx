@@ -332,7 +332,13 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
   });
 
   const onSubmit = (data: EditShiftFormData) => {
-    updateShiftMutation.mutate(data);
+    if (shiftId) {
+      // Editing existing shift
+      updateShiftMutation.mutate(data);
+    } else {
+      // Creating new shift
+      createShiftMutation.mutate(data);
+    }
   };
 
   const handleClose = () => {
@@ -349,9 +355,9 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Shift</DialogTitle>
+          <DialogTitle>{shiftId ? "Edit Shift" : "Create New Shift"}</DialogTitle>
           <DialogDescription>
-            Update shift details and manage recurring schedules.
+            {shiftId ? "Update shift details and manage recurring schedules." : "Create a new shift and configure recurring schedules."}
           </DialogDescription>
         </DialogHeader>
 
@@ -713,15 +719,15 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={updateShiftMutation.isPending}
+                  disabled={updateShiftMutation.isPending || createShiftMutation.isPending}
                 >
-                  {updateShiftMutation.isPending ? (
+                  {(updateShiftMutation.isPending || createShiftMutation.isPending) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
+                      {shiftId ? "Updating..." : "Creating..."}
                     </>
                   ) : (
-                    "Update Shift"
+                    shiftId ? "Update Shift" : "Create Shift"
                   )}
                 </Button>
               </div>
