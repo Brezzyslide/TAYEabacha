@@ -40,10 +40,13 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Create case note mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest(`/api/clients/${clientId}/case-notes`, {
+      const response = await fetch(`/api/clients/${clientId}/case-notes`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (!response.ok) throw new Error("Failed to create case note");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/case-notes`] });
@@ -64,10 +67,13 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Update case note mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return await apiRequest(`/api/case-notes/${id}`, {
+      const response = await fetch(`/api/case-notes/${id}`, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (!response.ok) throw new Error("Failed to update case note");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/case-notes`] });
@@ -88,9 +94,11 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Delete case note mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/case-notes/${id}`, {
+      const response = await fetch(`/api/case-notes/${id}`, {
         method: "DELETE",
       });
+      if (!response.ok) throw new Error("Failed to delete case note");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/case-notes`] });
@@ -108,10 +116,10 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     },
   });
 
-  // Get the actual data
-  const caseNotes: CaseNote[] = caseNotesData?.caseNotes || [];
-  const client: Client | undefined = caseNotesData?.client;
-  const recentShifts: Shift[] = caseNotesData?.recentShifts || [];
+  // Get the actual data with proper typing
+  const caseNotes: CaseNote[] = (caseNotesData as any)?.caseNotes || [];
+  const client: Client | undefined = (caseNotesData as any)?.client;
+  const recentShifts: Shift[] = (caseNotesData as any)?.recentShifts || [];
 
   // Filter case notes based on search and tabs
   const filteredNotes = useMemo(() => {

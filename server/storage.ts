@@ -380,7 +380,7 @@ export class DatabaseStorage implements IStorage {
   async deleteCaseNote(id: number, tenantId: number): Promise<boolean> {
     const result = await db.delete(caseNotes)
       .where(and(eq(caseNotes.id, id), eq(caseNotes.tenantId, tenantId)));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getCaseNotesByType(clientId: number, type: string, tenantId: number): Promise<CaseNote[]> {
