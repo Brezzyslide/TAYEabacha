@@ -217,6 +217,52 @@ export const activityLogs = pgTable("activity_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Incident Reports table
+export const incidentReports = pgTable("incident_reports", {
+  id: serial("id").primaryKey(),
+  incidentId: text("incident_id").notNull().unique(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  staffId: integer("staff_id").notNull().references(() => users.id),
+  dateTime: timestamp("date_time").notNull(),
+  location: text("location").notNull(),
+  witnessName: text("witness_name"),
+  witnessPhone: text("witness_phone"),
+  types: text("types").array().notNull(),
+  isNDISReportable: boolean("is_ndis_reportable").default(false),
+  triggers: jsonb("triggers").default([]), // [{ label: string, notes?: string }]
+  intensityRating: integer("intensity_rating").notNull(),
+  staffResponses: jsonb("staff_responses").default([]), // [{ label: string, notes?: string }]
+  description: text("description").notNull(),
+  externalRef: text("external_ref"),
+  status: text("status").notNull().default("Open"), // "Open", "Closed"
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Incident Closures table
+export const incidentClosures = pgTable("incident_closures", {
+  id: serial("id").primaryKey(),
+  incidentId: text("incident_id").notNull().unique(),
+  closedBy: integer("closed_by").notNull().references(() => users.id),
+  closureDate: timestamp("closure_date").notNull(),
+  controlReview: boolean("control_review").notNull(),
+  improvements: text("improvements"),
+  implemented: boolean("implemented").notNull(),
+  controlLevel: text("control_level").notNull(), // "Elimination", "Engineering", "Behavioural", "Admin", "PPE", "None"
+  wasLTI: text("was_lti").notNull(), // "yes", "no", "NA"
+  hazard: text("hazard").notNull(), // "Behavioural", "Medical", "Environmental", "Other"
+  severity: text("severity").notNull(), // "Low", "Medium", "High", "Critical"
+  externalNotice: boolean("external_notice").notNull(),
+  participantContext: text("participant_context").notNull(), // "yes", "no", "NA"
+  supportPlanAvailable: text("support_plan_available").notNull(), // "yes", "no", "NA"
+  reviewType: text("review_type").notNull(), // "Root Cause", "Case Conference", "Support Team Review", "Corrective Action", "No Further Action"
+  outcome: text("outcome"),
+  attachments: jsonb("attachments").default([]),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   tenants: many(tenants),
@@ -252,6 +298,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   observations: many(hourlyObservations),
   createdMedicationPlans: many(medicationPlans),
   medicationRecords: many(medicationRecords),
+  incidentReports: many(incidentReports),
+  incidentClosures: many(incidentClosures),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -269,6 +317,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   observations: many(hourlyObservations),
   medicationPlans: many(medicationPlans),
   medicationRecords: many(medicationRecords),
+  incidentReports: many(incidentReports),
 }));
 
 export const formTemplatesRelations = relations(formTemplates, ({ one, many }) => ({
@@ -409,6 +458,32 @@ export const medicationRecordsRelations = relations(medicationRecords, ({ one })
   }),
 }));
 
+export const incidentReportsRelations = relations(incidentReports, ({ one }) => ({
+  client: one(clients, {
+    fields: [incidentReports.clientId],
+    references: [clients.id],
+  }),
+  staff: one(users, {
+    fields: [incidentReports.staffId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [incidentReports.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const incidentClosuresRelations = relations(incidentClosures, ({ one }) => ({
+  closedBy: one(users, {
+    fields: [incidentClosures.closedBy],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [incidentClosures.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -483,6 +558,17 @@ export const insertMedicationPlanSchema = createInsertSchema(medicationPlans).om
 });
 
 export const insertMedicationRecordSchema = createInsertSchema(medicationRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertIncidentReportSchema = createInsertSchema(incidentReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIncidentClosureSchema = createInsertSchema(incidentClosures).omit({
   id: true,
   createdAt: true,
 });

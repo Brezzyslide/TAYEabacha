@@ -1,0 +1,245 @@
+Place the incident system in:
+
+pgsql
+Copy
+Edit
+src/
+├── app/
+│   ├── incident-management/            ← Admin/TeamLeader dashboard lives here
+│   └── support-work/
+│       └── client-profile/
+│           └── tabs/
+│               └── incidents.tsx       ← View-only tab for assigned clients
+1. 📝 Incident Report Form
+🔹 Purpose:
+Allow staff to report any incidents involving clients, staff, environment, or restrictive practices.
+
+🔹 Access:
+SupportWorker (assigned to client)
+
+TeamLeader or higher
+
+🔹 Fields:
+Client (dropdown, companyId filtered)
+
+Date & Time
+
+Location
+
+Witness Name & Phone (optional)
+
+Incident Types (checkbox multi-select):
+
+Critical (e.g. Abuse, Serious Injury)
+
+Non-Critical (e.g. Verbal aggression, Property damage)
+
+Staff/Contractor (e.g. Falls, Car accident)
+
+Behaviour Triggers (multi-select with conditional notes):
+Each selected checkbox opens a free-text input for contextual explanation.
+
+ts
+Copy
+Edit
+triggers: [{ label: string, notes?: string }]
+Intensity Rating (1–5)
+
+Staff Response (multi-select with optional notes)
+
+ts
+Copy
+Edit
+staffResponses: [{ label: string, notes?: string }]
+Description (min 100 words)
+
+External Reference ID (optional)
+
+🔹 Auto-Generated ID:
+ts
+Copy
+Edit
+incidentId = `${companyName.slice(0, 3).toUpperCase()}_IR${nextNumber}`;
+🔹 On Submit:
+Save to incidentReports:
+
+ts
+Copy
+Edit
+{
+  incidentId,
+  clientId,
+  companyId,
+  staffId,
+  dateTime,
+  location,
+  witnessName,
+  witnessPhone,
+  types[],
+  isNDISReportable: boolean,
+  triggers[],
+  intensityRating,
+  staffResponses[],
+  description,
+  externalRef,
+  status: "Open",
+  createdAt
+}
+Redirect to /incident-management
+
+2. 📊 Incident Management Dashboard
+🔹 Access:
+TeamLeader, Coordinator, Admin
+
+🔹 Features:
+Header cards:
+Total | Open | Critical | Closed | Overdue
+
+Filters: Client, Type, Severity, Date range
+
+Search: Client name, Ref #
+
+Toggle: List | Card view
+
+🔹 Each Card/Row:
+Client name + Staff reporter
+
+Date, Type, Severity badge, Location
+
+Quick View modal
+
+PDF Export button
+
+Close button (if status === "Open")
+
+3. ✅ Incident Closure Workflow
+🔹 Access:
+TeamLeader or higher
+
+🔹 Trigger:
+"Close" button on open incident opens CloseIncidentModal.tsx
+
+🔹 Fields:
+Closure Date (default: now)
+
+Were controls reviewed? (yes/no)
+
+What changes were identified?
+
+Have they been implemented?
+
+Highest level of control achieved (dropdown):
+
+Elimination, Engineering, Behavioural, Admin, PPE, None
+
+Was it a Lost Time Injury? (yes/no/NA)
+
+Associated hazard: (Behavioural, Medical, Environmental, Other)
+
+Severity (Low–Critical)
+
+Was external notification required? (yes/no)
+
+🔹 Participant-Centered:
+Incident during usual activities? (yes/no/NA)
+
+Was there a support plan active? (yes/no/NA)
+
+Review type:
+
+Root Cause, Case Conference, Support Team Review, Corrective Action, No Further Action
+
+Recommended outcome (textarea)
+
+Attachments (optional)
+
+🔹 On Submit:
+Save to incidentClosures:
+
+ts
+Copy
+Edit
+{
+  incidentId,
+  closedBy,
+  closureDate,
+  controlReview,
+  improvements,
+  implemented,
+  controlLevel,
+  wasLTI,
+  hazard,
+  severity,
+  externalNotice,
+  participantContext,
+  supportPlanAvailable,
+  reviewType,
+  outcome,
+  attachments
+}
+Update incidentReports.status = "Closed"
+
+4. 🧾 Client Profile Tab (incidents.tsx)
+🔹 Access:
+Staff assigned to client
+
+TeamLeader/Admin for full access
+
+🔹 Displays:
+Cards filtered by clientId, companyId
+
+Read-only
+
+View modal
+
+Export single PDF
+
+Status badge (Open/Closed)
+
+Sort/filter by severity/date
+
+5. 📤 Export Logic
+🧾 Single PDF:
+Open Incident = Incident Report only
+
+Closed = Incident Report + Closure Form (bundled)
+
+📑 Bulk Export:
+All Closed incidents in CSV/Excel:
+
+incidentId
+
+client
+
+type
+
+severity
+
+closedBy
+
+closureDate
+
+🔧 Tools:
+PDF: jsPDF, html2pdf
+
+Excel: ExcelJS
+
+6. 🔒 Access Rules
+Role	Permissions
+SupportWorker	Create/view incidents for assigned clients only
+TeamLeader	Create/view/close/export within their company
+Coordinator	Full incident management capabilities
+Admin	Full visibility, exports, audit across company
+
+7. 🧱 Components to Build
+bash
+Copy
+Edit
+incident-management/
+├── CreateIncidentReportModal.tsx
+├── CloseIncidentModal.tsx
+├── IncidentDashboard.tsx
+├── IncidentCard.tsx
+├── IncidentListRow.tsx
+├── IncidentViewModal.tsx
+├── useIncidentIdGenerator.ts
