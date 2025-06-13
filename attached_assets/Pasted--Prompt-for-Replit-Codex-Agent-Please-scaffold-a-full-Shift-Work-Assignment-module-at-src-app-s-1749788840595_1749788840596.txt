@@ -1,0 +1,85 @@
+# Prompt for Replit Codex Agent
+
+Please scaffold a full Shift Work Assignment module at:
+
+`src/app/shift-management/`
+
+### 1. Create a page: `ShiftCalendar.tsx`
+
+This should display a calendar (use `react-big-calendar` or similar), showing:
+
+- All shifts for the current company (`companyId`)
+- Color-coded by status: 
+  - Unassigned (grey)
+  - Assigned (blue)
+  - In progress (green)
+- Staff can only see their assigned shifts or unassigned ones
+- Admins can see all shifts for the company
+
+### 2. Clicking a shift:
+
+- If Admin: open `EditShiftModal`
+- If Staff & unassigned: show confirmation modal to request shift → creates shift request for admin
+- If Staff & assigned: show shift details and allow `Start Shift` / `End Shift` (auto timestamp + location)
+
+### 3. Create a `NewShiftModal.tsx` with:
+- Shift title
+- Start Date & Time
+- End Date & Time
+- Assign to Client (dropdown from client directory, filtered by companyId)
+- Assign to Staff (optional; dropdown from staff list)
+- Toggle: "Recurring Shift"
+  - If enabled, show recurrence type: Weekly / Fortnightly / Monthly
+  - Choose: 
+    - Number of occurrences (text input), OR
+    - End date (calendar picker)
+- Button to save shift
+- If assigned to a client, show under their schedule (filtered by clientId)
+- If assigned to a staff, also appears in staff’s shift calendar
+
+### 4. My Shifts Page:
+
+- For staff: a calendar showing only assigned shifts
+- Tabs at top: `My Shifts`, `Shift Requests`
+- "Start Shift" → captures timestamp, location, sets status to in progress
+- "End Shift" → captures timestamp and closes the shift
+
+### 5. Admin Approvals:
+
+- Admins can view shift requests
+- Accept or Reject via `AdminShiftRequestPanel.tsx`
+- If accepted, assign staff to shift and mark as assigned
+
+### 6. Enforce:
+- `companyId` filtering for every shift query
+- `clientId` filtering for views like Client Schedule
+- Role checks: staff vs admin vs coordinator
+
+Use:
+- ShadCN UI for all inputs, cards, calendar overlay
+- TanStack Query for fetch + mutation
+- Location: mock with browser geolocation or placeholder for now
+🗂 Expected Folder Structure
+css
+Copy
+Edit
+src/
+└── app/
+    └── shift-management/
+        ├── ShiftCalendar.tsx
+        ├── MyShiftsPage.tsx
+        ├── components/
+        │   ├── NewShiftModal.tsx
+        │   ├── EditShiftModal.tsx
+        │   ├── AdminShiftRequestPanel.tsx
+        │   └── ShiftCard.tsx
+🔒 All actions respect:
+companyId (tenancy isolation)
+
+clientId (for shift-client link)
+
+Role-based views and permissions
+
+Color-coded shift statuses
+
+Staff only see what they need, Admin sees all

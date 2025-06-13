@@ -35,6 +35,7 @@ const supportWorkNavigation = [
 ];
 
 const shiftManagementNavigation = [
+  { name: "Shift Calendar", href: "/shift-management/calendar", icon: Calendar },
   { name: "Shifts", href: "/shifts", icon: Calendar },
   { name: "My Availability", href: "/availability", icon: Clock },
   { name: "Allocations", href: "/allocations", icon: TrendingUp },
