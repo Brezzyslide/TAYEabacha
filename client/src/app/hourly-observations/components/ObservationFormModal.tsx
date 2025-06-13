@@ -43,6 +43,14 @@ const observationSchema = z.object({
   timestamp: z.string().min(1, "Please select a date and time"),
   intensity: z.number().min(1).max(5).optional(),
   adlDetails: z.string().optional(),
+  behaviorRatings: z.object({
+    setting: z.number().min(1).max(5).optional(),
+    time: z.number().min(1).max(5).optional(),
+    antecedents: z.number().min(1).max(5).optional(),
+    consequences: z.number().min(1).max(5).optional(),
+    duration: z.number().min(1).max(5).optional(),
+    frequency: z.number().min(1).max(5).optional(),
+  }).optional(),
 });
 
 type ObservationFormData = z.infer<typeof observationSchema>;
@@ -106,6 +114,15 @@ export default function ObservationFormModal({
       notes: "",
       timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       intensity: undefined,
+      adlDetails: "",
+      behaviorRatings: {
+        setting: undefined,
+        time: undefined,
+        antecedents: undefined,
+        consequences: undefined,
+        duration: undefined,
+        frequency: undefined,
+      },
     },
   });
 
@@ -197,103 +214,133 @@ export default function ObservationFormModal({
   const renderBehaviorStarChart = () => {
     if (selectedType !== "behaviour") return null;
 
+    const behaviorCategories = [
+      { key: 'setting', label: 'Setting', description: 'Environmental factors and location appropriateness' },
+      { key: 'time', label: 'Time', description: 'Duration and timing of behavior occurrence' },
+      { key: 'antecedents', label: 'Antecedents', description: 'Triggers and events preceding the behavior' },
+      { key: 'consequences', label: 'Consequences', description: 'Outcomes and responses following the behavior' },
+      { key: 'duration', label: 'Duration', description: 'Length of time behavior persisted' },
+      { key: 'frequency', label: 'Frequency', description: 'How often the behavior occurred' },
+    ];
+
+    const StarRating = ({ categoryKey, label, description }: { categoryKey: string; label: string; description: string }) => (
+      <div className="space-y-2">
+        <div>
+          <h4 className="font-medium text-gray-900">{label}</h4>
+          <p className="text-xs text-gray-600">{description}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((level) => {
+            const currentValue = form.watch(`behaviorRatings.${categoryKey}` as any);
+            return (
+              <button
+                key={level}
+                type="button"
+                onClick={() => {
+                  const currentRatings = form.getValues('behaviorRatings') || {};
+                  form.setValue('behaviorRatings', {
+                    ...currentRatings,
+                    [categoryKey]: level
+                  });
+                }}
+                className={`p-1 rounded transition-all hover:scale-110 ${
+                  currentValue === level ? "bg-yellow-50" : "bg-transparent"
+                }`}
+              >
+                <Star
+                  className={`h-5 w-5 ${
+                    currentValue === level
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300 hover:text-gray-400"
+                  }`}
+                />
+              </button>
+            );
+          })}
+          <span className="ml-2 text-sm text-gray-600">
+            {form.watch(`behaviorRatings.${categoryKey}` as any) || "Not rated"}
+          </span>
+        </div>
+      </div>
+    );
+
     return (
-      <FormField
-        control={form.control}
-        name="intensity"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="flex items-center gap-2">
-              <Star className="h-4 w-4" />
-              Behavior Rating (Star Chart)
-            </FormLabel>
-            <FormControl>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Star className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Behavioral Assessment Star Chart</h3>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <h4 className="font-medium text-blue-900 mb-2">Rating Scale:</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-blue-800">
+            <div>⭐ 1 Star: Poor/Concerning</div>
+            <div>⭐⭐ 2 Stars: Below Average</div>
+            <div>⭐⭐⭐ 3 Stars: Average/Neutral</div>
+            <div>⭐⭐⭐⭐ 4 Stars: Good</div>
+            <div>⭐⭐⭐⭐⭐ 5 Stars: Excellent</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg border">
+          {behaviorCategories.map((category) => (
+            <StarRating
+              key={category.key}
+              categoryKey={category.key}
+              label={category.label}
+              description={category.description}
+            />
+          ))}
+        </div>
+
+        {/* Overall Intensity Rating */}
+        <FormField
+          control={form.control}
+          name="intensity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-2">
+                <Star className="h-4 w-4" />
+                Overall Behavior Intensity
+              </FormLabel>
+              <FormControl>
+                <div className="flex items-center gap-2 p-3 bg-white rounded-lg border">
                   {[1, 2, 3, 4, 5].map((level) => (
                     <button
                       key={level}
                       type="button"
                       onClick={() => field.onChange(level)}
-                      className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                      className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
                         field.value === level
-                          ? "bg-yellow-50 border-yellow-400 shadow-md"
+                          ? "bg-red-50 border-red-400 shadow-md"
                           : "bg-white border-gray-200 hover:border-gray-300"
                       }`}
                     >
                       <Star
                         className={`h-6 w-6 ${
                           field.value === level
-                            ? "fill-yellow-400 text-yellow-400"
+                            ? "fill-red-400 text-red-400"
                             : "text-gray-300"
                         }`}
                       />
                     </button>
                   ))}
-                </div>
-                
-                {/* Star Chart Legend */}
-                <div className="bg-gray-50 p-3 rounded-lg text-xs space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">1 Star:</span>
-                    <span>Concerning behavior requiring immediate attention</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    </div>
-                    <span className="font-medium">2 Stars:</span>
-                    <span>Below average behavior</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    </div>
-                    <span className="font-medium">3 Stars:</span>
-                    <span>Average/neutral behavior</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    </div>
-                    <span className="font-medium">4 Stars:</span>
-                    <span>Good behavior</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    </div>
-                    <span className="font-medium">5 Stars:</span>
-                    <span>Excellent behavior</span>
+                  <div className="ml-4 text-sm text-gray-600">
+                    {field.value ? (
+                      <span className="font-medium text-gray-800">
+                        Overall Intensity: {field.value}/5
+                      </span>
+                    ) : (
+                      <span>Rate overall behavior intensity</span>
+                    )}
                   </div>
                 </div>
-                
-                <div className="text-center text-sm text-gray-600">
-                  {field.value ? (
-                    <span className="font-medium text-gray-800">
-                      Selected: {field.value} star{field.value !== 1 ? 's' : ''}
-                    </span>
-                  ) : (
-                    <span>Please select a behavior rating</span>
-                  )}
-                </div>
-              </div>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     );
   };
 
@@ -454,8 +501,11 @@ export default function ObservationFormModal({
               )}
             />
 
-            {/* Intensity (for Behaviour observations) */}
-            {renderIntensitySelector()}
+            {/* Behavior Star Chart (for Behaviour observations) */}
+            {renderBehaviorStarChart()}
+            
+            {/* ADL Details Input (for ADL observations) */}
+            {renderADLTextInput()}
 
             {/* Notes */}
             <FormField
