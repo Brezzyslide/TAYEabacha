@@ -34,7 +34,8 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Fetch case notes data with client info and recent shifts
   const { data: caseNotesData, isLoading, error } = useQuery({
     queryKey: [`/api/clients/${clientId}/case-notes`, companyId],
-    enabled: !!clientId && !!companyId,
+    enabled: !!clientId && !!companyId && !!user,
+    retry: false,
   });
 
   // Create case note mutation
@@ -419,10 +420,18 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   }
 
   if (error) {
+    console.error("Case Notes API Error:", error);
     return (
       <div className="text-center py-8">
         <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <p className="text-muted-foreground">Failed to load case notes. Please try again.</p>
+        <p className="text-muted-foreground">Failed to load case notes.</p>
+        <p className="text-sm text-red-600 mt-2">Error: {error.message || "Unknown error"}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }
