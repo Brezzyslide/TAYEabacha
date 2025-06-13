@@ -3,31 +3,34 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, CheckCircle, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import Header from "@/components/layout/header";
 
 export default function CompanySummaryPage() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setLocation("/")}
-              className="flex items-center space-x-2"
-            >
-              <Building2 className="w-4 h-4" />
-              <span>Go to Dashboard</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => setLocation("/admin/create-company")}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Create Company
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setLocation("/")}
+                className="flex items-center space-x-2"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Go to Dashboard</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setLocation("/admin/create-company")}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Create Company
+              </Button>
+            </div>
           
           <div className="flex items-center space-x-3 mb-2">
             <CheckCircle className="w-8 h-8 text-green-600" />
@@ -152,6 +155,7 @@ export default function CompanySummaryPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
