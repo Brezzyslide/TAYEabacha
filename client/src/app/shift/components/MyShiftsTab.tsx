@@ -1,29 +1,22 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, FileText, Plus } from "lucide-react";
-import { format, isToday, isTomorrow, isYesterday } from "date-fns";
+import { Calendar, Clock, MapPin, Play, Square, User } from "lucide-react";
+import { format, isToday, isTomorrow, isYesterday, isAfter } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
 import { type Shift } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import ShiftViewToggle from "./ShiftViewToggle";
 import ShiftStatusTag from "./ShiftStatusTag";
-import ShiftCalendarView from "./ShiftCalendarView";
 import StartShiftModal from "./StartShiftModal";
 import EndShiftModal from "./EndShiftModal";
 
 export default function MyShiftsTab() {
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
   
   const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const { data: shifts = [], isLoading } = useQuery<Shift[]>({
     queryKey: ["/api/shifts"],
@@ -34,45 +27,21 @@ export default function MyShiftsTab() {
     queryKey: ["/api/clients"],
   });
 
-  // Mutation for requesting shifts
-  const requestShiftMutation = useMutation({
-    mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/${shiftId}`, "PATCH", {
-        userId: user?.id,
-        status: "requested"
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
-      toast({
-        title: "Shift Requested",
-        description: "Your shift request has been submitted for approval.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to request shift.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Filter shifts assigned to current user and unassigned shifts
+  // Filter shifts assigned to current user
   const myShifts = useMemo(() => {
     if (!user) return [];
     return shifts.filter(shift => shift.userId === user.id);
   }, [shifts, user]);
 
-  // Filter unassigned shifts that staff can request
-  const unassignedShifts = useMemo(() => {
-    return shifts.filter(shift => !shift.userId && (shift as any).status !== "requested");
-  }, [shifts]);
-
-  // All shifts to display in calendar (assigned + unassigned)
-  const allViewableShifts = useMemo(() => {
-    return [...myShifts, ...unassignedShifts];
-  }, [myShifts, unassignedShifts]);
+  // Get the next upcoming shift
+  const nextUpcomingShift = useMemo(() => {
+    const now = new Date();
+    const upcomingShifts = myShifts
+      .filter(shift => isAfter(new Date(shift.startTime), now))
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    
+    return upcomingShifts[0] || null;
+  }, [myShifts]);
 
   const formatShiftDate = (date: Date | string) => {
     const shiftDate = new Date(date);
@@ -98,82 +67,14 @@ export default function MyShiftsTab() {
     setIsEndModalOpen(true);
   };
 
-  const renderShiftCard = (shift: Shift) => (
-    <Card key={shift.id} className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg font-semibold">{shift.title}</CardTitle>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
-              <Calendar className="h-4 w-4" />
-              {formatShiftDate(shift.startTime)}
-            </div>
-          </div>
-          <ShiftStatusTag status={shift.status || "assigned"} />
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-500" />
-            <span>{format(new Date(shift.startTime), "h:mm a")} - {shift.endTime ? format(new Date(shift.endTime), "h:mm a") : "TBD"}</span>
-          </div>
-          
-          {shift.clientId && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              <span>{getClientName(shift.clientId)}</span>
-            </div>
-          )}
-        </div>
-
-        {(shift as any).description && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-            {(shift as any).description}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-2 pt-2">
-          {(shift as any).status === "assigned" && (
-            <Button
-              onClick={() => handleStartShift(shift)}
-              size="sm"
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Start Shift
-            </Button>
-          )}
-          
-          {(shift as any).status === "in-progress" && (
-            <Button
-              onClick={() => handleEndShift(shift)}
-              size="sm"
-              variant="outline"
-              className="border-orange-600 text-orange-600 hover:bg-orange-50"
-            >
-              End Shift
-            </Button>
-          )}
-
-          <Button
-            size="sm"
-            variant="ghost"
-            className="flex items-center gap-2"
-            onClick={() => {
-              // Navigate to case notes for this client
-              if (shift.clientId) {
-                window.location.href = `/support-work/client/${shift.clientId}?tab=case-notes`;
-              }
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            Case Notes
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const handleShiftCardClick = (shift: Shift) => {
+    const status = (shift as any).status;
+    if (status === "assigned") {
+      handleStartShift(shift);
+    } else if (status === "in-progress") {
+      handleEndShift(shift);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -185,75 +86,142 @@ export default function MyShiftsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Shifts</h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            {myShifts.length} shift{myShifts.length !== 1 ? 's' : ''} assigned to you
-          </p>
-        </div>
-        
-        <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Next Shift</h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Click the card below to start or end your shift
+        </p>
       </div>
 
-      {myShifts.length === 0 ? (
+      {!nextUpcomingShift ? (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No shifts assigned
+              No upcoming shifts
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              You don't have any shifts assigned yet. Check back later or contact your supervisor.
+              You don't have any upcoming shifts assigned. Check the calendar for available shifts to request.
             </p>
           </CardContent>
         </Card>
-      ) : viewMode === "calendar" ? (
-        <ShiftCalendarView
-          shifts={allViewableShifts}
-          onShiftClick={(shift) => {
-            // Handle unassigned shifts - request them
-            if (!shift.userId && (shift as any).status !== "requested") {
-              requestShiftMutation.mutate(shift.id);
-              return;
-            }
-            
-            // Handle assigned shifts - start/end them
-            if (shift.userId === user?.id) {
-              setSelectedShift(shift);
-              if ((shift as any).status === "assigned") {
-                setIsStartModalOpen(true);
-              } else if ((shift as any).status === "in-progress") {
-                setIsEndModalOpen(true);
-              }
-            }
-          }}
-          getClientName={getClientName}
-        />
       ) : (
-        <div className="space-y-4">
-          {myShifts.map(renderShiftCard)}
-        </div>
+        <Card 
+          className="hover:shadow-lg transition-all cursor-pointer border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950"
+          onClick={() => handleShiftCardClick(nextUpcomingShift)}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-xl font-bold text-blue-900 dark:text-blue-100">
+                  {nextUpcomingShift.title}
+                </CardTitle>
+                <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  <Calendar className="h-4 w-4" />
+                  {formatShiftDate(nextUpcomingShift.startTime)}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <ShiftStatusTag 
+                  status={(nextUpcomingShift as any).status || "assigned"} 
+                  className="text-sm px-3 py-1" 
+                />
+                <Button
+                  variant={((nextUpcomingShift as any).status === "in-progress") ? "destructive" : "default"}
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShiftCardClick(nextUpcomingShift);
+                  }}
+                >
+                  {((nextUpcomingShift as any).status === "in-progress") ? (
+                    <>
+                      <Square className="h-4 w-4" />
+                      End Shift
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Start Shift
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                <Clock className="h-4 w-4" />
+                <span className="font-medium">
+                  {format(new Date(nextUpcomingShift.startTime), "h:mm a")} - {
+                    nextUpcomingShift.endTime ? 
+                    format(new Date(nextUpcomingShift.endTime), "h:mm a") : 
+                    "TBD"
+                  }
+                </span>
+              </div>
+              
+              {nextUpcomingShift.clientId && (
+                <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                  <User className="h-4 w-4" />
+                  <span className="font-medium">{getClientName(nextUpcomingShift.clientId)}</span>
+                </div>
+              )}
+            </div>
+
+            {(nextUpcomingShift as any).description && (
+              <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  {(nextUpcomingShift as any).description}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-4 border-t border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                <MapPin className="h-4 w-4" />
+                <span>Click card to manage shift</span>
+              </div>
+              <Badge 
+                variant="outline" 
+                className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+              >
+                Next Up
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {selectedShift && (
         <>
           <StartShiftModal
-            shift={selectedShift}
             isOpen={isStartModalOpen}
             onClose={() => {
               setIsStartModalOpen(false);
               setSelectedShift(null);
             }}
-          />
-          
-          <EndShiftModal
             shift={selectedShift}
+            client={selectedShift.clientId ? 
+              (clients as any[]).find(c => c.id === selectedShift.clientId) : 
+              null
+            }
+          />
+
+          <EndShiftModal
             isOpen={isEndModalOpen}
             onClose={() => {
               setIsEndModalOpen(false);
               setSelectedShift(null);
             }}
+            shift={selectedShift}
+            client={selectedShift.clientId ? 
+              (clients as any[]).find(c => c.id === selectedShift.clientId) : 
+              null
+            }
           />
         </>
       )}

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import MyShiftsTab from "./components/MyShiftsTab";
+import ShiftCalendarTab from "./components/ShiftCalendarTab";
 import RequestedShiftsTab from "./components/RequestedShiftsTab";
 import ShiftRequestsTab from "./components/ShiftRequestsTab";
 import AllShiftsTab from "./components/AllShiftsTab";
@@ -33,9 +34,12 @@ export default function ShiftDashboard() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex items-center justify-between mb-6">
-                <TabsList className="grid grid-cols-4 lg:w-[500px]">
+                <TabsList className="grid grid-cols-5 lg:w-[600px]">
                   <TabsTrigger value="my-shifts" className="flex items-center gap-2">
                     🗂 My Shifts
+                  </TabsTrigger>
+                  <TabsTrigger value="shift-calendar" className="flex items-center gap-2">
+                    📅 Calendar
                   </TabsTrigger>
                   <TabsTrigger value="requested-shifts" className="flex items-center gap-2">
                     📋 Requested
@@ -56,6 +60,10 @@ export default function ShiftDashboard() {
               <div className="mt-6">
                 <TabsContent value="my-shifts" className="space-y-4">
                   <MyShiftsTab />
+                </TabsContent>
+
+                <TabsContent value="shift-calendar" className="space-y-4">
+                  <ShiftCalendarTab />
                 </TabsContent>
 
                 <TabsContent value="requested-shifts" className="space-y-4">
