@@ -1,12 +1,13 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
-  medicationPlans, medicationRecords,
+  medicationPlans, medicationRecords, incidentReports, incidentClosures,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
   type CaseNote, type InsertCaseNote, type ActivityLog, type InsertActivityLog,
   type HourlyObservation, type InsertHourlyObservation,
-  type MedicationPlan, type InsertMedicationPlan, type MedicationRecord, type InsertMedicationRecord
+  type MedicationPlan, type InsertMedicationPlan, type MedicationRecord, type InsertMedicationRecord,
+  type IncidentReport, type InsertIncidentReport, type IncidentClosure, type InsertIncidentClosure
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";

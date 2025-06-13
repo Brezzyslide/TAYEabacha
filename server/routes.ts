@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema } from "@shared/schema";
+import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
@@ -1106,6 +1106,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(records);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch medication records" });
+    }
+  });
+
+  // Incident Reports API
+  app.get("/api/incident-reports", requireAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId || 1;
+      const reports = await storage.getIncidentReportsWithClosures(tenantId);
+      res.json(reports);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch incident reports" });
+    }
+  });
+
+  app.get("/api/incident-reports/:incidentId", requireAuth, async (req: any, res) => {
+    try {
+      const incidentId = req.params.incidentId;
+      const tenantId = req.user?.tenantId || 1;
+      const report = await storage.getIncidentReport(incidentId, tenantId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Incident report not found" });
+      }
+
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch incident report" });
+    }
+  });
+
+  app.post("/api/incident-reports", requireAuth, async (req: any, res) => {
+    try {
+      const reportData = insertIncidentReportSchema.parse({
+        ...req.body,
+        staffId: req.user.id,
+        tenantId: req.user.tenantId,
+        incidentId: `INC-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      });
+
+      const report = await storage.createIncidentReport(reportData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_incident_report",
+        resourceType: "incident_report",
+        resourceId: report.id,
+        description: `Created incident report: ${report.incidentId}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(report);
+    } catch (error) {
+      console.error("Create incident report error:", error);
+      res.status(500).json({ message: "Failed to create incident report" });
+    }
+  });
+
+  app.put("/api/incident-reports/:incidentId", requireAuth, async (req: any, res) => {
+    try {
+      const incidentId = req.params.incidentId;
+      const tenantId = req.user?.tenantId || 1;
+      const updateData = req.body;
+
+      const report = await storage.updateIncidentReport(incidentId, updateData, tenantId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Incident report not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_incident_report",
+        resourceType: "incident_report",
+        resourceId: report.id,
+        description: `Updated incident report: ${report.incidentId}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update incident report" });
+    }
+  });
+
+  app.delete("/api/incident-reports/:incidentId", requireAuth, async (req: any, res) => {
+    try {
+      const incidentId = req.params.incidentId;
+      const tenantId = req.user?.tenantId || 1;
+      const success = await storage.deleteIncidentReport(incidentId, tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Incident report not found" });
+      }
+
+      res.json({ message: "Incident report deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete incident report" });
+    }
+  });
+
+  // Incident Closures API
+  app.get("/api/incident-closures/:incidentId", requireAuth, async (req: any, res) => {
+    try {
+      const incidentId = req.params.incidentId;
+      const tenantId = req.user?.tenantId || 1;
+      const closure = await storage.getIncidentClosure(incidentId, tenantId);
+      res.json(closure);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch incident closure" });
+    }
+  });
+
+  app.post("/api/incident-closures", requireAuth, async (req: any, res) => {
+    try {
+      const closureData = insertIncidentClosureSchema.parse({
+        ...req.body,
+        closedBy: req.user.id,
+        tenantId: req.user.tenantId,
+        closureDate: new Date(),
+      });
+
+      const closure = await storage.createIncidentClosure(closureData);
+      
+      // Update incident status to Closed
+      await storage.updateIncidentReport(closureData.incidentId, { status: "Closed" }, req.user.tenantId);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "close_incident",
+        resourceType: "incident_closure",
+        resourceId: closure.id,
+        description: `Closed incident: ${closureData.incidentId}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(closure);
+    } catch (error) {
+      console.error("Create incident closure error:", error);
+      res.status(500).json({ message: "Failed to create incident closure" });
+    }
+  });
+
+  app.put("/api/incident-closures/:incidentId", requireAuth, async (req: any, res) => {
+    try {
+      const incidentId = req.params.incidentId;
+      const tenantId = req.user?.tenantId || 1;
+      const updateData = req.body;
+
+      const closure = await storage.updateIncidentClosure(incidentId, updateData, tenantId);
+      
+      if (!closure) {
+        return res.status(404).json({ message: "Incident closure not found" });
+      }
+
+      res.json(closure);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update incident closure" });
     }
   });
 
