@@ -145,8 +145,8 @@ const QuickViewModal = ({ client, onClose }: QuickViewModalProps) => {
                   <p className="font-medium">{client.clientId}</p>
                 </div>
                 <div>
-                  <span className="text-gray-600 dark:text-gray-400">Care Level:</span>
-                  <p className="font-medium capitalize">{client.careLevel?.replace('_', ' ')}</p>
+                  <span className="text-gray-600 dark:text-gray-400">Primary Diagnosis:</span>
+                  <p className="font-medium">{client.primaryDiagnosis || 'Not specified'}</p>
                 </div>
                 <div>
                   <span className="text-gray-600 dark:text-gray-400">Date of Birth:</span>
