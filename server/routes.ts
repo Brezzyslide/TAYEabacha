@@ -2,6 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { db } from "./db";
+import * as schema from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes } from "crypto";
@@ -711,6 +714,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Case Notes API
+  app.get("/api/case-notes", requireAuth, async (req: any, res) => {
+    try {
+      const { clientId } = req.query;
+      const tenantId = req.user.tenantId;
+      
+      let caseNotes = [];
+      if (clientId) {
+        caseNotes = await storage.getCaseNotes(parseInt(clientId), tenantId);
+      } else {
+        // Get all case notes for the tenant - using storage method
+        const clients = await storage.getClients(tenantId);
+        for (const client of clients) {
+          const clientNotes = await storage.getCaseNotes(client.id, tenantId);
+          caseNotes.push(...clientNotes);
+        }
+        // Sort by creation date
+        caseNotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      
+      res.json(caseNotes);
+    } catch (error: any) {
+      console.error("Case notes API error:", error);
+      res.status(500).json({ message: "Failed to fetch case notes", error: error.message });
+    }
+  });
+
   app.get("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
