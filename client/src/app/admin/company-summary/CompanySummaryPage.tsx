@@ -11,14 +11,23 @@ export default function CompanySummaryPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setLocation("/admin/create-company")}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Create Company
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation("/")}
+              className="flex items-center space-x-2"
+            >
+              <Building2 className="w-4 h-4" />
+              <span>Go to Dashboard</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setLocation("/admin/create-company")}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Create Company
+            </Button>
+          </div>
           
           <div className="flex items-center space-x-3 mb-2">
             <CheckCircle className="w-8 h-8 text-green-600" />
