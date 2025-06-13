@@ -119,7 +119,7 @@ export default function MessageDashboard() {
 
     // Filter by tab (inbox/sent)
     if (activeTab === "inbox") {
-      filtered = filtered.filter(msg => msg.recipientIds.includes(user?.id));
+      filtered = filtered.filter(msg => user?.id && msg.recipientIds.includes(user.id));
     } else if (activeTab === "sent") {
       filtered = filtered.filter(msg => msg.senderId === user?.id);
     }

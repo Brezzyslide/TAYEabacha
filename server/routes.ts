@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
-import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema } from "@shared/schema";
+import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
@@ -1086,6 +1086,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Medication plan deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete medication plan" });
+    }
+  });
+
+  // Staff Messages API
+  app.get("/api/messages", requireAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      
+      // Get all messages for the tenant with sender information
+      const messages = await storage.getStaffMessages(tenantId);
+      
+      // Get all users to include sender details
+      const users = await storage.getUsersByTenant(tenantId);
+      
+      // Enhance messages with sender information
+      const enhancedMessages = messages.map(message => ({
+        ...message,
+        sender: users.find(u => u.id === message.senderId)
+      }));
+      
+      res.json(enhancedMessages);
+    } catch (error: any) {
+      console.error("Staff messages API error:", error);
+      res.status(500).json({ message: "Failed to fetch messages", error: error.message });
+    }
+  });
+
+  app.post("/api/messages", requireAuth, async (req: any, res) => {
+    try {
+      const messageData = {
+        ...req.body,
+        senderId: req.user.id,
+        tenantId: req.user.tenantId,
+      };
+      
+      const message = await storage.createStaffMessage(messageData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "send_message",
+        resourceType: "staff_message",
+        resourceId: message.id,
+        description: `Sent message: ${message.subject}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(message);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.patch("/api/messages/:id/read", requireAuth, async (req: any, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      
+      const success = await storage.markMessageAsRead(messageId, req.user.id, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      res.json({ message: "Message marked as read" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  app.delete("/api/messages/:id", requireAuth, async (req: any, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      
+      const deleted = await storage.deleteStaffMessage(messageId, req.user.tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_message",
+        resourceType: "staff_message",
+        resourceId: messageId,
+        description: "Deleted staff message",
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Message deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete message" });
+    }
+  });
+
+  // Get users for messaging (filtered by tenant)
+  app.get("/api/users", requireAuth, async (req: any, res) => {
+    try {
+      const users = await storage.getUsersByTenant(req.user.tenantId);
+      
+      // Return user info without sensitive data
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+        isActive: user.isActive
+      }));
+      
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 
