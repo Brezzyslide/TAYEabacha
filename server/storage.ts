@@ -49,12 +49,19 @@ export interface IStorage {
 
   // Shifts
   getActiveShifts(tenantId: number): Promise<Shift[]>;
+  getAllShifts(tenantId: number): Promise<Shift[]>;
   getShift(id: number, tenantId: number): Promise<Shift | undefined>;
   createShift(shift: InsertShift): Promise<Shift>;
   updateShift(id: number, shift: Partial<InsertShift>, tenantId: number): Promise<Shift | undefined>;
   deleteShift(id: number, tenantId: number): Promise<boolean>;
   endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined>;
   getShiftsByUser(userId: number, tenantId: number): Promise<Shift[]>;
+
+  // Staff Availability
+  getStaffAvailability(tenantId: number): Promise<StaffAvailability[]>;
+  getUserAvailability(userId: number, tenantId: number): Promise<StaffAvailability | undefined>;
+  createStaffAvailability(availability: InsertStaffAvailability): Promise<StaffAvailability>;
+  updateStaffAvailability(id: number, availability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined>;
 
   // Activity Logs
   getActivityLogs(tenantId: number, limit?: number): Promise<ActivityLog[]>;
@@ -283,6 +290,40 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(shifts)
       .where(and(eq(shifts.userId, userId), eq(shifts.tenantId, tenantId)))
       .orderBy(desc(shifts.startTime));
+  }
+
+  // Staff Availability
+  async getStaffAvailability(tenantId: number): Promise<StaffAvailability[]> {
+    return await db.select().from(staffAvailability)
+      .where(and(eq(staffAvailability.companyId, tenantId), eq(staffAvailability.isActive, true)))
+      .orderBy(desc(staffAvailability.createdAt));
+  }
+
+  async getUserAvailability(userId: number, tenantId: number): Promise<StaffAvailability | undefined> {
+    const [availability] = await db.select().from(staffAvailability)
+      .where(and(
+        eq(staffAvailability.userId, userId), 
+        eq(staffAvailability.companyId, tenantId),
+        eq(staffAvailability.isActive, true)
+      ));
+    return availability || undefined;
+  }
+
+  async createStaffAvailability(insertAvailability: InsertStaffAvailability): Promise<StaffAvailability> {
+    const [availability] = await db
+      .insert(staffAvailability)
+      .values(insertAvailability)
+      .returning();
+    return availability;
+  }
+
+  async updateStaffAvailability(id: number, updateAvailability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined> {
+    const [availability] = await db
+      .update(staffAvailability)
+      .set(updateAvailability)
+      .where(and(eq(staffAvailability.id, id), eq(staffAvailability.companyId, tenantId)))
+      .returning();
+    return availability || undefined;
   }
 
   // Activity Logs

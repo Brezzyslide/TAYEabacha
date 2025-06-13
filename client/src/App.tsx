@@ -15,7 +15,8 @@ import Reports from "@/pages/reports";
 import Export from "@/pages/export";
 import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
 import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProfileDashboard";
-import ShiftCalendar from "@/app/shift-management/ShiftCalendar";
+import ShiftCalendar from "@/app/shift/ShiftCalendar";
+import MyAvailabilityPage from "@/app/staff-availability/MyAvailabilityPage";
 import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import CompanyListPage from "@/app/admin/companies/CompanyListPage";
@@ -29,7 +30,8 @@ function Router() {
       <ProtectedRoute path="/client/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
-      <ProtectedRoute path="/shift-management/calendar" component={ShiftCalendar} />
+      <ProtectedRoute path="/shift" component={ShiftCalendar} />
+      <ProtectedRoute path="/staff-availability" component={MyAvailabilityPage} />
       <ProtectedRoute path="/staff" component={Staff} />
 
       <ProtectedRoute path="/forms" component={Forms} />
