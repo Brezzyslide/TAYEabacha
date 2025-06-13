@@ -254,18 +254,24 @@ export default function ObservationFormModal({
               <button
                 key={level}
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log(`Clicking star ${level} for ${categoryKey}`);
                   const currentRatings = form.getValues('behaviorRatings') || {};
-                  form.setValue('behaviorRatings', {
+                  const newRatings = {
                     ...currentRatings,
                     [categoryKey]: level
-                  });
+                  };
+                  form.setValue('behaviorRatings', newRatings, { shouldValidate: true, shouldDirty: true });
+                  console.log('New ratings:', newRatings);
                 }}
-                className={`p-2 rounded-lg border-2 transition-all hover:scale-110 ${
+                className={`p-2 rounded-lg border-2 transition-all hover:scale-110 cursor-pointer ${
                   currentValue === level 
                     ? "bg-yellow-50 border-yellow-400 shadow-md" 
                     : "bg-white border-gray-200 hover:border-gray-300"
                 }`}
+                style={{ pointerEvents: 'auto' }}
               >
                 <Star
                   className={`h-5 w-5 ${
