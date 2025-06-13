@@ -109,7 +109,7 @@ export default function Sidebar() {
         )}
 
         {/* Company Management Section - Admin Only */}
-        {isAdmin && renderNavigationSection(
+        {renderNavigationSection(
           "COMPANY MANAGEMENT", 
           companyManagementNavigation, 
           "bg-yellow-200"
