@@ -4,6 +4,16 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema } from "@shared/schema";
 import { z } from "zod";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 // Middleware to ensure user is authenticated and has tenant access
 function requireAuth(req: any, res: any, next: any) {
@@ -25,6 +35,72 @@ function requireRole(roles: string[]) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+
+  // Company creation endpoint - public access for admin setup
+  app.post("/api/admin/create-company", async (req, res) => {
+    try {
+      const { 
+        companyName, 
+        businessAddress, 
+        registrationNumber, 
+        primaryContactName, 
+        primaryContactEmail, 
+        primaryContactPhone, 
+        password 
+      } = req.body;
+
+      // Create company with UUID
+      const company = await storage.createCompany({
+        name: companyName,
+        businessAddress,
+        registrationNumber,
+        primaryContactName,
+        primaryContactEmail,
+        primaryContactPhone,
+      });
+
+      // Create a tenant for the company
+      const tenant = await storage.createTenant({
+        name: companyName,
+        type: "healthcare",
+        companyId: company.id,
+      });
+
+      // Create admin user for the company
+      const hashedPassword = await hashPassword(password);
+      const adminUser = await storage.createUser({
+        username: primaryContactEmail,
+        password: hashedPassword,
+        email: primaryContactEmail,
+        fullName: primaryContactName,
+        role: "admin",
+        tenantId: tenant.id,
+        isFirstLogin: true,
+      });
+
+      // Log to console as requested
+      console.table([
+        {
+          companyId: company.id,
+          companyName: company.name,
+          tenantId: tenant.id,
+          adminUserId: adminUser.id,
+          adminEmail: adminUser.email,
+          status: "Created Successfully"
+        }
+      ]);
+
+      res.status(201).json({
+        company,
+        tenant,
+        admin: adminUser,
+        message: "Company created successfully"
+      });
+    } catch (error) {
+      console.error("Company creation error:", error);
+      res.status(500).json({ error: "Failed to create company" });
+    }
+  });
 
   // Clients API
   app.get("/api/clients", requireAuth, async (req: any, res) => {
