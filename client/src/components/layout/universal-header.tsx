@@ -31,6 +31,8 @@ export default function UniversalHeader() {
       breadcrumbs.push({ label: "Hourly Observations" });
     } else if (location.startsWith("/case-notes")) {
       breadcrumbs.push({ label: "Case Notes" });
+    } else if (location.startsWith("/incident-management")) {
+      breadcrumbs.push({ label: "Incident Management" });
     } else if (location.startsWith("/staff-availability")) {
       breadcrumbs.push({ label: "Staff Availability" });
     } else if (location.startsWith("/clients")) {

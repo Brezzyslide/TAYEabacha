@@ -46,7 +46,7 @@ interface IncidentReport {
   };
 }
 
-export function IncidentDashboard() {
+export default function IncidentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");

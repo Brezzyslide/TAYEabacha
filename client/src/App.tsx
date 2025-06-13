@@ -24,6 +24,7 @@ import ShiftCalendar from "@/app/shift/ShiftCalendar";
 import MyAvailabilityPage from "@/app/staff-availability/MyAvailabilityPage";
 import ObservationDashboard from "@/app/hourly-observations/ObservationDashboard";
 import CaseNoteDashboard from "@/app/case-notes/CaseNoteDashboard";
+import IncidentDashboard from "@/app/incident-management/IncidentDashboard";
 import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import CompanyListPage from "@/app/admin/companies/CompanyListPage";
@@ -44,6 +45,7 @@ function Router() {
       <ProtectedRoute path="/staff-availability" component={MyAvailabilityPage} />
       <ProtectedRoute path="/hourly-observations" component={ObservationDashboard} />
       <ProtectedRoute path="/case-notes" component={CaseNoteDashboard} />
+      <ProtectedRoute path="/incident-management" component={IncidentDashboard} />
       <ProtectedRoute path="/staff" component={Staff} />
 
       <ProtectedRoute path="/forms" component={Forms} />
