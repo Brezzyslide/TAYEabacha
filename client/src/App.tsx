@@ -34,6 +34,7 @@ function Router() {
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
       <ProtectedRoute path="/staff-availability" component={MyAvailabilityPage} />
+      <ProtectedRoute path="/hourly-observations" component={ObservationDashboard} />
       <ProtectedRoute path="/staff" component={Staff} />
 
       <ProtectedRoute path="/forms" component={Forms} />

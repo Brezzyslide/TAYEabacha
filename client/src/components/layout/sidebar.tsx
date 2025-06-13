@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 const supportWorkNavigation = [
   { name: "Client Profiles", href: "/support-work/client-profile", icon: Users },
   { name: "Case Notes", href: "/case-notes", icon: FileText },
-  { name: "Hourly Observations", href: "/observations", icon: Eye },
+  { name: "Hourly Observations", href: "/hourly-observations", icon: Eye },
   { name: "Medication Tracker", href: "/medications", icon: Pill },
   { name: "Care Support Plans", href: "/care-plans", icon: ClipboardList },
   { name: "Workflow Dashboard", href: "/", icon: BarChart3 },
