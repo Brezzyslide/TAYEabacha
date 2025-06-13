@@ -18,6 +18,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import { PermissionGuard, usePermission } from "@/components/auth/PermissionGuard";
 
 const clientFormSchema = insertClientSchema.omit({ tenantId: true, createdBy: true });
 
@@ -176,13 +177,23 @@ export default function Clients() {
                 <p className="text-gray-600 mt-1">Manage your client database</p>
               </div>
               
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { setEditingClient(null); form.reset(); }}>
+              <PermissionGuard 
+                module="clients" 
+                action="create"
+                fallback={
+                  <Button disabled className="opacity-50">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Client
+                    Add Client (No Permission)
                   </Button>
-                </DialogTrigger>
+                }
+              >
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => { setEditingClient(null); form.reset(); }}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Client
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>
@@ -292,7 +303,8 @@ export default function Clients() {
                     </div>
                   </form>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </PermissionGuard>
             </div>
             
             <Card>
