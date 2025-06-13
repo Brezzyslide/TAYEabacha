@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, FileText, Plus } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { type Shift } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 import ShiftViewToggle from "./ShiftViewToggle";
 import ShiftStatusTag from "./ShiftStatusTag";
 import ShiftCalendarView from "./ShiftCalendarView";
@@ -20,6 +22,8 @@ export default function MyShiftsTab() {
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
   
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: shifts = [], isLoading } = useQuery<Shift[]>({
     queryKey: ["/api/shifts"],
@@ -30,11 +34,45 @@ export default function MyShiftsTab() {
     queryKey: ["/api/clients"],
   });
 
-  // Filter shifts assigned to current user
+  // Mutation for requesting shifts
+  const requestShiftMutation = useMutation({
+    mutationFn: async (shiftId: number) => {
+      return apiRequest(`/api/shifts/${shiftId}`, "PATCH", {
+        userId: user?.id,
+        status: "requested"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      toast({
+        title: "Shift Requested",
+        description: "Your shift request has been submitted for approval.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to request shift.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Filter shifts assigned to current user and unassigned shifts
   const myShifts = useMemo(() => {
     if (!user) return [];
     return shifts.filter(shift => shift.userId === user.id);
   }, [shifts, user]);
+
+  // Filter unassigned shifts that staff can request
+  const unassignedShifts = useMemo(() => {
+    return shifts.filter(shift => !shift.userId && (shift as any).status !== "requested");
+  }, [shifts]);
+
+  // All shifts to display in calendar (assigned + unassigned)
+  const allViewableShifts = useMemo(() => {
+    return [...myShifts, ...unassignedShifts];
+  }, [myShifts, unassignedShifts]);
 
   const formatShiftDate = (date: Date | string) => {
     const shiftDate = new Date(date);
@@ -172,13 +210,22 @@ export default function MyShiftsTab() {
         </Card>
       ) : viewMode === "calendar" ? (
         <ShiftCalendarView
-          shifts={myShifts}
+          shifts={allViewableShifts}
           onShiftClick={(shift) => {
-            setSelectedShift(shift);
-            if ((shift as any).status === "assigned") {
-              setIsStartModalOpen(true);
-            } else if ((shift as any).status === "in-progress") {
-              setIsEndModalOpen(true);
+            // Handle unassigned shifts - request them
+            if (!shift.userId && (shift as any).status !== "requested") {
+              requestShiftMutation.mutate(shift.id);
+              return;
+            }
+            
+            // Handle assigned shifts - start/end them
+            if (shift.userId === user?.id) {
+              setSelectedShift(shift);
+              if ((shift as any).status === "assigned") {
+                setIsStartModalOpen(true);
+              } else if ((shift as any).status === "in-progress") {
+                setIsEndModalOpen(true);
+              }
             }
           }}
           getClientName={getClientName}
