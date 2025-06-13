@@ -10,6 +10,7 @@ export type RecurringShiftInput = {
   staffId?: string;
   clientId: string;
   companyId: string;
+  seriesId?: string;
 };
 
 export type Shift = {
@@ -21,6 +22,7 @@ export type Shift = {
   clientId: string;
   companyId: string;
   status: "unassigned" | "assigned";
+  seriesId?: string;
 };
 
 /**
@@ -39,6 +41,7 @@ export function generateRecurringShifts(input: RecurringShiftInput): Shift[] {
     staffId,
     clientId,
     companyId,
+    seriesId,
   } = input;
 
   // Convert string dates to Date objects
@@ -64,6 +67,9 @@ export function generateRecurringShifts(input: RecurringShiftInput): Shift[] {
   let currentEndDate = new Date(originalEndDate);
   let occurrenceIndex = 0;
 
+  // Generate a unique seriesId for this recurring pattern if not provided
+  const recurringSeriesId = seriesId || crypto.randomUUID();
+
   // Calculate the duration between start and end for each shift
   const shiftDuration = originalEndDate.getTime() - startDate.getTime();
 
@@ -88,6 +94,7 @@ export function generateRecurringShifts(input: RecurringShiftInput): Shift[] {
       clientId,
       companyId,
       status: staffId ? "assigned" : "unassigned",
+      seriesId: recurringSeriesId,
     };
 
     shifts.push(shift);

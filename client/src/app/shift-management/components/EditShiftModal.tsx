@@ -520,8 +520,8 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
                   <FormItem>
                     <FormLabel>Assign to Staff (Optional)</FormLabel>
                     <Select
-                      value={field.value?.toString()}
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                      value={field.value?.toString() || "unassigned"}
+                      onValueChange={(value) => field.onChange(value === "unassigned" ? undefined : parseInt(value))}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -529,7 +529,7 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {staff.map((member) => (
                           <SelectItem key={member.id} value={member.id.toString()}>
                             {member.username} ({member.role})
@@ -550,8 +550,8 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
                   <FormItem>
                     <FormLabel>Assign to Client (Optional)</FormLabel>
                     <Select
-                      value={field.value?.toString()}
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                      value={field.value?.toString() || "unassigned"}
+                      onValueChange={(value) => field.onChange(value === "unassigned" ? undefined : parseInt(value))}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -559,7 +559,7 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No client assigned</SelectItem>
+                        <SelectItem value="unassigned">No client assigned</SelectItem>
                         {clients.map((client) => (
                           <SelectItem key={client.id} value={client.id.toString()}>
                             {client.fullName}
