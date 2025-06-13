@@ -964,6 +964,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Medication Plans API
+  app.get("/api/clients/:clientId/medication-plans", requireAuth, async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const plans = await storage.getMedicationPlans(clientId, req.user.tenantId);
+      res.json(plans);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch medication plans" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/medication-plans", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const planData = insertMedicationPlanSchema.parse({
+        ...req.body,
+        clientId,
+        createdBy: req.user.id,
+        tenantId: req.user.tenantId,
+      });
+
+      const plan = await storage.createMedicationPlan(planData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_medication_plan",
+        resourceType: "medication_plan",
+        resourceId: plan.id,
+        description: `Created medication plan: ${plan.medicationName}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(plan);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create medication plan" });
+    }
+  });
+
+  app.put("/api/medication-plans/:id", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const plan = await storage.updateMedicationPlan(planId, updateData, req.user.tenantId);
+      
+      if (!plan) {
+        return res.status(404).json({ message: "Medication plan not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_medication_plan",
+        resourceType: "medication_plan",
+        resourceId: planId,
+        description: `Updated medication plan: ${plan.medicationName}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(plan);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update medication plan" });
+    }
+  });
+
+  app.delete("/api/medication-plans/:id", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      
+      const existingPlan = await storage.getMedicationPlan(planId, req.user.tenantId);
+      if (!existingPlan) {
+        return res.status(404).json({ message: "Medication plan not found" });
+      }
+      
+      const deleted = await storage.deleteMedicationPlan(planId, req.user.tenantId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Medication plan not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_medication_plan",
+        resourceType: "medication_plan",
+        resourceId: planId,
+        description: `Deleted medication plan: ${existingPlan.medicationName}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ message: "Medication plan deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete medication plan" });
+    }
+  });
+
+  // Medication Records API
+  app.get("/api/clients/:clientId/medication-records", requireAuth, async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const records = await storage.getMedicationRecords(clientId, req.user.tenantId);
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch medication records" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/medication-records", requireAuth, async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const recordData = insertMedicationRecordSchema.parse({
+        ...req.body,
+        clientId,
+        administeredBy: req.user.id,
+        tenantId: req.user.tenantId,
+      });
+
+      const record = await storage.createMedicationRecord(recordData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_medication_record",
+        resourceType: "medication_record",
+        resourceId: record.id,
+        description: `Recorded medication administration: ${record.result}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(record);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create medication record" });
+    }
+  });
+
+  app.get("/api/medication-plans/:planId/records", requireAuth, async (req: any, res) => {
+    try {
+      const planId = parseInt(req.params.planId);
+      const records = await storage.getMedicationRecordsByPlan(planId, req.user.tenantId);
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch medication records" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
