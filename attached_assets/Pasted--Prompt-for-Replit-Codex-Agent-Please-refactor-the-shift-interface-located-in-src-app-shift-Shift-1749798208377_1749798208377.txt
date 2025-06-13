@@ -1,0 +1,116 @@
+# Prompt for Replit Codex Agent
+
+Please refactor the shift interface located in `src/app/shift/ShiftDashboard.tsx` (or equivalent root file) to replace the current view tabs (“Kanban | List | Calendar”) with a smarter layout split by **functional views**.
+
+Create 3 main tabs:
+
+### 1. 🗂 My Shifts Tab
+- Only shows shifts where current user is assigned
+- Display with:
+  - Shift title
+  - Date/time
+  - Start Shift / End Shift buttons
+  - Create Case Note button
+- Shift Action Modal includes:
+  - Location Verification (use browser geolocation)
+  - Shift Time
+  - Optional handover notes
+- After "Start Shift" or "End Shift", auto-stamp timestamp and store
+- Display in either List or Calendar view (toggle in top right)
+
+### 2. 📝 Requests Tab
+- Only visible to Admin/Coordinator roles
+- Lists pending shift requests from staff
+- Display each shift with:
+  - Requesting staff
+  - Date/time
+  - Accept/Reject buttons
+- On Accept: assign shift to staff
+- On Reject: delete request
+- Use clean card layout with status color tags
+
+### 3. 🏢 All Shifts Tab (for Admins only)
+- Show all shifts (filtered by companyId)
+- Allow view toggle between List and Calendar
+- Daily / Weekly / Fortnightly filter dropdown
+- Clicking a shift opens:
+  - Edit modal
+  - Assign staff/client
+  - Archive shift
+  - Start/End Shift (for overseeing role)
+
+Add shared utility components:
+- `ShiftViewToggle.tsx` for switching Calendar/List
+- `ShiftStatusTag.tsx` for color-coded status (unassigned, in-progress, completed)
+
+Ensure:
+- All data queries are filtered by `companyId` and, when applicable, `staffId` or `clientId`
+- All shift actions respect roles (SupportWorker, TeamLeader, Coordinator, Admin)
+
+Use:
+- Tailwind + ShadCN for cards, tabs, and responsive layout
+- TanStack Query for fetching
+- Form actions via useMutation hooks src/
+└── app/
+    └── shift/
+        ├── ShiftDashboard.tsx
+        ├── components/
+        │   ├── MyShiftsTab.tsx
+        │   ├── ShiftRequestsTab.tsx
+        │   ├── AllShiftsTab.tsx
+        │   ├── ShiftActionModal.tsx
+        │   ├── ShiftViewToggle.tsx
+        │   └── ShiftStatusTag.tsx
+# Prompt for Replit Codex Agent
+
+Please create the following two modals under `src/app/shift/components/`:
+
+### 1. `StartShiftModal.tsx`
+
+This modal should open when a staff clicks “Start Shift” for their assigned shift.
+
+It should:
+- Auto-detect and display location using `navigator.geolocation.getCurrentPosition`
+- Display shift time: Start/End datetime
+- Auto-fill client name using `clientId`
+- Dropdown to select "Receiving Handover From" (list of company staff via companyId)
+- Textarea: “What were you told during handover?”
+- Submit button should:
+  - Update the shift record with:
+    - `startTimestamp`
+    - `startLocation`
+    - `handoverReceivedFromStaffId`
+    - `handoverNotesIn`
+    - Set `status` = "in-progress"
+
+### 2. `EndShiftModal.tsx`
+
+Opens when user clicks “End Shift” on an in-progress shift.
+
+It should:
+- Again verify location
+- Show client name, shift time
+- Textarea: “What did you pass on to the next staff?”
+- Optional dropdown: "Handover Given To" (staff from company)
+- Submit button should:
+  - Update:
+    - `endTimestamp`
+    - `endLocation`
+    - `handoverNotesOut`
+    - `handoverGivenToStaffId`
+    - Set `status` = "completed"
+
+Common Requirements:
+- All modals use ShadCN components
+- Location field shows readable address (placeholder or static if reverse geocoding unavailable)
+- Role enforcement: Only assigned staff can perform these actions
+- All updates must pass `companyId`, `staffId`, and `clientId` for access integrity
+
+Also update:
+- `ShiftActionButtons.tsx` to open the correct modal based on shift statussrc/
+└── app/
+    └── shift/
+        └── components/
+            ├── StartShiftModal.tsx
+            ├── EndShiftModal.tsx
+            └── ShiftActionButtons.tsx
