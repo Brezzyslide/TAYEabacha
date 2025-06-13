@@ -43,12 +43,14 @@ export const users = pgTable("users", {
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
+  ndisNumber: text("ndis_number"),
   dateOfBirth: timestamp("date_of_birth"),
   phone: text("phone"),
   email: text("email"),
   address: text("address"),
   careLevel: text("care_level"), // independent, assisted, memory_care
   emergencyContact: text("emergency_contact"),
+  medicalInfo: text("medical_info"),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdBy: integer("created_by").notNull().references(() => users.id),
   isActive: boolean("is_active").default(true),
