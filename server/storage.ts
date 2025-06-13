@@ -1,10 +1,12 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
+  medicationPlans, medicationRecords,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
   type CaseNote, type InsertCaseNote, type ActivityLog, type InsertActivityLog,
-  type HourlyObservation, type InsertHourlyObservation
+  type HourlyObservation, type InsertHourlyObservation,
+  type MedicationPlan, type InsertMedicationPlan, type MedicationRecord, type InsertMedicationRecord
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -85,6 +87,21 @@ export interface IStorage {
   // Activity Logs
   getActivityLogs(tenantId: number, limit?: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+
+  // Medication Plans
+  getMedicationPlans(clientId: number, tenantId: number): Promise<MedicationPlan[]>;
+  getMedicationPlan(id: number, tenantId: number): Promise<MedicationPlan | undefined>;
+  createMedicationPlan(plan: InsertMedicationPlan): Promise<MedicationPlan>;
+  updateMedicationPlan(id: number, plan: Partial<InsertMedicationPlan>, tenantId: number): Promise<MedicationPlan | undefined>;
+  deleteMedicationPlan(id: number, tenantId: number): Promise<boolean>;
+
+  // Medication Records
+  getMedicationRecords(clientId: number, tenantId: number): Promise<MedicationRecord[]>;
+  getMedicationRecord(id: number, tenantId: number): Promise<MedicationRecord | undefined>;
+  createMedicationRecord(record: InsertMedicationRecord): Promise<MedicationRecord>;
+  updateMedicationRecord(id: number, record: Partial<InsertMedicationRecord>, tenantId: number): Promise<MedicationRecord | undefined>;
+  deleteMedicationRecord(id: number, tenantId: number): Promise<boolean>;
+  getMedicationRecordsByPlan(planId: number, tenantId: number): Promise<MedicationRecord[]>;
 
   // Session store
   sessionStore: any;
@@ -464,6 +481,103 @@ export class DatabaseStorage implements IStorage {
         eq(hourlyObservations.tenantId, tenantId)
       ));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Medication Plans methods
+  async getMedicationPlans(clientId: number, tenantId: number): Promise<MedicationPlan[]> {
+    return await db.select().from(medicationPlans)
+      .where(and(
+        eq(medicationPlans.clientId, clientId),
+        eq(medicationPlans.tenantId, tenantId)
+      ))
+      .orderBy(desc(medicationPlans.createdAt));
+  }
+
+  async getMedicationPlan(id: number, tenantId: number): Promise<MedicationPlan | undefined> {
+    const [plan] = await db.select().from(medicationPlans)
+      .where(and(
+        eq(medicationPlans.id, id),
+        eq(medicationPlans.tenantId, tenantId)
+      ));
+    return plan;
+  }
+
+  async createMedicationPlan(insertPlan: InsertMedicationPlan): Promise<MedicationPlan> {
+    const [plan] = await db.insert(medicationPlans).values(insertPlan).returning();
+    return plan;
+  }
+
+  async updateMedicationPlan(id: number, updatePlan: Partial<InsertMedicationPlan>, tenantId: number): Promise<MedicationPlan | undefined> {
+    const [plan] = await db.update(medicationPlans)
+      .set({ ...updatePlan, updatedAt: new Date() })
+      .where(and(
+        eq(medicationPlans.id, id),
+        eq(medicationPlans.tenantId, tenantId)
+      ))
+      .returning();
+    return plan;
+  }
+
+  async deleteMedicationPlan(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.delete(medicationPlans)
+      .where(and(
+        eq(medicationPlans.id, id),
+        eq(medicationPlans.tenantId, tenantId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Medication Records methods
+  async getMedicationRecords(clientId: number, tenantId: number): Promise<MedicationRecord[]> {
+    return await db.select().from(medicationRecords)
+      .where(and(
+        eq(medicationRecords.clientId, clientId),
+        eq(medicationRecords.tenantId, tenantId)
+      ))
+      .orderBy(desc(medicationRecords.createdAt));
+  }
+
+  async getMedicationRecord(id: number, tenantId: number): Promise<MedicationRecord | undefined> {
+    const [record] = await db.select().from(medicationRecords)
+      .where(and(
+        eq(medicationRecords.id, id),
+        eq(medicationRecords.tenantId, tenantId)
+      ));
+    return record;
+  }
+
+  async createMedicationRecord(insertRecord: InsertMedicationRecord): Promise<MedicationRecord> {
+    const [record] = await db.insert(medicationRecords).values(insertRecord).returning();
+    return record;
+  }
+
+  async updateMedicationRecord(id: number, updateRecord: Partial<InsertMedicationRecord>, tenantId: number): Promise<MedicationRecord | undefined> {
+    const [record] = await db.update(medicationRecords)
+      .set(updateRecord)
+      .where(and(
+        eq(medicationRecords.id, id),
+        eq(medicationRecords.tenantId, tenantId)
+      ))
+      .returning();
+    return record;
+  }
+
+  async deleteMedicationRecord(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.delete(medicationRecords)
+      .where(and(
+        eq(medicationRecords.id, id),
+        eq(medicationRecords.tenantId, tenantId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getMedicationRecordsByPlan(planId: number, tenantId: number): Promise<MedicationRecord[]> {
+    return await db.select().from(medicationRecords)
+      .where(and(
+        eq(medicationRecords.medicationPlanId, planId),
+        eq(medicationRecords.tenantId, tenantId)
+      ))
+      .orderBy(desc(medicationRecords.createdAt));
   }
 }
 
