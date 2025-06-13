@@ -102,6 +102,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Companies API - Admin only
+  app.get("/api/admin/companies", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const companies = await storage.getCompanies();
+      res.json(companies);
+    } catch (error) {
+      console.error("Failed to fetch companies:", error);
+      res.status(500).json({ error: "Failed to fetch companies" });
+    }
+  });
+
   // Clients API
   app.get("/api/clients", requireAuth, async (req: any, res) => {
     try {

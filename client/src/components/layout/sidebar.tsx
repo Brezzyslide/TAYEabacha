@@ -15,7 +15,8 @@ import {
   Clock,
   TrendingUp,
   Shield,
-  Users
+  Users,
+  Plus
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,11 @@ const shiftManagementNavigation = [
 const staffManagementNavigation = [
   { name: "Roles & Permissions", href: "/permissions", icon: Shield },
   { name: "User Management", href: "/staff", icon: Users },
+];
+
+const companyManagementNavigation = [
+  { name: "Company List", href: "/admin/companies", icon: Building },
+  { name: "Create Company", href: "/admin/create-company", icon: Plus },
 ];
 
 export default function Sidebar() {
@@ -99,6 +105,13 @@ export default function Sidebar() {
         {renderNavigationSection(
           "STAFF MANAGEMENT", 
           staffManagementNavigation, 
+          "bg-yellow-200"
+        )}
+
+        {/* Company Management Section - Admin Only */}
+        {isAdmin && renderNavigationSection(
+          "COMPANY MANAGEMENT", 
+          companyManagementNavigation, 
           "bg-yellow-200"
         )}
       </nav>
