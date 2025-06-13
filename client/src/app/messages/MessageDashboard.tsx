@@ -152,14 +152,16 @@ export default function MessageDashboard() {
   };
 
   const getUnreadCount = () => {
+    if (!user?.id) return 0;
     return messages.filter((msg: StaffMessage) => 
-      msg.recipientIds.includes(user?.id) && !isMessageRead(msg)
+      msg.recipientIds.includes(user.id) && !isMessageRead(msg)
     ).length;
   };
 
   const getUrgentCount = () => {
+    if (!user?.id) return 0;
     return messages.filter((msg: StaffMessage) => 
-      msg.recipientIds.includes(user?.id) && 
+      msg.recipientIds.includes(user.id) && 
       msg.messageType === "urgent" && 
       !isMessageRead(msg)
     ).length;
@@ -170,7 +172,7 @@ export default function MessageDashboard() {
     setIsViewModalOpen(true);
     
     // Mark as read if it's in user's inbox and not already read
-    if (message.recipientIds.includes(user?.id) && !isMessageRead(message)) {
+    if (user?.id && message.recipientIds.includes(user.id) && !isMessageRead(message)) {
       markAsReadMutation.mutate(message.id);
     }
   };
