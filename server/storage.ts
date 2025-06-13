@@ -261,7 +261,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(shifts)
       .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined> {

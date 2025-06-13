@@ -312,7 +312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const shifts = await storage.getActiveShifts(req.user.tenantId);
       res.json(shifts);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch shifts" });
+      console.error("Error fetching shifts:", error);
+      res.status(500).json({ message: "Failed to fetch shifts", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
