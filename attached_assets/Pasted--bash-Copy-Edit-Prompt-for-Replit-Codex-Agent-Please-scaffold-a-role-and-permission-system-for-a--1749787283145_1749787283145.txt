@@ -1,0 +1,112 @@
+
+bash
+Copy
+Edit
+# Prompt for Replit Codex Agent
+
+Please scaffold a role and permission system for a multi-tenant CRM inside `src/lib/auth/`.
+
+Create the following files:
+
+1. `roles.ts` – defines all available roles with name, id, level, and description.
+2. `permissions.ts` – defines permissions for each role by module, action, and scope.
+3. `hasPermission.ts` – a helper function that checks if a user can perform a given action on a module.
+4. `scopes.ts` – constants for `"assigned"`, `"company"`, `"global"` scope levels.
+
+## In `roles.ts`:
+Export an array of role objects with:
+- id (number)
+- name ("SupportWorker", etc.)
+- level (number, for override)
+- description
+
+## In `permissions.ts`:
+Define a permissions array like:
+{
+  roleName: "Coordinator",
+  module: "shifts",
+  actions: ["create", "edit", "view", "delete"],
+  scope: "company"
+}
+
+## In `hasPermission.ts`:
+Export a function:
+```ts
+function hasPermission(user, module, action, targetCompanyId, targetClientId) {
+  // Enforce company match
+  if (user.companyId !== targetCompanyId && user.role !== "ConsoleManager") return false;
+
+  // Get role definition
+  const role = roles.find(r => r.name === user.role);
+  if (!role) return false;
+
+  // Get permissions
+  const perms = permissions.find(p => p.roleName === role.name && p.module === module);
+  if (!perms || !perms.actions.includes(action)) return false;
+
+  // Scope logic
+  if (perms.scope === "assigned") {
+    return user.clientAssignments?.includes(targetClientId);
+  }
+
+  return true; // for 'company' or 'global'
+}
+Also create src/lib/auth/index.ts to export all from these files.
+
+yaml
+Copy
+Edit
+
+---
+
+## 📁 Output Directory Structure
+
+src/
+└── lib/
+└── auth/
+├── roles.ts
+├── permissions.ts
+├── hasPermission.ts
+├── scopes.ts
+└── index.ts
+
+yaml
+Copy
+Edit
+
+---
+
+## 🛠 What to Do After Prompt Runs
+
+1. Add roles in `roles.ts`:
+
+```ts
+export const roles = [
+  { id: 1, name: "SupportWorker", level: 1, description: "View assigned content only" },
+  { id: 2, name: "TeamLeader", level: 2, description: "Edit content for assigned clients" },
+  { id: 3, name: "Coordinator", level: 3, description: "Full access to shifts & staff" },
+  { id: 4, name: "Admin", level: 4, description: "All access in company" },
+  { id: 5, name: "ConsoleManager", level: 5, description: "Global system access" }
+];
+Add permissions in permissions.ts:
+
+ts
+Copy
+Edit
+export const permissions = [
+  { roleName: "SupportWorker", module: "shifts", actions: ["view"], scope: "assigned" },
+  { roleName: "TeamLeader", module: "shifts", actions: ["view", "edit"], scope: "assigned" },
+  { roleName: "Coordinator", module: "shifts", actions: ["create", "edit", "delete", "view"], scope: "company" },
+  { roleName: "Coordinator", module: "staff", actions: ["view", "edit"], scope: "company" },
+  { roleName: "Admin", module: "*", actions: ["*"], scope: "company" },
+  { roleName: "ConsoleManager", module: "*", actions: ["*"], scope: "global" }
+];
+🧪 Bonus: Use in Component
+In a page:
+
+ts
+Copy
+Edit
+import { hasPermission } from "@/lib/auth";
+const canEdit = hasPermission(user, "shifts", "edit", client.companyId, client.id);
+if (!canEdit) return null;

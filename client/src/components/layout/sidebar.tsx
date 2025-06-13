@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { canManageCompanies } from "@/lib/auth";
 import { 
   Building, 
   ChevronDown, 
@@ -56,6 +57,7 @@ export default function Sidebar() {
   if (!user) return null;
 
   const isAdmin = user.role === "admin";
+  const canManageCompaniesAccess = canManageCompanies(user);
 
   const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (
     <div className="mb-6">
@@ -108,8 +110,8 @@ export default function Sidebar() {
           "bg-yellow-200"
         )}
 
-        {/* Company Management Section - Admin Only */}
-        {renderNavigationSection(
+        {/* Company Management Section - ConsoleManager Only */}
+        {canManageCompaniesAccess && renderNavigationSection(
           "COMPANY MANAGEMENT", 
           companyManagementNavigation, 
           "bg-yellow-200"
