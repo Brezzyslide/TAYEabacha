@@ -316,6 +316,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/shifts", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const shiftData = insertShiftSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+      });
+      
+      const shift = await storage.createShift(shiftData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_shift",
+        resourceType: "shift",
+        resourceId: shift.id,
+        description: `Created shift`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(shift);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid shift data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create shift" });
+    }
+  });
+
   app.post("/api/shifts/start", requireAuth, async (req: any, res) => {
     try {
       const { latitude, longitude, location, building, floor } = req.body;
@@ -389,6 +417,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedShift);
     } catch (error) {
       res.status(500).json({ message: "Failed to update shift" });
+    }
+  });
+
+  app.delete("/api/shifts/:id", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const shiftId = parseInt(req.params.id);
+      const deleted = await storage.deleteShift(shiftId, req.user.tenantId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_shift",
+        resourceType: "shift",
+        resourceId: shiftId,
+        description: `Deleted shift`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete shift" });
     }
   });
 

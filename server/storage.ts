@@ -52,6 +52,7 @@ export interface IStorage {
   getShift(id: number, tenantId: number): Promise<Shift | undefined>;
   createShift(shift: InsertShift): Promise<Shift>;
   updateShift(id: number, shift: Partial<InsertShift>, tenantId: number): Promise<Shift | undefined>;
+  deleteShift(id: number, tenantId: number): Promise<boolean>;
   endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined>;
   getShiftsByUser(userId: number, tenantId: number): Promise<Shift[]>;
 
@@ -254,6 +255,13 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)))
       .returning();
     return shift || undefined;
+  }
+
+  async deleteShift(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(shifts)
+      .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)));
+    return result.rowCount > 0;
   }
 
   async endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined> {

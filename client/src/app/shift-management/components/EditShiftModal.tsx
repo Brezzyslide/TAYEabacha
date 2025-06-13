@@ -41,6 +41,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { Shift, User, Client } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { generateRecurringShifts, validateRecurringShiftInput } from "@/lib/utils/generateRecurringShifts";
 
 // Form schema
 const editShiftSchema = z.object({
@@ -172,23 +173,72 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
     mutationFn: async (data: EditShiftFormData) => {
       if (!shiftId) throw new Error("No shift ID provided");
       
-      const updateData = {
-        title: data.title,
-        startTime: data.startDateTime.toISOString(),
-        endTime: data.endDateTime?.toISOString(),
-        userId: data.userId,
-        clientId: data.clientId,
-        // Add recurrence data here when backend supports it
-      };
+      // If this is a recurring shift update, generate multiple shifts
+      if (data.isRecurring && user?.tenantId) {
+        try {
+          // Validate recurring shift input
+          const recurringInput = {
+            title: data.title,
+            startDateTime: data.startDateTime,
+            endDateTime: data.endDateTime || data.startDateTime,
+            recurrenceType: data.recurrenceType!,
+            occurrenceCount: data.endConditionType === "occurrences" ? data.numberOfOccurrences : undefined,
+            endDate: data.endConditionType === "endDate" ? data.recurrenceEndDate : undefined,
+            staffId: data.userId?.toString(),
+            clientId: data.clientId?.toString() || "",
+            companyId: user.tenantId.toString(),
+          };
 
-      const response = await apiRequest("PUT", `/api/shifts/${shiftId}`, updateData);
-      return response.json();
+          validateRecurringShiftInput(recurringInput);
+          const recurringShifts = generateRecurringShifts(recurringInput);
+
+          // Create all recurring shifts via API
+          const promises = recurringShifts.map(shift => 
+            apiRequest("POST", "/api/shifts", {
+              title: shift.title,
+              startTime: shift.startDateTime.toISOString(),
+              endTime: shift.endDateTime.toISOString(),
+              userId: shift.staffId ? parseInt(shift.staffId) : null,
+              clientId: shift.clientId ? parseInt(shift.clientId) : null,
+              tenantId: user.tenantId,
+            })
+          );
+
+          await Promise.all(promises);
+          
+          // Delete the original shift since we're replacing it with recurring series
+          await apiRequest("DELETE", `/api/shifts/${shiftId}`);
+          
+          return { recurring: true, count: recurringShifts.length };
+        } catch (error) {
+          throw new Error(`Failed to create recurring shifts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      } else {
+        // Regular single shift update
+        const updateData = {
+          title: data.title,
+          startTime: data.startDateTime.toISOString(),
+          endTime: data.endDateTime?.toISOString(),
+          userId: data.userId,
+          clientId: data.clientId,
+        };
+
+        const response = await apiRequest("PUT", `/api/shifts/${shiftId}`, updateData);
+        return response.json();
+      }
     },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Shift updated successfully",
-      });
+    onSuccess: (result) => {
+      if (result?.recurring) {
+        toast({
+          title: "Success",
+          description: `Created ${result.count} recurring shifts successfully`,
+        });
+      } else {
+        toast({
+          title: "Success", 
+          description: "Shift updated successfully",
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       onClose();
     },
