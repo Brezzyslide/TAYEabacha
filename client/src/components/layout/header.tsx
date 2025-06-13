@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Menu, MapPin, ChevronDown } from "lucide-react";
+import { Bell, Menu, MapPin, ChevronDown, Home, LogOut } from "lucide-react";
+import { useLocation } from "wouter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +15,14 @@ import {
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
+  const [, setLocation] = useLocation();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   if (!user) return null;
+
+  const handleDashboard = () => {
+    setLocation("/");
+  };
 
   const userInitials = user.fullName
     .split(' ')
@@ -44,7 +50,32 @@ export default function Header() {
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          {/* Dashboard Button */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleDashboard}
+            className="flex items-center space-x-2"
+          >
+            <Home className="h-4 w-4" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </Button>
+
+          {/* Logout Button */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {logoutMutation.isPending ? "Logging out..." : "Logout"}
+            </span>
+          </Button>
+          
           {/* Location Status */}
           <div className="hidden md:flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
             <MapPin className="h-4 w-4" />
