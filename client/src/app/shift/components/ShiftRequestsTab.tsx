@@ -56,19 +56,19 @@ export default function ShiftRequestsTab() {
 
   const rejectMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/${shiftId}`, "DELETE");
+      return apiRequest(`/api/shifts/${shiftId}/reject`, "POST", {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       toast({
-        title: "Request Rejected",
-        description: "The shift request has been rejected and removed.",
+        title: "Shift Request Rejected",
+        description: "The shift request has been rejected and returned to available shifts.",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to reject shift request. Please try again.",
+        description: "Failed to reject shift request.",
         variant: "destructive",
       });
     },
@@ -87,18 +87,7 @@ export default function ShiftRequestsTab() {
   };
 
   const handleAccept = (shift: Shift) => {
-    // For now, auto-assign to the first available staff member
-    // In a real implementation, you'd show a staff selection modal
-    const availableStaff = (users as any[]).find(u => u.role === "SupportWorker");
-    if (availableStaff) {
-      acceptMutation.mutate({ shiftId: shift.id, staffId: availableStaff.id });
-    } else {
-      toast({
-        title: "No Available Staff",
-        description: "No support workers available to assign this shift.",
-        variant: "destructive",
-      });
-    }
+    acceptMutation.mutate(shift.id);
   };
 
   const handleReject = (shift: Shift) => {

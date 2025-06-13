@@ -489,6 +489,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Approve shift request
+  app.post("/api/shifts/:id/approve", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const shiftId = parseInt(req.params.id);
+      
+      // Get the shift to find the requesting user
+      const shift = await storage.getShift(shiftId, req.user.tenantId);
+      if (!shift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      if ((shift as any).status !== "requested") {
+        return res.status(400).json({ message: "Shift is not in requested status" });
+      }
+      
+      // Approve the shift by changing status to assigned
+      const updatedShift = await storage.updateShift(shiftId, {
+        status: "assigned"
+      }, req.user.tenantId);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "approve_shift_request",
+        resourceType: "shift",
+        resourceId: shift.id,
+        description: `Approved shift request: ${shift.title}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(updatedShift);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to approve shift request" });
+    }
+  });
+
+  // Reject shift request
+  app.post("/api/shifts/:id/reject", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const shiftId = parseInt(req.params.id);
+      
+      // Get the shift to find the requesting user
+      const shift = await storage.getShift(shiftId, req.user.tenantId);
+      if (!shift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      if ((shift as any).status !== "requested") {
+        return res.status(400).json({ message: "Shift is not in requested status" });
+      }
+      
+      // Reject the shift by removing user assignment and changing status back to unassigned
+      const updatedShift = await storage.updateShift(shiftId, {
+        userId: null,
+        status: "unassigned"
+      }, req.user.tenantId);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "reject_shift_request",
+        resourceType: "shift",
+        resourceId: shift.id,
+        description: `Rejected shift request: ${shift.title}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(updatedShift);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reject shift request" });
+    }
+  });
+
   // Get users for tenant (for shift assignment)
   app.get("/api/users", requireAuth, async (req: any, res) => {
     try {
