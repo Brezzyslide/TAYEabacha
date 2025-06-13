@@ -6,12 +6,15 @@ import { type Shift } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import ShiftViewToggle from "./ShiftViewToggle";
 import ShiftCalendarView from "./ShiftCalendarView";
+import ShiftRequestConfirmDialog from "./ShiftRequestConfirmDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday } from "date-fns";
 
 export default function ShiftCalendarTab() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [selectedShiftForRequest, setSelectedShiftForRequest] = useState<Shift | null>(null);
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -149,9 +152,10 @@ export default function ShiftCalendarTab() {
         <ShiftCalendarView
           shifts={allViewableShifts}
           onShiftClick={(shift) => {
-            // Only handle unassigned shifts - request them
+            // Only handle unassigned shifts - show confirmation dialog
             if (!shift.userId && (shift as any).status !== "requested") {
-              requestShiftMutation.mutate(shift.id);
+              setSelectedShiftForRequest(shift);
+              setIsRequestDialogOpen(true);
               return;
             }
             // For assigned shifts, do nothing (viewing only)
@@ -163,6 +167,24 @@ export default function ShiftCalendarTab() {
           {allViewableShifts.map(renderShiftCard)}
         </div>
       )}
+
+      <ShiftRequestConfirmDialog
+        isOpen={isRequestDialogOpen}
+        onClose={() => {
+          setIsRequestDialogOpen(false);
+          setSelectedShiftForRequest(null);
+        }}
+        onConfirm={() => {
+          if (selectedShiftForRequest) {
+            requestShiftMutation.mutate(selectedShiftForRequest.id);
+            setIsRequestDialogOpen(false);
+            setSelectedShiftForRequest(null);
+          }
+        }}
+        shift={selectedShiftForRequest}
+        clientName={selectedShiftForRequest ? getClientName(selectedShiftForRequest.clientId) : ""}
+        isLoading={requestShiftMutation.isPending}
+      />
     </div>
   );
 }

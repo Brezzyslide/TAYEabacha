@@ -29,25 +29,19 @@ export default function ShiftRequestsTab() {
     queryKey: ["/api/clients"],
   });
 
-  // Filter for pending shift requests (unassigned shifts or requests)
+  // Filter for pending shift requests (shifts with status "requested")
   const pendingRequests = useMemo(() => {
-    return shifts.filter(shift => 
-      shift.status === "requested" || 
-      (shift.status === "unassigned" && shift.userId === null)
-    );
+    return shifts.filter(shift => (shift as any).status === "requested");
   }, [shifts]);
 
   const acceptMutation = useMutation({
-    mutationFn: async ({ shiftId, staffId }: { shiftId: number; staffId: number }) => {
-      return apiRequest(`/api/shifts/${shiftId}`, "PATCH", {
-        userId: staffId,
-        status: "assigned"
-      });
+    mutationFn: async (shiftId: number) => {
+      return apiRequest(`/api/shifts/${shiftId}/approve`, "POST", {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       toast({
-        title: "Shift Assigned",
+        title: "Shift Request Approved",
         description: "The shift has been successfully assigned to staff member.",
       });
     },
