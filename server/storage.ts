@@ -193,9 +193,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
+    // Generate unique client ID
+    const clientId = `CLT${Date.now().toString().slice(-6)}`;
+    const fullName = `${insertClient.firstName} ${insertClient.lastName}`;
+    
+    const clientData = {
+      ...insertClient,
+      clientId,
+      fullName,
+      companyId: insertClient.companyId || 'COMP001'
+    };
+    
     const [client] = await db
       .insert(clients)
-      .values({ ...insertClient, updatedAt: new Date() })
+      .values(clientData)
       .returning();
     return client;
   }

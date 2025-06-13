@@ -16,6 +16,8 @@ import Reports from "@/pages/reports";
 import Export from "@/pages/export";
 import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
 import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProfileDashboard";
+import CreateClientForm from "@/app/support-work/client-profile/components/CreateClientForm";
+import ClientListPage from "@/app/support-work/client-profile/components/ClientListPage";
 import SupportWorkPage from "@/pages/support-work";
 import ShiftDashboard from "@/app/shift/ShiftDashboard";
 import ShiftCalendar from "@/app/shift/ShiftCalendar";
