@@ -85,7 +85,9 @@ export const formSubmissions = pgTable("form_submissions", {
 // Shifts table
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").references(() => users.id), // Made nullable for unassigned shifts
+  clientId: integer("client_id").references(() => clients.id),
+  title: text("title"),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
   location: text("location"),

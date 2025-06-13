@@ -49,7 +49,9 @@ export interface IStorage {
 
   // Shifts
   getActiveShifts(tenantId: number): Promise<Shift[]>;
+  getShift(id: number, tenantId: number): Promise<Shift | undefined>;
   createShift(shift: InsertShift): Promise<Shift>;
+  updateShift(id: number, shift: Partial<InsertShift>, tenantId: number): Promise<Shift | undefined>;
   endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined>;
   getShiftsByUser(userId: number, tenantId: number): Promise<Shift[]>;
 

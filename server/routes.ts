@@ -353,6 +353,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/shifts/:id", requireAuth, async (req: any, res) => {
+    try {
+      const shiftId = parseInt(req.params.id);
+      const shift = await storage.getShift(shiftId, req.user.tenantId);
+      if (!shift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      res.json(shift);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch shift" });
+    }
+  });
+
+  app.put("/api/shifts/:id", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const shiftId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const updatedShift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
+      if (!updatedShift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_shift",
+        resourceType: "shift",
+        resourceId: shiftId,
+        description: `Updated shift details`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(updatedShift);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update shift" });
+    }
+  });
+
   app.post("/api/shifts/:id/end", requireAuth, async (req: any, res) => {
     try {
       const shift = await storage.endShift(parseInt(req.params.id), new Date(), req.user.tenantId);
@@ -374,6 +413,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(shift);
     } catch (error) {
       res.status(500).json({ message: "Failed to end shift" });
+    }
+  });
+
+  // Get users for tenant (for shift assignment)
+  app.get("/api/users", requireAuth, async (req: any, res) => {
+    try {
+      const users = await storage.getUsersByTenant(req.user.tenantId);
+      // Remove sensitive data
+      const sanitizedUsers = users.map(({ password, ...user }) => user);
+      res.json(sanitizedUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 
