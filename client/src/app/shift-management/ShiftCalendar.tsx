@@ -397,18 +397,15 @@ export default function ShiftCalendar() {
 
                     {/* Calendar View */}
                     {viewMode === "calendar" && (
-                      <div className="space-y-4">
-                        <div className="text-center py-8">
-                          <CalendarDays className="mx-auto h-12 w-12 text-gray-400" />
-                          <h3 className="mt-2 text-lg font-medium text-gray-900">Calendar View</h3>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Interactive calendar view coming soon
-                          </p>
+                      <div className="space-y-6">
+                        {/* Calendar Header */}
+                        <div className="text-center">
+                          <h3 className="text-lg font-semibold text-gray-900">Shift Calendar</h3>
+                          <p className="text-sm text-gray-500">Shifts organized by date</p>
                         </div>
                         
-                        {/* Shifts grouped by date for now */}
-                        <div className="space-y-4">
-                          <h4 className="font-medium text-gray-900">Upcoming Shifts</h4>
+                        {/* Calendar Grid */}
+                        <div className="space-y-6">
                           {Object.entries(
                             filteredShifts
                               .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
@@ -419,40 +416,110 @@ export default function ShiftCalendar() {
                                 return groups;
                               }, {} as { [key: string]: Shift[] })
                           ).map(([date, dateShifts]: [string, Shift[]]) => (
-                              <div key={date} className="border rounded-lg p-4">
-                                <h5 className="font-medium text-gray-900 mb-3">{date}</h5>
-                                <div className="space-y-2">
-                                  {(dateShifts as Shift[]).map((shift) => {
+                            <div key={date} className="bg-white border rounded-lg shadow-sm">
+                              {/* Date Header */}
+                              <div className="bg-gray-50 px-4 py-3 border-b rounded-t-lg">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-semibold text-gray-900 flex items-center space-x-2">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>{date}</span>
+                                  </h4>
+                                  <span className="text-sm text-gray-600">
+                                    {dateShifts.length} shift{dateShifts.length !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Shifts for this date */}
+                              <div className="p-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {dateShifts.map((shift) => {
                                     const status = getShiftStatus(shift);
                                     return (
-                                      <div
+                                      <Card
                                         key={shift.id}
-                                        className={`p-3 rounded border-l-4 ${
-                                          status === 'unassigned' ? 'border-l-gray-400 bg-gray-50' :
-                                          status === 'assigned' ? 'border-l-blue-500 bg-blue-50' :
-                                          status === 'in-progress' ? 'border-l-green-500 bg-green-50' : 'border-l-purple-500 bg-purple-50'
+                                        className={`border-l-4 hover:shadow-md transition-shadow cursor-pointer ${
+                                          status === 'unassigned' ? 'border-l-gray-400' :
+                                          status === 'assigned' ? 'border-l-blue-500' :
+                                          status === 'in-progress' ? 'border-l-green-500' : 'border-l-purple-500'
                                         }`}
                                       >
-                                        <div className="flex items-center justify-between">
-                                          <div>
-                                            <span className="font-medium">Shift #{shift.id}</span>
-                                            <span className="ml-2 text-sm text-gray-600">
+                                        <CardHeader className="pb-2">
+                                          <div className="flex items-center justify-between">
+                                            <CardTitle className="text-base">Shift #{shift.id}</CardTitle>
+                                            <Badge 
+                                              variant={status === 'unassigned' ? 'secondary' : 'default'}
+                                              className="capitalize text-xs"
+                                            >
+                                              {status.replace('-', ' ')}
+                                            </Badge>
+                                          </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                            <Clock className="h-3 w-3" />
+                                            <span>
                                               {formatTime(shift.startTime)} - {shift.endTime ? formatTime(shift.endTime) : 'Ongoing'}
                                             </span>
                                           </div>
-                                          <Badge 
-                                            variant={status === 'unassigned' ? 'secondary' : 'default'}
-                                            className="capitalize"
-                                          >
-                                            {status.replace('-', ' ')}
-                                          </Badge>
-                                        </div>
-                                      </div>
+                                          {shift.userId && (
+                                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                              <Users className="h-3 w-3" />
+                                              <span>Staff ID: {shift.userId}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {/* Action buttons */}
+                                          <div className="pt-2">
+                                            {status === 'unassigned' && !userIsAdmin && (
+                                              <Button size="sm" variant="outline" className="w-full text-xs">
+                                                Request Shift
+                                              </Button>
+                                            )}
+                                            {status === 'assigned' && shift.userId === user?.id && (
+                                              <Button size="sm" className="w-full text-xs">
+                                                Start Shift
+                                              </Button>
+                                            )}
+                                            {status === 'in-progress' && shift.userId === user?.id && (
+                                              <Button size="sm" variant="destructive" className="w-full text-xs">
+                                                End Shift
+                                              </Button>
+                                            )}
+                                            {userIsAdmin && (
+                                              <Button size="sm" variant="ghost" className="w-full text-xs">
+                                                Edit Shift
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </CardContent>
+                                      </Card>
                                     );
                                   })}
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                          ))}
+                          
+                          {/* Empty state for calendar view */}
+                          {filteredShifts.length === 0 && (
+                            <div className="text-center py-12">
+                              <CalendarDays className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">No shifts scheduled</h3>
+                              <p className="text-sm text-gray-500 mb-4">
+                                {userIsAdmin 
+                                  ? "Create new shifts to see them organized by date in the calendar view." 
+                                  : "No shifts have been assigned to you yet."
+                                }
+                              </p>
+                              {userIsAdmin && (
+                                <Button className="mt-2">
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Create New Shift
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
