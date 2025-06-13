@@ -1,0 +1,130 @@
+Staff Shift Start/End Instructions - Complete Guide
+What is the Start/End Shift Function?
+The Start/End Shift function is a geolocation-verified time tracking system that ensures staff are physically present at the correct location when beginning and completing their assigned shifts. This provides accountability, compliance documentation, and ensures quality care delivery.
+
+Step-by-Step Instructions for Staff
+Starting a Shift
+Navigate to Your Shifts
+
+Open the app and go to "Shifts" section
+Find your assigned shift for today
+Verify the client name, location, and time
+Arrive at Location
+
+Physically arrive at the client's address
+Ensure you're within the geofenced area (usually 100m radius)
+Start Shift Process
+
+Tap the "Start Shift" button on your assigned shift
+Allow location access when prompted
+The app will automatically capture:
+Your GPS coordinates (latitude/longitude)
+Current address verification
+Timestamp of arrival
+Complete Start Documentation
+
+Handover Notes Field: Describe client's current state
+Example: "Client awake and alert, ready for morning routine"
+Example: "Client requires assistance with mobility today"
+Previous Staff Handover: Review any notes from the previous shift
+Tap "Confirm Start" to clock in
+During the Shift
+Your location may be periodically verified for safety
+Document any incidents or observations in real-time
+Take required photos for medication administration
+Complete hourly observations as needed
+Ending a Shift
+Prepare for Handover
+
+Complete all required documentation
+Ensure client is safe and settled
+Prepare detailed handover notes
+End Shift Process
+
+Tap "End Shift" button
+Verify you're still at the correct location
+Cannot end without starting: System prevents ending unstarted shifts
+Complete End Documentation
+
+Detailed Handover Notes (mandatory):
+Client's condition and mood
+Activities completed
+Any concerns or observations
+Medication administration summary
+Next shift requirements
+Example: "Client completed physiotherapy exercises, ate full lunch, mood positive. Medication given at 2pm with photo documentation. Requires assistance with evening routine."
+Handover to Next Staff (if applicable)
+
+Select next staff member from dropdown
+Provide verbal handover in person
+Ensure continuity of care
+What This Means for Compliance
+Legal Protection
+Audit Trail: Every start/end creates permanent records
+Location Verification: Proves staff presence at client location
+Time Accuracy: Prevents time theft and ensures accurate billing
+Documentation: Creates comprehensive care records
+NDIS Compliance
+Quality Assurance: Demonstrates professional care delivery
+Funding Verification: Proves services were actually delivered
+Safety Standards: Ensures staff are where they should be
+Regulatory Requirements: Meets government documentation standards
+Client Safety
+Accountability: Staff cannot fake attendance
+Continuity: Handover notes ensure smooth care transitions
+Emergency Response: Location tracking enables quick assistance
+Quality Care: Mandatory documentation improves service quality
+Security Features
+Anti-Fraud Measures
+Geofencing: Must be within 100m of client address
+Duplicate Prevention: Cannot start/end same shift twice
+Company Isolation: Cannot access other companies' shifts
+Role Verification: Only assigned staff can start shifts
+Data Protection
+Encrypted Storage: All location data is securely stored
+Access Control: Only authorized personnel can view records
+Audit Logging: All actions are tracked and timestamped
+Compliance: Meets healthcare data protection standards
+What Happens When You Start/End
+System Actions on Start
+Records exact GPS coordinates
+Verifies location matches client address
+Creates audit log entry with timestamp
+Updates shift status to "In Progress"
+Notifies managers of shift commencement
+Enables access to client care documents
+System Actions on End
+Records completion location and time
+Calculates total shift duration
+Processes handover documentation
+Updates client care timeline
+Triggers billing calculations
+Generates compliance reports
+Troubleshooting Common Issues
+Location Not Working
+Ensure GPS is enabled on your device
+Check you have location permissions for the app
+Move to an area with better signal reception
+Contact support if persistent issues
+Cannot Start Shift
+Verify you're assigned to this shift
+Check you're at the correct address
+Ensure shift time has arrived
+Confirm you haven't already started
+Cannot End Shift
+Must have started the shift first
+Complete all mandatory documentation
+Ensure you're still at client location
+Fill in all required handover notes
+Benefits for Staff
+Professional Development
+Documentation Skills: Improves care planning abilities
+Accountability: Builds professional credibility
+Career Growth: Creates performance tracking records
+Skill Recognition: Demonstrates reliable service delivery
+Protection
+Legal Coverage: Documented proof of service delivery
+Dispute Resolution: Clear records prevent conflicts
+Performance Tracking: Objective measurement of work quality
+Safety Monitoring: Location tracking for staff security
+This system transforms shift work from simple time tracking into comprehensive care documentation, ensuring high-quality service delivery while protecting both staff and clients through verified, compliant care records.

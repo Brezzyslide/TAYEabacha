@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Play, Square, Clock, Users } from "lucide-react";
+import { MapPin, Play, Square, Clock, Users, Shield } from "lucide-react";
 import { type Shift } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -154,16 +154,16 @@ export default function ShiftLogging() {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Start New Shift</h1>
-              <p className="text-gray-600 mt-1">Start an unscheduled shift with automatic time and location tracking</p>
+              <p className="text-gray-600 mt-1">Begin an unscheduled shift with geolocation verification and compliance documentation</p>
               <div className="mt-3 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <Clock className="h-5 w-5 text-blue-400" />
+                    <Shield className="h-5 w-5 text-blue-400" />
                   </div>
                   <div className="ml-3">
                     <p className="text-sm text-blue-700">
-                      <strong>Use this for:</strong> Emergency shifts, unplanned work, or when you need to start working outside of your scheduled shifts. 
-                      This creates a new shift record with geolocation verification.
+                      <strong>Compliance Ready:</strong> This creates a geolocation-verified shift record with audit trail for NDIS compliance. 
+                      Use for emergency cover, unplanned client needs, or additional support outside scheduled shifts.
                     </p>
                   </div>
                 </div>
