@@ -239,6 +239,23 @@ export class DatabaseStorage implements IStorage {
     return shift;
   }
 
+  async getShift(id: number, tenantId: number): Promise<Shift | undefined> {
+    const [shift] = await db
+      .select()
+      .from(shifts)
+      .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)));
+    return shift || undefined;
+  }
+
+  async updateShift(id: number, updateShift: Partial<InsertShift>, tenantId: number): Promise<Shift | undefined> {
+    const [shift] = await db
+      .update(shifts)
+      .set(updateShift)
+      .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)))
+      .returning();
+    return shift || undefined;
+  }
+
   async endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined> {
     const [shift] = await db
       .update(shifts)

@@ -11,6 +11,7 @@ import { isAdmin } from "@/lib/auth";
 import { Shift } from "@shared/schema";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import { EditShiftModal } from "./components/EditShiftModal";
 
 interface ShiftAnalytics {
   totalShifts: number;
@@ -25,6 +26,8 @@ export default function ShiftCalendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
 
   // Fetch all shifts for the current company (tenant)
   const { data: shifts = [], isLoading } = useQuery<Shift[]>({
@@ -138,6 +141,19 @@ export default function ShiftCalendar() {
     }
 
     return days;
+  };
+
+  const handleEditShift = (shiftId: number) => {
+    // Only allow Coordinator, Admin, or ConsoleManager to edit shifts
+    if (user && ["Coordinator", "Admin", "ConsoleManager"].includes(user.role)) {
+      setSelectedShiftId(shiftId);
+      setEditModalOpen(true);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setSelectedShiftId(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -374,7 +390,12 @@ export default function ShiftCalendar() {
                                       </Button>
                                     )}
                                     {userIsAdmin && (
-                                      <Button size="sm" variant="ghost" className="w-full">
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        className="w-full"
+                                        onClick={() => handleEditShift(shift.id)}
+                                      >
                                         Edit
                                       </Button>
                                     )}
