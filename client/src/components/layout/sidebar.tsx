@@ -78,7 +78,7 @@ export default function Sidebar() {
   );
 
   return (
-    <aside className="w-64 bg-slate-50 flex-shrink-0 hidden lg:block border-r border-gray-200">
+    <aside className="w-64 bg-slate-50 flex-shrink-0 border-r border-gray-200">
       {/* Navigation Menu */}
       <nav className="p-4 space-y-6">
         {/* Support Work Section */}
