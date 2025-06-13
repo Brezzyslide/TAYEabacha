@@ -42,6 +42,7 @@ const observationSchema = z.object({
   notes: z.string().min(10, "Notes must be at least 10 characters"),
   timestamp: z.string().min(1, "Please select a date and time"),
   intensity: z.number().min(1).max(5).optional(),
+  adlDetails: z.string().optional(),
 });
 
 type ObservationFormData = z.infer<typeof observationSchema>;
@@ -193,8 +194,8 @@ export default function ObservationFormModal({
 
   const selectedTypeConfig = selectedType ? OBSERVATION_TYPES[selectedType as keyof typeof OBSERVATION_TYPES] : null;
 
-  const renderIntensitySelector = () => {
-    if (!selectedTypeConfig?.hasIntensity) return null;
+  const renderBehaviorStarChart = () => {
+    if (selectedType !== "behaviour") return null;
 
     return (
       <FormField
@@ -204,35 +205,117 @@ export default function ObservationFormModal({
           <FormItem>
             <FormLabel className="flex items-center gap-2">
               <Star className="h-4 w-4" />
-              Intensity Level
+              Behavior Rating (Star Chart)
             </FormLabel>
             <FormControl>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((level) => (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => field.onChange(level)}
-                    className={`p-2 rounded-lg border transition-colors ${
-                      field.value === level
-                        ? "bg-yellow-50 border-yellow-300 text-yellow-700"
-                        : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Star
-                      className={`h-5 w-5 ${
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => field.onChange(level)}
+                      className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
                         field.value === level
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
+                          ? "bg-yellow-50 border-yellow-400 shadow-md"
+                          : "bg-white border-gray-200 hover:border-gray-300"
                       }`}
-                    />
-                  </button>
-                ))}
-                <div className="ml-2 text-sm text-gray-600">
-                  {field.value ? `Level ${field.value}` : "Select intensity"}
+                    >
+                      <Star
+                        className={`h-6 w-6 ${
+                          field.value === level
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Star Chart Legend */}
+                <div className="bg-gray-50 p-3 rounded-lg text-xs space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    <span className="font-medium">1 Star:</span>
+                    <span>Concerning behavior requiring immediate attention</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    </div>
+                    <span className="font-medium">2 Stars:</span>
+                    <span>Below average behavior</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    </div>
+                    <span className="font-medium">3 Stars:</span>
+                    <span>Average/neutral behavior</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    </div>
+                    <span className="font-medium">4 Stars:</span>
+                    <span>Good behavior</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    </div>
+                    <span className="font-medium">5 Stars:</span>
+                    <span>Excellent behavior</span>
+                  </div>
+                </div>
+                
+                <div className="text-center text-sm text-gray-600">
+                  {field.value ? (
+                    <span className="font-medium text-gray-800">
+                      Selected: {field.value} star{field.value !== 1 ? 's' : ''}
+                    </span>
+                  ) : (
+                    <span>Please select a behavior rating</span>
+                  )}
                 </div>
               </div>
             </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  };
+
+  const renderADLTextInput = () => {
+    if (selectedType !== "adl") return null;
+
+    return (
+      <FormField
+        control={form.control}
+        name="adlDetails"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>ADL Assessment Details</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="e.g., Independent with prompting, Requires full assistance, etc."
+                {...field}
+              />
+            </FormControl>
+            <p className="text-xs text-gray-500">
+              Describe the level of assistance required or independence demonstrated
+            </p>
             <FormMessage />
           </FormItem>
         )}
