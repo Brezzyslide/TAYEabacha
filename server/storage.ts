@@ -1,16 +1,17 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
-  medicationPlans, medicationRecords, incidentReports, incidentClosures,
+  medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
   type CaseNote, type InsertCaseNote, type ActivityLog, type InsertActivityLog,
   type HourlyObservation, type InsertHourlyObservation,
   type MedicationPlan, type InsertMedicationPlan, type MedicationRecord, type InsertMedicationRecord,
-  type IncidentReport, type InsertIncidentReport, type IncidentClosure, type InsertIncidentClosure
+  type IncidentReport, type InsertIncidentReport, type IncidentClosure, type InsertIncidentClosure,
+  type StaffMessage, type InsertStaffMessage
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -103,6 +104,16 @@ export interface IStorage {
   updateMedicationRecord(id: number, record: Partial<InsertMedicationRecord>, tenantId: number): Promise<MedicationRecord | undefined>;
   deleteMedicationRecord(id: number, tenantId: number): Promise<boolean>;
   getMedicationRecordsByPlan(planId: number, tenantId: number): Promise<MedicationRecord[]>;
+
+  // Staff Messages
+  getStaffMessages(tenantId: number): Promise<StaffMessage[]>;
+  getStaffMessage(id: number, tenantId: number): Promise<StaffMessage | undefined>;
+  createStaffMessage(message: InsertStaffMessage): Promise<StaffMessage>;
+  updateStaffMessage(id: number, message: Partial<InsertStaffMessage>, tenantId: number): Promise<StaffMessage | undefined>;
+  deleteStaffMessage(id: number, tenantId: number): Promise<boolean>;
+  getStaffMessagesByRecipient(userId: number, tenantId: number): Promise<StaffMessage[]>;
+  getStaffMessagesBySender(userId: number, tenantId: number): Promise<StaffMessage[]>;
+  markMessageAsRead(messageId: number, userId: number, tenantId: number): Promise<boolean>;
 
   // Session store
   sessionStore: any;
@@ -680,6 +691,85 @@ export class DatabaseStorage implements IStorage {
     .leftJoin(users, eq(incidentReports.staffId, users.id))
     .where(eq(incidentReports.tenantId, tenantId))
     .orderBy(desc(incidentReports.createdAt));
+  }
+
+  // Staff Messages methods
+  async getStaffMessages(tenantId: number): Promise<StaffMessage[]> {
+    return await db.select().from(staffMessages)
+      .where(eq(staffMessages.tenantId, tenantId))
+      .orderBy(desc(staffMessages.createdAt));
+  }
+
+  async getStaffMessage(id: number, tenantId: number): Promise<StaffMessage | undefined> {
+    const [message] = await db.select().from(staffMessages)
+      .where(and(
+        eq(staffMessages.id, id),
+        eq(staffMessages.tenantId, tenantId)
+      ));
+    return message;
+  }
+
+  async createStaffMessage(insertMessage: InsertStaffMessage): Promise<StaffMessage> {
+    const [message] = await db.insert(staffMessages).values(insertMessage).returning();
+    return message;
+  }
+
+  async updateStaffMessage(id: number, updateMessage: Partial<InsertStaffMessage>, tenantId: number): Promise<StaffMessage | undefined> {
+    const [message] = await db.update(staffMessages)
+      .set({ ...updateMessage, updatedAt: new Date() })
+      .where(and(
+        eq(staffMessages.id, id),
+        eq(staffMessages.tenantId, tenantId)
+      ))
+      .returning();
+    return message;
+  }
+
+  async deleteStaffMessage(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.delete(staffMessages)
+      .where(and(
+        eq(staffMessages.id, id),
+        eq(staffMessages.tenantId, tenantId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getStaffMessagesByRecipient(userId: number, tenantId: number): Promise<StaffMessage[]> {
+    return await db.select().from(staffMessages)
+      .where(and(
+        sql`${userId} = ANY(${staffMessages.recipientIds})`,
+        eq(staffMessages.tenantId, tenantId)
+      ))
+      .orderBy(desc(staffMessages.createdAt));
+  }
+
+  async getStaffMessagesBySender(userId: number, tenantId: number): Promise<StaffMessage[]> {
+    return await db.select().from(staffMessages)
+      .where(and(
+        eq(staffMessages.senderId, userId),
+        eq(staffMessages.tenantId, tenantId)
+      ))
+      .orderBy(desc(staffMessages.createdAt));
+  }
+
+  async markMessageAsRead(messageId: number, userId: number, tenantId: number): Promise<boolean> {
+    const message = await this.getStaffMessage(messageId, tenantId);
+    if (!message) return false;
+
+    const currentReadStatus = message.isRead as Record<string, boolean> || {};
+    currentReadStatus[userId.toString()] = true;
+
+    const result = await db.update(staffMessages)
+      .set({ 
+        isRead: currentReadStatus,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(staffMessages.id, messageId),
+        eq(staffMessages.tenantId, tenantId)
+      ));
+    
+    return (result.rowCount || 0) > 0;
   }
 }
 
