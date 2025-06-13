@@ -1,6 +1,6 @@
 import { 
-  users, clients, tenants, formTemplates, formSubmissions, shifts, activityLogs,
-  type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
+  companies, users, clients, tenants, formTemplates, formSubmissions, shifts, activityLogs,
+  type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
@@ -13,6 +13,11 @@ import { pool } from "./db";
 const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
+  // Companies
+  getCompany(id: string): Promise<Company | undefined>;
+  createCompany(company: InsertCompany): Promise<Company>;
+  getCompanies(): Promise<Company[]>;
+
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;

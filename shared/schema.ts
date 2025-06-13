@@ -35,6 +35,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("staff"), // admin, staff, viewer
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   isActive: boolean("is_active").default(true),
+  isFirstLogin: boolean("is_first_login").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -109,7 +110,15 @@ export const activityLogs = pgTable("activity_logs", {
 });
 
 // Relations
-export const tenantsRelations = relations(tenants, ({ many }) => ({
+export const companiesRelations = relations(companies, ({ many }) => ({
+  tenants: many(tenants),
+}));
+
+export const tenantsRelations = relations(tenants, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [tenants.companyId],
+    references: [companies.id],
+  }),
   users: many(users),
   clients: many(clients),
   formTemplates: many(formTemplates),
@@ -196,6 +205,11 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
 }));
 
 // Insert schemas
+export const insertCompanySchema = createInsertSchema(companies).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
   createdAt: true,
@@ -233,6 +247,9 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
 });
 
 // Types
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = z.infer<typeof insertCompanySchema>;
+
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 
