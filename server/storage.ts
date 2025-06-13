@@ -1,9 +1,10 @@
 import { 
-  companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs,
+  companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
-  type CaseNote, type InsertCaseNote, type ActivityLog, type InsertActivityLog
+  type CaseNote, type InsertCaseNote, type ActivityLog, type InsertActivityLog,
+  type HourlyObservation, type InsertHourlyObservation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -72,6 +73,14 @@ export interface IStorage {
   deleteCaseNote(id: number, tenantId: number): Promise<boolean>;
   getCaseNotesByType(clientId: number, type: string, tenantId: number): Promise<CaseNote[]>;
   searchCaseNotes(searchTerm: string, clientId: number, tenantId: number): Promise<CaseNote[]>;
+
+  // Hourly Observations
+  getObservations(tenantId: number): Promise<HourlyObservation[]>;
+  getObservationsByClient(clientId: number, tenantId: number): Promise<HourlyObservation[]>;
+  getObservation(id: number, tenantId: number): Promise<HourlyObservation | undefined>;
+  createObservation(observation: InsertHourlyObservation): Promise<HourlyObservation>;
+  updateObservation(id: number, observation: Partial<InsertHourlyObservation>, tenantId: number): Promise<HourlyObservation | undefined>;
+  deleteObservation(id: number, tenantId: number): Promise<boolean>;
 
   // Activity Logs
   getActivityLogs(tenantId: number, limit?: number): Promise<ActivityLog[]>;
@@ -400,6 +409,61 @@ export class DatabaseStorage implements IStorage {
         eq(caseNotes.tenantId, tenantId)
       ))
       .orderBy(desc(caseNotes.createdAt));
+  }
+
+  // Hourly Observations methods
+  async getObservations(tenantId: number): Promise<HourlyObservation[]> {
+    return await db.select().from(hourlyObservations)
+      .where(eq(hourlyObservations.tenantId, tenantId))
+      .orderBy(desc(hourlyObservations.timestamp));
+  }
+
+  async getObservationsByClient(clientId: number, tenantId: number): Promise<HourlyObservation[]> {
+    return await db.select().from(hourlyObservations)
+      .where(and(
+        eq(hourlyObservations.clientId, clientId),
+        eq(hourlyObservations.tenantId, tenantId)
+      ))
+      .orderBy(desc(hourlyObservations.timestamp));
+  }
+
+  async getObservation(id: number, tenantId: number): Promise<HourlyObservation | undefined> {
+    const [observation] = await db.select().from(hourlyObservations)
+      .where(and(
+        eq(hourlyObservations.id, id),
+        eq(hourlyObservations.tenantId, tenantId)
+      ));
+    return observation || undefined;
+  }
+
+  async createObservation(insertObservation: InsertHourlyObservation): Promise<HourlyObservation> {
+    const [observation] = await db
+      .insert(hourlyObservations)
+      .values(insertObservation)
+      .returning();
+    return observation;
+  }
+
+  async updateObservation(id: number, updateObservation: Partial<InsertHourlyObservation>, tenantId: number): Promise<HourlyObservation | undefined> {
+    const [observation] = await db
+      .update(hourlyObservations)
+      .set({ ...updateObservation, updatedAt: new Date() })
+      .where(and(
+        eq(hourlyObservations.id, id),
+        eq(hourlyObservations.tenantId, tenantId)
+      ))
+      .returning();
+    return observation || undefined;
+  }
+
+  async deleteObservation(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(hourlyObservations)
+      .where(and(
+        eq(hourlyObservations.id, id),
+        eq(hourlyObservations.tenantId, tenantId)
+      ));
+    return result.rowCount > 0;
   }
 }
 

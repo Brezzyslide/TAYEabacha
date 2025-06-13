@@ -206,6 +206,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   availability: many(staffAvailability),
   caseNotes: many(caseNotes),
   activityLogs: many(activityLogs),
+  observations: many(hourlyObservations),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -220,6 +221,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   formSubmissions: many(formSubmissions),
   caseNotes: many(caseNotes),
   shifts: many(shifts),
+  observations: many(hourlyObservations),
 }));
 
 export const formTemplatesRelations = relations(formTemplates, ({ one, many }) => ({
@@ -299,6 +301,21 @@ export const staffAvailabilityRelations = relations(staffAvailability, ({ one })
   }),
 }));
 
+export const hourlyObservationsRelations = relations(hourlyObservations, ({ one }) => ({
+  client: one(clients, {
+    fields: [hourlyObservations.clientId],
+    references: [clients.id],
+  }),
+  user: one(users, {
+    fields: [hourlyObservations.userId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [hourlyObservations.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   user: one(users, {
     fields: [activityLogs.userId],
@@ -359,6 +376,12 @@ export const insertCaseNoteSchema = createInsertSchema(caseNotes).omit({
   updatedAt: true,
 });
 
+export const insertHourlyObservationSchema = createInsertSchema(hourlyObservations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
   createdAt: true,
@@ -391,6 +414,9 @@ export type InsertStaffAvailability = z.infer<typeof insertStaffAvailabilitySche
 
 export type CaseNote = typeof caseNotes.$inferSelect;
 export type InsertCaseNote = z.infer<typeof insertCaseNoteSchema>;
+
+export type HourlyObservation = typeof hourlyObservations.$inferSelect;
+export type InsertHourlyObservation = z.infer<typeof insertHourlyObservationSchema>;
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
