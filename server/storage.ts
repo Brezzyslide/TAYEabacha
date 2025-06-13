@@ -1,8 +1,9 @@
 import { 
-  companies, users, clients, tenants, formTemplates, formSubmissions, shifts, activityLogs,
+  companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, activityLogs,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
-  type Shift, type InsertShift, type ActivityLog, type InsertActivityLog
+  type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
+  type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";

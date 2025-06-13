@@ -526,6 +526,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff Availability API
+  app.get("/api/staff-availability", requireAuth, async (req: any, res) => {
+    try {
+      const availability = await storage.getStaffAvailability(req.user.tenantId);
+      res.json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch staff availability" });
+    }
+  });
+
+  app.post("/api/staff-availability", requireAuth, async (req: any, res) => {
+    try {
+      const availabilityData = {
+        ...req.body,
+        userId: req.user.id,
+        companyId: req.user.tenantId,
+      };
+      
+      const availability = await storage.createStaffAvailability(availabilityData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_availability",
+        resourceType: "staff_availability",
+        resourceId: availability.id,
+        description: "Created staff availability",
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create staff availability" });
+    }
+  });
+
+  app.put("/api/staff-availability/:id", requireAuth, async (req: any, res) => {
+    try {
+      const availabilityId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const availability = await storage.updateStaffAvailability(availabilityId, updateData, req.user.tenantId);
+      if (!availability) {
+        return res.status(404).json({ message: "Staff availability not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_availability",
+        resourceType: "staff_availability",
+        resourceId: availabilityId,
+        description: "Updated staff availability",
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update staff availability" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
