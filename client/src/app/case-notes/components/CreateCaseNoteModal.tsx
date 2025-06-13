@@ -75,6 +75,29 @@ export default function CreateCaseNoteModal({
     }
   });
 
+  // Fetch clients filtered by tenant
+  const { data: clients = [] } = useQuery({
+    queryKey: ["/api/clients"],
+    select: (data: Client[]) => data.filter(client => client.tenantId === user?.tenantId)
+  });
+
+  // Fetch recent shifts for selected client
+  const { data: recentShifts = [] } = useQuery({
+    queryKey: ["/api/shifts/recent", form.watch("clientId")],
+    enabled: !!form.watch("clientId"),
+    queryFn: async () => {
+      const clientId = form.getValues("clientId");
+      if (!clientId) return [];
+      
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      const response = await fetch(`/api/shifts?clientId=${clientId}&since=${threeDaysAgo.toISOString()}`);
+      if (!response.ok) throw new Error('Failed to fetch shifts');
+      return response.json();
+    }
+  });
+
   const watchedContent = form.watch("content");
   const watchedClientId = form.watch("clientId");
 

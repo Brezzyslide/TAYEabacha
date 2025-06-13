@@ -3,58 +3,68 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LayoutGrid, List, Download, FileText, Search, Plus, MoreVertical, Eye, Edit, Archive, Clock, User, Building } from "lucide-react";
+import { Plus, Download, FileText, AlertTriangle, Pill, LayoutGrid, List } from "lucide-react";
 import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { CaseNote, Client, Shift } from "@shared/schema";
-import CaseNoteModal from "@/components/case-notes/CaseNoteModal";
+import type { CaseNote } from "@shared/schema";
+import CaseNoteFilterBar from "@/app/case-notes/components/CaseNoteFilterBar";
+import CaseNoteCard from "@/app/case-notes/components/CaseNoteCard";
+import CreateCaseNoteModal from "@/app/case-notes/components/CreateCaseNoteModal";
 
-interface CaseNotesTabProps {
-  clientId?: string;
-  companyId?: string;
+interface ClientCaseNotesProps {
+  clientId: number;
 }
 
-export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps) {
-  const [viewMode, setViewMode] = useState<"list" | "card">("list");
+export default function ClientCaseNotes({ clientId }: ClientCaseNotesProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTab, setSelectedTab] = useState("all");
+  const [selectedType, setSelectedType] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [viewMode, setViewMode] = useState<"card" | "list">("list");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<CaseNote | undefined>();
-  const [expandedNotes, setExpandedNotes] = useState<Set<number>>(new Set());
+  const [selectedTab, setSelectedTab] = useState("all");
   
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch case notes data with client info and recent shifts
-  const { data: caseNotesData, isLoading, error } = useQuery({
-    queryKey: [`/api/clients/${clientId}/case-notes`, companyId],
-    enabled: !!clientId && !!companyId,
+  // Fetch case notes for this specific client
+  const { data: caseNotes = [], isLoading, error } = useQuery({
+    queryKey: ["/api/case-notes", clientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/case-notes?clientId=${clientId}`);
+      if (!response.ok) throw new Error('Failed to fetch case notes');
+      return response.json();
+    },
     retry: 1,
   });
 
   // Create case note mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`/api/clients/${clientId}/case-notes`, {
+      const response = await apiRequest("/api/case-notes", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          clientId,
+          userId: user?.id,
+          tenantId: user?.tenantId
+        }),
       });
-      if (!response.ok) throw new Error("Failed to create case note");
-      return response.json();
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/case-notes`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/case-notes", clientId] });
       toast({
         title: "Case Note Created",
         description: "Your case note has been created successfully.",
       });
+      setIsModalOpen(false);
+      setEditingNote(undefined);
     },
     onError: () => {
       toast({
@@ -68,20 +78,20 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Update case note mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await fetch(`/api/case-notes/${id}`, {
+      const response = await apiRequest(`/api/case-notes/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to update case note");
-      return response.json();
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/case-notes`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/case-notes", clientId] });
       toast({
         title: "Case Note Updated",
         description: "Your case note has been updated successfully.",
       });
+      setIsModalOpen(false);
+      setEditingNote(undefined);
     },
     onError: () => {
       toast({
@@ -95,14 +105,13 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Delete case note mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/case-notes/${id}`, {
+      const response = await apiRequest(`/api/case-notes/${id}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete case note");
-      return response.json();
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/case-notes`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/case-notes", clientId] });
       toast({
         title: "Case Note Deleted",
         description: "The case note has been deleted successfully.",
@@ -117,43 +126,51 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     },
   });
 
-  // Get the actual data with proper typing
-  const caseNotes: CaseNote[] = (caseNotesData as any)?.caseNotes || [];
-  const client: Client | undefined = (caseNotesData as any)?.client;
-  const recentShifts: Shift[] = (caseNotesData as any)?.recentShifts || [];
-
-  // Filter case notes based on search and tabs
+  // Filter case notes based on criteria
   const filteredNotes = useMemo(() => {
-    let notes = caseNotes;
+    let notes = [...(caseNotes as CaseNote[])];
 
-    // Apply search filter
+    // Filter by type/tab
+    if (selectedTab === "incidents") {
+      notes = notes.filter(note => note.type === "incident");
+    } else if (selectedTab === "medication") {
+      notes = notes.filter(note => note.type === "medication");
+    } else if (selectedType !== "all") {
+      notes = notes.filter(note => note.type === selectedType);
+    }
+
+    // Filter by search term
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      notes = notes.filter(note => 
-        note.title.toLowerCase().includes(searchLower) ||
-        note.content.toLowerCase().includes(searchLower) ||
-        note.tags?.some(tag => tag.toLowerCase().includes(searchLower)) ||
-        (client?.fullName?.toLowerCase().includes(searchLower)) ||
-        (client?.ndisNumber?.toLowerCase().includes(searchLower))
+      const lowercaseSearch = searchTerm.toLowerCase();
+      notes = notes.filter(note =>
+        note.title.toLowerCase().includes(lowercaseSearch) ||
+        note.content.toLowerCase().includes(lowercaseSearch) ||
+        note.category.toLowerCase().includes(lowercaseSearch) ||
+        (note.tags && note.tags.some(tag => tag.toLowerCase().includes(lowercaseSearch)))
       );
     }
 
-    // Apply tab filter
-    switch (selectedTab) {
-      case "incidents":
-        notes = notes.filter(note => note.type === "incident" || note.incidentData);
-        break;
-      case "medication":
-        notes = notes.filter(note => note.type === "medication" || note.medicationData);
-        break;
-      case "all":
-      default:
-        break;
+    // Filter by date range
+    if (dateRange?.from) {
+      const fromDate = new Date(dateRange.from);
+      fromDate.setHours(0, 0, 0, 0);
+      
+      const toDate = dateRange.to ? new Date(dateRange.to) : new Date(dateRange.from);
+      toDate.setHours(23, 59, 59, 999);
+      
+      notes = notes.filter(note => {
+        const noteDate = new Date(note.createdAt);
+        return noteDate >= fromDate && noteDate <= toDate;
+      });
     }
 
-    // Sort by creation date (newest first)
     return notes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [caseNotes, searchTerm, selectedTab, client]);
+  }, [caseNotes, selectedTab, selectedType, searchTerm, dateRange]);
+
+  // Get counts for tabs
+  const allNotesCount = (caseNotes as CaseNote[]).length;
+  const incidentNotesCount = (caseNotes as CaseNote[]).filter(n => n.type === "incident").length;
+  const medicationNotesCount = (caseNotes as CaseNote[]).filter(n => n.type === "medication").length;
 
   // Handle form submission
   const handleSubmit = async (data: any) => {
@@ -162,8 +179,6 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     } else {
       await createMutation.mutateAsync(data);
     }
-    setIsModalOpen(false);
-    setEditingNote(undefined);
   };
 
   // Handle note deletion
@@ -173,229 +188,52 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     }
   };
 
-  // Toggle note expansion
-  const toggleExpanded = (noteId: number) => {
-    const newExpanded = new Set(expandedNotes);
-    if (newExpanded.has(noteId)) {
-      newExpanded.delete(noteId);
-    } else {
-      newExpanded.add(noteId);
+  // Handle note editing
+  const handleEdit = (note: CaseNote) => {
+    setEditingNote(note);
+    setIsModalOpen(true);
+  };
+
+  // Handle note viewing
+  const handleView = (note: CaseNote) => {
+    console.log("Viewing note:", note);
+  };
+
+  // Export function for client-specific notes
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch("/api/case-notes/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          noteIds: filteredNotes.map(n => n.id),
+          clientId 
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to export PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `client-${clientId}-case-notes-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export successful",
+        description: "Case notes have been exported to PDF"
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to export case notes to PDF",
+        variant: "destructive"
+      });
     }
-    setExpandedNotes(newExpanded);
-  };
-
-  // Truncate content
-  const truncateContent = (content: string, limit: number = 150) => {
-    if (content.length <= limit) return content;
-    return content.substring(0, limit) + "...";
-  };
-
-  // Get note type badge
-  const getTypeBadge = (note: CaseNote) => {
-    switch (note.type) {
-      case "incident":
-        return <Badge variant="destructive">Incident</Badge>;
-      case "medication":
-        return <Badge className="bg-blue-600">Medication</Badge>;
-      default:
-        return <Badge variant="secondary">Standard</Badge>;
-    }
-  };
-
-  // Note card component
-  const NoteCard = ({ note }: { note: CaseNote }) => {
-    const isExpanded = expandedNotes.has(note.id);
-    const displayContent = isExpanded ? note.content : truncateContent(note.content);
-    const canEditNote = user?.role !== "SupportWorker" || user?.id === note.userId;
-
-    return (
-      <Card className={`${note.priority === "high" || note.priority === "urgent" ? "border-orange-200 bg-orange-50" : ""}`}>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-lg flex items-center gap-2">
-                {note.title}
-                {getTypeBadge(note)}
-                {note.priority === "high" && <Badge variant="destructive" className="text-xs">High Priority</Badge>}
-                {note.priority === "urgent" && <Badge variant="destructive" className="text-xs">Urgent</Badge>}
-              </CardTitle>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                <User className="w-4 h-4" />
-                <span>Staff Member</span>
-                <span>•</span>
-                <Clock className="w-4 h-4" />
-                <span>{format(new Date(note.createdAt), "MMM dd, yyyy 'at' HH:mm")}</span>
-                {client && (
-                  <>
-                    <span>•</span>
-                    <Building className="w-4 h-4" />
-                    <span>{client.fullName}</span>
-                    {client.ndisNumber && <span>({client.ndisNumber})</span>}
-                  </>
-                )}
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => toggleExpanded(note.id)}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  {isExpanded ? "Show Less" : "View Full"}
-                </DropdownMenuItem>
-                {canEditNote && (
-                  <DropdownMenuItem onClick={() => { setEditingNote(note); setIsModalOpen(true); }}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => {}}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </DropdownMenuItem>
-                {canEditNote && (
-                  <DropdownMenuItem 
-                    onClick={() => handleDelete(note.id)}
-                    className="text-red-600"
-                  >
-                    <Archive className="w-4 h-4 mr-2" />
-                    Archive
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm mb-4 whitespace-pre-wrap">{displayContent}</p>
-          
-          {note.content.length > 150 && (
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => toggleExpanded(note.id)}
-              className="p-0 h-auto text-blue-600"
-            >
-              {isExpanded ? "Show Less" : "Show More"}
-            </Button>
-          )}
-
-          {note.tags && note.tags.length > 0 && (
-            <div className="mt-3">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Tags:</p>
-              <div className="flex flex-wrap gap-1">
-                {note.tags.map((tag: string, index: number) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {note.linkedShiftId && (
-            <div className="mt-3">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Linked Shift:</p>
-              <Badge variant="outline" className="text-xs">
-                Shift #{note.linkedShiftId}
-              </Badge>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Note list item component
-  const NoteListItem = ({ note }: { note: CaseNote }) => {
-    const isExpanded = expandedNotes.has(note.id);
-    const displayContent = isExpanded ? note.content : truncateContent(note.content);
-    const canEditNote = user?.role !== "SupportWorker" || user?.id === note.userId;
-
-    return (
-      <div className={`border rounded-lg p-4 ${note.priority === "high" || note.priority === "urgent" ? "border-orange-200 bg-orange-50" : ""}`}>
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <h4 className="font-medium flex items-center gap-2">
-              {note.title}
-              {getTypeBadge(note)}
-              {(note.priority === "high" || note.priority === "urgent") && (
-                <Badge variant="destructive" className="text-xs">
-                  {note.priority === "urgent" ? "Urgent" : "High"}
-                </Badge>
-              )}
-            </h4>
-            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-              <span>Staff Member • {format(new Date(note.createdAt), "MMM dd, yyyy HH:mm")}</span>
-              {client && <span>• {client.fullName}</span>}
-            </div>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => toggleExpanded(note.id)}>
-                <Eye className="w-4 h-4 mr-2" />
-                {isExpanded ? "Show Less" : "View Full"}
-              </DropdownMenuItem>
-              {canEditNote && (
-                <DropdownMenuItem onClick={() => { setEditingNote(note); setIsModalOpen(true); }}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => {}}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </DropdownMenuItem>
-              {canEditNote && (
-                <DropdownMenuItem 
-                  onClick={() => handleDelete(note.id)}
-                  className="text-red-600"
-                >
-                  <Archive className="w-4 h-4 mr-2" />
-                  Archive
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap">{displayContent}</p>
-        
-        {note.content.length > 150 && (
-          <Button
-            variant="link"
-            size="sm"
-            onClick={() => toggleExpanded(note.id)}
-            className="p-0 h-auto text-blue-600 mb-2"
-          >
-            {isExpanded ? "Show Less" : "Show More"}
-          </Button>
-        )}
-
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex flex-wrap gap-1">
-            {note.tags?.map((tag: string, index: number) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-          {note.linkedShiftId && (
-            <Badge variant="outline" className="text-xs">
-              Shift #{note.linkedShiftId}
-            </Badge>
-          )}
-        </div>
-      </div>
-    );
   };
 
   if (isLoading) {
@@ -424,164 +262,117 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     return (
       <div className="text-center py-8">
         <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <p className="text-muted-foreground">Failed to load case notes.</p>
-        <p className="text-sm text-red-600 mt-2">Error: {error.message || "Unknown error"}</p>
-        <button 
+        <p className="text-muted-foreground">Failed to load case notes for this client.</p>
+        <p className="text-sm text-red-600 mt-2">
+          Error: {(error as any)?.message || "Unknown error"}
+        </p>
+        <Button 
           onClick={() => window.location.reload()} 
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="mt-4"
         >
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header with controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by client, NDIS, staff, or content..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Case Notes</h2>
+          <p className="text-muted-foreground">Manage case notes for this client</p>
         </div>
-
         <div className="flex gap-2">
-          <div className="flex border rounded-lg">
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="rounded-r-none"
-            >
-              <List className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === "card" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("card")}
-              className="rounded-l-none"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-          </div>
-          
-          <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
+          <Button onClick={() => setIsModalOpen(true)} size="sm">
+            <Plus className="w-4 h-4 mr-2" />
             New Note
           </Button>
-          
-          <Button variant="outline" onClick={() => {}}>
+          <Button variant="outline" size="sm" onClick={handleExportPDF}>
             <Download className="w-4 h-4 mr-2" />
-            Export
+            Export PDF
           </Button>
         </div>
       </div>
 
-      {/* Tabs for filtering */}
+      {/* Simplified Filter Bar (no client filter since we're already in client context) */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <CaseNoteFilterBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedClient="all"
+          onClientChange={() => {}} // No client filtering in client-specific view
+          selectedType={selectedType}
+          onTypeChange={setSelectedType}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          totalCount={allNotesCount}
+          filteredCount={filteredNotes.length}
+        />
+      </div>
+
+      {/* Tabbed View */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList>
-          <TabsTrigger value="all">All Notes</TabsTrigger>
-          <TabsTrigger value="incidents">Incidents</TabsTrigger>
-          <TabsTrigger value="medication">Medication</TabsTrigger>
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            All Notes ({allNotesCount})
+          </TabsTrigger>
+          <TabsTrigger value="incidents" className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Incidents ({incidentNotesCount})
+          </TabsTrigger>
+          <TabsTrigger value="medication" className="flex items-center gap-2">
+            <Pill className="w-4 h-4" />
+            Medication ({medicationNotesCount})
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Showing {filteredNotes.length} case notes
+        <TabsContent value={selectedTab} className="mt-6">
+          {filteredNotes.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No case notes found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm || dateRange
+                  ? "Try adjusting your filters or search criteria"
+                  : "Get started by creating your first case note for this client"
+                }
+              </p>
+              <Button onClick={() => setIsModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create First Case Note
+              </Button>
             </div>
-            
-            {filteredNotes.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No case notes found.</p>
-                <Button onClick={() => setIsModalOpen(true)} className="mt-4">
-                  Create First Case Note
-                </Button>
-              </div>
-            ) : (
-              <div className={viewMode === "card" ? "grid gap-4" : "space-y-3"}>
-                {filteredNotes.map((note) => 
-                  viewMode === "card" ? (
-                    <NoteCard key={note.id} note={note} />
-                  ) : (
-                    <NoteListItem key={note.id} note={note} />
-                  )
-                )}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="incidents" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Showing {filteredNotes.filter(note => note.type === "incident" || note.incidentData).length} incident notes
+          ) : (
+            <div className={viewMode === "card" ? "grid gap-4 md:grid-cols-2" : "space-y-3"}>
+              {filteredNotes.map((note) => (
+                <CaseNoteCard
+                  key={note.id}
+                  note={note}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onView={handleView}
+                  viewMode={viewMode}
+                />
+              ))}
             </div>
-            
-            {filteredNotes.filter(note => note.type === "incident" || note.incidentData).length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No incident case notes found.</p>
-              </div>
-            ) : (
-              <div className={viewMode === "card" ? "grid gap-4" : "space-y-3"}>
-                {filteredNotes.filter(note => note.type === "incident" || note.incidentData).map((note) => 
-                  viewMode === "card" ? (
-                    <NoteCard key={note.id} note={note} />
-                  ) : (
-                    <NoteListItem key={note.id} note={note} />
-                  )
-                )}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="medication" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Showing {filteredNotes.filter(note => note.type === "medication" || note.medicationData).length} medication notes
-            </div>
-            
-            {filteredNotes.filter(note => note.type === "medication" || note.medicationData).length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No medication case notes found.</p>
-              </div>
-            ) : (
-              <div className={viewMode === "card" ? "grid gap-4" : "space-y-3"}>
-                {filteredNotes.filter(note => note.type === "medication" || note.medicationData).map((note) => 
-                  viewMode === "card" ? (
-                    <NoteCard key={note.id} note={note} />
-                  ) : (
-                    <NoteListItem key={note.id} note={note} />
-                  )
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </TabsContent>
       </Tabs>
 
-      {/* Modal for creating/editing case notes */}
-      <CaseNoteModal
+      {/* Create/Edit Modal */}
+      <CreateCaseNoteModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setEditingNote(undefined);
         }}
         onSubmit={handleSubmit}
-        caseNote={editingNote}
-        recentShifts={recentShifts}
-        userRole={user?.role || ""}
+        clientId={clientId}
       />
     </div>
   );

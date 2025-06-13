@@ -146,6 +146,7 @@ export const caseNotes = pgTable("case_notes", {
   priority: text("priority").notNull().default("normal"), // normal, high, urgent
   tags: text("tags").array().default([]),
   linkedShiftId: integer("linked_shift_id").references(() => shifts.id),
+  attachments: jsonb("attachments").default([]),
   incidentData: jsonb("incident_data"),
   medicationData: jsonb("medication_data"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
