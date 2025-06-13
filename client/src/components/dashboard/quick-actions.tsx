@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Play, Plus, Download } from "lucide-react";
+import { UserPlus, Play, Plus, Download, AlertTriangle } from "lucide-react";
 
 export default function QuickActions() {
   const [, navigate] = useLocation();
@@ -30,6 +30,14 @@ export default function QuickActions() {
       iconBg: "bg-purple-100",
       iconColor: "text-purple-600",
       onClick: () => navigate("/forms")
+    },
+    {
+      title: "Incident Report",
+      description: "Report incident",
+      icon: AlertTriangle,
+      iconBg: "bg-red-100",
+      iconColor: "text-red-600",
+      onClick: () => navigate("/incident-management")
     },
     {
       title: "Export Data",
