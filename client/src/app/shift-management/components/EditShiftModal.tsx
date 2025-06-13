@@ -156,14 +156,14 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
       form.reset({
         title: shift.title || "",
         startDateTime: new Date(shift.startTime),
-        endDateTime: shift.endTime ? new Date(shift.endTime) : undefined,
+        endDateTime: shift.endTime ? new Date(shift.endTime) : new Date(),
         userId: shift.userId || undefined,
         clientId: shift.clientId || undefined,
-        isRecurring: false, // Will be updated if we add recurrence data to schema
-        recurrenceType: undefined,
-        endConditionType: undefined,
-        numberOfOccurrences: undefined,
-        recurrenceEndDate: undefined,
+        isRecurring: false,
+        recurrenceType: "weekly",
+        endConditionType: "occurrences",
+        numberOfOccurrences: 1,
+        recurrenceEndDate: new Date(),
       });
     }
   }, [shift, form]);

@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Shield,
   Users,
-  Plus
+  Plus,
+  Play
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,8 +36,8 @@ const supportWorkNavigation = [
 ];
 
 const shiftManagementNavigation = [
-  { name: "Shift Calendar", href: "/shift-management/calendar", icon: Calendar },
-  { name: "Shifts", href: "/shifts", icon: Calendar },
+  { name: "Scheduled Shifts", href: "/shift-management/calendar", icon: Calendar },
+  { name: "Start New Shift", href: "/shifts", icon: Clock },
   { name: "My Availability", href: "/availability", icon: Clock },
   { name: "Allocations", href: "/allocations", icon: TrendingUp },
 ];

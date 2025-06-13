@@ -153,8 +153,21 @@ export default function ShiftLogging() {
         <main className="flex-1 p-6">
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Shift Logging</h1>
-              <p className="text-gray-600 mt-1">Track your work shifts with location verification</p>
+              <h1 className="text-3xl font-bold text-gray-900">Start New Shift</h1>
+              <p className="text-gray-600 mt-1">Start an unscheduled shift with automatic time and location tracking</p>
+              <div className="mt-3 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Clock className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700">
+                      <strong>Use this for:</strong> Emergency shifts, unplanned work, or when you need to start working outside of your scheduled shifts. 
+                      This creates a new shift record with geolocation verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Location Status */}
