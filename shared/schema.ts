@@ -116,6 +116,25 @@ export const staffAvailability = pgTable("staff_availability", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Case Notes table
+export const caseNotes = pgTable("case_notes", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull().default("standard"), // standard, incident, medication
+  category: text("category").notNull().default("Progress Note"),
+  priority: text("priority").notNull().default("normal"), // normal, high, urgent
+  tags: text("tags").array().default([]),
+  linkedShiftId: integer("linked_shift_id").references(() => shifts.id),
+  incidentData: jsonb("incident_data"),
+  medicationData: jsonb("medication_data"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Activity logs table
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
@@ -145,6 +164,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   formSubmissions: many(formSubmissions),
   shifts: many(shifts),
   staffAvailability: many(staffAvailability),
+  caseNotes: many(caseNotes),
   activityLogs: many(activityLogs),
 }));
 
@@ -158,6 +178,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   formSubmissions: many(formSubmissions),
   shifts: many(shifts),
   availability: many(staffAvailability),
+  caseNotes: many(caseNotes),
   activityLogs: many(activityLogs),
 }));
 
@@ -171,6 +192,8 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
     references: [users.id],
   }),
   formSubmissions: many(formSubmissions),
+  caseNotes: many(caseNotes),
+  shifts: many(shifts),
 }));
 
 export const formTemplatesRelations = relations(formTemplates, ({ one, many }) => ({
@@ -204,7 +227,7 @@ export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => 
   }),
 }));
 
-export const shiftsRelations = relations(shifts, ({ one }) => ({
+export const shiftsRelations = relations(shifts, ({ one, many }) => ({
   user: one(users, {
     fields: [shifts.userId],
     references: [users.id],
@@ -216,6 +239,26 @@ export const shiftsRelations = relations(shifts, ({ one }) => ({
   tenant: one(tenants, {
     fields: [shifts.tenantId],
     references: [tenants.id],
+  }),
+  linkedCaseNotes: many(caseNotes),
+}));
+
+export const caseNotesRelations = relations(caseNotes, ({ one }) => ({
+  client: one(clients, {
+    fields: [caseNotes.clientId],
+    references: [clients.id],
+  }),
+  user: one(users, {
+    fields: [caseNotes.userId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [caseNotes.tenantId],
+    references: [tenants.id],
+  }),
+  linkedShift: one(shifts, {
+    fields: [caseNotes.linkedShiftId],
+    references: [shifts.id],
   }),
 }));
 
@@ -279,6 +322,12 @@ export const insertShiftSchema = createInsertSchema(shifts).omit({
 });
 
 export const insertStaffAvailabilitySchema = createInsertSchema(staffAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCaseNoteSchema = createInsertSchema(caseNotes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
