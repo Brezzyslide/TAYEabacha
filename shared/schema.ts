@@ -161,6 +161,42 @@ export const hourlyObservations = pgTable("hourly_observations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Medication Plans table
+export const medicationPlans = pgTable("medication_plans", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  medicationName: text("medication_name").notNull(),
+  dosage: text("dosage").notNull(),
+  frequency: text("frequency").notNull(),
+  route: text("route").notNull(), // oral, injection, topical, etc.
+  timeOfDay: text("time_of_day"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  prescribedBy: text("prescribed_by").notNull(),
+  instructions: text("instructions"),
+  sideEffects: text("side_effects").array().default([]),
+  status: text("status").notNull().default("active"), // active, inactive, discontinued
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Medication Records table
+export const medicationRecords = pgTable("medication_records", {
+  id: serial("id").primaryKey(),
+  medicationPlanId: integer("medication_plan_id").notNull().references(() => medicationPlans.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  administeredBy: integer("administered_by").notNull().references(() => users.id),
+  scheduledTime: timestamp("scheduled_time").notNull(),
+  actualTime: timestamp("actual_time"),
+  result: text("result").notNull(), // administered, refused, missed, delayed
+  notes: text("notes"),
+  refusalReason: text("refusal_reason"),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Activity logs table
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
@@ -207,6 +243,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   caseNotes: many(caseNotes),
   activityLogs: many(activityLogs),
   observations: many(hourlyObservations),
+  createdMedicationPlans: many(medicationPlans),
+  medicationRecords: many(medicationRecords),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -222,6 +260,8 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   caseNotes: many(caseNotes),
   shifts: many(shifts),
   observations: many(hourlyObservations),
+  medicationPlans: many(medicationPlans),
+  medicationRecords: many(medicationRecords),
 }));
 
 export const formTemplatesRelations = relations(formTemplates, ({ one, many }) => ({
@@ -327,6 +367,41 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const medicationPlansRelations = relations(medicationPlans, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [medicationPlans.clientId],
+    references: [clients.id],
+  }),
+  createdBy: one(users, {
+    fields: [medicationPlans.createdBy],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [medicationPlans.tenantId],
+    references: [tenants.id],
+  }),
+  records: many(medicationRecords),
+}));
+
+export const medicationRecordsRelations = relations(medicationRecords, ({ one }) => ({
+  medicationPlan: one(medicationPlans, {
+    fields: [medicationRecords.medicationPlanId],
+    references: [medicationPlans.id],
+  }),
+  client: one(clients, {
+    fields: [medicationRecords.clientId],
+    references: [clients.id],
+  }),
+  administeredBy: one(users, {
+    fields: [medicationRecords.administeredBy],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [medicationRecords.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -387,6 +462,17 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   createdAt: true,
 });
 
+export const insertMedicationPlanSchema = createInsertSchema(medicationPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMedicationRecordSchema = createInsertSchema(medicationRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
@@ -420,3 +506,9 @@ export type InsertHourlyObservation = z.infer<typeof insertHourlyObservationSche
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+
+export type MedicationPlan = typeof medicationPlans.$inferSelect;
+export type InsertMedicationPlan = z.infer<typeof insertMedicationPlanSchema>;
+
+export type MedicationRecord = typeof medicationRecords.$inferSelect;
+export type InsertMedicationRecord = z.infer<typeof insertMedicationRecordSchema>;
