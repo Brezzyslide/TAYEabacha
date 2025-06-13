@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -355,6 +355,14 @@ export default function Clients() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.location.href = `/client/${client.id}`}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View Profile
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
