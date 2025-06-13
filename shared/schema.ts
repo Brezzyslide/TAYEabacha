@@ -85,22 +85,20 @@ export const formSubmissions = pgTable("form_submissions", {
 // Shifts table
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  shiftId: text("shift_id").notNull().unique(),
-  title: text("title").notNull(),
-  startDateTime: timestamp("start_date_time").notNull(),
-  endDateTime: timestamp("end_date_time"),
-  staffId: integer("staff_id").references(() => users.id), // nullable for unassigned shifts
+  userId: integer("user_id").references(() => users.id), // Made nullable for unassigned shifts
   clientId: integer("client_id").references(() => clients.id),
-  companyId: integer("company_id").notNull().references(() => tenants.id),
-  status: text("status").notNull().default("unassigned"), // unassigned, assigned, in-progress, completed
-  isRecurring: boolean("is_recurring").default(false),
-  recurrenceRule: jsonb("recurrence_rule"), // Store recurrence pattern as JSON
-  overtimeMinutes: integer("overtime_minutes"),
-  costEstimate: decimal("cost_estimate", { precision: 10, scale: 2 }),
-  locationData: jsonb("location_data"), // Store location info as JSON
+  title: text("title"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  location: text("location"),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  building: text("building"),
+  floor: text("floor"),
+  isActive: boolean("is_active").default(true),
   seriesId: text("series_id"), // For grouping recurring shifts
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Staff Availability table
@@ -207,16 +205,16 @@ export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => 
 }));
 
 export const shiftsRelations = relations(shifts, ({ one }) => ({
-  staff: one(users, {
-    fields: [shifts.staffId],
+  user: one(users, {
+    fields: [shifts.userId],
     references: [users.id],
   }),
   client: one(clients, {
     fields: [shifts.clientId],
     references: [clients.id],
   }),
-  company: one(tenants, {
-    fields: [shifts.companyId],
+  tenant: one(tenants, {
+    fields: [shifts.tenantId],
     references: [tenants.id],
   }),
 }));
@@ -278,7 +276,6 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
 export const insertShiftSchema = createInsertSchema(shifts).omit({
   id: true,
   createdAt: true,
-  updatedAt: true,
 });
 
 export const insertStaffAvailabilitySchema = createInsertSchema(staffAvailability).omit({

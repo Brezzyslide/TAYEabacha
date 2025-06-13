@@ -232,6 +232,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(shifts.startTime));
   }
 
+  async getAllShifts(tenantId: number): Promise<Shift[]> {
+    return await db.select().from(shifts)
+      .where(eq(shifts.tenantId, tenantId))
+      .orderBy(desc(shifts.startTime));
+  }
+
   async createShift(insertShift: InsertShift): Promise<Shift> {
     const [shift] = await db
       .insert(shifts)
