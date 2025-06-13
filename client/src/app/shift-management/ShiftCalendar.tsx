@@ -20,9 +20,9 @@ export default function ShiftCalendar() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Fetch all shifts for the current company
+  // Fetch all shifts for the current company (tenant)
   const { data: shifts = [], isLoading } = useQuery<Shift[]>({
-    queryKey: ["/api/shifts"],
+    queryKey: ["/api/shifts", user?.tenantId],
     enabled: !!user,
   });
 
