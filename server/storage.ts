@@ -671,8 +671,7 @@ export class DatabaseStorage implements IStorage {
       },
       staff: {
         id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName
+        username: users.username
       }
     })
     .from(incidentReports)

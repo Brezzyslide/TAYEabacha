@@ -41,8 +41,7 @@ interface IncidentReport {
   };
   staff: {
     id: number;
-    firstName: string;
-    lastName: string;
+    username: string;
   };
 }
 
@@ -59,9 +58,16 @@ export default function IncidentDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: incidents = [], isLoading } = useQuery({
+  const { data: incidents = [], isLoading, error } = useQuery({
     queryKey: ["/api/incident-reports"],
-    queryFn: () => fetch("/api/incident-reports").then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/incident-reports");
+      if (!res.ok) {
+        throw new Error('Failed to fetch incidents');
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const deleteIncidentMutation = useMutation({
@@ -85,7 +91,37 @@ export default function IncidentDashboard() {
     },
   });
 
-  const filteredIncidents = incidents.filter((incident: IncidentReport) => {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <UniversalHeader />
+          <main className="flex-1 p-6">
+            <div className="text-center py-12">Loading incidents...</div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <UniversalHeader />
+          <main className="flex-1 p-6">
+            <div className="text-center py-12 text-red-600">
+              Error loading incidents. Please try again.
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredIncidents = (incidents || []).filter((incident: IncidentReport) => {
     const matchesSearch = 
       incident.report.incidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incident.client.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
