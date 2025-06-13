@@ -71,10 +71,7 @@ export default function CaseNoteDashboard() {
   // Update case note mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await apiRequest(`/api/case-notes/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest(`/api/case-notes/${id}`, "PATCH", data);
       return response;
     },
     onSuccess: () => {
@@ -98,9 +95,7 @@ export default function CaseNoteDashboard() {
   // Delete case note mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/case-notes/${id}`, {
-        method: "DELETE",
-      });
+      const response = await apiRequest(`/api/case-notes/${id}`, "DELETE");
       return response;
     },
     onSuccess: () => {
@@ -397,14 +392,15 @@ export default function CaseNoteDashboard() {
       </Tabs>
 
       {/* Create/Edit Modal */}
-      <CreateCaseNoteModal
+      <CaseNoteModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setEditingNote(undefined);
         }}
         onSubmit={handleSubmit}
-        clientId={editingNote?.clientId}
+        caseNote={editingNote}
+        userRole={user?.role || "SupportWorker"}
       />
     </div>
   );
