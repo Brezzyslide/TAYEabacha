@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const supportWorkNavigation = [
-  { name: "Client Profile", href: "/client/1", icon: User },
+  { name: "Client Profiles", href: "/support-work/client-profile", icon: Users },
   { name: "Case Notes", href: "/case-notes", icon: FileText },
   { name: "Hourly Observations", href: "/observations", icon: Eye },
   { name: "Medication Tracker", href: "/medications", icon: Pill },
