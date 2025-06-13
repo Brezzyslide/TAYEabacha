@@ -14,6 +14,8 @@ import Forms from "@/pages/forms";
 import Reports from "@/pages/reports";
 import Export from "@/pages/export";
 import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
+import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
+import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -28,6 +30,8 @@ function Router() {
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/export" component={Export} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/admin/create-company" component={CreateCompanyPage} />
+      <Route path="/admin/company-summary" component={CompanySummaryPage} />
       <Route component={NotFound} />
     </Switch>
   );
