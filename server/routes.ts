@@ -351,42 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/shifts/start", requireAuth, async (req: any, res) => {
-    try {
-      const { latitude, longitude, location, building, floor } = req.body;
-      
-      const shiftData = insertShiftSchema.parse({
-        userId: req.user.id,
-        startTime: new Date(),
-        latitude: latitude?.toString(),
-        longitude: longitude?.toString(),
-        location,
-        building,
-        floor,
-        tenantId: req.user.tenantId,
-      });
-      
-      const shift = await storage.createShift(shiftData);
-      
-      // Log activity
-      await storage.createActivityLog({
-        userId: req.user.id,
-        action: "start_shift",
-        resourceType: "shift",
-        resourceId: shift.id,
-        description: `Started shift at ${location || 'unknown location'}`,
-        metadata: { latitude, longitude, building, floor },
-        tenantId: req.user.tenantId,
-      });
-      
-      res.status(201).json(shift);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid shift data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to start shift" });
-    }
-  });
+
 
   app.get("/api/shifts/:id", requireAuth, async (req: any, res) => {
     try {

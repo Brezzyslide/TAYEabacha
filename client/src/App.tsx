@@ -9,7 +9,7 @@ import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import Staff from "@/pages/staff";
-import ShiftLogging from "@/pages/shift-logging";
+
 import Forms from "@/pages/forms";
 import Reports from "@/pages/reports";
 import Export from "@/pages/export";
@@ -31,7 +31,7 @@ function Router() {
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/shift-management/calendar" component={ShiftCalendar} />
       <ProtectedRoute path="/staff" component={Staff} />
-      <ProtectedRoute path="/shifts" component={ShiftLogging} />
+
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/export" component={Export} />
