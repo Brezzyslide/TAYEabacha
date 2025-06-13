@@ -13,7 +13,7 @@ import StartShiftModal from "./StartShiftModal";
 import EndShiftModal from "./EndShiftModal";
 
 export default function MyShiftsTab() {
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);

@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import MyShiftsTab from "./components/MyShiftsTab";
 import ShiftRequestsTab from "./components/ShiftRequestsTab";
 import AllShiftsTab from "./components/AllShiftsTab";
+import RequestShiftModal from "./components/RequestShiftModal";
 
 export default function ShiftDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("my-shifts");
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   const isAdminOrCoordinator = user?.role === "Admin" || user?.role === "Coordinator";
   const isAdmin = user?.role === "Admin";
@@ -29,21 +33,33 @@ export default function ShiftDashboard() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-                <TabsTrigger value="my-shifts" className="flex items-center gap-2">
-                  🗂 My Shifts
-                </TabsTrigger>
-                {isAdminOrCoordinator && (
-                  <TabsTrigger value="requests" className="flex items-center gap-2">
-                    📝 Requests
+              <div className="flex items-center justify-between mb-6">
+                <TabsList className="grid grid-cols-3 lg:w-[400px]">
+                  <TabsTrigger value="my-shifts" className="flex items-center gap-2">
+                    🗂 My Shifts
                   </TabsTrigger>
+                  {isAdminOrCoordinator && (
+                    <TabsTrigger value="requests" className="flex items-center gap-2">
+                      📝 Requests
+                    </TabsTrigger>
+                  )}
+                  {isAdmin && (
+                    <TabsTrigger value="all-shifts" className="flex items-center gap-2">
+                      🏢 All Shifts
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+                
+                {activeTab === "my-shifts" && (
+                  <Button 
+                    onClick={() => setIsRequestModalOpen(true)}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Request Shift
+                  </Button>
                 )}
-                {isAdmin && (
-                  <TabsTrigger value="all-shifts" className="flex items-center gap-2">
-                    🏢 All Shifts
-                  </TabsTrigger>
-                )}
-              </TabsList>
+              </div>
 
               <div className="mt-6">
                 <TabsContent value="my-shifts" className="space-y-4">
@@ -66,6 +82,11 @@ export default function ShiftDashboard() {
           </div>
         </main>
       </div>
+
+      <RequestShiftModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+      />
     </div>
   );
 }
