@@ -168,6 +168,86 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
     }
   }, [shift, form]);
 
+  // Create shift mutation
+  const createShiftMutation = useMutation({
+    mutationFn: async (data: EditShiftFormData) => {
+      if (!user?.tenantId) throw new Error("No tenant ID available");
+      
+      // If this is a recurring shift, generate multiple shifts
+      if (data.isRecurring) {
+        try {
+          // Validate recurring shift input
+          const recurringInput = {
+            title: data.title,
+            startDateTime: data.startDateTime,
+            endDateTime: data.endDateTime || data.startDateTime,
+            recurrenceType: data.recurrenceType!,
+            occurrenceCount: data.endConditionType === "occurrences" ? data.numberOfOccurrences : undefined,
+            endDate: data.endConditionType === "endDate" ? data.recurrenceEndDate : undefined,
+            staffId: data.userId?.toString(),
+            clientId: data.clientId?.toString() || "",
+            companyId: user.tenantId.toString(),
+          };
+
+          validateRecurringShiftInput(recurringInput);
+          const recurringShifts = generateRecurringShifts(recurringInput);
+
+          // Create all recurring shifts via API
+          const promises = recurringShifts.map(shift => 
+            apiRequest("POST", "/api/shifts", {
+              title: shift.title,
+              startTime: shift.startDateTime.toISOString(),
+              endTime: shift.endDateTime.toISOString(),
+              userId: shift.staffId ? parseInt(shift.staffId) : null,
+              clientId: shift.clientId ? parseInt(shift.clientId) : null,
+              tenantId: user.tenantId,
+            })
+          );
+
+          await Promise.all(promises);
+          return { recurring: true, count: recurringShifts.length };
+        } catch (error) {
+          throw new Error(`Failed to create recurring shifts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      } else {
+        // Regular single shift creation
+        const shiftData = {
+          title: data.title,
+          startTime: data.startDateTime.toISOString(),
+          endTime: data.endDateTime?.toISOString(),
+          userId: data.userId,
+          clientId: data.clientId,
+          tenantId: user.tenantId,
+        };
+
+        const response = await apiRequest("POST", "/api/shifts", shiftData);
+        return response.json();
+      }
+    },
+    onSuccess: (result) => {
+      if (result?.recurring) {
+        toast({
+          title: "Success",
+          description: `Created ${result.count} recurring shifts successfully`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Shift created successfully",
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Update shift mutation
   const updateShiftMutation = useMutation({
     mutationFn: async (data: EditShiftFormData) => {

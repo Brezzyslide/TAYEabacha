@@ -185,7 +185,10 @@ export default function ShiftCalendar() {
               </div>
               
               {userIsAdmin && (
-                <Button>
+                <Button onClick={() => {
+                  setSelectedShiftId(null);
+                  setEditModalOpen(true);
+                }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Shift
                 </Button>
