@@ -179,7 +179,7 @@ export default function ShiftCalendar() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Scheduled Shifts</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Scheduled Shifts Management</h1>
                 <p className="text-gray-600 mt-1">
                   {userIsAdmin ? "Manage all company shifts" : "View your assigned shifts"}
                 </p>
