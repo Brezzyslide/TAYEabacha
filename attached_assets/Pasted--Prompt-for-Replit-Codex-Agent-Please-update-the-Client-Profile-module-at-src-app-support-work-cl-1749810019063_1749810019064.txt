@@ -1,0 +1,89 @@
+# Prompt for Replit Codex Agent
+
+Please update the Client Profile module at `src/app/support-work/client-profile/` with the following:
+
+---
+
+### 1. 🎨 Revamp Create Client Form
+
+In `CreateClientForm.tsx`, update the structure to reflect the latest version shown:
+
+- Basic Information:
+  - First Name *
+  - Last Name *
+  - NDIS Number *
+  - Date of Birth *
+  - Address
+  - Emergency Contact: name + phone
+
+- Care & Support:
+  - NDIS Goals
+  - Likes & Preferences
+  - Dislikes & Aversions
+  - Allergies & Medical Alerts
+
+Remove any unnecessary required fields from the legacy staff form structure.
+
+Store this in a clean `clients` table, and auto-generate a unique `clientId`. Enforce `companyId` for tenant isolation.
+
+---
+
+### 2. 🧾 Client Cards + Quick Actions
+
+In `ClientListPage.tsx`:
+
+- Card view of active clients with:
+  - Name, NDIS number, address
+  - Emergency contact preview
+  - Tags: "Active", "Allergies" (if any listed)
+- Menu on card (`...`) should allow:
+  - Quick View
+  - Full Profile
+  - Edit Profile
+  - Archive
+
+---
+
+### 3. 💊 Medication Tab Integration in Client Profile
+
+Inside `client-profile/tabs/medications.tsx`:
+
+Include the following:
+
+#### A. Medication Analytics:
+- Line/Bar chart of last 7 days: doses administered/refused
+- Pie chart showing time-of-day (AM/PM/Night) breakdown
+- Per-medication adherence bars (e.g., Paracetamol 33.3%, Panadol 66.7%)
+
+#### B. Active Medication Plans:
+- Display as cards
+- Show name, dosage, frequency, route, start date, plan type
+- Include "Record Administration" button on each
+
+#### C. Recent Administrations:
+- List of last 5–10 records
+- Status badge (administered/refused)
+- Time, staff, notes/refusal reason
+
+All data filtered by `clientId` and `companyId`.
+
+---
+
+### 4. 🛡 Access & Security
+
+- SupportWorker: can only see assigned clients and create administration records
+- Team Leader/Coordinator: can edit plans for assigned clients
+- Admin: full access to edit plans and export data
+
+---
+
+### 5. 🧠 Utility
+
+- Add export buttons (PDF, Excel)
+- Support switching between `Card View` and `List View` for records
+- Cleanly styled using Tailwind and ShadCN UI
+
+Use:
+- TanStack Query
+- `react-hook-form` + `zod` for validations
+- Role-check wrapper for tabs and actions

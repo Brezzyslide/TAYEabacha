@@ -42,16 +42,22 @@ export const users = pgTable("users", {
 // Clients table
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
+  clientId: text("client_id").notNull().unique(), // Auto-generated unique ID
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
   fullName: text("full_name").notNull(),
-  ndisNumber: text("ndis_number"),
-  dateOfBirth: timestamp("date_of_birth"),
-  phone: text("phone"),
-  email: text("email"),
+  ndisNumber: text("ndis_number").notNull(),
+  dateOfBirth: timestamp("date_of_birth").notNull(),
   address: text("address"),
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactPhone: text("emergency_contact_phone"),
+  ndisGoals: text("ndis_goals"),
+  likesPreferences: text("likes_preferences"),
+  dislikesAversions: text("dislikes_aversions"),
+  allergiesMedicalAlerts: text("allergies_medical_alerts"),
   careLevel: text("care_level"), // independent, assisted, memory_care
-  emergencyContact: text("emergency_contact"),
-  medicalInfo: text("medical_info"),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  companyId: text("company_id").notNull(), // For tenant isolation
   createdBy: integer("created_by").notNull().references(() => users.id),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -420,8 +426,15 @@ export const insertUserSchema = createInsertSchema(users).omit({
 
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
+  clientId: true,
+  fullName: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  ndisNumber: z.string().min(1, "NDIS number is required"),
+  dateOfBirth: z.date({ required_error: "Date of birth is required" }),
 });
 
 export const insertFormTemplateSchema = createInsertSchema(formTemplates).omit({
