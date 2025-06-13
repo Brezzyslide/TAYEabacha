@@ -70,16 +70,15 @@ export default function Sidebar() {
         {items.map((item) => {
           const isActive = location === item.href;
           return (
-            <Link key={item.name} href={item.href}>
-              <a className={cn(
+            <Link key={item.name} href={item.href} 
+              className={cn(
                 "flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                 isActive 
                   ? "bg-gray-800 text-white" 
                   : "text-gray-700 hover:bg-gray-100"
               )}>
-                <item.icon className="h-4 w-4" />
-                <span>{item.name}</span>
-              </a>
+              <item.icon className="h-4 w-4" />
+              <span>{item.name}</span>
             </Link>
           );
         })}

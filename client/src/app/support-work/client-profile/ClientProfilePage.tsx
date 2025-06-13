@@ -3,6 +3,7 @@ import { useParams } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 import OverviewTab from "./tabs/overview";
 import MedicationsTab from "./tabs/medications";
 import CarePlansTab from "./tabs/care-plans";
