@@ -13,6 +13,7 @@ import ShiftLogging from "@/pages/shift-logging";
 import Forms from "@/pages/forms";
 import Reports from "@/pages/reports";
 import Export from "@/pages/export";
+import ClientProfilePage from "@/app/support-work/client-profile/ClientProfilePage";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
