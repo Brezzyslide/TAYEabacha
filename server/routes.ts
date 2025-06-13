@@ -589,7 +589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Case Notes API
-  app.get("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
+  app.get("/api/clients/:clientId/case-notes", async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
       const caseNotes = await storage.getCaseNotes(clientId, req.user.tenantId);
