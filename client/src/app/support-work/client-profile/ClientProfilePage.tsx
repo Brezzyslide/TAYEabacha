@@ -43,35 +43,6 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Navigation */}
-      <div className="flex items-center justify-between mb-6">
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Home className="w-4 h-4" />
-              Dashboard
-            </Button>
-          </Link>
-          <span>/</span>
-          <Link href="/support-work">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Support Work
-            </Button>
-          </Link>
-          <span>/</span>
-          <span className="text-foreground font-medium">Client Profile</span>
-        </div>
-        
-        {/* Back Button */}
-        <Link href="/support-work">
-          <Button variant="outline" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Support Work
-          </Button>
-        </Link>
-      </div>
 
       {/* Client Header */}
       <Card>

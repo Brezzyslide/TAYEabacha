@@ -26,18 +26,6 @@ export default function ShiftDashboard() {
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
           <div className="max-w-7xl mx-auto">
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Home className="w-4 h-4" />
-                  Dashboard
-                </Button>
-              </Link>
-              <span>/</span>
-              <span className="text-foreground font-medium">Shift Management</span>
-            </div>
-
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Shift Management</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">

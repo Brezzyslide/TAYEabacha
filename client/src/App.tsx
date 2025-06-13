@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
+import UniversalHeader from "@/components/layout/universal-header";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
@@ -56,8 +57,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <UniversalHeader />
+            <Router />
+          </div>
           <Toaster />
-          <Router />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
