@@ -32,10 +32,12 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
-      <ProtectedRoute path="/clients" component={Clients} />
+      <ProtectedRoute path="/clients" component={ClientListPage} />
+      <ProtectedRoute path="/clients/create" component={CreateClientForm} />
       <ProtectedRoute path="/client/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/support-work" component={SupportWorkPage} />
       <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
+      <ProtectedRoute path="/support-work/client-profile/create" component={CreateClientForm} />
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
       <ProtectedRoute path="/staff-availability" component={MyAvailabilityPage} />
