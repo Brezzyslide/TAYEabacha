@@ -484,6 +484,33 @@ export const incidentClosuresRelations = relations(incidentClosures, ({ one }) =
   }),
 }));
 
+// Staff Messages table
+export const staffMessages = pgTable("staff_messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  recipientIds: integer("recipient_ids").array().notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  messageType: text("message_type").notNull().default("quick"), // quick, urgent
+  attachments: jsonb("attachments").default([]),
+  replyToId: integer("reply_to_id"),
+  isRead: jsonb("is_read").default({}), // Object mapping userId to read status
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const staffMessagesRelations = relations(staffMessages, ({ one }) => ({
+  sender: one(users, {
+    fields: [staffMessages.senderId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [staffMessages.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -573,6 +600,12 @@ export const insertIncidentClosureSchema = createInsertSchema(incidentClosures).
   createdAt: true,
 });
 
+export const insertStaffMessageSchema = createInsertSchema(staffMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
@@ -618,3 +651,6 @@ export type InsertIncidentReport = z.infer<typeof insertIncidentReportSchema>;
 
 export type IncidentClosure = typeof incidentClosures.$inferSelect;
 export type InsertIncidentClosure = z.infer<typeof insertIncidentClosureSchema>;
+
+export type StaffMessage = typeof staffMessages.$inferSelect;
+export type InsertStaffMessage = z.infer<typeof insertStaffMessageSchema>;

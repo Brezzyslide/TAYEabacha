@@ -1,0 +1,134 @@
+# Prompt for Replit Codex Agent
+
+Please create a complete Internal Messaging System under:
+
+📁 `src/app/messages/`
+
+---
+
+### 1. `ComposeMessageModal.tsx`
+
+Fields:
+- **Subject** (text input)
+- **Message Type**:  
+  Dropdown with options:
+  - Quick Update
+  - Urgent Update
+- **Message Body** (multiline input)
+- **Attachments**:  
+  Optional (max 6: .pdf, .jpg, .docx, etc.)
+
+Recipient Targeting:
+- Checkbox: "Send to All Staff"
+- Multi-select dropdown:
+  - Show roles (e.g., Support Worker, Team Leader, Admin)
+  - Show individual users (filtered by `companyId`)
+
+Submit should save message to `staffMessages` with:
+```ts
+{
+  id,
+  companyId,
+  senderId,
+  recipientIds[],
+  messageType: "quick" | "urgent",
+  subject,
+  body,
+  attachments[],
+  timestamp,
+  replyToId?: string
+}
+2. MessageDashboard.tsx
+Tabs:
+
+Inbox (default)
+
+Sent
+
+Each tab shows message cards:
+
+Subject
+
+Message preview (truncated)
+
+Message type badge (quick/urgent)
+
+Timestamp
+
+From / To label
+
+3. Message Card Buttons:
+Reply: opens ReplyModal.tsx
+
+Pre-fills subject as Re: [subject]
+
+Pre-sets replyToId
+
+View: opens full message in modal
+
+Delete: only hides for current user
+
+Optional: pin, mark as read
+
+4. ReplyModal.tsx
+Pre-filled subject with "Re: "
+
+Message body field
+
+Attachments (optional)
+
+Pre-filled recipients from original message
+
+5. Message Filtering (in Inbox tab):
+Dropdown: All Types, Quick, Urgent
+
+Search bar: by subject, sender, body content
+
+6. Role & Tenant Enforcement:
+Only show messages within companyId
+
+Filter inbox to current user's userId
+
+TeamLeaders/Admins can message roles; normal staff can only reply
+
+7. Components to Create:
+ComposeMessageModal.tsx
+
+ReplyModal.tsx
+
+MessageCard.tsx
+
+MessageDashboard.tsx
+
+ViewMessageModal.tsx
+
+Use:
+
+TanStack Query
+
+react-hook-form + zod
+
+Tailwind + ShadCN
+
+Optional toast notification: “Message sent” / “Reply posted”
+
+yaml
+Copy
+Edit
+
+---
+
+Let me know if you'd like to add:
+- **Read receipts**
+- **Audit trail logging**
+- **Broadcast-only channels (e.g. from Admin)**
+
+You're now building a secure, role-filtered internal comms system.
+
+
+
+
+
+
+
+
