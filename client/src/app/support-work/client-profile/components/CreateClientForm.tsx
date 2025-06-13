@@ -41,7 +41,7 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
       likesPreferences: "",
       dislikesAversions: "",
       allergiesMedicalAlerts: "",
-      careLevel: "assisted",
+      primaryDiagnosis: "",
       tenantId: 1,
       companyId: "COMP001",
       createdBy: 1,
@@ -234,22 +234,16 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
 
               <FormField
                 control={form.control}
-                name="careLevel"
+                name="primaryDiagnosis"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Care Level</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select care level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="independent">Independent</SelectItem>
-                        <SelectItem value="assisted">Assisted</SelectItem>
-                        <SelectItem value="memory_care">Memory Care</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Primary Diagnosis</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Autism Spectrum Disorder, Intellectual Disability, Dementia..."
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -101,9 +101,9 @@ const ClientCard = ({ client, onQuickView, onArchive }: ClientCardProps) => {
               </Badge>
             )}
             
-            {client.careLevel && (
-              <Badge variant="outline" className="capitalize">
-                {client.careLevel.replace('_', ' ')}
+            {client.primaryDiagnosis && (
+              <Badge variant="outline" className="text-xs">
+                {client.primaryDiagnosis}
               </Badge>
             )}
           </div>

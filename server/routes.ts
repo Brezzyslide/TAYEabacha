@@ -591,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clients = await storage.getClients(req.user.tenantId);
       
       // Create CSV content
-      const headers = ['Client ID', 'Full Name', 'NDIS Number', 'Date of Birth', 'Address', 'Emergency Contact', 'Care Level', 'Created At'];
+      const headers = ['Client ID', 'Full Name', 'NDIS Number', 'Date of Birth', 'Address', 'Emergency Contact', 'Primary Diagnosis', 'Created At'];
       const csvContent = [
         headers.join(','),
         ...clients.map(client => [
@@ -601,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           client.dateOfBirth ? new Date(client.dateOfBirth).toISOString().split('T')[0] : '',
           `"${client.address || ''}"`,
           `"${client.emergencyContactName || ''}"`,
-          client.careLevel || '',
+          client.primaryDiagnosis || '',
           new Date(client.createdAt).toISOString().split('T')[0]
         ].join(','))
       ].join('\n');
