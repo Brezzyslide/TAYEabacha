@@ -102,8 +102,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Companies API - Admin only
-  app.get("/api/admin/companies", requireAuth, requireRole(["admin"]), async (req, res) => {
+  // Companies API - Admin and ConsoleManager only
+  app.get("/api/admin/companies", requireAuth, requireRole(["admin", "ConsoleManager"]), async (req, res) => {
     try {
       const companies = await storage.getCompanies();
       res.json(companies);
