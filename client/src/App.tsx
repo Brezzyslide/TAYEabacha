@@ -13,7 +13,7 @@ import ShiftLogging from "@/pages/shift-logging";
 import Forms from "@/pages/forms";
 import Reports from "@/pages/reports";
 import Export from "@/pages/export";
-import ClientProfilePage from "@/app/support-work/client-profile/ClientProfilePage";
+import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -21,6 +21,7 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/clients" component={Clients} />
+      <ProtectedRoute path="/client/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/staff" component={Staff} />
       <ProtectedRoute path="/shifts" component={ShiftLogging} />
       <ProtectedRoute path="/forms" component={Forms} />

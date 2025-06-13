@@ -1,25 +1,22 @@
-import { useState, Suspense, lazy } from "react";
+import { useState } from "react";
 import { useParams } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
-
-// Lazy load tab components
-const OverviewTab = lazy(() => import("./tabs/overview"));
-const MedicationsTab = lazy(() => import("./tabs/medications"));
-const CarePlansTab = lazy(() => import("./tabs/care-plans"));
-const CaseNotesTab = lazy(() => import("./tabs/case-notes"));
-const IncidentsTab = lazy(() => import("./tabs/incidents"));
-const SchedulesTab = lazy(() => import("./tabs/schedules"));
-const ObservationsTab = lazy(() => import("./tabs/observations"));
+import OverviewTab from "./tabs/overview";
+import MedicationsTab from "./tabs/medications";
+import CarePlansTab from "./tabs/care-plans";
+import CaseNotesTab from "./tabs/case-notes";
+import IncidentsTab from "./tabs/incidents";
+import SchedulesTab from "./tabs/schedules";
+import ObservationsTab from "./tabs/observations";
 
 interface ClientProfilePageProps {
   clientId?: string;
   companyId?: string;
 }
 
-export default function ClientProfilePage({ clientId: propClientId, companyId: propCompanyId }: ClientProfilePageProps) {
+function ClientProfilePageInner({ clientId: propClientId, companyId: propCompanyId }: ClientProfilePageProps) {
   const params = useParams();
   const clientId = propClientId || params.clientId || "1";
   const companyId = propCompanyId || "1";
@@ -77,47 +74,38 @@ export default function ClientProfilePage({ clientId: propClientId, companyId: p
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <OverviewTab clientId={clientId} companyId={companyId} />
-          </Suspense>
+          <OverviewTab clientId={clientId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="medications" className="mt-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <MedicationsTab clientId={clientId} companyId={companyId} />
-          </Suspense>
+          <MedicationsTab clientId={clientId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="care-plans" className="mt-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <CarePlansTab clientId={clientId} companyId={companyId} />
-          </Suspense>
+          <CarePlansTab clientId={clientId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="case-notes" className="mt-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <CaseNotesTab clientId={clientId} companyId={companyId} />
-          </Suspense>
+          <CaseNotesTab clientId={clientId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="incidents" className="mt-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <IncidentsTab clientId={clientId} companyId={companyId} />
-          </Suspense>
+          <IncidentsTab clientId={clientId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="schedules" className="mt-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <SchedulesTab clientId={clientId} companyId={companyId} />
-          </Suspense>
+          <SchedulesTab clientId={clientId} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="observations" className="mt-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <ObservationsTab clientId={clientId} companyId={companyId} />
-          </Suspense>
+          <ObservationsTab clientId={clientId} companyId={companyId} />
         </TabsContent>
       </Tabs>
     </div>
   );
+}
+
+// Router wrapper component
+export default function ClientProfilePage() {
+  return <ClientProfilePageInner />;
 }
