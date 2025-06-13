@@ -441,6 +441,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update shift (for requesting shifts)
+  app.patch("/api/shifts/:id", requireAuth, async (req: any, res) => {
+    try {
+      const shiftId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Validate that this is a shift request operation
+      if (updateData.userId && updateData.status === "requested") {
+        // Ensure user can only request for themselves
+        if (updateData.userId !== req.user.id) {
+          return res.status(403).json({ message: "Can only request shifts for yourself" });
+        }
+        
+        // Check if shift exists and is unassigned
+        const existingShift = await storage.getShift(shiftId, req.user.tenantId);
+        if (!existingShift) {
+          return res.status(404).json({ message: "Shift not found" });
+        }
+        
+        if (existingShift.userId) {
+          return res.status(400).json({ message: "Shift already assigned" });
+        }
+      }
+      
+      const shift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
+      
+      if (!shift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      // Log activity for shift requests
+      if (updateData.status === "requested") {
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "request_shift",
+          resourceType: "shift",
+          resourceId: shift.id,
+          description: `Requested shift: ${shift.title}`,
+          tenantId: req.user.tenantId,
+        });
+      }
+      
+      res.json(shift);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update shift" });
+    }
+  });
+
   // Get users for tenant (for shift assignment)
   app.get("/api/users", requireAuth, async (req: any, res) => {
     try {

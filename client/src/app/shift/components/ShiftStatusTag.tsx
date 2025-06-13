@@ -15,6 +15,18 @@ export default function ShiftStatusTag({ status, className }: ShiftStatusTagProp
           variant: "secondary" as const,
           className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
         };
+      case "available":
+        return {
+          label: "Available",
+          variant: "outline" as const,
+          className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300"
+        };
+      case "requested":
+        return {
+          label: "Requested",
+          variant: "outline" as const,
+          className: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300"
+        };
       case "assigned":
         return {
           label: "Assigned",

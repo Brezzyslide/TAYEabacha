@@ -169,6 +169,14 @@ export default function ShiftCalendarView({ shifts, onShiftClick, getClientName 
           <span>Your Shifts</span>
         </div>
         <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-800 rounded"></div>
+          <span>Available (Click to Request)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-orange-100 dark:bg-orange-900 border border-orange-200 dark:border-orange-800 rounded"></div>
+          <span>Requested (Pending Approval)</span>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="w-3 h-3 border-2 border-blue-500 rounded"></div>
           <span>Today</span>
         </div>
