@@ -134,9 +134,9 @@ export default function ShiftLogging() {
   const activeShifts = shifts?.filter(shift => shift.isActive) || [];
   const completedShifts = shifts?.filter(shift => !shift.isActive) || [];
 
-  const getShiftDuration = (startTime: string, endTime?: string) => {
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date();
+  const getShiftDuration = (startTime: Date, endTime?: Date | null) => {
+    const start = startTime instanceof Date ? startTime : new Date(startTime);
+    const end = endTime ? (endTime instanceof Date ? endTime : new Date(endTime)) : new Date();
     const duration = end.getTime() - start.getTime();
     const hours = Math.floor(duration / (1000 * 60 * 60));
     const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
@@ -244,7 +244,7 @@ export default function ShiftLogging() {
                             <p className="text-sm text-gray-500">
                               {shift.building && `${shift.building} • `}
                               {shift.floor && `Floor ${shift.floor} • `}
-                              Duration: {getShiftDuration(shift.startTime)}
+                              Duration: {getShiftDuration(shift.startTime, shift.endTime || undefined)}
                             </p>
                             {shift.location && (
                               <p className="text-xs text-gray-400">

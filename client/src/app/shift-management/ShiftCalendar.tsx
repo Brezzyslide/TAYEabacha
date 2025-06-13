@@ -179,10 +179,22 @@ export default function ShiftCalendar() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Shift Calendar</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Scheduled Shifts</h1>
                 <p className="text-gray-600 mt-1">
                   {userIsAdmin ? "Manage all company shifts" : "View your assigned shifts"}
                 </p>
+                <div className="mt-3 p-4 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <Calendar className="h-5 w-5 text-green-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-green-700">
+                        <strong>Scheduled Shifts:</strong> These are pre-planned shifts created by administrators. Use the action buttons to start/end your assigned shifts with automatic time tracking.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               {userIsAdmin && (
