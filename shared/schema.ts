@@ -85,20 +85,37 @@ export const formSubmissions = pgTable("form_submissions", {
 // Shifts table
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id), // Made nullable for unassigned shifts
+  shiftId: text("shift_id").notNull().unique(),
+  title: text("title").notNull(),
+  startDateTime: timestamp("start_date_time").notNull(),
+  endDateTime: timestamp("end_date_time"),
+  staffId: integer("staff_id").references(() => users.id), // nullable for unassigned shifts
   clientId: integer("client_id").references(() => clients.id),
-  title: text("title"),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time"),
-  location: text("location"),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
-  building: text("building"),
-  floor: text("floor"),
-  isActive: boolean("is_active").default(true),
+  companyId: integer("company_id").notNull().references(() => tenants.id),
+  status: text("status").notNull().default("unassigned"), // unassigned, assigned, in-progress, completed
+  isRecurring: boolean("is_recurring").default(false),
+  recurrenceRule: jsonb("recurrence_rule"), // Store recurrence pattern as JSON
+  overtimeMinutes: integer("overtime_minutes"),
+  costEstimate: decimal("cost_estimate", { precision: 10, scale: 2 }),
+  locationData: jsonb("location_data"), // Store location info as JSON
   seriesId: text("series_id"), // For grouping recurring shifts
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Staff Availability table
+export const staffAvailability = pgTable("staff_availability", {
+  id: serial("id").primaryKey(),
+  availabilityId: text("availability_id").notNull().unique(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  companyId: integer("company_id").notNull().references(() => tenants.id),
+  availableDays: jsonb("available_days").notNull(), // ["Monday", "Tuesday", ...]
+  timeSlots: jsonb("time_slots").notNull(), // {Monday: {start: "09:00", end: "17:00"}, ...}
+  recurrencePattern: text("recurrence_pattern").default("weekly"), // weekly, fortnightly, monthly
+  overrideByManager: boolean("override_by_manager").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Activity logs table
@@ -129,6 +146,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   formTemplates: many(formTemplates),
   formSubmissions: many(formSubmissions),
   shifts: many(shifts),
+  staffAvailability: many(staffAvailability),
   activityLogs: many(activityLogs),
 }));
 
@@ -141,6 +159,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   createdFormTemplates: many(formTemplates),
   formSubmissions: many(formSubmissions),
   shifts: many(shifts),
+  availability: many(staffAvailability),
   activityLogs: many(activityLogs),
 }));
 
@@ -188,12 +207,27 @@ export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => 
 }));
 
 export const shiftsRelations = relations(shifts, ({ one }) => ({
-  user: one(users, {
-    fields: [shifts.userId],
+  staff: one(users, {
+    fields: [shifts.staffId],
     references: [users.id],
   }),
-  tenant: one(tenants, {
-    fields: [shifts.tenantId],
+  client: one(clients, {
+    fields: [shifts.clientId],
+    references: [clients.id],
+  }),
+  company: one(tenants, {
+    fields: [shifts.companyId],
+    references: [tenants.id],
+  }),
+}));
+
+export const staffAvailabilityRelations = relations(staffAvailability, ({ one }) => ({
+  user: one(users, {
+    fields: [staffAvailability.userId],
+    references: [users.id],
+  }),
+  company: one(tenants, {
+    fields: [staffAvailability.companyId],
     references: [tenants.id],
   }),
 }));
@@ -244,6 +278,13 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
 export const insertShiftSchema = createInsertSchema(shifts).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffAvailabilitySchema = createInsertSchema(staffAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
@@ -272,6 +313,9 @@ export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
 
 export type Shift = typeof shifts.$inferSelect;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
+
+export type StaffAvailability = typeof staffAvailability.$inferSelect;
+export type InsertStaffAvailability = z.infer<typeof insertStaffAvailabilitySchema>;
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;

@@ -1,0 +1,91 @@
+# Prompt for Replit Codex Agent
+
+Completely replace the existing `shift-management` or `scheduled-shift` module with a new unified module named `shift`.
+
+Please implement the following:
+
+📁 Folder: `src/app/shift/`
+
+---
+
+### 📌 PART 1: SHIFT SCHEDULING & ALLOCATION
+
+🔧 Database Model: `shifts` table should include:
+- shiftId (UUID)
+- title (string)
+- startDateTime (DateTime)
+- endDateTime (DateTime)
+- staffId (nullable)
+- clientId (nullable)
+- companyId (string)
+- status ("unassigned" | "assigned" | "in-progress" | "completed")
+- isRecurring (boolean)
+- recurrenceRule (nullable string or JSON)
+- overtimeMinutes (optional number)
+- costEstimate (optional number)
+- locationData (optional, object)
+
+🔨 Functionality:
+- Full calendar view of shifts with role-based visibility:
+  - Staff: only their shifts
+  - Team Leaders: shifts of assigned clients
+  - Coordinators/Admins: all company shifts
+- Click shift to:
+  - Edit or delete (based on role)
+  - Start / End Shift with timestamp and location
+- Assign shifts to staff and/or client via a modal form
+- Smart recurring shift builder with weekly/fortnightly/monthly logic
+- Display overtime based on shift end timestamps exceeding scheduled end
+- Mobile-responsive layout using ShadCN + Tailwind
+- Color-coded shifts: assigned, unassigned, in-progress
+
+🧠 Extras:
+- Use TanStack Query
+- Store shifts with `companyId` + `clientId` enforced
+- Modular components: `ShiftCalendar.tsx`, `NewShiftModal.tsx`, `EditShiftModal.tsx`, `ShiftActionButtons.tsx`, `ShiftRequestPanel.tsx`
+
+---
+
+### 📌 PART 2: STAFF AVAILABILITY ("/staff-availability")
+
+📁 Folder: `src/app/staff-availability/`
+
+🔧 Database Model: `staffAvailability` table should include:
+- availabilityId (UUID)
+- userId (string)
+- companyId (string)
+- availableDays: ["Monday", "Tuesday", ...]
+- startTime / endTime per day (e.g., 09:00 - 17:00)
+- recurrencePattern ("weekly", "fortnightly", etc.)
+- overrideByManager (boolean)
+
+🔨 Functionality:
+- Staff can declare their availability per day using calendar/pattern UI
+- Add recurring patterns (e.g. Mon–Wed every week)
+- System detects availability conflicts with assigned shifts
+- Manager override: team leaders/coordinators can override or edit staff availability
+- Availability is used in shift creation (hide unavailable staff from dropdown)
+- Push notifications (placeholder) if conflict detected
+
+🧠 UI Components:
+- `AvailabilityForm.tsx`
+- `MyAvailabilityPage.tsx`
+- `ConflictDetectionBanner.tsx`
+- Integration with `shift` module’s New/Edit Shift modal
+
+🔒 Role Enforcement:
+- Staff can view and edit only their own availability
+- Managers/Admins can override for any staff in same companyId
+
+---
+
+📱 Design & UX:
+- Vibrant, modern layout using Tailwind & ShadCN
+- Card-based views for My Shifts, Requests, and Availability
+- Fully mobile-responsive
+- Clean typography, consistent spacing, intuitive toggles and buttons
+
+🛠 Notes:
+- Replace all legacy scheduled shift routes/components
+- Ensure tenant-safety (`companyId`, `clientId` filters)
+- Test clickability, mutation success, and calendar responsiveness
