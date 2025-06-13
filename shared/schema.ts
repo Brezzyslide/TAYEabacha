@@ -88,13 +88,24 @@ export const shifts = pgTable("shifts", {
   userId: integer("user_id").references(() => users.id), // Made nullable for unassigned shifts
   clientId: integer("client_id").references(() => clients.id),
   title: text("title"),
+  description: text("description"),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
+  status: text("status").default("assigned"), // assigned, requested, in-progress, completed, cancelled
   location: text("location"),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   building: text("building"),
   floor: text("floor"),
+  // Shift tracking fields
+  startTimestamp: timestamp("start_timestamp"),
+  endTimestamp: timestamp("end_timestamp"),
+  startLocation: text("start_location"),
+  endLocation: text("end_location"),
+  handoverReceivedFromStaffId: integer("handover_received_from_staff_id").references(() => users.id),
+  handoverGivenToStaffId: integer("handover_given_to_staff_id").references(() => users.id),
+  handoverNotesIn: text("handover_notes_in"),
+  handoverNotesOut: text("handover_notes_out"),
   isActive: boolean("is_active").default(true),
   seriesId: text("series_id"), // For grouping recurring shifts
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
