@@ -1,0 +1,81 @@
+# Prompt for Replit Codex Agent
+
+Please build the full Case Notes module under `src/app/case-notes/` with full form, filters, export tools, and client integration.
+
+---
+
+### 1. Case Note Creation Modal: `CreateCaseNoteModal.tsx`
+Fields:
+- Client dropdown (filtered by companyId)
+- Case Note Content (min 130 words, validated via zod)
+- File upload (max 6 files: images, PDFs, Word docs)
+- Link to Shift (dropdown of last 3 days' shifts for client)
+- AI Spell Check (if user role is TeamLeader or above)
+- Incident Reporting toggle:
+  - If ON: show reference number input
+- Medication Admin toggle:
+  - Dropdown: Administered / Not required
+  - If Not Required: confirmation textbox (type 'yes')
+
+On submit:
+- Save note to `caseNotes` table with:
+  - `clientId`, `companyId`, `staffId`, `content`, `attachments`, `linkedShiftId`, `type`, `incidentRef`, `medicationFlag`, `createdAt`
+
+---
+
+### 2. Case Note Display
+
+Create `CaseNoteCard.tsx`:
+- Shows:
+  - Client name, NDIS number
+  - Date/time
+  - Staff name
+  - Tags: Standard / Incident / Medication
+  - Notes preview with expand
+  - Download PDF button
+  - 3-dot menu (View full, Edit, Archive)
+
+---
+
+### 3. Filter Panel: `CaseNoteFilterBar.tsx`
+- Search bar (search by client name, staff, note content)
+- Filters:
+  - Client dropdown
+  - Type dropdown
+  - Date range picker
+- View toggle: Card / List
+
+---
+
+### 4. Tabbed View: `CaseNoteDashboard.tsx`
+- Tabs:
+  - All Notes
+  - Incidents
+  - Medication
+- Export Buttons: Export All PDF, Export to Excel
+
+---
+
+### 5. Client Profile Integration
+
+Inside `src/app/support-work/client-profile/tabs/case-notes.tsx`:
+- Display tabbed case notes filtered by `clientId` and `companyId`
+- Same Card/List toggle
+- Only show notes for that client
+
+---
+
+### 6. Role Permissions
+- SupportWorker: only create/view case notes for assigned clients
+- TeamLeader: can view/edit all for assigned clients
+- Admin: view/edit/export all within company
+- Console Manager: global view (if role exists)
+
+---
+
+### Use:
+- `TanStack Query`
+- `react-hook-form` + `zod`
+- `ShadCN` for UI
+- `date-fns` for date filtering
+- `jsPDF` or similar for PDF export
