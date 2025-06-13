@@ -146,6 +146,21 @@ export const caseNotes = pgTable("case_notes", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Hourly Observations table
+export const hourlyObservations = pgTable("hourly_observations", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  observationType: text("observation_type").notNull(), // behaviour, adl, health, social, communication
+  subtype: text("subtype"), // specific subcategory based on type
+  notes: text("notes").notNull(),
+  intensity: integer("intensity"), // 1-5 for behaviour observations
+  timestamp: timestamp("timestamp").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Activity logs table
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
