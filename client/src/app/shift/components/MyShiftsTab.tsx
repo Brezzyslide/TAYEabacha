@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { type Shift } from "@shared/schema";
 import ShiftViewToggle from "./ShiftViewToggle";
 import ShiftStatusTag from "./ShiftStatusTag";
+import ShiftCalendarView from "./ShiftCalendarView";
 import StartShiftModal from "./StartShiftModal";
 import EndShiftModal from "./EndShiftModal";
 
@@ -169,8 +170,21 @@ export default function MyShiftsTab() {
             </p>
           </CardContent>
         </Card>
+      ) : viewMode === "calendar" ? (
+        <ShiftCalendarView
+          shifts={myShifts}
+          onShiftClick={(shift) => {
+            setSelectedShift(shift);
+            if ((shift as any).status === "assigned") {
+              setIsStartModalOpen(true);
+            } else if ((shift as any).status === "in-progress") {
+              setIsEndModalOpen(true);
+            }
+          }}
+          getClientName={getClientName}
+        />
       ) : (
-        <div className={viewMode === "list" ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"}>
+        <div className="space-y-4">
           {myShifts.map(renderShiftCard)}
         </div>
       )}
