@@ -332,12 +332,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: "create_shift",
         resourceType: "shift",
         resourceId: shift.id,
-        description: `Created shift`,
+        description: `Created shift${shiftData.seriesId ? ' (recurring series)' : ''}`,
         tenantId: req.user.tenantId,
       });
       
       res.status(201).json(shift);
     } catch (error) {
+      console.error("Error creating shift:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid shift data", errors: error.errors });
       }

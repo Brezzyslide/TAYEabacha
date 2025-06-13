@@ -96,6 +96,7 @@ export const shifts = pgTable("shifts", {
   building: text("building"),
   floor: text("floor"),
   isActive: boolean("is_active").default(true),
+  seriesId: text("series_id"), // For grouping recurring shifts
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

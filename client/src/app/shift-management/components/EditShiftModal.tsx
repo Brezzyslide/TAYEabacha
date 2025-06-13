@@ -168,7 +168,52 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
     }
   }, [shift, form]);
 
-  // Create shift mutation
+  // Create multiple shifts mutation (batch insert)
+  const createShiftsMutation = useMutation({
+    mutationFn: async (shifts: any[]) => {
+      if (!user?.tenantId) throw new Error("No tenant ID available");
+      
+      // Create all shifts via API
+      const promises = shifts.map(shift => 
+        apiRequest("POST", "/api/shifts", {
+          title: shift.title,
+          startTime: shift.startDateTime.toISOString(),
+          endTime: shift.endDateTime.toISOString(),
+          userId: shift.staffId ? parseInt(shift.staffId) : null,
+          clientId: shift.clientId ? parseInt(shift.clientId) : null,
+          tenantId: user.tenantId,
+          seriesId: shift.seriesId, // Add seriesId support
+        })
+      );
+
+      await Promise.all(promises);
+      return { count: shifts.length, isRecurring: shifts.length > 1 };
+    },
+    onSuccess: (result) => {
+      if (result.isRecurring) {
+        toast({
+          title: "Success",
+          description: `Created ${result.count} recurring shifts successfully`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Shift created successfully",
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create shift mutation (legacy - keeping for compatibility)
   const createShiftMutation = useMutation({
     mutationFn: async (data: EditShiftFormData) => {
       if (!user?.tenantId) throw new Error("No tenant ID available");
@@ -331,14 +376,58 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
     },
   });
 
-  const onSubmit = (data: EditShiftFormData) => {
+  const onSubmit = (formValues: EditShiftFormData) => {
     if (shiftId) {
       // Editing existing shift
-      updateShiftMutation.mutate(data);
-    } else {
-      // Creating new shift
-      createShiftMutation.mutate(data);
+      updateShiftMutation.mutate(formValues);
+      return;
     }
+
+    // Creating new shift(s) - implement your suggested logic
+    const {
+      startDateTime,
+      endDateTime,
+      recurrenceType,
+      isRecurring,
+      numberOfOccurrences,
+      recurrenceEndDate,
+      endConditionType,
+      userId,
+      clientId,
+      title,
+    } = formValues;
+
+    let shifts = [];
+
+    if (isRecurring) {
+      shifts = generateRecurringShifts({
+        title,
+        startDateTime: startDateTime,
+        endDateTime: endDateTime || startDateTime,
+        recurrenceType: recurrenceType!,
+        occurrenceCount: endConditionType === "occurrences" ? numberOfOccurrences : undefined,
+        endDate: endConditionType === "endDate" ? recurrenceEndDate : undefined,
+        staffId: userId?.toString(),
+        clientId: clientId?.toString() || "",
+        companyId: user?.tenantId?.toString() || "",
+      });
+    } else {
+      shifts = [
+        {
+          id: crypto.randomUUID(),
+          title,
+          startDateTime: new Date(startDateTime),
+          endDateTime: new Date(endDateTime || startDateTime),
+          staffId: userId?.toString(),
+          clientId: clientId?.toString() || "",
+          companyId: user?.tenantId?.toString() || "",
+          status: userId ? "assigned" : "unassigned" as const,
+        },
+      ];
+    }
+
+    // Send shifts to API (batch insert)
+    createShiftsMutation.mutate(shifts);
   };
 
   const handleClose = () => {
@@ -719,9 +808,9 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={updateShiftMutation.isPending || createShiftMutation.isPending}
+                  disabled={updateShiftMutation.isPending || createShiftMutation.isPending || createShiftsMutation.isPending}
                 >
-                  {(updateShiftMutation.isPending || createShiftMutation.isPending) ? (
+                  {(updateShiftMutation.isPending || createShiftMutation.isPending || createShiftsMutation.isPending) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       {shiftId ? "Updating..." : "Creating..."}
