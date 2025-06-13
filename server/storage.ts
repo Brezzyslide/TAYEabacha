@@ -590,6 +590,97 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(medicationRecords.createdAt));
   }
+
+  // Incident Reports methods
+  async getIncidentReports(tenantId: number): Promise<IncidentReport[]> {
+    return await db.select().from(incidentReports)
+      .where(eq(incidentReports.tenantId, tenantId))
+      .orderBy(desc(incidentReports.createdAt));
+  }
+
+  async getIncidentReport(incidentId: string, tenantId: number): Promise<IncidentReport | undefined> {
+    const [report] = await db.select().from(incidentReports)
+      .where(and(
+        eq(incidentReports.incidentId, incidentId),
+        eq(incidentReports.tenantId, tenantId)
+      ));
+    return report;
+  }
+
+  async createIncidentReport(insertReport: InsertIncidentReport): Promise<IncidentReport> {
+    const [report] = await db.insert(incidentReports).values(insertReport).returning();
+    return report;
+  }
+
+  async updateIncidentReport(incidentId: string, updateReport: Partial<InsertIncidentReport>, tenantId: number): Promise<IncidentReport | undefined> {
+    const [report] = await db.update(incidentReports)
+      .set({ ...updateReport, updatedAt: new Date() })
+      .where(and(
+        eq(incidentReports.incidentId, incidentId),
+        eq(incidentReports.tenantId, tenantId)
+      ))
+      .returning();
+    return report;
+  }
+
+  async deleteIncidentReport(incidentId: string, tenantId: number): Promise<boolean> {
+    const result = await db.delete(incidentReports)
+      .where(and(
+        eq(incidentReports.incidentId, incidentId),
+        eq(incidentReports.tenantId, tenantId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Incident Closures methods
+  async getIncidentClosure(incidentId: string, tenantId: number): Promise<IncidentClosure | undefined> {
+    const [closure] = await db.select().from(incidentClosures)
+      .where(and(
+        eq(incidentClosures.incidentId, incidentId),
+        eq(incidentClosures.tenantId, tenantId)
+      ));
+    return closure;
+  }
+
+  async createIncidentClosure(insertClosure: InsertIncidentClosure): Promise<IncidentClosure> {
+    const [closure] = await db.insert(incidentClosures).values(insertClosure).returning();
+    return closure;
+  }
+
+  async updateIncidentClosure(incidentId: string, updateClosure: Partial<InsertIncidentClosure>, tenantId: number): Promise<IncidentClosure | undefined> {
+    const [closure] = await db.update(incidentClosures)
+      .set(updateClosure)
+      .where(and(
+        eq(incidentClosures.incidentId, incidentId),
+        eq(incidentClosures.tenantId, tenantId)
+      ))
+      .returning();
+    return closure;
+  }
+
+  async getIncidentReportsWithClosures(tenantId: number): Promise<any[]> {
+    return await db.select({
+      report: incidentReports,
+      closure: incidentClosures,
+      client: {
+        id: clients.id,
+        firstName: clients.firstName,
+        lastName: clients.lastName,
+        clientId: clients.clientId
+      },
+      staff: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName
+      }
+    })
+    .from(incidentReports)
+    .leftJoin(incidentClosures, eq(incidentReports.incidentId, incidentClosures.incidentId))
+    .leftJoin(clients, eq(incidentReports.clientId, clients.id))
+    .leftJoin(users, eq(incidentReports.staffId, users.id))
+    .where(eq(incidentReports.tenantId, tenantId))
+    .orderBy(desc(incidentReports.createdAt));
+  }
 }
 
 export const storage = new DatabaseStorage();

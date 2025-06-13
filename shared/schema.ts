@@ -612,3 +612,9 @@ export type InsertMedicationPlan = z.infer<typeof insertMedicationPlanSchema>;
 
 export type MedicationRecord = typeof medicationRecords.$inferSelect;
 export type InsertMedicationRecord = z.infer<typeof insertMedicationRecordSchema>;
+
+export type IncidentReport = typeof incidentReports.$inferSelect;
+export type InsertIncidentReport = z.infer<typeof insertIncidentReportSchema>;
+
+export type IncidentClosure = typeof incidentClosures.$inferSelect;
+export type InsertIncidentClosure = z.infer<typeof insertIncidentClosureSchema>;
