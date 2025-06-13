@@ -463,7 +463,7 @@ export class DatabaseStorage implements IStorage {
         eq(hourlyObservations.id, id),
         eq(hourlyObservations.tenantId, tenantId)
       ));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 }
 

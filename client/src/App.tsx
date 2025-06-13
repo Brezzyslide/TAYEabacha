@@ -18,6 +18,7 @@ import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProf
 import ShiftDashboard from "@/app/shift/ShiftDashboard";
 import ShiftCalendar from "@/app/shift/ShiftCalendar";
 import MyAvailabilityPage from "@/app/staff-availability/MyAvailabilityPage";
+import ObservationDashboard from "@/app/hourly-observations/ObservationDashboard";
 import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import CompanyListPage from "@/app/admin/companies/CompanyListPage";

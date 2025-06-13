@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema } from "@shared/schema";
+import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
@@ -819,6 +819,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Case note deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete case note" });
+    }
+  });
+
+  // Hourly Observations routes
+  app.get("/api/observations", requireAuth, async (req: any, res) => {
+    try {
+      const { clientId } = req.query;
+      
+      let observations;
+      if (clientId) {
+        observations = await storage.getObservationsByClient(parseInt(clientId), req.user.tenantId);
+      } else {
+        observations = await storage.getObservations(req.user.tenantId);
+      }
+      
+      res.json(observations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch observations" });
+    }
+  });
+
+  app.get("/api/observations/:id", requireAuth, async (req: any, res) => {
+    try {
+      const observationId = parseInt(req.params.id);
+      const observation = await storage.getObservation(observationId, req.user.tenantId);
+      
+      if (!observation) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+      
+      res.json(observation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch observation" });
+    }
+  });
+
+  app.post("/api/observations", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker"]), async (req: any, res) => {
+    try {
+      const validationResult = insertHourlyObservationSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid observation data", 
+          errors: validationResult.error.issues 
+        });
+      }
+
+      const observationData = {
+        ...validationResult.data,
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+      };
+
+      const observation = await storage.createObservation(observationData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_observation",
+        resourceType: "observation",
+        resourceId: observation.id,
+        description: `Created ${observation.observationType} observation for client ${observation.clientId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(observation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create observation" });
+    }
+  });
+
+  app.patch("/api/observations/:id", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker"]), async (req: any, res) => {
+    try {
+      const observationId = parseInt(req.params.id);
+      
+      // Verify observation exists and belongs to tenant
+      const existingObservation = await storage.getObservation(observationId, req.user.tenantId);
+      if (!existingObservation) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+
+      // Only allow the creator or admin/coordinator to edit
+      if (existingObservation.userId !== req.user.id && !["Admin", "Coordinator"].includes(req.user.role)) {
+        return res.status(403).json({ message: "Not authorized to edit this observation" });
+      }
+
+      const validationResult = insertHourlyObservationSchema.partial().safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid observation data", 
+          errors: validationResult.error.issues 
+        });
+      }
+
+      const observation = await storage.updateObservation(observationId, validationResult.data, req.user.tenantId);
+      if (!observation) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_observation",
+        resourceType: "observation",
+        resourceId: observation.id,
+        description: `Updated ${observation.observationType} observation for client ${observation.clientId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(observation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update observation" });
+    }
+  });
+
+  app.delete("/api/observations/:id", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const observationId = parseInt(req.params.id);
+      
+      // Verify observation exists
+      const existingObservation = await storage.getObservation(observationId, req.user.tenantId);
+      if (!existingObservation) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+      
+      const deleted = await storage.deleteObservation(observationId, req.user.tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_observation",
+        resourceType: "observation",
+        resourceId: observationId,
+        description: `Deleted ${existingObservation.observationType} observation for client ${existingObservation.clientId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Observation deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete observation" });
     }
   });
 
