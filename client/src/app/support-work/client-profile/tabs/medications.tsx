@@ -343,10 +343,7 @@ export default function MedicationsTab() {
   });
 
   const createPlanMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/clients/${clientId}/medication-plans`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest(`/api/clients/${clientId}/medication-plans`, "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/medication-plans`] });
       setShowPlanModal(false);
@@ -360,10 +357,7 @@ export default function MedicationsTab() {
 
   const updatePlanMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => 
-      apiRequest(`/api/medication-plans/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/medication-plans/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/medication-plans`] });
       setShowPlanModal(false);
@@ -377,9 +371,7 @@ export default function MedicationsTab() {
   });
 
   const deletePlanMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/medication-plans/${id}`, {
-      method: "DELETE",
-    }),
+    mutationFn: (id: number) => apiRequest(`/api/medication-plans/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/medication-plans`] });
       toast({ title: "Medication plan deleted successfully" });
@@ -390,10 +382,7 @@ export default function MedicationsTab() {
   });
 
   const createRecordMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/clients/${clientId}/medication-records`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest(`/api/clients/${clientId}/medication-records`, "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/medication-records`] });
       setShowRecordModal(false);
