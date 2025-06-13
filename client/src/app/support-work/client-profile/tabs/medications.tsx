@@ -293,8 +293,14 @@ function MedicationAnalytics({ clientId }: { clientId: number }) {
   );
 }
 
-export default function MedicationsTab() {
-  const { clientId } = useParams();
+interface MedicationsTabProps {
+  clientId?: string;
+  companyId?: string;
+}
+
+export default function MedicationsTab({ clientId: propClientId }: MedicationsTabProps = {}) {
+  const params = useParams();
+  const clientId = propClientId || params.clientId || "1";
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();

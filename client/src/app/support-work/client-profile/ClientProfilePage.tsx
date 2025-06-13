@@ -99,7 +99,7 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
         </TabsContent>
 
         <TabsContent value="medications" className="mt-6">
-          <MedicationsTab clientId={clientId} companyId={companyId} />
+          <MedicationsTab clientId={clientId} />
         </TabsContent>
 
         <TabsContent value="care-plans" className="mt-6">

@@ -15,8 +15,8 @@ import type { CaseNote, Client, Shift } from "@shared/schema";
 import CaseNoteModal from "@/components/case-notes/CaseNoteModal";
 
 interface CaseNotesTabProps {
-  clientId: string;
-  companyId: string;
+  clientId?: string;
+  companyId?: string;
 }
 
 export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps) {
