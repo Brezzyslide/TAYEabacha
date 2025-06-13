@@ -588,6 +588,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Case Notes API
+  app.get("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const caseNotes = await storage.getCaseNotes(clientId, req.user.tenantId);
+      
+      // Get client details and recent shifts for linking
+      const client = await storage.getClient(clientId, req.user.tenantId);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      // Get recent shifts from last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const allShifts = await storage.getAllShifts(req.user.tenantId);
+      const recentShifts = allShifts.filter(shift => 
+        shift.clientId === clientId && 
+        new Date(shift.startTime) >= sevenDaysAgo
+      );
+      
+      res.json({ 
+        caseNotes, 
+        client,
+        recentShifts: recentShifts.slice(0, 10) // Limit to 10 most recent
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch case notes" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const caseNoteData = {
+        ...req.body,
+        clientId,
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+      };
+      
+      const caseNote = await storage.createCaseNote(caseNoteData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_case_note",
+        resourceType: "case_note",
+        resourceId: caseNote.id,
+        description: `Created case note: ${caseNote.title}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(caseNote);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create case note" });
+    }
+  });
+
+  app.put("/api/case-notes/:id", requireAuth, async (req: any, res) => {
+    try {
+      const caseNoteId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const caseNote = await storage.updateCaseNote(caseNoteId, updateData, req.user.tenantId);
+      if (!caseNote) {
+        return res.status(404).json({ message: "Case note not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_case_note",
+        resourceType: "case_note",
+        resourceId: caseNoteId,
+        description: `Updated case note: ${caseNote.title}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(caseNote);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update case note" });
+    }
+  });
+
+  app.delete("/api/case-notes/:id", requireAuth, async (req: any, res) => {
+    try {
+      const caseNoteId = parseInt(req.params.id);
+      
+      const deleted = await storage.deleteCaseNote(caseNoteId, req.user.tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Case note not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_case_note",
+        resourceType: "case_note",
+        resourceId: caseNoteId,
+        description: "Deleted case note",
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Case note deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete case note" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

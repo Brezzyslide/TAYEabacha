@@ -363,5 +363,8 @@ export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type StaffAvailability = typeof staffAvailability.$inferSelect;
 export type InsertStaffAvailability = z.infer<typeof insertStaffAvailabilitySchema>;
 
+export type CaseNote = typeof caseNotes.$inferSelect;
+export type InsertCaseNote = z.infer<typeof insertCaseNoteSchema>;
+
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;

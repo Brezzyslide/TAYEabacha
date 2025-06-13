@@ -1,9 +1,9 @@
 import { 
-  companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, activityLogs,
+  companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
-  type ActivityLog, type InsertActivityLog
+  type CaseNote, type InsertCaseNote, type ActivityLog, type InsertActivityLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -63,6 +63,15 @@ export interface IStorage {
   getUserAvailability(userId: number, tenantId: number): Promise<StaffAvailability | undefined>;
   createStaffAvailability(availability: InsertStaffAvailability): Promise<StaffAvailability>;
   updateStaffAvailability(id: number, availability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined>;
+
+  // Case Notes
+  getCaseNotes(clientId: number, tenantId: number): Promise<CaseNote[]>;
+  getCaseNote(id: number, tenantId: number): Promise<CaseNote | undefined>;
+  createCaseNote(caseNote: InsertCaseNote): Promise<CaseNote>;
+  updateCaseNote(id: number, caseNote: Partial<InsertCaseNote>, tenantId: number): Promise<CaseNote | undefined>;
+  deleteCaseNote(id: number, tenantId: number): Promise<boolean>;
+  getCaseNotesByType(clientId: number, type: string, tenantId: number): Promise<CaseNote[]>;
+  searchCaseNotes(searchTerm: string, clientId: number, tenantId: number): Promise<CaseNote[]>;
 
   // Activity Logs
   getActivityLogs(tenantId: number, limit?: number): Promise<ActivityLog[]>;
@@ -341,6 +350,56 @@ export class DatabaseStorage implements IStorage {
       .values(insertLog)
       .returning();
     return log;
+  }
+
+  async getCaseNotes(clientId: number, tenantId: number): Promise<CaseNote[]> {
+    return await db.select().from(caseNotes)
+      .where(and(eq(caseNotes.clientId, clientId), eq(caseNotes.tenantId, tenantId)))
+      .orderBy(desc(caseNotes.createdAt));
+  }
+
+  async getCaseNote(id: number, tenantId: number): Promise<CaseNote | undefined> {
+    const [caseNote] = await db.select().from(caseNotes)
+      .where(and(eq(caseNotes.id, id), eq(caseNotes.tenantId, tenantId)));
+    return caseNote;
+  }
+
+  async createCaseNote(insertCaseNote: InsertCaseNote): Promise<CaseNote> {
+    const [caseNote] = await db.insert(caseNotes).values(insertCaseNote).returning();
+    return caseNote;
+  }
+
+  async updateCaseNote(id: number, updateCaseNote: Partial<InsertCaseNote>, tenantId: number): Promise<CaseNote | undefined> {
+    const [caseNote] = await db.update(caseNotes)
+      .set({ ...updateCaseNote, updatedAt: new Date() })
+      .where(and(eq(caseNotes.id, id), eq(caseNotes.tenantId, tenantId)))
+      .returning();
+    return caseNote;
+  }
+
+  async deleteCaseNote(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.delete(caseNotes)
+      .where(and(eq(caseNotes.id, id), eq(caseNotes.tenantId, tenantId)));
+    return result.rowCount > 0;
+  }
+
+  async getCaseNotesByType(clientId: number, type: string, tenantId: number): Promise<CaseNote[]> {
+    return await db.select().from(caseNotes)
+      .where(and(
+        eq(caseNotes.clientId, clientId),
+        eq(caseNotes.type, type),
+        eq(caseNotes.tenantId, tenantId)
+      ))
+      .orderBy(desc(caseNotes.createdAt));
+  }
+
+  async searchCaseNotes(searchTerm: string, clientId: number, tenantId: number): Promise<CaseNote[]> {
+    return await db.select().from(caseNotes)
+      .where(and(
+        eq(caseNotes.clientId, clientId),
+        eq(caseNotes.tenantId, tenantId)
+      ))
+      .orderBy(desc(caseNotes.createdAt));
   }
 }
 
