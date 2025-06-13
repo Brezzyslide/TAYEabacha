@@ -139,14 +139,14 @@ export function EditShiftModal({ isOpen, onClose, shiftId }: EditShiftModalProps
     defaultValues: {
       title: "",
       startDateTime: new Date(),
-      endDateTime: undefined,
+      endDateTime: new Date(),
       userId: undefined,
       clientId: undefined,
       isRecurring: false,
-      recurrenceType: undefined,
-      endConditionType: undefined,
-      numberOfOccurrences: undefined,
-      recurrenceEndDate: undefined,
+      recurrenceType: "weekly",
+      endConditionType: "occurrences",
+      numberOfOccurrences: 1,
+      recurrenceEndDate: new Date(),
     },
   });
 

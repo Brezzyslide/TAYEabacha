@@ -12,6 +12,7 @@ import { Shift } from "@shared/schema";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import { EditShiftModal } from "./components/EditShiftModal";
+import { ShiftActionButtons } from "./components/ShiftActionButtons";
 
 interface ShiftAnalytics {
   totalShifts: number;
@@ -376,22 +377,8 @@ export default function ShiftCalendar() {
                                       <span>Staff ID: {shift.userId}</span>
                                     </div>
                                   )}
-                                  <div className="pt-2 flex space-x-2">
-                                    {status === 'unassigned' && !userIsAdmin && (
-                                      <Button size="sm" variant="outline" className="w-full">
-                                        Request Shift
-                                      </Button>
-                                    )}
-                                    {status === 'assigned' && shift.userId === user?.id && (
-                                      <Button size="sm" className="w-full">
-                                        Start Shift
-                                      </Button>
-                                    )}
-                                    {status === 'in-progress' && shift.userId === user?.id && (
-                                      <Button size="sm" variant="destructive" className="w-full">
-                                        End Shift
-                                      </Button>
-                                    )}
+                                  <div className="pt-2 flex flex-col space-y-2">
+                                    <ShiftActionButtons shift={shift} />
                                     {userIsAdmin && (
                                       <Button 
                                         size="sm" 
@@ -446,22 +433,8 @@ export default function ShiftCalendar() {
                                   {shift.userId ? `Staff ID: ${shift.userId}` : 'Unassigned'}
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex space-x-2">
-                                    {status === 'unassigned' && !userIsAdmin && (
-                                      <Button size="sm" variant="outline">
-                                        Request
-                                      </Button>
-                                    )}
-                                    {status === 'assigned' && shift.userId === user?.id && (
-                                      <Button size="sm">
-                                        Start
-                                      </Button>
-                                    )}
-                                    {status === 'in-progress' && shift.userId === user?.id && (
-                                      <Button size="sm" variant="destructive">
-                                        End
-                                      </Button>
-                                    )}
+                                  <div className="flex flex-col space-y-2">
+                                    <ShiftActionButtons shift={shift} />
                                     {userIsAdmin && (
                                       <Button 
                                         size="sm" 

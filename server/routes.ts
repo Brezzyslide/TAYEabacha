@@ -319,10 +319,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/shifts", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const shiftData = insertShiftSchema.parse({
+      // Convert string dates to Date objects before validation
+      const processedBody = {
         ...req.body,
+        startTime: req.body.startTime ? new Date(req.body.startTime) : undefined,
+        endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
         tenantId: req.user.tenantId,
-      });
+      };
+      
+      const shiftData = insertShiftSchema.parse(processedBody);
       
       const shift = await storage.createShift(shiftData);
       
