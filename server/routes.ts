@@ -711,10 +711,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Case Notes API
-  app.get("/api/clients/:clientId/case-notes", async (req: any, res) => {
+  app.get("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
-      const tenantId = 1; // Default tenant for testing
+      const tenantId = req.user.tenantId;
       
       const caseNotes = await storage.getCaseNotes(clientId, tenantId);
       
