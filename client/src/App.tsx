@@ -15,6 +15,7 @@ import Reports from "@/pages/reports";
 import Export from "@/pages/export";
 import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
 import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProfileDashboard";
+import SupportWorkPage from "@/pages/support-work";
 import ShiftDashboard from "@/app/shift/ShiftDashboard";
 import ShiftCalendar from "@/app/shift/ShiftCalendar";
 import MyAvailabilityPage from "@/app/staff-availability/MyAvailabilityPage";
@@ -30,6 +31,7 @@ function Router() {
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/clients" component={Clients} />
       <ProtectedRoute path="/client/:clientId" component={ClientProfileDemo} />
+      <ProtectedRoute path="/support-work" component={SupportWorkPage} />
       <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
