@@ -9,12 +9,10 @@ import MyShiftsTab from "./components/MyShiftsTab";
 import RequestedShiftsTab from "./components/RequestedShiftsTab";
 import ShiftRequestsTab from "./components/ShiftRequestsTab";
 import AllShiftsTab from "./components/AllShiftsTab";
-import RequestShiftModal from "./components/RequestShiftModal";
 
 export default function ShiftDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("my-shifts");
-  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   const isAdminOrCoordinator = user?.role === "Admin" || user?.role === "Coordinator";
   const isAdmin = user?.role === "Admin";
@@ -53,16 +51,6 @@ export default function ShiftDashboard() {
                     </TabsTrigger>
                   )}
                 </TabsList>
-                
-                {activeTab === "my-shifts" && (
-                  <Button 
-                    onClick={() => setIsRequestModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Request Shift
-                  </Button>
-                )}
               </div>
 
               <div className="mt-6">
@@ -90,11 +78,6 @@ export default function ShiftDashboard() {
           </div>
         </main>
       </div>
-
-      <RequestShiftModal
-        isOpen={isRequestModalOpen}
-        onClose={() => setIsRequestModalOpen(false)}
-      />
     </div>
   );
 }
