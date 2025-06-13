@@ -1,0 +1,242 @@
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Tenants table
+export const tenants = pgTable("tenants", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  settings: jsonb("settings").default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Users table with tenant association
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email"),
+  fullName: text("full_name").notNull(),
+  role: text("role").notNull().default("staff"), // admin, staff, viewer
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Clients table
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  dateOfBirth: timestamp("date_of_birth"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  careLevel: text("care_level"), // independent, assisted, memory_care
+  emergencyContact: text("emergency_contact"),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Form templates table
+export const formTemplates = pgTable("form_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  fields: jsonb("fields").notNull().default([]),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Form submissions table
+export const formSubmissions = pgTable("form_submissions", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => formTemplates.id),
+  clientId: integer("client_id").references(() => clients.id),
+  submittedBy: integer("submitted_by").notNull().references(() => users.id),
+  data: jsonb("data").notNull().default({}),
+  status: text("status").notNull().default("completed"), // pending, completed
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Shifts table
+export const shifts = pgTable("shifts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  location: text("location"),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  building: text("building"),
+  floor: text("floor"),
+  isActive: boolean("is_active").default(true),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Activity logs table
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  action: text("action").notNull(),
+  resourceType: text("resource_type").notNull(),
+  resourceId: integer("resource_id"),
+  description: text("description").notNull(),
+  metadata: jsonb("metadata").default({}),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relations
+export const tenantsRelations = relations(tenants, ({ many }) => ({
+  users: many(users),
+  clients: many(clients),
+  formTemplates: many(formTemplates),
+  formSubmissions: many(formSubmissions),
+  shifts: many(shifts),
+  activityLogs: many(activityLogs),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [users.tenantId],
+    references: [tenants.id],
+  }),
+  createdClients: many(clients),
+  createdFormTemplates: many(formTemplates),
+  formSubmissions: many(formSubmissions),
+  shifts: many(shifts),
+  activityLogs: many(activityLogs),
+}));
+
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [clients.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [clients.createdBy],
+    references: [users.id],
+  }),
+  formSubmissions: many(formSubmissions),
+}));
+
+export const formTemplatesRelations = relations(formTemplates, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [formTemplates.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [formTemplates.createdBy],
+    references: [users.id],
+  }),
+  submissions: many(formSubmissions),
+}));
+
+export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => ({
+  template: one(formTemplates, {
+    fields: [formSubmissions.templateId],
+    references: [formTemplates.id],
+  }),
+  client: one(clients, {
+    fields: [formSubmissions.clientId],
+    references: [clients.id],
+  }),
+  submittedBy: one(users, {
+    fields: [formSubmissions.submittedBy],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [formSubmissions.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const shiftsRelations = relations(shifts, ({ one }) => ({
+  user: one(users, {
+    fields: [shifts.userId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [shifts.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [activityLogs.userId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [activityLogs.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+// Insert schemas
+export const insertTenantSchema = createInsertSchema(tenants).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFormTemplateSchema = createInsertSchema(formTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertShiftSchema = createInsertSchema(shifts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Client = typeof clients.$inferSelect;
+export type InsertClient = z.infer<typeof insertClientSchema>;
+
+export type FormTemplate = typeof formTemplates.$inferSelect;
+export type InsertFormTemplate = z.infer<typeof insertFormTemplateSchema>;
+
+export type FormSubmission = typeof formSubmissions.$inferSelect;
+export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
+
+export type Shift = typeof shifts.$inferSelect;
+export type InsertShift = z.infer<typeof insertShiftSchema>;
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
