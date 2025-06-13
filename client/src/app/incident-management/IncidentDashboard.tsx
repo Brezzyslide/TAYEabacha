@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Filter, AlertTriangle, Clock, CheckCircle, Eye, Edit, Trash2 } from "lucide-react";
+import Sidebar from "@/components/layout/sidebar";
+import UniversalHeader from "@/components/layout/universal-header";
 import { CreateIncidentModal } from "./components/CreateIncidentModal";
 import { ViewIncidentModal } from "./components/ViewIncidentModal";
 import { CloseIncidentModal } from "./components/CloseIncidentModal";
@@ -61,8 +63,16 @@ export default function IncidentDashboard() {
   const { data: incidents = [], isLoading, error } = useQuery({
     queryKey: ["/api/incident-reports"],
     queryFn: async () => {
-      const res = await fetch("/api/incident-reports");
+      const res = await fetch("/api/incident-reports", {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('Authentication required');
+        }
         throw new Error('Failed to fetch incidents');
       }
       const data = await res.json();
