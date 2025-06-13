@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { FileText, Calendar, AlertTriangle, Pill } from "lucide-react";
 
 interface OverviewTabProps {
-  clientId: string;
-  companyId: string;
+  clientId?: string;
+  companyId?: string;
 }
 
 export default function OverviewTab({ clientId, companyId }: OverviewTabProps) {

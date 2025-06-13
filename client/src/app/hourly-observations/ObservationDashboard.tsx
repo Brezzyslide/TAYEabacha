@@ -1,20 +1,63 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Download, FileText, Grid3X3, List, Filter } from "lucide-react";
+import { Plus, Search, Download, FileText, Grid3X3, List, Filter, Home, Eye, Star } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import ObservationCard from "./components/ObservationCard";
-import ObservationRow from "./components/ObservationRow";
-import ObservationFormModal from "./components/ObservationFormModal";
 
 type ViewMode = "card" | "list";
 type FilterType = "all" | "behaviour" | "adl" | "health" | "social" | "communication";
+
+// Simple inline components
+const ObservationCard = ({ observation }: { observation: any }) => (
+  <Card className="mb-4">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Eye className="w-5 h-5" />
+        {observation.type || 'Observation'}
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="text-gray-600 mb-2">{observation.description || 'No description available'}</p>
+      <div className="flex gap-2 text-sm text-gray-500">
+        <span>{observation.createdAt ? new Date(observation.createdAt).toLocaleDateString() : 'No date'}</span>
+        <span>•</span>
+        <span>{observation.client || 'Unknown client'}</span>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const ObservationRow = ({ observation }: { observation: any }) => (
+  <div className="flex items-center justify-between p-4 border-b">
+    <div>
+      <h3 className="font-medium">{observation.type || 'Observation'}</h3>
+      <p className="text-gray-600 text-sm">{observation.description || 'No description'}</p>
+    </div>
+    <div className="text-sm text-gray-500">
+      {observation.createdAt ? new Date(observation.createdAt).toLocaleDateString() : 'No date'}
+    </div>
+  </div>
+);
+
+const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full">
+        <h2 className="text-xl font-bold mb-4">Add Observation</h2>
+        <p className="text-gray-600 mb-4">Observation form coming soon...</p>
+        <Button onClick={onClose}>Close</Button>
+      </div>
+    </div>
+  );
+};
 
 export default function ObservationDashboard() {
   const { user } = useAuth();
@@ -137,6 +180,18 @@ export default function ObservationDashboard() {
         <Header />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8 max-w-7xl">
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Home className="w-4 h-4" />
+                  Dashboard
+                </Button>
+              </Link>
+              <span>/</span>
+              <span className="text-foreground font-medium">Hourly Observations</span>
+            </div>
+
             {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hourly Observations</h1>
