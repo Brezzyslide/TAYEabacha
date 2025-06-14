@@ -18,7 +18,7 @@ import { format, isToday, isTomorrow, isYesterday, startOfWeek, endOfWeek, start
 type FilterPeriod = "daily" | "weekly" | "fortnightly";
 
 export default function ShiftCalendarTab() {
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
   const [selectedShiftForRequest, setSelectedShiftForRequest] = useState<Shift | null>(null);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
@@ -78,7 +78,7 @@ export default function ShiftCalendarTab() {
     return shifts.filter(shift => !shift.userId && (shift as any).status !== "requested");
   }, [shifts]);
 
-  // Filter shifts by period
+  // Filter shifts by period - strict filtering with complete date collapse
   const filteredShifts = useMemo(() => {
     const now = new Date();
     let startDate: Date;
@@ -86,17 +86,19 @@ export default function ShiftCalendarTab() {
 
     switch (filterPeriod) {
       case "daily":
+        // Only today's shifts
         startDate = startOfDay(now);
         endDate = endOfDay(now);
         break;
       case "weekly":
+        // Only this week's shifts
         startDate = startOfWeek(now);
         endDate = endOfWeek(now);
         break;
       case "fortnightly":
-        // Extend to show more shifts - current week plus next 2 weeks
-        startDate = startOfWeek(now);
-        endDate = addDays(endOfWeek(now), 14);
+        // Only next 2 weeks from today
+        startDate = startOfDay(now);
+        endDate = addDays(now, 14);
         break;
       default:
         return shifts;
