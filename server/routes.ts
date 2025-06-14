@@ -375,7 +375,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const shiftId = parseInt(req.params.id);
       const updateData = req.body;
       
+      console.log(`[SHIFT UPDATE] User ${req.user.id} (${req.user.role}) updating shift ${shiftId}`);
+      console.log(`[SHIFT UPDATE] Update data:`, JSON.stringify(updateData, null, 2));
+      console.log(`[SHIFT UPDATE] Tenant ID: ${req.user.tenantId}`);
+      
       const updatedShift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
+      
+      console.log(`[SHIFT UPDATE] Updated shift result:`, updatedShift ? 'SUCCESS' : 'FAILED - Shift not found');
+      
       if (!updatedShift) {
         return res.status(404).json({ message: "Shift not found" });
       }
@@ -390,8 +397,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       });
       
+      console.log(`[SHIFT UPDATE] Activity logged successfully`);
+      
       res.json(updatedShift);
     } catch (error) {
+      console.error(`[SHIFT UPDATE ERROR] Error updating shift ${req.params.id}:`, error);
+      console.error(`[SHIFT UPDATE ERROR] Stack trace:`, error.stack);
       res.status(500).json({ message: "Failed to update shift" });
     }
   });
