@@ -996,6 +996,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Medication Plans API
+  app.get("/api/medication-plans", requireAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      
+      // Get all medication plans for the tenant by fetching all clients first
+      const clients = await storage.getClients(tenantId);
+      let allPlans = [];
+      
+      for (const client of clients) {
+        const plans = await storage.getMedicationPlans(client.id, tenantId);
+        allPlans.push(...plans);
+      }
+      
+      // Sort by creation date (newest first)
+      allPlans.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      res.json(allPlans);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch medication plans" });
+    }
+  });
+
   app.get("/api/clients/:clientId/medication-plans", async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
@@ -1004,6 +1026,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(plans);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch medication plans" });
+    }
+  });
+
+  app.post("/api/medication-plans", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const planData = insertMedicationPlanSchema.parse({
+        ...req.body,
+        createdBy: req.user.id,
+        tenantId: req.user.tenantId,
+      });
+
+      const plan = await storage.createMedicationPlan(planData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_medication_plan",
+        resourceType: "medication_plan",
+        resourceId: plan.id,
+        description: `Created medication plan: ${plan.medicationName}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(plan);
+    } catch (error: any) {
+      console.error("Create medication plan error:", error);
+      res.status(500).json({ message: "Failed to create medication plan", error: error.message });
     }
   });
 

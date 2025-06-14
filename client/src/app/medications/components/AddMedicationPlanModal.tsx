@@ -5,6 +5,7 @@ import { z } from "zod";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -156,6 +157,9 @@ export default function AddMedicationPlanModal({
             <Pill className="h-5 w-5" />
             <span>Add New Medication Plan</span>
           </DialogTitle>
+          <DialogDescription>
+            Create a new medication plan for a client with dosage instructions and administration details.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
