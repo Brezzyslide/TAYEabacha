@@ -1,4 +1,5 @@
 import { Switch, Route } from "wouter";
+import { lazy } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,6 +32,7 @@ import MessageDashboard from "@/app/messages/MessageDashboard";
 import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import CompanyListPage from "@/app/admin/companies/CompanyListPage";
+import StaffHourDashboard from "@/app/staff-hour-allocations/StaffHourDashboard";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -47,6 +49,7 @@ function Router() {
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
       <ProtectedRoute path="/staff-availability" component={StaffAvailabilityPage} />
       <ProtectedRoute path="/manage-staff-availability" component={ManageStaffAvailabilityPage} />
+      <ProtectedRoute path="/staff-hour-allocations" component={StaffHourDashboard} />
       <ProtectedRoute path="/hourly-observations" component={ObservationDashboard} />
       <ProtectedRoute path="/case-notes" component={CaseNoteDashboard} />
       <ProtectedRoute path="/incident-management" component={IncidentDashboard} />

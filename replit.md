@@ -122,6 +122,8 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 14, 2025. Initial setup
 - June 14, 2025. Fixed shift editing functionality - resolved timestamp data type issue (Drizzle expects Date objects, not ISO strings)
 - June 14, 2025. Implemented true calendar collapse functionality with Daily/Weekly/Fortnightly/Monthly view toggles that change grid structure rather than just filtering content
+- June 14, 2025. Added Calendar view as default when opening Calendar tab instead of list view
+- June 14, 2025. Created complete Staff Hour Allocation module with analytics dashboard, allocation management, and shift enforcement capabilities
 
 ## User Preferences
 
