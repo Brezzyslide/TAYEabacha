@@ -99,20 +99,25 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
     resetForm();
   };
 
-  // Get unique roles from users
-  const availableRoles = Array.from(new Set(users.map(u => u.role))).filter(role => role);
+  // Get unique roles from users (excluding current user)
+  const availableRoles = Array.from(new Set(
+    users.filter(u => u.id !== user?.id).map(u => u.role)
+  )).filter(role => role);
+
+  // Get active staff from the same company/tenant (all users in API are active by default)
+  const activeStaff = users.filter(u => u.id !== user?.id);
 
   // Get recipients based on selection
   const getRecipientIds = () => {
     if (sendToAll) {
-      return users.filter(u => u.id !== user?.id).map(u => u.id);
+      return activeStaff.map(u => u.id);
     }
 
     let recipients: number[] = [...selectedUsers];
 
     // Add users by role
     selectedRoles.forEach(role => {
-      const roleUsers = users.filter(u => u.role === role && u.id !== user?.id);
+      const roleUsers = activeStaff.filter(u => u.role === role);
       roleUsers.forEach(u => {
         if (!recipients.includes(u.id)) {
           recipients.push(u.id);
@@ -173,7 +178,7 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
   };
 
   const recipientCount = getRecipientIds().length;
-  const canSendToAll = user?.role === "admin" || user?.role === "manager";
+  const canSendToAll = user?.role === "Admin" || user?.role === "Coordinator" || user?.role === "Manager";
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -258,7 +263,7 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
                 <>
                   {/* Role Selection */}
                   <div className="space-y-2">
-                    <Label className="text-sm">Select by Role:</Label>
+                    <Label className="text-sm">Select by Role (from staff directory):</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {availableRoles.map(role => (
                         <div key={role} className="flex items-center space-x-2">
@@ -268,7 +273,7 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
                             onCheckedChange={(checked) => handleRoleSelection(role, checked as boolean)}
                           />
                           <Label htmlFor={`role-${role}`} className="cursor-pointer capitalize">
-                            {role} ({users.filter(u => u.role === role && u.id !== user?.id).length})
+                            {role} ({activeStaff.filter(u => u.role === role).length})
                           </Label>
                         </div>
                       ))}
@@ -277,28 +282,31 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
 
                   {/* Individual User Selection */}
                   <div className="space-y-2">
-                    <Label className="text-sm">Select Individual Users:</Label>
+                    <Label className="text-sm">Select Individual Staff Members:</Label>
                     <div className="max-h-40 overflow-y-auto border rounded-md p-3 space-y-2">
-                      {users
-                        .filter(u => u.id !== user?.id)
-                        .map(u => (
-                          <div key={u.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`user-${u.id}`}
-                              checked={selectedUsers.includes(u.id)}
-                              onCheckedChange={(checked) => handleUserSelection(u.id, checked as boolean)}
-                            />
-                            <Label htmlFor={`user-${u.id}`} className="cursor-pointer flex-1">
-                              <div className="flex items-center justify-between">
-                                <span>{u.fullName || u.username}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {u.role}
-                                </Badge>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
+                      {activeStaff.map(u => (
+                        <div key={u.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`user-${u.id}`}
+                            checked={selectedUsers.includes(u.id)}
+                            onCheckedChange={(checked) => handleUserSelection(u.id, checked as boolean)}
+                          />
+                          <Label htmlFor={`user-${u.id}`} className="cursor-pointer flex-1">
+                            <div className="flex items-center justify-between">
+                              <span>{u.fullName || u.username}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {u.role}
+                              </Badge>
+                            </div>
+                          </Label>
+                        </div>
+                      ))}
                     </div>
+                    {activeStaff.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No other staff members found in your company directory
+                      </p>
+                    )}
                   </div>
                 </>
               )}
