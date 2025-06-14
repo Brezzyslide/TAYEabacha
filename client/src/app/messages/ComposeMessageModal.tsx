@@ -44,7 +44,7 @@ type ComposeMessageForm = z.infer<typeof composeMessageSchema>;
 
 export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeMessageModalProps) {
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+
   const [sendToAll, setSendToAll] = useState(false);
 
   const { user } = useAuth();
@@ -90,7 +90,6 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
   const resetForm = () => {
     form.reset();
     setSelectedUsers([]);
-    setSelectedRoles([]);
     setSendToAll(false);
   };
 
@@ -112,20 +111,7 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
     if (sendToAll) {
       return activeStaff.map(u => u.id);
     }
-
-    let recipients: number[] = [...selectedUsers];
-
-    // Add users by role
-    selectedRoles.forEach(role => {
-      const roleUsers = activeStaff.filter(u => u.role === role);
-      roleUsers.forEach(u => {
-        if (!recipients.includes(u.id)) {
-          recipients.push(u.id);
-        }
-      });
-    });
-
-    return recipients;
+    return selectedUsers;
   };
 
   const handleUserSelection = (userId: number, checked: boolean) => {
@@ -136,19 +122,12 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
     }
   };
 
-  const handleRoleSelection = (role: string, checked: boolean) => {
-    if (checked) {
-      setSelectedRoles(prev => [...prev, role]);
-    } else {
-      setSelectedRoles(prev => prev.filter(r => r !== role));
-    }
-  };
+
 
   const handleSendToAllChange = (checked: boolean) => {
     setSendToAll(checked);
     if (checked) {
       setSelectedUsers([]);
-      setSelectedRoles([]);
     }
   };
 
@@ -240,83 +219,50 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
               )}
             />
 
-            {/* Recipients */}
-            <div className="space-y-4">
-              <Label className="text-sm font-medium">Recipients</Label>
+            {/* Send to All Staff */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="sendToAll"
+                checked={sendToAll}
+                onCheckedChange={handleSendToAllChange}
+              />
+              <Users className="h-4 w-4" />
+              <Label htmlFor="sendToAll" className="cursor-pointer">
+                Send to All Staff
+              </Label>
+            </div>
+
+            {/* Select Recipients */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Select Recipients</Label>
               
-              {/* Send to All */}
-              {canSendToAll && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sendToAll"
-                    checked={sendToAll}
-                    onCheckedChange={handleSendToAllChange}
-                  />
-                  <Label htmlFor="sendToAll" className="flex items-center space-x-2 cursor-pointer">
-                    <Users className="h-4 w-4" />
-                    <span>Send to All Staff</span>
-                  </Label>
-                </div>
-              )}
-
-              {!sendToAll && (
-                <>
-                  {/* Role Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Select by Role (from staff directory):</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {availableRoles.map(role => (
-                        <div key={role} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`role-${role}`}
-                            checked={selectedRoles.includes(role)}
-                            onCheckedChange={(checked) => handleRoleSelection(role, checked as boolean)}
-                          />
-                          <Label htmlFor={`role-${role}`} className="cursor-pointer capitalize">
-                            {role} ({activeStaff.filter(u => u.role === role).length})
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+              <div className="space-y-2 border rounded-md p-3 max-h-48 overflow-y-auto">
+                {activeStaff.map(u => (
+                  <div key={u.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`user-${u.id}`}
+                      checked={sendToAll || selectedUsers.includes(u.id)}
+                      disabled={sendToAll}
+                      onCheckedChange={(checked) => handleUserSelection(u.id, checked as boolean)}
+                    />
+                    <Label htmlFor={`user-${u.id}`} className="cursor-pointer flex-1">
+                      <span>{u.fullName || u.username} ({u.role?.toUpperCase() || 'STAFF'})</span>
+                    </Label>
                   </div>
+                ))}
+                {activeStaff.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No other staff members found in your company
+                  </p>
+                )}
+              </div>
 
-                  {/* Individual User Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Select Individual Staff Members:</Label>
-                    <div className="max-h-40 overflow-y-auto border rounded-md p-3 space-y-2">
-                      {activeStaff.map(u => (
-                        <div key={u.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`user-${u.id}`}
-                            checked={selectedUsers.includes(u.id)}
-                            onCheckedChange={(checked) => handleUserSelection(u.id, checked as boolean)}
-                          />
-                          <Label htmlFor={`user-${u.id}`} className="cursor-pointer flex-1">
-                            <div className="flex items-center justify-between">
-                              <span>{u.fullName || u.username}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {u.role}
-                              </Badge>
-                            </div>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    {activeStaff.length === 0 && (
-                      <p className="text-sm text-gray-500 text-center py-4">
-                        No other staff members found in your company directory
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Recipient Count */}
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <UserCheck className="h-4 w-4" />
-                <span>
-                  {recipientCount} recipient{recipientCount !== 1 ? 's' : ''} selected
-                </span>
+              <div className="text-xs text-gray-500">
+                {sendToAll ? (
+                  <span>All staff members will receive this message</span>
+                ) : (
+                  <span>{recipientCount} recipient{recipientCount !== 1 ? 's' : ''} selected</span>
+                )}
               </div>
             </div>
 

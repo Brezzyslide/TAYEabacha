@@ -1,0 +1,102 @@
+ Prompt for Replit Codex Agent
+
+Please update the medication administration form in:
+
+📁 `src/app/medications/components/RecordAdministrationModal.tsx`
+
+---
+
+### 🎯 Functionality:
+
+This modal should allow a staff user to record a medication administration for a client, using the following fields:
+
+- **Medication**: Dropdown populated from active plans for that client
+- **Time of Day**: Dropdown – Morning (AM), Afternoon (PM), Night
+- **Status**: Dropdown – Administered / Refused / Missed
+- **Route**: Dropdown – Oral / Injection / Topical / Other
+- **Date & Time**: Default = now, editable
+- **Notes**: Optional free text
+- **Administration Witnessed**: Toggle switch
+
+---
+
+### 📸 Mandatory Attachments:
+
+1. **Photo of Medication Before Administration**  
+   - Label: "Upload photo before administering medication"  
+   - Required
+
+2. **Photo of Webster Pack After Administration**  
+   - Label: "Upload photo of Webster pack post-administration"  
+   - Required
+
+✅ Both must be attached before allowing form submission.
+
+---
+
+### ✅ On Submit:
+
+Save the following to the `medicationRecords` table:
+
+```ts
+{
+  clientId,
+  companyId,
+  staffId,
+  planId,
+  medicationName,
+  status,              // Administered, Refused, Missed
+  route,               // Oral, Injection, etc.
+  timeOfDay,
+  dateTime,
+  notes,
+  wasWitnessed: true | false,
+  attachmentBeforeUrl,
+  attachmentAfterUrl,
+  createdAt
+}
+Store attachments using cloud storage (mock with uploadPreview URL or placeholder if needed).
+
+💡 UI Requirements:
+Use react-hook-form + zod for validation
+
+Validate that both files are present before enabling submit
+
+Use ShadCN File Input or Dropzone
+
+Add inline error: "Both before and after photos must be uploaded"
+
+🔐 Access:
+Only users with access to clientId and companyId can record
+
+Role check: SupportWorker and above
+
+Tools:
+
+Tailwind + ShadCN
+
+TanStack Query
+
+date-fns
+
+Local preview of images before upload (optional)
+
+yaml
+Copy
+Edit
+
+---
+
+Let me know if you'd like this form to also trigger:
+- A new **Case Note** if medication is refused
+- A **notification to Team Leader** if not witnessed
+
+This now brings your Medication Module up to clinical compliance level.
+
+
+
+
+
+
+
+
