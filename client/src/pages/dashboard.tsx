@@ -23,38 +23,28 @@ export default function Dashboard() {
         <Header />
         
         <main className="flex-1 p-6 space-y-6">
-          {canViewWorkflowDashboard ? (
-            <Tabs defaultValue="insights" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="insights">System Insights</TabsTrigger>
-                {canManageTasks && <TabsTrigger value="tasks">Task Board</TabsTrigger>}
-                <TabsTrigger value="quick">Quick Actions</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="insights" className="space-y-6">
-                <AutoInsightsPanel />
-              </TabsContent>
-              
-              {canManageTasks && (
-                <TabsContent value="tasks" className="space-y-6">
-                  <ManualTaskBoard />
-                </TabsContent>
-              )}
-              
-              <TabsContent value="quick" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <QuickActions />
-                  <RecentActivity />
-                </div>
-              </TabsContent>
-            </Tabs>
-          ) : (
-            // Fallback for roles without workflow permissions
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <QuickActions />
-              <RecentActivity />
-            </div>
-          )}
+          <Tabs defaultValue="insights" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="insights">System Insights</TabsTrigger>
+              <TabsTrigger value="tasks">Task Board</TabsTrigger>
+              <TabsTrigger value="quick">Quick Actions</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="insights" className="space-y-6">
+              <AutoInsightsPanel />
+            </TabsContent>
+            
+            <TabsContent value="tasks" className="space-y-6">
+              <ManualTaskBoard />
+            </TabsContent>
+            
+            <TabsContent value="quick" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <QuickActions />
+                <RecentActivity />
+              </div>
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </div>
