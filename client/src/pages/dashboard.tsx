@@ -35,7 +35,7 @@ export default function Dashboard() {
             </TabsContent>
             
             <TabsContent value="tasks" className="space-y-6">
-              <ManualTaskBoard />
+              <ManualTaskBoard key="task-board-persistent" />
             </TabsContent>
             
             <TabsContent value="quick" className="space-y-6">

@@ -49,13 +49,19 @@ export default function ManualTaskBoard() {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
 
-  // Fetch data
-  const { data: tasks = [], isLoading } = useQuery<Task[]>({
+  // Fetch data with better stability
+  const { data: tasks = [], isLoading, error } = useQuery<Task[]>({
     queryKey: ['/api/task-board-tasks'],
+    staleTime: 30000, // Keep data fresh for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const { data: users = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
+    staleTime: 60000, // Users change less frequently
+    gcTime: 600000, // Keep in cache for 10 minutes
   });
 
   // Form state
@@ -153,23 +159,49 @@ export default function ManualTaskBoard() {
     return user ? (user.fullName || user.username) : "Unknown User";
   };
 
+  // Error handling
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Badge variant="secondary">Error Loading Tasks</Badge>
+          </div>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        </div>
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6 text-center">
+            <p className="text-red-600">Failed to load task board. Please refresh the page.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {["To Do", "In Progress", "Completed"].map((status) => (
-          <Card key={status} className="animate-pulse">
-            <CardHeader>
-              <div className="h-6 bg-gray-200 rounded w-24"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-20 bg-gray-200 rounded"></div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Badge variant="secondary">Loading Tasks...</Badge>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {["To Do", "In Progress", "Completed"].map((status) => (
+            <Card key={status} className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 bg-gray-200 rounded w-24"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
