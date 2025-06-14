@@ -22,7 +22,7 @@ export default function QuickActions() {
       icon: UserPlus,
       iconBg: "bg-blue-100",
       iconColor: "text-blue-600",
-      onClick: () => navigate("/clients")
+      onClick: () => navigate("/clients/create")
     },
     {
       title: "Start Shift",
@@ -30,7 +30,7 @@ export default function QuickActions() {
       icon: Play,
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
-      onClick: () => navigate("/shifts")
+      onClick: () => navigate("/shift")
     },
     {
       title: "Incident Report",
@@ -41,12 +41,12 @@ export default function QuickActions() {
       onClick: () => navigate("/incident-management")
     },
     {
-      title: "Export Data",
-      description: "Download CSV reports",
+      title: "View All Clients",
+      description: "Browse client list",
       icon: Download,
       iconBg: "bg-indigo-100",
       iconColor: "text-indigo-600",
-      onClick: () => navigate("/export")
+      onClick: () => navigate("/clients")
     }
   ];
 
