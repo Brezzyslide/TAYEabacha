@@ -1,12 +1,21 @@
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Play, Plus, Download, AlertTriangle } from "lucide-react";
+import { UserPlus, Play, Plus, Download, AlertTriangle, BarChart3 } from "lucide-react";
 
 export default function QuickActions() {
   const [, navigate] = useLocation();
 
   const quickActions = [
+    {
+      title: "Workflow Dashboard",
+      description: "View insights & manage tasks",
+      icon: BarChart3,
+      iconBg: "bg-gradient-to-r from-blue-100 to-purple-100",
+      iconColor: "text-blue-600",
+      onClick: () => navigate("/workflow-dashboard"),
+      featured: true
+    },
     {
       title: "Add New Client",
       description: "Create client profile",
@@ -22,14 +31,6 @@ export default function QuickActions() {
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
       onClick: () => navigate("/shifts")
-    },
-    {
-      title: "Create Form",
-      description: "Build dynamic form",
-      icon: Plus,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-      onClick: () => navigate("/forms")
     },
     {
       title: "Incident Report",
