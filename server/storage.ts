@@ -1,6 +1,7 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
+  customRoles, customPermissions, userRoleAssignments,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -8,7 +9,9 @@ import {
   type HourlyObservation, type InsertHourlyObservation,
   type MedicationPlan, type InsertMedicationPlan, type MedicationRecord, type InsertMedicationRecord,
   type IncidentReport, type InsertIncidentReport, type IncidentClosure, type InsertIncidentClosure,
-  type StaffMessage, type InsertStaffMessage, type HourAllocation, type InsertHourAllocation
+  type StaffMessage, type InsertStaffMessage, type HourAllocation, type InsertHourAllocation,
+  type CustomRole, type InsertCustomRole, type CustomPermission, type InsertCustomPermission,
+  type UserRoleAssignment, type InsertUserRoleAssignment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -126,6 +129,27 @@ export interface IStorage {
   updateHourAllocation(id: number, allocation: Partial<InsertHourAllocation>, tenantId: number): Promise<HourAllocation | undefined>;
   deleteHourAllocation(id: number, tenantId: number): Promise<boolean>;
   getHourAllocationStats(tenantId: number): Promise<any>;
+
+  // Custom Roles
+  getCustomRoles(tenantId: number): Promise<CustomRole[]>;
+  getCustomRole(id: number, tenantId: number): Promise<CustomRole | undefined>;
+  createCustomRole(role: InsertCustomRole): Promise<CustomRole>;
+  updateCustomRole(id: number, role: Partial<InsertCustomRole>, tenantId: number): Promise<CustomRole | undefined>;
+  deleteCustomRole(id: number, tenantId: number): Promise<boolean>;
+
+  // Custom Permissions
+  getCustomPermissions(tenantId: number): Promise<CustomPermission[]>;
+  getCustomPermissionsByRole(roleId: number, tenantId: number): Promise<CustomPermission[]>;
+  createCustomPermission(permission: InsertCustomPermission): Promise<CustomPermission>;
+  updateCustomPermission(id: number, permission: Partial<InsertCustomPermission>, tenantId: number): Promise<CustomPermission | undefined>;
+  deleteCustomPermission(id: number, tenantId: number): Promise<boolean>;
+
+  // User Role Assignments
+  getUserRoleAssignments(tenantId: number): Promise<UserRoleAssignment[]>;
+  getUserRoleAssignment(userId: number, tenantId: number): Promise<UserRoleAssignment | undefined>;
+  createUserRoleAssignment(assignment: InsertUserRoleAssignment): Promise<UserRoleAssignment>;
+  updateUserRoleAssignment(id: number, assignment: Partial<InsertUserRoleAssignment>, tenantId: number): Promise<UserRoleAssignment | undefined>;
+  deleteUserRoleAssignment(id: number, tenantId: number): Promise<boolean>;
 
   // Session store
   sessionStore: any;
@@ -966,6 +990,138 @@ export class DatabaseStorage implements IStorage {
       unallocatedHours: Math.round(totalRemainingHours * 10) / 10,
       allocationRate,
     };
+  }
+
+  // Custom Roles methods
+  async getCustomRoles(tenantId: number): Promise<CustomRole[]> {
+    return await db.select().from(customRoles)
+      .where(and(
+        eq(customRoles.tenantId, tenantId),
+        eq(customRoles.isActive, true)
+      ))
+      .orderBy(desc(customRoles.createdAt));
+  }
+
+  async getCustomRole(id: number, tenantId: number): Promise<CustomRole | undefined> {
+    const [role] = await db.select().from(customRoles)
+      .where(and(
+        eq(customRoles.id, id),
+        eq(customRoles.tenantId, tenantId),
+        eq(customRoles.isActive, true)
+      ));
+    return role;
+  }
+
+  async createCustomRole(insertRole: InsertCustomRole): Promise<CustomRole> {
+    const [role] = await db.insert(customRoles).values(insertRole).returning();
+    return role;
+  }
+
+  async updateCustomRole(id: number, updateRole: Partial<InsertCustomRole>, tenantId: number): Promise<CustomRole | undefined> {
+    const [role] = await db.update(customRoles)
+      .set({ ...updateRole, updatedAt: new Date() })
+      .where(and(
+        eq(customRoles.id, id),
+        eq(customRoles.tenantId, tenantId)
+      ))
+      .returning();
+    return role;
+  }
+
+  async deleteCustomRole(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.update(customRoles)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(customRoles.id, id),
+        eq(customRoles.tenantId, tenantId)
+      ));
+    return result.rowCount! > 0;
+  }
+
+  // Custom Permissions methods
+  async getCustomPermissions(tenantId: number): Promise<CustomPermission[]> {
+    return await db.select().from(customPermissions)
+      .where(eq(customPermissions.tenantId, tenantId))
+      .orderBy(desc(customPermissions.createdAt));
+  }
+
+  async getCustomPermissionsByRole(roleId: number, tenantId: number): Promise<CustomPermission[]> {
+    return await db.select().from(customPermissions)
+      .where(and(
+        eq(customPermissions.roleId, roleId),
+        eq(customPermissions.tenantId, tenantId)
+      ));
+  }
+
+  async createCustomPermission(insertPermission: InsertCustomPermission): Promise<CustomPermission> {
+    const [permission] = await db.insert(customPermissions).values(insertPermission).returning();
+    return permission;
+  }
+
+  async updateCustomPermission(id: number, updatePermission: Partial<InsertCustomPermission>, tenantId: number): Promise<CustomPermission | undefined> {
+    const [permission] = await db.update(customPermissions)
+      .set({ ...updatePermission, updatedAt: new Date() })
+      .where(and(
+        eq(customPermissions.id, id),
+        eq(customPermissions.tenantId, tenantId)
+      ))
+      .returning();
+    return permission;
+  }
+
+  async deleteCustomPermission(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.delete(customPermissions)
+      .where(and(
+        eq(customPermissions.id, id),
+        eq(customPermissions.tenantId, tenantId)
+      ));
+    return result.rowCount! > 0;
+  }
+
+  // User Role Assignments methods
+  async getUserRoleAssignments(tenantId: number): Promise<UserRoleAssignment[]> {
+    return await db.select().from(userRoleAssignments)
+      .where(and(
+        eq(userRoleAssignments.tenantId, tenantId),
+        eq(userRoleAssignments.isActive, true)
+      ))
+      .orderBy(desc(userRoleAssignments.assignedAt));
+  }
+
+  async getUserRoleAssignment(userId: number, tenantId: number): Promise<UserRoleAssignment | undefined> {
+    const [assignment] = await db.select().from(userRoleAssignments)
+      .where(and(
+        eq(userRoleAssignments.userId, userId),
+        eq(userRoleAssignments.tenantId, tenantId),
+        eq(userRoleAssignments.isActive, true)
+      ));
+    return assignment;
+  }
+
+  async createUserRoleAssignment(insertAssignment: InsertUserRoleAssignment): Promise<UserRoleAssignment> {
+    const [assignment] = await db.insert(userRoleAssignments).values(insertAssignment).returning();
+    return assignment;
+  }
+
+  async updateUserRoleAssignment(id: number, updateAssignment: Partial<InsertUserRoleAssignment>, tenantId: number): Promise<UserRoleAssignment | undefined> {
+    const [assignment] = await db.update(userRoleAssignments)
+      .set(updateAssignment)
+      .where(and(
+        eq(userRoleAssignments.id, id),
+        eq(userRoleAssignments.tenantId, tenantId)
+      ))
+      .returning();
+    return assignment;
+  }
+
+  async deleteUserRoleAssignment(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.update(userRoleAssignments)
+      .set({ isActive: false })
+      .where(and(
+        eq(userRoleAssignments.id, id),
+        eq(userRoleAssignments.tenantId, tenantId)
+      ));
+    return result.rowCount! > 0;
   }
 }
 

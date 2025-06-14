@@ -819,3 +819,12 @@ export type InsertStaffMessage = z.infer<typeof insertStaffMessageSchema>;
 
 export type HourAllocation = typeof hourAllocations.$inferSelect;
 export type InsertHourAllocation = z.infer<typeof insertHourAllocationSchema>;
+
+export type CustomRole = typeof customRoles.$inferSelect;
+export type InsertCustomRole = z.infer<typeof insertCustomRoleSchema>;
+
+export type CustomPermission = typeof customPermissions.$inferSelect;
+export type InsertCustomPermission = z.infer<typeof insertCustomPermissionSchema>;
+
+export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
+export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
