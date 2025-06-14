@@ -75,6 +75,9 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
         description,
       };
 
+      console.log("[CLIENT] Sending shift update:", updateData);
+      console.log("[CLIENT] Shift ID:", shift.id);
+
       const response = await fetch(`/api/shifts/${shift.id}`, {
         method: "PUT",
         headers: {
@@ -82,6 +85,9 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
         },
         body: JSON.stringify(updateData),
       });
+
+      console.log("[CLIENT] Response status:", response.status);
+      console.log("[CLIENT] Response ok:", response.ok);
       
       if (!response.ok) {
         throw new Error("Failed to update shift");
