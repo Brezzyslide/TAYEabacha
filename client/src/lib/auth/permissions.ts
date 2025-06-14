@@ -78,3 +78,23 @@ export const hasAction = (roleName: string, module: string, action: string): boo
   
   return permission.actions.includes("*") || permission.actions.includes(action);
 };
+
+/**
+ * Check if a user has a specific permission capability
+ */
+export const hasPermission = (user: any, capability: string): boolean => {
+  if (!user?.role) return false;
+  
+  switch (capability) {
+    case "canEditBudget":
+      return ["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(user.role);
+    case "canViewPricing":
+      return ["Admin", "ConsoleManager"].includes(user.role);
+    case "canManageBudgets":
+      return ["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(user.role);
+    case "canViewBudgets":
+      return ["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(user.role);
+    default:
+      return false;
+  }
+};

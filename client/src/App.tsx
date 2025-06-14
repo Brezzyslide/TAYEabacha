@@ -35,6 +35,7 @@ import CompanyListPage from "@/app/admin/companies/CompanyListPage";
 import StaffHourDashboard from "@/app/staff-hour-allocations/StaffHourDashboard";
 import RolesPermissionsDashboard from "@/app/roles-permissions/RolesPermissionsDashboard";
 import WorkflowDashboard from "@/app/workflow-dashboard/WorkflowDashboard";
+import BudgetDashboard from "@/app/budget-management/BudgetDashboard";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -60,6 +61,7 @@ function Router() {
       <ProtectedRoute path="/staff" component={Staff} />
       <ProtectedRoute path="/roles-permissions" component={RolesPermissionsDashboard} />
       <ProtectedRoute path="/workflow-dashboard" component={WorkflowDashboard} />
+      <ProtectedRoute path="/budget-management" component={BudgetDashboard} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
