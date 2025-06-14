@@ -1012,12 +1012,12 @@ export class DatabaseStorage implements IStorage {
     return role;
   }
 
-  async createCustomRole(insertRole: InsertCustomRole): Promise<CustomRole> {
+  async createCustomRole(insertRole: any): Promise<CustomRole> {
     const [role] = await db.insert(customRoles).values(insertRole).returning();
     return role;
   }
 
-  async updateCustomRole(id: number, updateRole: Partial<InsertCustomRole>, tenantId: number): Promise<CustomRole | undefined> {
+  async updateCustomRole(id: number, updateRole: any, tenantId: number): Promise<CustomRole | undefined> {
     const [role] = await db.update(customRoles)
       .set({ ...updateRole, updatedAt: new Date() })
       .where(and(

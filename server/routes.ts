@@ -1743,12 +1743,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/custom-roles", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
+      console.log("API: Received role creation request:", req.body);
+      console.log("API: User info:", { id: req.user.id, tenantId: req.user.tenantId });
+      
       const { insertCustomRoleSchema } = await import("@shared/schema");
       const roleData = insertCustomRoleSchema.parse({
         ...req.body,
         tenantId: req.user.tenantId,
         createdBy: req.user.id,
       });
+
+      console.log("API: Validated role data:", roleData);
 
       const role = await storage.createCustomRole(roleData);
       
@@ -1762,8 +1767,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json(role);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to create custom role" });
+    } catch (error: any) {
+      console.error("API: Role creation error:", error);
+      res.status(500).json({ message: "Failed to create custom role", error: error.message });
     }
   });
 
