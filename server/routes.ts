@@ -1089,6 +1089,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Medication Records API
+  app.get("/api/medication-records", requireAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      
+      // Get all medication records for the tenant
+      const records = await db.select({
+        id: medicationRecords.id,
+        medicationPlanId: medicationRecords.medicationPlanId,
+        clientId: medicationRecords.clientId,
+        administeredBy: medicationRecords.administeredBy,
+        medicationName: medicationRecords.medicationName,
+        scheduledTime: medicationRecords.scheduledTime,
+        actualTime: medicationRecords.actualTime,
+        dateTime: medicationRecords.dateTime,
+        timeOfDay: medicationRecords.timeOfDay,
+        route: medicationRecords.route,
+        status: medicationRecords.status,
+        result: medicationRecords.result,
+        notes: medicationRecords.notes,
+        wasWitnessed: medicationRecords.wasWitnessed,
+        attachmentBeforeUrl: medicationRecords.attachmentBeforeUrl,
+        attachmentAfterUrl: medicationRecords.attachmentAfterUrl,
+        createdAt: medicationRecords.createdAt,
+      }).from(medicationRecords)
+        .where(eq(medicationRecords.tenantId, tenantId))
+        .orderBy(desc(medicationRecords.createdAt));
+      
+      res.json(records);
+    } catch (error) {
+      console.error("Medication records API error:", error);
+      res.status(500).json({ message: "Failed to fetch medication records" });
+    }
+  });
+
+  app.post("/api/medication-records", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker"]), async (req: any, res) => {
+    try {
+      const recordData = {
+        ...req.body,
+        administeredBy: req.user.id,
+        tenantId: req.user.tenantId,
+        // Map status to result for backward compatibility
+        result: req.body.status?.toLowerCase() || "administered",
+      };
+
+      const record = await storage.createMedicationRecord(recordData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_medication_record",
+        resourceType: "medication_record",
+        resourceId: record.id,
+        description: `Recorded medication administration: ${record.medicationName} - ${record.status}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.status(201).json(record);
+    } catch (error) {
+      console.error("Create medication record error:", error);
+      res.status(500).json({ message: "Failed to create medication record" });
+    }
+  });
+
   // Staff Messages API
   app.get("/api/messages", requireAuth, async (req: any, res) => {
     try {

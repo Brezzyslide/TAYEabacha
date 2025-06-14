@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, Pill, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
+import { Plus, Search, Filter, Pill, Clock, CheckCircle, AlertTriangle, Calendar, Camera } from "lucide-react";
 import Sidebar from "@/components/layout/sidebar";
 import UniversalHeader from "@/components/layout/universal-header";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import RecordAdministrationModal from "./components/RecordAdministrationModal";
 
 interface MedicationPlan {
   id: number;
@@ -48,6 +49,13 @@ export default function MedicationDashboard() {
   const [clientFilter, setClientFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("plans");
+  const [recordAdminModal, setRecordAdminModal] = useState<{
+    isOpen: boolean;
+    clientId?: number;
+    clientName?: string;
+  }>({
+    isOpen: false,
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -291,11 +299,21 @@ export default function MedicationDashboard() {
                               )}
                             </div>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
-                                Edit
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setRecordAdminModal({
+                                  isOpen: true,
+                                  clientId: plan.clientId,
+                                  clientName: getClientName(plan.clientId),
+                                })}
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              >
+                                <Camera className="h-3 w-3 mr-1" />
+                                Record Administration
                               </Button>
                               <Button variant="outline" size="sm">
-                                Records
+                                View Records
                               </Button>
                             </div>
                           </div>
@@ -371,6 +389,16 @@ export default function MedicationDashboard() {
           </Tabs>
         </main>
       </div>
+
+      {/* Record Administration Modal */}
+      {recordAdminModal.isOpen && recordAdminModal.clientId && recordAdminModal.clientName && (
+        <RecordAdministrationModal
+          isOpen={recordAdminModal.isOpen}
+          onClose={() => setRecordAdminModal({ isOpen: false })}
+          clientId={recordAdminModal.clientId}
+          clientName={recordAdminModal.clientName}
+        />
+      )}
     </div>
   );
 }
