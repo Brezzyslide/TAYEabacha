@@ -6,14 +6,14 @@ import AutoInsightsPanel from "@/app/workflow-dashboard/components/AutoInsightsP
 import ManualTaskBoard from "@/app/workflow-dashboard/components/ManualTaskBoard";
 import QuickActions from "@/components/dashboard/quick-actions";
 import RecentActivity from "@/components/dashboard/recent-activity";
-import { hasPermission } from "@/lib/auth/permissions";
+
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // Role-based dashboard filtering
-  const canViewWorkflowDashboard = hasPermission(user?.role, 'workflow', 'read');
-  const canManageTasks = hasPermission(user?.role, 'workflow', 'write');
+  // Role-based dashboard filtering - TeamLeader+ can access workflow features
+  const canViewWorkflowDashboard = ['TeamLeader', 'Coordinator', 'Admin', 'ConsoleManager'].includes(user?.role || '');
+  const canManageTasks = ['TeamLeader', 'Coordinator', 'Admin', 'ConsoleManager'].includes(user?.role || '');
 
   return (
     <div className="min-h-screen flex">
