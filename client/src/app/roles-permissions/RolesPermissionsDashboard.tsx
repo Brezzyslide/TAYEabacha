@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CustomRole, CustomPermission, UserRoleAssignment } from "@shared/schema";
 import CreateRoleModal from "./components/CreateRoleModal";
+import PermissionOverrideModal from "./components/PermissionOverrideModal";
 
 interface RoleStats {
   totalCustomRoles: number;
@@ -33,6 +34,8 @@ export default function RolesPermissionsDashboard() {
   const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState<CustomRole | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+  const [selectedBuiltInRole, setSelectedBuiltInRole] = useState<{ name: string; displayName: string } | null>(null);
 
   // Fetch data
   const { data: customRoles = [], isLoading: rolesLoading } = useQuery<CustomRole[]>({
@@ -260,7 +263,14 @@ export default function RolesPermissionsDashboard() {
                       </p>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-500">Users: {role.userCount}</span>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedBuiltInRole({ name: role.name, displayName: role.displayName });
+                            setIsOverrideModalOpen(true);
+                          }}
+                        >
                           <Settings className="h-3 w-3 mr-1" />
                           Override
                         </Button>
@@ -502,6 +512,19 @@ export default function RolesPermissionsDashboard() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
       />
+
+      {/* Permission Override Modal */}
+      {selectedBuiltInRole && (
+        <PermissionOverrideModal
+          isOpen={isOverrideModalOpen}
+          onClose={() => {
+            setIsOverrideModalOpen(false);
+            setSelectedBuiltInRole(null);
+          }}
+          roleName={selectedBuiltInRole.name}
+          roleDisplayName={selectedBuiltInRole.displayName}
+        />
+      )}
     </div>
   );
 }
