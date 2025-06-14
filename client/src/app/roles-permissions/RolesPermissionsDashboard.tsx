@@ -21,6 +21,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { CustomRole, CustomPermission, UserRoleAssignment } from "@shared/schema";
 import CreateRoleModal from "./components/CreateRoleModal";
 import PermissionOverrideModal from "./components/PermissionOverrideModal";
+import AssignRoleModal from "./components/AssignRoleModal";
 
 interface RoleStats {
   totalCustomRoles: number;
@@ -35,6 +36,7 @@ export default function RolesPermissionsDashboard() {
   const [selectedRole, setSelectedRole] = useState<CustomRole | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedBuiltInRole, setSelectedBuiltInRole] = useState<{ name: string; displayName: string } | null>(null);
 
   // Fetch data
@@ -446,7 +448,7 @@ export default function RolesPermissionsDashboard() {
                   Manage custom role assignments for individual users
                 </p>
               </div>
-              <Button disabled>
+              <Button onClick={() => setIsAssignModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Assign Role
               </Button>
@@ -461,7 +463,7 @@ export default function RolesPermissionsDashboard() {
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Assign custom roles to users to override their default built-in role permissions.
                   </p>
-                  <Button disabled>
+                  <Button onClick={() => setIsAssignModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Assignment
                   </Button>

@@ -1,26 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertCustomPermissionSchema } from "@shared/schema";
 
 interface PermissionOverrideModalProps {
   isOpen: boolean;
@@ -28,6 +14,27 @@ interface PermissionOverrideModalProps {
   roleName: string;
   roleDisplayName: string;
 }
+
+const MODULES = [
+  "Client Management",
+  "Staff Management", 
+  "Shift Management",
+  "Case Notes",
+  "Medication Management",
+  "Incident Reports",
+  "Hourly Observations",
+  "Form Templates",
+  "Hour Allocation",
+  "Internal Messaging",
+  "Roles & Permissions"
+];
+
+const ACTIONS = ["view", "create", "edit", "delete"];
+const SCOPES = [
+  { value: "assigned", label: "Assigned Only" },
+  { value: "company", label: "Company-wide" },
+  { value: "global", label: "Global (ConsoleManager only)" }
+];
 
 export default function PermissionOverrideModal({ 
   isOpen, 
@@ -38,191 +45,132 @@ export default function PermissionOverrideModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [selectedModule, setSelectedModule] = useState("");
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
-  const [selectedScope, setSelectedScope] = useState("");
+  const [formData, setFormData] = useState({
+    module: "",
+    actions: [] as string[],
+    scope: "",
+  });
 
-  const createOverrideMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const validatedData = insertCustomPermissionSchema.parse({
-        ...data,
-        isOverride: true,
-        builtInRole: roleName,
+  const createPermissionMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      if (!data.module || data.actions.length === 0 || !data.scope) {
+        throw new Error("Please fill in all fields");
+      }
+      
+      return apiRequest('POST', '/api/custom-permissions', {
+        roleName,
+        module: data.module,
+        actions: data.actions,
+        scope: data.scope,
       });
-      return apiRequest('/api/custom-permissions', 'POST', validatedData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/custom-permissions'] });
-      toast({ title: "Permission override created successfully" });
+      toast({ title: `Permission override created for ${roleDisplayName}` });
       onClose();
-      resetForm();
+      setFormData({ module: "", actions: [], scope: "" });
     },
     onError: (error: any) => {
       toast({ 
-        title: "Failed to create override", 
-        description: error.message || "Please try again",
+        title: "Failed to create permission override", 
+        description: error.message,
         variant: "destructive" 
       });
     },
   });
 
-  const resetForm = () => {
-    setSelectedModule("");
-    setSelectedActions([]);
-    setSelectedScope("");
+  const handleActionChange = (action: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      actions: checked 
+        ? [...prev.actions, action]
+        : prev.actions.filter(a => a !== action)
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedModule || selectedActions.length === 0 || !selectedScope) {
-      toast({ 
-        title: "Validation Error", 
-        description: "Please select module, actions, and scope",
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    createOverrideMutation.mutate({
-      module: selectedModule,
-      actions: selectedActions,
-      scope: selectedScope,
-    });
+    createPermissionMutation.mutate(formData);
   };
-
-  const handleActionToggle = (action: string) => {
-    setSelectedActions(prev => 
-      prev.includes(action) 
-        ? prev.filter(a => a !== action)
-        : [...prev, action]
-    );
-  };
-
-  const modules = [
-    { value: "clients", label: "Client Management" },
-    { value: "shifts", label: "Shift Management" },
-    { value: "medications", label: "Medication Management" },
-    { value: "case-notes", label: "Case Notes" },
-    { value: "observations", label: "Hourly Observations" },
-    { value: "incidents", label: "Incident Reports" },
-    { value: "forms", label: "Dynamic Forms" },
-    { value: "reports", label: "Reports & Analytics" },
-    { value: "staff", label: "Staff Management" },
-    { value: "care-plans", label: "Care Plans" },
-  ];
-
-  const actions = [
-    { value: "view", label: "View" },
-    { value: "create", label: "Create" },
-    { value: "edit", label: "Edit" },
-    { value: "delete", label: "Delete" },
-    { value: "export", label: "Export" },
-  ];
-
-  const scopes = [
-    { value: "assigned", label: "Assigned Clients Only", description: "Only clients assigned to this user" },
-    { value: "company", label: "Company-wide", description: "All clients within the company" },
-    { value: "global", label: "Global Access", description: "System-wide access (ConsoleManager only)" },
-  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            Override Permissions for {roleDisplayName}
-          </DialogTitle>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Create custom permission rules that override the default permissions for this built-in role.
-          </p>
+          <DialogTitle>Override Permissions for {roleDisplayName}</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label>Module</Label>
-            <Select value={selectedModule} onValueChange={setSelectedModule}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="module">Module</Label>
+            <Select 
+              value={formData.module} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, module: value }))}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select module to override..." />
+                <SelectValue placeholder="Select module to override" />
               </SelectTrigger>
               <SelectContent>
-                {modules.map((module) => (
-                  <SelectItem key={module.value} value={module.value}>
-                    {module.label}
+                {MODULES.map(module => (
+                  <SelectItem key={module} value={module}>
+                    {module}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-3">
+          <div>
             <Label>Actions</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {actions.map((action) => (
-                <div key={action.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={action.value}
-                    checked={selectedActions.includes(action.value)}
-                    onCheckedChange={() => handleActionToggle(action.value)}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {ACTIONS.map(action => (
+                <div key={action} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={action}
+                    checked={formData.actions.includes(action)}
+                    onCheckedChange={(checked) => handleActionChange(action, checked as boolean)}
                   />
-                  <Label htmlFor={action.value} className="text-sm font-normal">
-                    {action.label}
+                  <Label 
+                    htmlFor={action} 
+                    className="text-sm font-normal capitalize"
+                  >
+                    {action}
                   </Label>
                 </div>
               ))}
             </div>
-            {selectedActions.length > 0 && (
-              <div className="flex gap-1 flex-wrap">
-                {selectedActions.map(action => (
-                  <Badge key={action} variant="secondary" className="text-xs">
-                    {action}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Access Scope</Label>
-            <Select value={selectedScope} onValueChange={setSelectedScope}>
+          <div>
+            <Label htmlFor="scope">Scope</Label>
+            <Select 
+              value={formData.scope} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, scope: value }))}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select access scope..." />
+                <SelectValue placeholder="Select permission scope" />
               </SelectTrigger>
               <SelectContent>
-                {scopes.map((scope) => (
+                {SCOPES.map(scope => (
                   <SelectItem key={scope.value} value={scope.value}>
-                    <div>
-                      <div className="font-medium">{scope.label}</div>
-                      <div className="text-xs text-gray-500">{scope.description}</div>
-                    </div>
+                    {scope.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-            <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-              Permission Override
-            </h4>
-            <p className="text-xs text-yellow-700 dark:text-yellow-300">
-              This will override the default permissions for <strong>{roleDisplayName}</strong> users 
-              in the <strong>{selectedModule}</strong> module. All users with this role will be affected.
-            </p>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" type="button" onClick={onClose}>
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={createOverrideMutation.isPending}
-              className="bg-orange-600 hover:bg-orange-700"
+              disabled={createPermissionMutation.isPending}
             >
-              {createOverrideMutation.isPending ? "Creating Override..." : "Create Override"}
+              {createPermissionMutation.isPending ? "Creating..." : "Create Override"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
