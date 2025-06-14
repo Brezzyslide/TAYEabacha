@@ -1,6 +1,6 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
-  medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages,
+  medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -8,7 +8,7 @@ import {
   type HourlyObservation, type InsertHourlyObservation,
   type MedicationPlan, type InsertMedicationPlan, type MedicationRecord, type InsertMedicationRecord,
   type IncidentReport, type InsertIncidentReport, type IncidentClosure, type InsertIncidentClosure,
-  type StaffMessage, type InsertStaffMessage
+  type StaffMessage, type InsertStaffMessage, type HourAllocation, type InsertHourAllocation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -118,6 +118,14 @@ export interface IStorage {
   getStaffMessagesByRecipient(userId: number, tenantId: number): Promise<StaffMessage[]>;
   getStaffMessagesBySender(userId: number, tenantId: number): Promise<StaffMessage[]>;
   markMessageAsRead(messageId: number, userId: number, tenantId: number): Promise<boolean>;
+
+  // Hour Allocations
+  getHourAllocations(tenantId: number): Promise<HourAllocation[]>;
+  getHourAllocation(id: number, tenantId: number): Promise<HourAllocation | undefined>;
+  createHourAllocation(allocation: InsertHourAllocation): Promise<HourAllocation>;
+  updateHourAllocation(id: number, allocation: Partial<InsertHourAllocation>, tenantId: number): Promise<HourAllocation | undefined>;
+  deleteHourAllocation(id: number, tenantId: number): Promise<boolean>;
+  getHourAllocationStats(tenantId: number): Promise<any>;
 
   // Session store
   sessionStore: any;
@@ -853,6 +861,105 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return (result.rowCount || 0) > 0;
+  }
+
+  // Hour Allocations methods
+  async getHourAllocations(tenantId: number): Promise<HourAllocation[]> {
+    return await db.select().from(hourAllocations)
+      .where(and(
+        eq(hourAllocations.tenantId, tenantId),
+        eq(hourAllocations.isActive, true)
+      ))
+      .orderBy(desc(hourAllocations.createdAt));
+  }
+
+  async getHourAllocation(id: number, tenantId: number): Promise<HourAllocation | undefined> {
+    const [allocation] = await db.select().from(hourAllocations)
+      .where(and(
+        eq(hourAllocations.id, id),
+        eq(hourAllocations.tenantId, tenantId)
+      ));
+    return allocation;
+  }
+
+  async createHourAllocation(insertAllocation: InsertHourAllocation): Promise<HourAllocation> {
+    // Convert number fields to strings for decimal columns
+    const processedData = {
+      ...insertAllocation,
+      maxHours: insertAllocation.maxHours.toString(),
+      hoursUsed: "0",
+      remainingHours: insertAllocation.maxHours.toString(),
+    };
+    const [allocation] = await db.insert(hourAllocations).values(processedData).returning();
+    return allocation;
+  }
+
+  async updateHourAllocation(id: number, updateAllocation: Partial<InsertHourAllocation>, tenantId: number): Promise<HourAllocation | undefined> {
+    // Convert number fields to strings for decimal columns
+    const processedData = { ...updateAllocation, updatedAt: new Date() };
+    if (updateAllocation.maxHours !== undefined) {
+      processedData.maxHours = updateAllocation.maxHours.toString();
+    }
+    
+    const [allocation] = await db.update(hourAllocations)
+      .set(processedData)
+      .where(and(
+        eq(hourAllocations.id, id),
+        eq(hourAllocations.tenantId, tenantId)
+      ))
+      .returning();
+    return allocation;
+  }
+
+  async deleteHourAllocation(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.update(hourAllocations)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(hourAllocations.id, id),
+        eq(hourAllocations.tenantId, tenantId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getHourAllocationStats(tenantId: number): Promise<any> {
+    const allocations = await this.getHourAllocations(tenantId);
+    const totalAllocations = allocations.length;
+    const weeklyAllocations = allocations.filter(a => a.allocationPeriod === 'weekly').length;
+    const fortnightlyAllocations = allocations.filter(a => a.allocationPeriod === 'fortnightly').length;
+    
+    const totalMaxHours = allocations.reduce((sum, a) => sum + parseFloat(a.maxHours), 0);
+    const totalUsedHours = allocations.reduce((sum, a) => sum + parseFloat(a.hoursUsed), 0);
+    const totalRemainingHours = allocations.reduce((sum, a) => sum + parseFloat(a.remainingHours), 0);
+    
+    const allocationRate = totalMaxHours > 0 ? Math.round((totalUsedHours / totalMaxHours) * 100) : 0;
+
+    // Get shift stats for this week
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const shiftsThisWeek = await db.select().from(shifts)
+      .where(and(
+        eq(shifts.tenantId, tenantId),
+        sql`${shifts.startTime} >= ${oneWeekAgo}`
+      ));
+
+    const totalShifts = shiftsThisWeek.length;
+    const totalShiftHours = shiftsThisWeek.reduce((sum, shift) => {
+      if (shift.startTime && shift.endTime) {
+        const duration = (new Date(shift.endTime).getTime() - new Date(shift.startTime).getTime()) / (1000 * 60 * 60);
+        return sum + duration;
+      }
+      return sum;
+    }, 0);
+
+    return {
+      totalAllocations,
+      weeklyAllocations,
+      fortnightlyAllocations,
+      totalShifts,
+      totalShiftHours: Math.round(totalShiftHours * 10) / 10,
+      allocatedHours: Math.round(totalUsedHours * 10) / 10,
+      unallocatedHours: Math.round(totalRemainingHours * 10) / 10,
+      allocationRate,
+    };
   }
 }
 

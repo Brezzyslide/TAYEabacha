@@ -1623,6 +1623,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hour Allocations routes
+  app.get("/api/hour-allocations", requireAuth, async (req: any, res) => {
+    try {
+      const allocations = await storage.getHourAllocations(req.user.tenantId);
+      res.json(allocations);
+    } catch (error) {
+      console.error("Error fetching hour allocations:", error);
+      res.status(500).json({ message: "Failed to fetch hour allocations" });
+    }
+  });
+
+  app.get("/api/hour-allocations/stats", requireAuth, async (req: any, res) => {
+    try {
+      const stats = await storage.getHourAllocationStats(req.user.tenantId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching hour allocation stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.post("/api/hour-allocations", requireAuth, requireRole(["TeamLeader", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const allocationData = {
+        ...req.body,
+        tenantId: req.user.tenantId,
+        remainingHours: req.body.maxHours, // Initially, remaining hours equals max hours
+      };
+      
+      const allocation = await storage.createHourAllocation(allocationData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_hour_allocation",
+        details: `Created hour allocation for staff ${allocationData.staffId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(allocation);
+    } catch (error) {
+      console.error("Error creating hour allocation:", error);
+      res.status(500).json({ message: "Failed to create hour allocation" });
+    }
+  });
+
+  app.put("/api/hour-allocations/:id", requireAuth, requireRole(["TeamLeader", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const allocationId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Recalculate remaining hours if max hours changed
+      if (updateData.maxHours) {
+        const currentAllocation = await storage.getHourAllocation(allocationId, req.user.tenantId);
+        if (currentAllocation) {
+          const currentUsed = parseFloat(currentAllocation.hoursUsed);
+          updateData.remainingHours = updateData.maxHours - currentUsed;
+        }
+      }
+      
+      const allocation = await storage.updateHourAllocation(allocationId, updateData, req.user.tenantId);
+      
+      if (!allocation) {
+        return res.status(404).json({ message: "Hour allocation not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_hour_allocation",
+        details: `Updated hour allocation ${allocationId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(allocation);
+    } catch (error) {
+      console.error("Error updating hour allocation:", error);
+      res.status(500).json({ message: "Failed to update hour allocation" });
+    }
+  });
+
+  app.delete("/api/hour-allocations/:id", requireAuth, requireRole(["TeamLeader", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const allocationId = parseInt(req.params.id);
+      const success = await storage.deleteHourAllocation(allocationId, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Hour allocation not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_hour_allocation",
+        details: `Deleted hour allocation ${allocationId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Hour allocation deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting hour allocation:", error);
+      res.status(500).json({ message: "Failed to delete hour allocation" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
