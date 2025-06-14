@@ -112,6 +112,9 @@ export const shifts = pgTable("shifts", {
   handoverGivenToStaffId: integer("handover_given_to_staff_id").references(() => users.id),
   handoverNotesIn: text("handover_notes_in"),
   handoverNotesOut: text("handover_notes_out"),
+  // NDIS Budget tracking fields
+  fundingCategory: text("funding_category"), // "SIL", "CommunityAccess", "CapacityBuilding"
+  staffRatio: text("staff_ratio"), // "1:1", "1:2", "1:3", "1:4", "2:1"
   isActive: boolean("is_active").default(true),
   seriesId: text("series_id"), // For grouping recurring shifts
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
@@ -678,6 +681,9 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
 export const insertShiftSchema = createInsertSchema(shifts).omit({
   id: true,
   createdAt: true,
+}).extend({
+  fundingCategory: z.enum(["SIL", "CommunityAccess", "CapacityBuilding"]).optional(),
+  staffRatio: z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"]).optional(),
 });
 
 export const insertStaffAvailabilitySchema = createInsertSchema(staffAvailability).omit({

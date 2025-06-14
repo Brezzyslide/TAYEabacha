@@ -51,6 +51,8 @@ const shiftFormSchema = z.object({
   endDateTime: z.date().optional(),
   userId: z.number().optional(),
   clientId: z.number().optional(),
+  fundingCategory: z.enum(["SIL", "CommunityAccess", "CapacityBuilding"]).optional(),
+  staffRatio: z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"]).optional(),
   isRecurring: z.boolean().default(false),
   recurrenceType: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
   selectedWeekdays: z.array(z.string()).optional(),
@@ -391,6 +393,57 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                               {client.fullName}
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* NDIS Budget Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="fundingCategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NDIS Budget Category</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select budget category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="SIL">SIL (Supported Independent Living)</SelectItem>
+                          <SelectItem value="CommunityAccess">Community Access</SelectItem>
+                          <SelectItem value="CapacityBuilding">Capacity Building</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="staffRatio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Staff to Client Ratio</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select staff ratio" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="1:1">1:1 (One-on-One)</SelectItem>
+                          <SelectItem value="1:2">1:2 (One to Two)</SelectItem>
+                          <SelectItem value="1:3">1:3 (One to Three)</SelectItem>
+                          <SelectItem value="1:4">1:4 (One to Four)</SelectItem>
+                          <SelectItem value="2:1">2:1 (Two to One)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
