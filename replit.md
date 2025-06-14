@@ -120,7 +120,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 
 ## Changelog
 - June 14, 2025. Initial setup
-- June 14, 2025. Fixed shift editing functionality - resolved field mapping issue between client camelCase and database snake_case column names
+- June 14, 2025. Fixed shift editing functionality - resolved timestamp data type issue (Drizzle expects Date objects, not ISO strings)
 - June 14, 2025. Implemented true calendar collapse functionality with Daily/Weekly/Fortnightly/Monthly view toggles that change grid structure rather than just filtering content
 
 ## User Preferences

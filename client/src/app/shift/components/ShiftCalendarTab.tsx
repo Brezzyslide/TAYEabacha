@@ -18,7 +18,7 @@ import { format, isToday, isTomorrow, isYesterday, startOfWeek, endOfWeek, start
 type FilterPeriod = "daily" | "weekly" | "fortnightly" | "monthly";
 
 export default function ShiftCalendarTab() {
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [selectedShiftForRequest, setSelectedShiftForRequest] = useState<Shift | null>(null);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);

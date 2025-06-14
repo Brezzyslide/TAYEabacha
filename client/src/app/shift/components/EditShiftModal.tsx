@@ -70,8 +70,8 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
         title,
         clientId: parseInt(clientId),
         userId: userId === "unassigned" ? null : parseInt(userId),
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString(),
+        startTime: startDateTime,
+        endTime: endDateTime,
         description,
       };
 
