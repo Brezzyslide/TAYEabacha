@@ -53,16 +53,16 @@ export default function QuickActions() {
   return (
     <div className="lg:col-span-1">
       <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">Quick Actions</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-gray-900">Quick Actions</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        <CardContent className="p-4">
+          <div className="space-y-2">
             {quickActions.map((action, index) => (
               <Button
                 key={index}
                 variant="ghost"
-                className="w-full justify-start p-3 h-auto border border-gray-200 hover:bg-gray-50"
+                className="w-full justify-start p-2 h-auto border border-gray-200 hover:bg-gray-50"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -70,12 +70,12 @@ export default function QuickActions() {
                   action.onClick();
                 }}
               >
-                <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center mr-3 flex-shrink-0`}>
-                  <action.icon className={`h-5 w-5 ${action.iconColor}`} />
+                <div className={`w-8 h-8 ${action.iconBg} rounded-lg flex items-center justify-center mr-3 flex-shrink-0`}>
+                  <action.icon className={`h-4 w-4 ${action.iconColor}`} />
                 </div>
                 <div className="text-left">
-                  <p className="font-medium text-gray-900">{action.title}</p>
-                  <p className="text-sm text-gray-500">{action.description}</p>
+                  <p className="font-medium text-sm text-gray-900">{action.title}</p>
+                  <p className="text-xs text-gray-500">{action.description}</p>
                 </div>
               </Button>
             ))}

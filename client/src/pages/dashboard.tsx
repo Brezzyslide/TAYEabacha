@@ -38,8 +38,8 @@ export default function Dashboard() {
               <ManualTaskBoard key="task-board-persistent" />
             </TabsContent>
             
-            <TabsContent value="quick" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent value="quick" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <QuickActions />
                 <RecentActivity />
               </div>
