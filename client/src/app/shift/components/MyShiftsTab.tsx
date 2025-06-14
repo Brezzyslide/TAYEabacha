@@ -3,20 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, Play, Square, User, Plus } from "lucide-react";
+import { Calendar, Clock, MapPin, Play, Square, User } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday, isAfter } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { type Shift } from "@shared/schema";
 import ShiftStatusTag from "./ShiftStatusTag";
 import StartShiftModal from "./StartShiftModal";
 import EndShiftModal from "./EndShiftModal";
-import NewShiftModal from "./NewShiftModal";
 
 export default function MyShiftsTab() {
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
-  const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
   
   const { user } = useAuth();
 
@@ -88,17 +86,11 @@ export default function MyShiftsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Next Shift</h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Click the card below to start or end your shift
-          </p>
-        </div>
-        <Button onClick={() => setIsNewShiftModalOpen(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Shift
-        </Button>
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Assigned Shifts</h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          View and manage shifts assigned to you. Use Start/End buttons for GPS check-in with handover notes.
+        </p>
       </div>
 
       {!nextUpcomingShift ? (
@@ -233,11 +225,6 @@ export default function MyShiftsTab() {
           />
         </>
       )}
-
-      <NewShiftModal
-        open={isNewShiftModalOpen}
-        onOpenChange={setIsNewShiftModalOpen}
-      />
     </div>
   );
 }
