@@ -63,7 +63,12 @@ export default function QuickActions() {
                 key={index}
                 variant="ghost"
                 className="w-full justify-start p-3 h-auto border border-gray-200 hover:bg-gray-50"
-                onClick={action.onClick}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Quick action clicked:', action.title);
+                  action.onClick();
+                }}
               >
                 <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center mr-3 flex-shrink-0`}>
                   <action.icon className={`h-5 w-5 ${action.iconColor}`} />
