@@ -7,14 +7,21 @@ import { apiRequest } from "@/lib/queryClient";
 import ShiftViewToggle from "./ShiftViewToggle";
 import ShiftCalendarView from "./ShiftCalendarView";
 import ShiftRequestConfirmDialog from "./ShiftRequestConfirmDialog";
+import NewShiftModal from "./NewShiftModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, MapPin, Users, UserCheck, UserX, TrendingUp, CheckCircle, PlayCircle } from "lucide-react";
-import { format, isToday, isTomorrow, isYesterday } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Clock, MapPin, Users, UserCheck, UserX, TrendingUp, CheckCircle, PlayCircle, Plus, Filter } from "lucide-react";
+import { format, isToday, isTomorrow, isYesterday, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays, subDays } from "date-fns";
+
+type FilterPeriod = "daily" | "weekly" | "fortnightly";
 
 export default function ShiftCalendarTab() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [selectedShiftForRequest, setSelectedShiftForRequest] = useState<Shift | null>(null);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("weekly");
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -68,10 +75,39 @@ export default function ShiftCalendarTab() {
     return shifts.filter(shift => !shift.userId && (shift as any).status !== "requested");
   }, [shifts]);
 
-  // All shifts to display in calendar (assigned + unassigned)
+  // Filter shifts by period
+  const filteredShifts = useMemo(() => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (filterPeriod) {
+      case "daily":
+        startDate = startOfDay(now);
+        endDate = endOfDay(now);
+        break;
+      case "weekly":
+        startDate = startOfWeek(now);
+        endDate = endOfWeek(now);
+        break;
+      case "fortnightly":
+        startDate = subDays(startOfWeek(now), 7);
+        endDate = addDays(endOfWeek(now), 7);
+        break;
+      default:
+        return shifts;
+    }
+
+    return shifts.filter(shift => {
+      const shiftDate = new Date(shift.startTime);
+      return shiftDate >= startDate && shiftDate <= endDate;
+    });
+  }, [shifts, filterPeriod]);
+
+  // All shifts to display in calendar (filtered)
   const allViewableShifts = useMemo(() => {
-    return [...myShifts, ...unassignedShifts];
-  }, [myShifts, unassignedShifts]);
+    return filteredShifts;
+  }, [filteredShifts]);
 
   // Calculate organizational shift analytics from real database data
   const shiftAnalytics = useMemo(() => {
@@ -110,34 +146,76 @@ export default function ShiftCalendarTab() {
     return client?.fullName || "Unknown client";
   };
 
+  const getStaffName = (userId: number | null) => {
+    if (!userId) return "Unassigned";
+    const staff = (users as any[]).find(u => u.id === userId);
+    return staff?.username || "Unknown staff";
+  };
+
   const renderShiftCard = (shift: Shift) => (
-    <Card key={shift.id} className="hover:shadow-md transition-shadow">
+    <Card key={shift.id} className="hover:shadow-md transition-shadow cursor-pointer" 
+          onClick={() => {
+            if (!shift.userId && (shift as any).status !== "requested") {
+              setSelectedShiftForRequest(shift);
+              setIsRequestDialogOpen(true);
+            }
+          }}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div>
+          <div className="flex-1">
             <CardTitle className="text-lg font-semibold">{shift.title}</CardTitle>
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
               <Calendar className="h-4 w-4" />
-              {formatShiftDate(shift.startTime)}
+              {formatShiftDate(shift.startTime)} - {format(new Date(shift.startTime), "h:mm a")} to {shift.endTime ? format(new Date(shift.endTime), "h:mm a") : "TBD"}
             </div>
+          </div>
+          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+            shift.userId ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
+            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+          }`}>
+            {shift.userId ? 'Assigned' : 'Available'}
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-500" />
-            <span>{format(new Date(shift.startTime), "h:mm a")} - {shift.endTime ? format(new Date(shift.endTime), "h:mm a") : "TBD"}</span>
+            <Users className="h-4 w-4 text-gray-500" />
+            <span className="font-medium">Staff:</span>
+            <span className={shift.userId ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+              {getStaffName(shift.userId)}
+            </span>
           </div>
           
-          {shift.clientId && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              <span>{getClientName(shift.clientId)}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-gray-500" />
+            <span className="font-medium">Client:</span>
+            <span>{getClientName(shift.clientId)}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-gray-500" />
+            <span className="font-medium">Duration:</span>
+            <span>{format(new Date(shift.startTime), "MMM d, h:mm a")} - {shift.endTime ? format(new Date(shift.endTime), "h:mm a") : "TBD"}</span>
+          </div>
         </div>
+
+        {(shift as any).description && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {(shift as any).description}
+            </p>
+          </div>
+        )}
+
+        {!shift.userId && (
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              Click to request this shift
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -152,7 +230,7 @@ export default function ShiftCalendarTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Shift Calendar</h2>
           <p className="text-gray-600 dark:text-gray-400">
@@ -160,7 +238,28 @@ export default function ShiftCalendarTab() {
           </p>
         </div>
         
-        <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        <div className="flex items-center gap-3">
+          <Select value={filterPeriod} onValueChange={(value: FilterPeriod) => setFilterPeriod(value)}>
+            <SelectTrigger className="w-40">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Daily</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="fortnightly">Fortnightly</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+          
+          {(user?.role === "Admin" || user?.role === "TeamLeader") && (
+            <Button onClick={() => setIsNewShiftModalOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              New Shift
+            </Button>
+          )}
+        </div>
       </div>
 
       {allViewableShifts.length === 0 ? (
@@ -319,6 +418,11 @@ export default function ShiftCalendarTab() {
           </Card>
         </div>
       </div>
+
+      <NewShiftModal
+        open={isNewShiftModalOpen}
+        onOpenChange={setIsNewShiftModalOpen}
+      />
 
       <ShiftRequestConfirmDialog
         isOpen={isRequestDialogOpen}
