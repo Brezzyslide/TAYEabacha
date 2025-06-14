@@ -89,7 +89,7 @@ export default function ManualTaskBoard() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: number; updates: any }) => {
-      return apiRequest('PUT', `/api/task-board-tasks/${taskId}`, updates);
+      return apiRequest(`/api/task-board-tasks/${taskId}`, 'PUT', updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/task-board-tasks'] });
@@ -102,7 +102,7 @@ export default function ManualTaskBoard() {
 
   const deleteTaskMutation = useMutation({
     mutationFn: async (taskId: number) => {
-      return apiRequest('DELETE', `/api/task-board-tasks/${taskId}`);
+      return apiRequest(`/api/task-board-tasks/${taskId}`, 'DELETE');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/task-board-tasks'] });
@@ -150,7 +150,7 @@ export default function ManualTaskBoard() {
   const getUserName = (userId?: number) => {
     if (!userId) return "Unassigned";
     const user = users.find(u => u.id === userId);
-    return user ? `${user.firstName} ${user.lastName}` : "Unknown User";
+    return user ? (user.fullName || user.username) : "Unknown User";
   };
 
   if (isLoading) {
@@ -232,7 +232,7 @@ export default function ManualTaskBoard() {
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {users.map((user: any) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
-                        {user.firstName} {user.lastName}
+                        {user.fullName || user.username}
                       </SelectItem>
                     ))}
                   </SelectContent>
