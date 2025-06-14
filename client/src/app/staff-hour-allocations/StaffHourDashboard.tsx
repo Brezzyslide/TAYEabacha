@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Users, Clock, TrendingUp, Calendar } from "lucide-react";
-import CreateAllocationModal from "./components/CreateAllocationModal";
-import StaffAllocationCard from "./components/StaffAllocationCard";
+// import CreateAllocationModal from "./components/CreateAllocationModal";
+// import StaffAllocationCard from "./components/StaffAllocationCard";
 import { HourAllocation } from "@shared/schema";
 
 interface DashboardStats {
@@ -21,7 +21,6 @@ interface DashboardStats {
 }
 
 export default function StaffHourDashboard() {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Fetch allocations
   const { data: allocations = [], isLoading: allocationsLoading } = useQuery<HourAllocation[]>({
@@ -67,7 +66,7 @@ export default function StaffHourDashboard() {
             Manage staff working hour caps and prevent overscheduling
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button disabled>
           <Plus className="h-4 w-4 mr-2" />
           New Allocation
         </Button>
@@ -219,7 +218,7 @@ export default function StaffHourDashboard() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Create your first staff hour allocation to start managing working hours.
               </p>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Button disabled>
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Allocation
               </Button>
@@ -227,21 +226,59 @@ export default function StaffHourDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {allocations.map((allocation) => (
-                <StaffAllocationCard
-                  key={allocation.id}
-                  allocation={allocation}
-                />
+                <Card key={allocation.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Staff ID: {allocation.staffId}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Calendar className="h-3 w-3" />
+                      <Badge variant="outline" className="text-xs">
+                        {allocation.allocationPeriod === "weekly" ? "Weekly" : "Fortnightly"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-white">
+                          {parseFloat(allocation.hoursUsed).toFixed(1)}h
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Used</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-white">
+                          {parseFloat(allocation.maxHours).toFixed(1)}h
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Max</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                          {parseFloat(allocation.remainingHours).toFixed(1)}h
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Remaining</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Progress</span>
+                        <span className="font-medium">
+                          {Math.round((parseFloat(allocation.hoursUsed) / parseFloat(allocation.maxHours)) * 100)}%
+                        </span>
+                      </div>
+                      <Progress 
+                        value={Math.min((parseFloat(allocation.hoursUsed) / parseFloat(allocation.maxHours)) * 100, 100)} 
+                        className="h-2" 
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Create Allocation Modal */}
-      <CreateAllocationModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-      />
     </div>
   );
 }
