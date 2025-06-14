@@ -127,6 +127,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 14, 2025. Updated SupportWorker permissions to allow medication administration record creation for assigned clients
 - June 14, 2025. Built comprehensive Roles & Permissions management system with custom role creation, permission overrides, and user assignment capabilities
 - June 14, 2025. Fixed custom role creation API - resolved parameter order issue and schema validation for optional fields
+- June 14, 2025. Completed interactive Permission Matrix with clickable cells for direct permission overrides, enabling real-time role customization
 
 ## User Preferences
 
