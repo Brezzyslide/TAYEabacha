@@ -43,7 +43,7 @@ export default function ShiftDashboard() {
                     📅 Calendar
                   </TabsTrigger>
                   <TabsTrigger value="requested-shifts" className="flex items-center gap-2">
-                    📋 Requested
+                    📋 Available
                   </TabsTrigger>
                   {isAdminOrCoordinator && (
                     <TabsTrigger value="requests" className="flex items-center gap-2">
