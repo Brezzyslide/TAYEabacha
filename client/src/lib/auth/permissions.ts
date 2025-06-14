@@ -21,7 +21,7 @@ export const permissions: Permission[] = [
   { roleName: "SupportWorker", module: "reports", actions: ["view"], scope: "assigned" },
   { roleName: "SupportWorker", module: "case-notes", actions: ["view", "create"], scope: "assigned" },
   { roleName: "SupportWorker", module: "observations", actions: ["view", "create"], scope: "assigned" },
-  { roleName: "SupportWorker", module: "medications", actions: ["view"], scope: "assigned" },
+  { roleName: "SupportWorker", module: "medications", actions: ["view", "create"], scope: "assigned" },
   { roleName: "SupportWorker", module: "care-plans", actions: ["view"], scope: "assigned" },
   { roleName: "SupportWorker", module: "incidents", actions: ["create"], scope: "assigned" },
 

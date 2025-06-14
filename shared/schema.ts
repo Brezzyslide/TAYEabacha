@@ -545,6 +545,97 @@ export const hourAllocationsRelations = relations(hourAllocations, ({ one }) => 
   }),
 }));
 
+// Custom Roles table - for dynamically created roles
+export const customRoles = pgTable("custom_roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // e.g., "Senior Support Worker", "Clinical Coordinator"
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  basedOnRole: text("based_on_role"), // Reference to built-in role it extends
+  isActive: boolean("is_active").default(true),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Custom Permissions table - for permission overrides and custom role permissions
+export const customPermissions = pgTable("custom_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").references(() => customRoles.id), // For custom roles
+  builtInRole: text("built_in_role"), // For overriding built-in roles
+  module: text("module").notNull(), // e.g., "clients", "shifts", "medications"
+  actions: jsonb("actions").notNull(), // Array of allowed actions
+  scope: text("scope").notNull(), // "global", "company", "assigned"
+  conditions: jsonb("conditions"), // Additional conditions for permission
+  isOverride: boolean("is_override").default(false), // True if overriding default permission
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User Role Assignments table - for assigning custom roles to users
+export const userRoleAssignments = pgTable("user_role_assignments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roleId: integer("role_id").references(() => customRoles.id), // Custom role
+  builtInRole: text("built_in_role"), // Built-in role override
+  assignedBy: integer("assigned_by").notNull().references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"), // Optional expiration
+  isActive: boolean("is_active").default(true),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+});
+
+// Relations for new tables
+export const customRolesRelations = relations(customRoles, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [customRoles.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [customRoles.createdBy],
+    references: [users.id],
+  }),
+  permissions: many(customPermissions),
+  assignments: many(userRoleAssignments),
+}));
+
+export const customPermissionsRelations = relations(customPermissions, ({ one }) => ({
+  role: one(customRoles, {
+    fields: [customPermissions.roleId],
+    references: [customRoles.id],
+  }),
+  tenant: one(tenants, {
+    fields: [customPermissions.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [customPermissions.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const userRoleAssignmentsRelations = relations(userRoleAssignments, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoleAssignments.userId],
+    references: [users.id],
+  }),
+  role: one(customRoles, {
+    fields: [userRoleAssignments.roleId],
+    references: [customRoles.id],
+  }),
+  assignedBy: one(users, {
+    fields: [userRoleAssignments.assignedBy],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [userRoleAssignments.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -649,6 +740,32 @@ export const insertHourAllocationSchema = createInsertSchema(hourAllocations).om
 }).extend({
   maxHours: z.number().min(1, "Max hours must be at least 1").max(168, "Max hours cannot exceed 168 hours per week"),
   allocationPeriod: z.enum(["weekly", "fortnightly"], { required_error: "Allocation period is required" }),
+});
+
+export const insertCustomRoleSchema = createInsertSchema(customRoles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(2, "Role name must be at least 2 characters").max(50, "Role name cannot exceed 50 characters"),
+  displayName: z.string().min(2, "Display name must be at least 2 characters").max(100, "Display name cannot exceed 100 characters"),
+  basedOnRole: z.enum(["SupportWorker", "TeamLeader", "Coordinator", "Admin"]).optional(),
+});
+
+export const insertCustomPermissionSchema = createInsertSchema(customPermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  actions: z.array(z.string()).min(1, "At least one action is required"),
+  scope: z.enum(["global", "company", "assigned"], { required_error: "Scope is required" }),
+});
+
+export const insertUserRoleAssignmentSchema = createInsertSchema(userRoleAssignments).omit({
+  id: true,
+  assignedAt: true,
+}).extend({
+  expiresAt: z.date().optional(),
 });
 
 // Types
