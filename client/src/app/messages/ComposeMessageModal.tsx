@@ -59,7 +59,6 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
       body: "",
       sendToAll: false,
       selectedRecipients: [],
-      selectedRoles: [],
       attachments: [],
     },
   });
