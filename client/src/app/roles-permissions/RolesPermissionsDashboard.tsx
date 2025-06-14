@@ -378,57 +378,105 @@ export default function RolesPermissionsDashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              {customPermissions.length === 0 ? (
-                <div className="text-center py-8">
-                  <Key className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No Custom Permissions
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    Override default permissions or create custom permissions for specific roles.
-                  </p>
-                  <Button disabled>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Permission Override
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {customPermissions.map((permission) => (
-                    <Card key={permission.id} className="hover:shadow-sm transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={permission.isOverride ? "destructive" : "default"}>
-                                {permission.isOverride ? "Override" : "Custom"}
-                              </Badge>
-                              <span className="font-medium">{permission.module}</span>
-                              <Badge variant="outline">{permission.scope}</Badge>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              Actions: {Array.isArray(permission.actions) ? (permission.actions as string[]).join(", ") : "None"}
-                            </p>
-                            {permission.roleId && (
-                              <p className="text-xs text-gray-500">Role ID: {permission.roleId}</p>
-                            )}
-                            {permission.builtInRole && (
-                              <p className="text-xs text-gray-500">Built-in Role: {permission.builtInRole}</p>
-                            )}
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => deletePermissionMutation.mutate(permission.id)}
-                            disabled={deletePermissionMutation.isPending}
-                          >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Remove
-                          </Button>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-200">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border border-gray-200 p-3 text-left font-medium">Module</th>
+                      <th className="border border-gray-200 p-3 text-center font-medium">Support Worker</th>
+                      <th className="border border-gray-200 p-3 text-center font-medium">Team Leader</th>
+                      <th className="border border-gray-200 p-3 text-center font-medium">Coordinator</th>
+                      <th className="border border-gray-200 p-3 text-center font-medium">Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { module: "Client Management", sw: "View (Assigned)", tl: "View, Edit (Assigned)", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Shift Management", sw: "View (Own)", tl: "View, Create (Team)", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Medications", sw: "View, Record (Assigned)", tl: "View, Record (Assigned)", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Case Notes", sw: "View, Create (Assigned)", tl: "View, Create, Edit (Assigned)", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Incident Reports", sw: "View, Create (Assigned)", tl: "View, Create, Edit (Assigned)", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Staff Management", sw: "View (Limited)", tl: "View (Team)", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Hour Allocation", sw: "View (Own)", tl: "View (Team)", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Internal Messaging", sw: "View, Create", tl: "View, Create", coord: "View, Create, Edit", admin: "Full Access" },
+                      { module: "Roles & Permissions", sw: "None", tl: "None", coord: "None", admin: "Full Access" },
+                    ].map((row, index) => (
+                      <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <td className="border border-gray-200 p-3 font-medium">{row.module}</td>
+                        <td 
+                          className="border border-gray-200 p-3 text-center text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+                          onClick={() => {
+                            setSelectedBuiltInRole({ name: "SupportWorker", displayName: "Support Worker" });
+                            setIsOverrideModalOpen(true);
+                          }}
+                        >
+                          {row.sw}
+                        </td>
+                        <td 
+                          className="border border-gray-200 p-3 text-center text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+                          onClick={() => {
+                            setSelectedBuiltInRole({ name: "TeamLeader", displayName: "Team Leader" });
+                            setIsOverrideModalOpen(true);
+                          }}
+                        >
+                          {row.tl}
+                        </td>
+                        <td 
+                          className="border border-gray-200 p-3 text-center text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+                          onClick={() => {
+                            setSelectedBuiltInRole({ name: "Coordinator", displayName: "Coordinator" });
+                            setIsOverrideModalOpen(true);
+                          }}
+                        >
+                          {row.coord}
+                        </td>
+                        <td 
+                          className="border border-gray-200 p-3 text-center text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+                          onClick={() => {
+                            setSelectedBuiltInRole({ name: "Admin", displayName: "Admin" });
+                            setIsOverrideModalOpen(true);
+                          }}
+                        >
+                          {row.admin}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <Info className="h-4 w-4 inline mr-2" />
+                  Click any cell to override permissions for that role and module. Custom overrides will be highlighted.
+                </p>
+              </div>
+              
+              {/* Show existing custom permissions below the matrix */}
+              {customPermissions.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-md font-medium mb-4">Active Permission Overrides</h4>
+                  <div className="space-y-2">
+                    {customPermissions.map((permission) => (
+                      <div key={permission.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded border-l-4 border-yellow-400">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{permission.module}</Badge>
+                          <span className="text-sm">
+                            {Array.isArray(permission.actions) ? (permission.actions as string[]).join(", ") : "None"}
+                          </span>
+                          <Badge variant="secondary">{permission.scope}</Badge>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => deletePermissionMutation.mutate(permission.id)}
+                          disabled={deletePermissionMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
