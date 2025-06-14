@@ -387,7 +387,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[SHIFT UPDATE] Update data:`, JSON.stringify(updateData, null, 2));
       console.log(`[SHIFT UPDATE] Tenant ID: ${req.user.tenantId}`);
       
-      const updatedShift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
+      // Convert string timestamps to Date objects for Drizzle
+      const processedUpdateData = { ...updateData };
+      if (processedUpdateData.startTime && typeof processedUpdateData.startTime === 'string') {
+        processedUpdateData.startTime = new Date(processedUpdateData.startTime);
+      }
+      if (processedUpdateData.endTime && typeof processedUpdateData.endTime === 'string') {
+        processedUpdateData.endTime = new Date(processedUpdateData.endTime);
+      }
+      
+      console.log(`[SHIFT UPDATE] Processed data with Date objects:`, processedUpdateData);
+      
+      const updatedShift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
       
       console.log(`[SHIFT UPDATE] Updated shift result:`, updatedShift ? 'SUCCESS' : 'FAILED - Shift not found');
       

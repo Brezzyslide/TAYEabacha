@@ -520,6 +520,31 @@ export const staffMessagesRelations = relations(staffMessages, ({ one }) => ({
   }),
 }));
 
+// Hour Allocations table
+export const hourAllocations = pgTable("hour_allocations", {
+  id: serial("id").primaryKey(),
+  staffId: integer("staff_id").notNull().references(() => users.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  allocationPeriod: text("allocation_period").notNull(), // "weekly" | "fortnightly"
+  maxHours: decimal("max_hours", { precision: 5, scale: 2 }).notNull(),
+  hoursUsed: decimal("hours_used", { precision: 5, scale: 2 }).default("0").notNull(),
+  remainingHours: decimal("remaining_hours", { precision: 5, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const hourAllocationsRelations = relations(hourAllocations, ({ one }) => ({
+  staff: one(users, {
+    fields: [hourAllocations.staffId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [hourAllocations.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -615,6 +640,17 @@ export const insertStaffMessageSchema = createInsertSchema(staffMessages).omit({
   updatedAt: true,
 });
 
+export const insertHourAllocationSchema = createInsertSchema(hourAllocations).omit({
+  id: true,
+  hoursUsed: true,
+  remainingHours: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  maxHours: z.number().min(1, "Max hours must be at least 1").max(168, "Max hours cannot exceed 168 hours per week"),
+  allocationPeriod: z.enum(["weekly", "fortnightly"], { required_error: "Allocation period is required" }),
+});
+
 // Types
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
@@ -663,3 +699,6 @@ export type InsertIncidentClosure = z.infer<typeof insertIncidentClosureSchema>;
 
 export type StaffMessage = typeof staffMessages.$inferSelect;
 export type InsertStaffMessage = z.infer<typeof insertStaffMessageSchema>;
+
+export type HourAllocation = typeof hourAllocations.$inferSelect;
+export type InsertHourAllocation = z.infer<typeof insertHourAllocationSchema>;

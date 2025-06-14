@@ -1,0 +1,135 @@
+# Prompt for Replit Codex Agent
+
+Please create a complete Staff Hour Allocation module with analytics and shift enforcement at:
+
+📁 `src/app/staff-hour-allocations/`
+
+This module should allow admins to allocate working hour caps for each staff member (weekly or fortnightly), display analytics, and prevent overscheduling unless overridden.
+
+---
+
+### 1. Dashboard: `StaffHourDashboard.tsx`
+
+Sections:
+- **Header Cards**:
+  - Total Allocations
+  - Weekly Allocations
+  - Fortnightly Allocations
+
+- **Shift Analytics**:
+  - Total Shifts (count + total hours)
+  - Allocated Hours (used)
+  - Unallocated Hours (available)
+  - Allocation Rate (as %)
+
+- **Workforce Planning Overview**:
+  - Allocated vs Available shifts
+  - Insights:
+    - Coverage Status
+    - Available Capacity
+    - Workforce Utilization
+
+- **Current Allocations**:
+  - Cards per staff:
+    - Staff name
+    - Period (weekly/fortnightly)
+    - Hours Used / Max Hours
+    - Progress bar
+    - Edit / Delete buttons
+
+---
+
+### 2. Create/Edit Modal: `CreateAllocationModal.tsx`
+
+Fields:
+- Staff Member (dropdown filtered by `companyId`)
+- Period: Weekly or Fortnightly
+- Max Allowed Hours (numeric)
+
+On submit:
+Save to `hourAllocations` table:
+```ts
+{
+  id,
+  companyId,
+  staffId,
+  allocationPeriod: "weekly" | "fortnightly",
+  maxHours: number,
+  hoursUsed: number,
+  remainingHours: number,
+  createdAt
+}
+3. Staff View: MyAllocationCard.tsx
+Path: src/app/staff-availability/quick-patterns.tsx
+
+Show:
+
+Allocation Period
+
+Max Hours
+
+Hours Used
+
+Remaining Hours (progress bar)
+
+4. Shift Enforcement Logic
+In NewShiftModal.tsx or AssignShiftDialog.tsx, add:
+
+On staff selection:
+
+Fetch hourAllocations for staff
+
+Calculate total hoursUsed + new shift duration
+
+If it exceeds maxHours:
+
+Show warning modal:
+
+css
+Copy
+Edit
+This shift exceeds the staff member’s allocated hours for this period.
+[ Proceed Anyway ] [ Cancel ]
+Only allow proceed if user is Team Leader or Admin
+
+On confirmation:
+
+Update hoursUsed in hourAllocations
+
+Update remainingHours
+
+5. Components to Create:
+StaffHourDashboard.tsx
+
+CreateAllocationModal.tsx
+
+MyAllocationCard.tsx
+
+StaffAllocationCard.tsx
+
+ShiftAllocationCheck.tsx (logic layer or hook)
+
+useAllocationUtils.ts with:
+
+calculateHoursUsed()
+
+isAllocationExceeded()
+
+6. Access Rules
+Role	Permissions
+SupportWorker	View own allocation only
+Team Leader	View/edit all allocations in company
+Admin	View/edit/archive/export all allocations company-wide
+
+7. UI Framework & Tools
+ShadCN UI
+
+TailwindCSS
+
+TanStack Query
+
+react-hook-form + zod
+
+date-fns for scheduling logic
+
+Role check logic on all modals
