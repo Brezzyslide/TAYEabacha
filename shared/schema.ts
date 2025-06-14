@@ -124,11 +124,12 @@ export const staffAvailability = pgTable("staff_availability", {
   availabilityId: text("availability_id").notNull().unique(),
   userId: integer("user_id").notNull().references(() => users.id),
   companyId: integer("company_id").notNull().references(() => tenants.id),
-  availableDays: jsonb("available_days").notNull(), // ["Monday", "Tuesday", ...]
-  timeSlots: jsonb("time_slots").notNull(), // {Monday: {start: "09:00", end: "17:00"}, ...}
-  recurrencePattern: text("recurrence_pattern").default("weekly"), // weekly, fortnightly, monthly
+  availability: jsonb("availability").notNull(), // {Monday: ["AM", "PM"], Tuesday: ["Active Night"], ...}
+  patternName: text("pattern_name"), // For saved quick patterns
+  isQuickPattern: boolean("is_quick_pattern").default(false),
   overrideByManager: boolean("override_by_manager").default(false),
   isActive: boolean("is_active").default(true),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
