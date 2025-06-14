@@ -14,7 +14,7 @@ import AllShiftsTab from "./components/AllShiftsTab";
 
 export default function ShiftDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("my-shifts");
+  const [activeTab, setActiveTab] = useState("shift-calendar");
 
   const isAdminOrCoordinator = user?.role === "Admin" || user?.role === "Coordinator";
   const isAdmin = user?.role === "Admin";
@@ -36,11 +36,11 @@ export default function ShiftDashboard() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex items-center justify-between mb-6">
                 <TabsList className="grid grid-cols-5 lg:w-[600px]">
-                  <TabsTrigger value="my-shifts" className="flex items-center gap-2">
-                    🗂 My Shifts
-                  </TabsTrigger>
                   <TabsTrigger value="shift-calendar" className="flex items-center gap-2">
                     📅 Calendar
+                  </TabsTrigger>
+                  <TabsTrigger value="my-shifts" className="flex items-center gap-2">
+                    🗂 My Shifts
                   </TabsTrigger>
                   <TabsTrigger value="requested-shifts" className="flex items-center gap-2">
                     📋 Available
