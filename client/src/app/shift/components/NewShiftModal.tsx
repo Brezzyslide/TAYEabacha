@@ -30,6 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -48,7 +52,8 @@ const shiftFormSchema = z.object({
   userId: z.number().optional(),
   clientId: z.number().optional(),
   isRecurring: z.boolean().default(false),
-  recurrenceType: z.enum(["daily", "weekly", "fortnightly", "monthly"]).optional(),
+  recurrenceType: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
+  selectedWeekdays: z.array(z.string()).optional(),
   numberOfOccurrences: z.number().min(1).max(52).optional(),
   recurrenceEndDate: z.date().optional(),
   endConditionType: z.enum(["occurrences", "endDate"]).optional(),
@@ -64,6 +69,7 @@ interface NewShiftModalProps {
 export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps) {
   const [isRecurring, setIsRecurring] = useState(false);
   const [endConditionType, setEndConditionType] = useState<"occurrences" | "endDate">("occurrences");
+  const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -75,7 +81,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       title: "",
       startDateTime: new Date(),
       isRecurring: false,
-      numberOfOccurrences: 1,
+      selectedWeekdays: [],
+      numberOfOccurrences: 6,
       recurrenceType: "weekly",
       endConditionType: "occurrences",
     },
@@ -93,9 +100,9 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     mutationFn: async (data: ShiftFormData) => {
       if (!user?.tenantId) throw new Error("No tenant ID available");
       
-      if (data.isRecurring) {
-        // Generate recurring shifts
-        const shifts = generateRecurringShifts(data);
+      if (data.isRecurring && data.selectedWeekdays && data.selectedWeekdays.length > 0) {
+        // Generate recurring shifts using weekly pattern
+        const shifts = generateWeeklyPatternShifts(data);
         const promises = shifts.map(shift => 
           apiRequest("POST", "/api/shifts", {
             ...shift,
@@ -127,6 +134,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       onOpenChange(false);
       form.reset();
       setIsRecurring(false);
+      setSelectedWeekdays([]);
     },
     onError: (error: Error) => {
       toast({
@@ -137,47 +145,61 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     },
   });
 
-  const generateRecurringShifts = (data: ShiftFormData) => {
+  const generateWeeklyPatternShifts = (data: ShiftFormData) => {
     const shifts = [];
     const startDate = new Date(data.startDateTime);
     const endDate = data.endDateTime ? new Date(data.endDateTime) : null;
-    const duration = endDate ? endDate.getTime() - startDate.getTime() : 60 * 60 * 1000; // 1 hour default
+    const duration = endDate ? endDate.getTime() - startDate.getTime() : 8 * 60 * 60 * 1000; // 8 hours default
+    
+    const selectedWeekdays = data.selectedWeekdays || [];
+    if (selectedWeekdays.length === 0) return shifts;
 
-    let currentDate = new Date(startDate);
-    let count = 0;
-    const maxOccurrences = data.endConditionType === "occurrences" ? (data.numberOfOccurrences || 1) : 52;
+    const weekdayMap = {
+      "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4,
+      "Friday": 5, "Saturday": 6, "Sunday": 0
+    };
+
+    const maxOccurrences = data.endConditionType === "occurrences" ? (data.numberOfOccurrences || 6) : 100;
     const endByDate = data.endConditionType === "endDate" ? data.recurrenceEndDate : null;
+    const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
 
-    while (count < maxOccurrences && (!endByDate || currentDate <= endByDate)) {
-      const shiftStart = new Date(currentDate);
-      const shiftEnd = new Date(currentDate.getTime() + duration);
-      
-      shifts.push({
-        title: data.title,
-        startTime: shiftStart.toISOString(),
-        endTime: shiftEnd.toISOString(),
-        userId: data.userId,
-        clientId: data.clientId,
-        seriesId: `series_${Date.now()}`,
-      });
+    let currentWeekStart = new Date(startDate);
+    currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay()); // Start of week (Sunday)
+    
+    let totalShiftsGenerated = 0;
+    let weekCount = 0;
 
-      // Calculate next occurrence
-      switch (data.recurrenceType) {
-        case "daily":
-          currentDate.setDate(currentDate.getDate() + 1);
-          break;
-        case "weekly":
-          currentDate.setDate(currentDate.getDate() + 7);
-          break;
-        case "fortnightly":
-          currentDate.setDate(currentDate.getDate() + 14);
-          break;
-        case "monthly":
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          break;
+    while (totalShiftsGenerated < maxOccurrences && (!endByDate || currentWeekStart <= endByDate)) {
+      for (const weekdayName of selectedWeekdays) {
+        const weekdayNumber = weekdayMap[weekdayName as keyof typeof weekdayMap];
+        const shiftDate = new Date(currentWeekStart);
+        shiftDate.setDate(currentWeekStart.getDate() + weekdayNumber);
+        
+        // Set the time from the original start date
+        shiftDate.setHours(startDate.getHours(), startDate.getMinutes(), startDate.getSeconds());
+        
+        // Skip if this date is before our start date or after end date
+        if (shiftDate < startDate || (endByDate && shiftDate > endByDate)) continue;
+        
+        const shiftEnd = new Date(shiftDate.getTime() + duration);
+        
+        shifts.push({
+          title: data.title,
+          startTime: shiftDate.toISOString(),
+          endTime: shiftEnd.toISOString(),
+          userId: data.userId,
+          clientId: data.clientId,
+          seriesId: `pattern_${Date.now()}`,
+          weekday: weekdayName,
+        });
+        
+        totalShiftsGenerated++;
+        if (totalShiftsGenerated >= maxOccurrences) break;
       }
       
-      count++;
+      // Move to next week (or fortnightly)
+      currentWeekStart.setDate(currentWeekStart.getDate() + (7 * frequencyWeeks));
+      weekCount++;
     }
 
     return shifts;
