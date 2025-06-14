@@ -29,9 +29,12 @@ function requireAuth(req: any, res: any, next: any) {
 
 function requireRole(roles: string[]) {
   return (req: any, res: any, next: any) => {
+    console.log(`[ROLE CHECK] User role: ${req.user.role}, Required roles: ${roles.join(', ')}`);
     if (!roles.includes(req.user.role)) {
+      console.log(`[ROLE CHECK] FAILED - User ${req.user.id} with role '${req.user.role}' denied access`);
       return res.status(403).json({ message: "Insufficient permissions" });
     }
+    console.log(`[ROLE CHECK] PASSED - User ${req.user.id} has sufficient permissions`);
     next();
   };
 }
@@ -370,6 +373,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test route to verify role access
+  app.get("/api/test-role", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    res.json({ message: "Role access verified", role: req.user.role });
+  });
+
   app.put("/api/shifts/:id", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const shiftId = parseInt(req.params.id);
@@ -400,7 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[SHIFT UPDATE] Activity logged successfully`);
       
       res.json(updatedShift);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[SHIFT UPDATE ERROR] Error updating shift ${req.params.id}:`, error);
       console.error(`[SHIFT UPDATE ERROR] Stack trace:`, error.stack);
       res.status(500).json({ message: "Failed to update shift" });
