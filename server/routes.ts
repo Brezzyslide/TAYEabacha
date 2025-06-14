@@ -1731,6 +1731,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Custom Roles API - Admin+ only
+  app.get("/api/custom-roles", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const roles = await storage.getCustomRoles(req.user.tenantId);
+      res.json(roles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch custom roles" });
+    }
+  });
+
+  app.post("/api/custom-roles", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { insertCustomRoleSchema } = await import("@shared/schema");
+      const roleData = insertCustomRoleSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+        createdBy: req.user.id,
+      });
+
+      const role = await storage.createCustomRole(roleData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_custom_role",
+        resourceType: "custom_role",
+        resourceId: role.id,
+        description: `Created custom role: ${role.displayName}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(role);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create custom role" });
+    }
+  });
+
+  app.put("/api/custom-roles/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const roleId = parseInt(req.params.id);
+      const role = await storage.updateCustomRole(roleId, req.body, req.user.tenantId);
+      
+      if (!role) {
+        return res.status(404).json({ message: "Custom role not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_custom_role",
+        resourceType: "custom_role",
+        resourceId: roleId,
+        description: `Updated custom role: ${role.displayName}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(role);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update custom role" });
+    }
+  });
+
+  app.delete("/api/custom-roles/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const roleId = parseInt(req.params.id);
+      const success = await storage.deleteCustomRole(roleId, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Custom role not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_custom_role",
+        resourceType: "custom_role",
+        description: `Deleted custom role ${roleId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Custom role deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete custom role" });
+    }
+  });
+
+  // Custom Permissions API - Admin+ only
+  app.get("/api/custom-permissions", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { roleId } = req.query;
+      let permissions;
+      
+      if (roleId) {
+        permissions = await storage.getCustomPermissionsByRole(parseInt(roleId as string), req.user.tenantId);
+      } else {
+        permissions = await storage.getCustomPermissions(req.user.tenantId);
+      }
+      
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch custom permissions" });
+    }
+  });
+
+  app.post("/api/custom-permissions", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { insertCustomPermissionSchema } = await import("@shared/schema");
+      const permissionData = insertCustomPermissionSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+        createdBy: req.user.id,
+      });
+
+      const permission = await storage.createCustomPermission(permissionData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_custom_permission",
+        resourceType: "custom_permission",
+        resourceId: permission.id,
+        description: `Created custom permission for ${permission.module}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(permission);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create custom permission" });
+    }
+  });
+
+  app.delete("/api/custom-permissions/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const permissionId = parseInt(req.params.id);
+      const success = await storage.deleteCustomPermission(permissionId, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Custom permission not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_custom_permission",
+        resourceType: "custom_permission",
+        description: `Deleted custom permission ${permissionId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Custom permission deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete custom permission" });
+    }
+  });
+
+  // User Role Assignments API - Admin+ only  
+  app.get("/api/user-role-assignments", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const assignments = await storage.getUserRoleAssignments(req.user.tenantId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user role assignments" });
+    }
+  });
+
+  app.post("/api/user-role-assignments", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { insertUserRoleAssignmentSchema } = await import("@shared/schema");
+      const assignmentData = insertUserRoleAssignmentSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+        assignedBy: req.user.id,
+      });
+
+      const assignment = await storage.createUserRoleAssignment(assignmentData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "assign_user_role",
+        resourceType: "user_role_assignment",
+        resourceId: assignment.id,
+        description: `Assigned role to user ${assignment.userId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(assignment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to assign user role" });
+    }
+  });
+
+  app.delete("/api/user-role-assignments/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const assignmentId = parseInt(req.params.id);
+      const success = await storage.deleteUserRoleAssignment(assignmentId, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "User role assignment not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "revoke_user_role",
+        resourceType: "user_role_assignment",
+        description: `Revoked role assignment ${assignmentId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "User role assignment revoked successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to revoke user role assignment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -42,7 +42,7 @@ const shiftManagementNavigation = [
 ];
 
 const staffManagementNavigation = [
-  { name: "Roles & Permissions", href: "/permissions", icon: Shield },
+  { name: "Roles & Permissions", href: "/roles-permissions", icon: Shield },
   { name: "User Management", href: "/staff", icon: Users },
 ];
 

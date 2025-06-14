@@ -33,6 +33,7 @@ import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import CompanyListPage from "@/app/admin/companies/CompanyListPage";
 import StaffHourDashboard from "@/app/staff-hour-allocations/StaffHourDashboard";
+import RolesPermissionsDashboard from "@/app/roles-permissions/RolesPermissionsDashboard";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -56,6 +57,7 @@ function Router() {
       <ProtectedRoute path="/medications" component={MedicationDashboard} />
       <ProtectedRoute path="/messages" component={MessageDashboard} />
       <ProtectedRoute path="/staff" component={Staff} />
+      <ProtectedRoute path="/roles-permissions" component={RolesPermissionsDashboard} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
