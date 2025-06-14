@@ -12,6 +12,7 @@ import UniversalHeader from "@/components/layout/universal-header";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import RecordAdministrationModal from "./components/RecordAdministrationModal";
+import AddMedicationPlanModal from "./components/AddMedicationPlanModal";
 
 interface MedicationPlan {
   id: number;
@@ -56,6 +57,7 @@ export default function MedicationDashboard() {
   }>({
     isOpen: false,
   });
+  const [addPlanModal, setAddPlanModal] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -142,7 +144,10 @@ export default function MedicationDashboard() {
                 <p className="text-gray-600">Manage medication plans and administration records</p>
               </div>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setAddPlanModal(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Medication Plan
             </Button>

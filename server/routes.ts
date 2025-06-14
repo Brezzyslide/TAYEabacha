@@ -4,7 +4,8 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { db } from "./db";
 import * as schema from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
+const { medicationRecords, medicationPlans, clients, users } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes } from "crypto";
@@ -1094,28 +1095,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tenantId = req.user.tenantId;
       
-      // Get all medication records for the tenant
-      const records = await db.select({
-        id: medicationRecords.id,
-        medicationPlanId: medicationRecords.medicationPlanId,
-        clientId: medicationRecords.clientId,
-        administeredBy: medicationRecords.administeredBy,
-        medicationName: medicationRecords.medicationName,
-        scheduledTime: medicationRecords.scheduledTime,
-        actualTime: medicationRecords.actualTime,
-        dateTime: medicationRecords.dateTime,
-        timeOfDay: medicationRecords.timeOfDay,
-        route: medicationRecords.route,
-        status: medicationRecords.status,
-        result: medicationRecords.result,
-        notes: medicationRecords.notes,
-        wasWitnessed: medicationRecords.wasWitnessed,
-        attachmentBeforeUrl: medicationRecords.attachmentBeforeUrl,
-        attachmentAfterUrl: medicationRecords.attachmentAfterUrl,
-        createdAt: medicationRecords.createdAt,
-      }).from(medicationRecords)
-        .where(eq(medicationRecords.tenantId, tenantId))
-        .orderBy(desc(medicationRecords.createdAt));
+      // Use the storage layer instead of direct DB query
+      const records = await storage.getMedicationRecords(0, tenantId); // Pass 0 for clientId to get all records
       
       res.json(records);
     } catch (error) {
