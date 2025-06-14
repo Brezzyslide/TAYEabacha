@@ -2044,6 +2044,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NDIS Budget Management API Routes
+  
+  // NDIS Pricing endpoints - Admin+ only
+  app.get("/api/ndis-pricing", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const pricing = await storage.getNdisPricing("5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      res.json(pricing);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch NDIS pricing" });
+    }
+  });
+
+  app.post("/api/ndis-pricing", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const pricingData = {
+        ...req.body,
+        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303",
+      };
+      
+      const pricing = await storage.createNdisPricing(pricingData);
+      res.json(pricing);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to create NDIS pricing", error: error.message });
+    }
+  });
+
+  // NDIS Budget endpoints - TeamLeader+ can view, Admin+ can edit
+  app.get("/api/ndis-budgets", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const budgets = await storage.getNdisBudgets("5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      res.json(budgets);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch NDIS budgets" });
+    }
+  });
+
+  app.get("/api/ndis-budgets/client/:clientId", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const budget = await storage.getNdisBudgetByClient(clientId, "5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      res.json(budget);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch client budget" });
+    }
+  });
+
+  app.post("/api/ndis-budgets", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const budgetData = {
+        ...req.body,
+        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303",
+      };
+      
+      const budget = await storage.createNdisBudget(budgetData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_ndis_budget",
+        resourceType: "ndis_budget",
+        resourceId: budget.id,
+        description: `Created NDIS budget for client ID: ${budget.clientId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(budget);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to create NDIS budget", error: error.message });
+    }
+  });
+
+  app.put("/api/ndis-budgets/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const budgetId = parseInt(req.params.id);
+      const budget = await storage.updateNdisBudget(budgetId, req.body, "5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      
+      if (!budget) {
+        return res.status(404).json({ message: "NDIS budget not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_ndis_budget",
+        resourceType: "ndis_budget",
+        resourceId: budgetId,
+        description: `Updated NDIS budget for client ID: ${budget.clientId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(budget);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update NDIS budget" });
+    }
+  });
+
+  // Budget Transaction endpoints
+  app.get("/api/budget-transactions/:budgetId", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const budgetId = parseInt(req.params.budgetId);
+      const transactions = await storage.getBudgetTransactions(budgetId, "5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch budget transactions" });
+    }
+  });
+
+  app.post("/api/budget-transactions/deduct", requireAuth, async (req: any, res) => {
+    try {
+      const result = await storage.processBudgetDeduction({
+        ...req.body,
+        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303",
+        createdByUserId: req.user.id,
+      });
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "budget_deduction",
+        resourceType: "budget_transaction",
+        resourceId: result.transaction.id,
+        description: `Deducted $${result.transaction.amount} from ${result.transaction.category} budget`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to process budget deduction", error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
