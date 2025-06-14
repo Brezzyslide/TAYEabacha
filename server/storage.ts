@@ -355,38 +355,115 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(shifts.startTime));
   }
 
-  // Staff Availability
+  // Staff Availability (updated implementation)
   async getStaffAvailability(tenantId: number): Promise<StaffAvailability[]> {
     return await db.select().from(staffAvailability)
-      .where(and(eq(staffAvailability.companyId, tenantId), eq(staffAvailability.isActive, true)))
+      .where(and(eq(staffAvailability.tenantId, tenantId), eq(staffAvailability.isActive, true)))
       .orderBy(desc(staffAvailability.createdAt));
   }
 
   async getUserAvailability(userId: number, tenantId: number): Promise<StaffAvailability | undefined> {
     const [availability] = await db.select().from(staffAvailability)
       .where(and(
-        eq(staffAvailability.userId, userId), 
-        eq(staffAvailability.companyId, tenantId),
+        eq(staffAvailability.userId, userId),
+        eq(staffAvailability.tenantId, tenantId),
         eq(staffAvailability.isActive, true)
-      ));
-    return availability || undefined;
+      ))
+      .orderBy(desc(staffAvailability.createdAt))
+      .limit(1);
+    return availability;
   }
 
   async createStaffAvailability(insertAvailability: InsertStaffAvailability): Promise<StaffAvailability> {
-    const [availability] = await db
-      .insert(staffAvailability)
-      .values(insertAvailability)
-      .returning();
+    // Generate unique availability ID
+    const availabilityId = `AV${Date.now()}${Math.random().toString(36).substr(2, 4)}`;
+    
+    const availabilityData = {
+      ...insertAvailability,
+      availabilityId,
+      tenantId: insertAvailability.companyId, // Map companyId to tenantId
+    };
+
+    const [availability] = await db.insert(staffAvailability).values(availabilityData).returning();
     return availability;
   }
 
   async updateStaffAvailability(id: number, updateAvailability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined> {
-    const [availability] = await db
-      .update(staffAvailability)
-      .set(updateAvailability)
-      .where(and(eq(staffAvailability.id, id), eq(staffAvailability.companyId, tenantId)))
+    const [availability] = await db.update(staffAvailability)
+      .set({ ...updateAvailability, updatedAt: new Date() })
+      .where(and(
+        eq(staffAvailability.id, id),
+        eq(staffAvailability.tenantId, tenantId)
+      ))
       .returning();
-    return availability || undefined;
+    return availability;
+  }
+
+  async getQuickPatterns(userId: number, tenantId: number): Promise<StaffAvailability[]> {
+    return await db.select().from(staffAvailability)
+      .where(and(
+        eq(staffAvailability.userId, userId),
+        eq(staffAvailability.tenantId, tenantId),
+        eq(staffAvailability.isQuickPattern, true),
+        eq(staffAvailability.isActive, true)
+      ))
+      .orderBy(desc(staffAvailability.createdAt));
+  }
+
+  async getAllStaffAvailability(tenantId: number, showArchived: boolean): Promise<any[]> {
+    const query = db.select({
+      id: staffAvailability.id,
+      userId: staffAvailability.userId,
+      userName: users.username,
+      userRole: users.role,
+      availability: staffAvailability.availability,
+      patternName: staffAvailability.patternName,
+      isActive: staffAvailability.isActive,
+      overrideByManager: staffAvailability.overrideByManager,
+      createdAt: staffAvailability.createdAt,
+      updatedAt: staffAvailability.updatedAt,
+    })
+    .from(staffAvailability)
+    .leftJoin(users, eq(staffAvailability.userId, users.id))
+    .where(and(
+      eq(staffAvailability.tenantId, tenantId),
+      showArchived ? undefined : eq(staffAvailability.isActive, true)
+    ))
+    .orderBy(desc(staffAvailability.createdAt));
+
+    return await query;
+  }
+
+  async archiveStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined> {
+    const [availability] = await db.update(staffAvailability)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(staffAvailability.id, id),
+        eq(staffAvailability.tenantId, tenantId)
+      ))
+      .returning();
+    return availability;
+  }
+
+  async getAvailabilityConflicts(tenantId: number): Promise<any[]> {
+    // Mock conflict analysis - in production this would analyze actual staffing requirements
+    const conflicts = [
+      {
+        day: "Monday",
+        shiftType: "AM",
+        staffCount: 2,
+        minRequired: 4,
+        isUnderStaffed: true
+      },
+      {
+        day: "Friday",
+        shiftType: "Active Night",
+        staffCount: 1,
+        minRequired: 3,
+        isUnderStaffed: true
+      }
+    ];
+    return conflicts;
   }
 
   // Activity Logs
@@ -674,116 +751,7 @@ export class DatabaseStorage implements IStorage {
     return closure;
   }
 
-  // Staff Availability methods
-  async getStaffAvailability(tenantId: number): Promise<StaffAvailability[]> {
-    return await db.select().from(staffAvailability)
-      .where(and(eq(staffAvailability.tenantId, tenantId), eq(staffAvailability.isActive, true)))
-      .orderBy(desc(staffAvailability.createdAt));
-  }
 
-  async getUserAvailability(userId: number, tenantId: number): Promise<StaffAvailability | undefined> {
-    const [availability] = await db.select().from(staffAvailability)
-      .where(and(
-        eq(staffAvailability.userId, userId),
-        eq(staffAvailability.tenantId, tenantId),
-        eq(staffAvailability.isActive, true)
-      ))
-      .orderBy(desc(staffAvailability.createdAt))
-      .limit(1);
-    return availability;
-  }
-
-  async createStaffAvailability(insertAvailability: InsertStaffAvailability): Promise<StaffAvailability> {
-    // Generate unique availability ID
-    const availabilityId = `AV${Date.now()}${Math.random().toString(36).substr(2, 4)}`;
-    
-    const availabilityData = {
-      ...insertAvailability,
-      availabilityId,
-      tenantId: insertAvailability.companyId, // Map companyId to tenantId
-    };
-
-    const [availability] = await db.insert(staffAvailability).values(availabilityData).returning();
-    return availability;
-  }
-
-  async updateStaffAvailability(id: number, updateAvailability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined> {
-    const [availability] = await db.update(staffAvailability)
-      .set({ ...updateAvailability, updatedAt: new Date() })
-      .where(and(
-        eq(staffAvailability.id, id),
-        eq(staffAvailability.tenantId, tenantId)
-      ))
-      .returning();
-    return availability;
-  }
-
-  async getQuickPatterns(userId: number, tenantId: number): Promise<StaffAvailability[]> {
-    return await db.select().from(staffAvailability)
-      .where(and(
-        eq(staffAvailability.userId, userId),
-        eq(staffAvailability.tenantId, tenantId),
-        eq(staffAvailability.isQuickPattern, true),
-        eq(staffAvailability.isActive, true)
-      ))
-      .orderBy(desc(staffAvailability.createdAt));
-  }
-
-  async getAllStaffAvailability(tenantId: number, showArchived: boolean): Promise<any[]> {
-    const query = db.select({
-      id: staffAvailability.id,
-      userId: staffAvailability.userId,
-      userName: users.username,
-      userRole: users.role,
-      availability: staffAvailability.availability,
-      patternName: staffAvailability.patternName,
-      isActive: staffAvailability.isActive,
-      overrideByManager: staffAvailability.overrideByManager,
-      createdAt: staffAvailability.createdAt,
-      updatedAt: staffAvailability.updatedAt,
-    })
-    .from(staffAvailability)
-    .leftJoin(users, eq(staffAvailability.userId, users.id))
-    .where(and(
-      eq(staffAvailability.tenantId, tenantId),
-      showArchived ? undefined : eq(staffAvailability.isActive, true)
-    ))
-    .orderBy(desc(staffAvailability.createdAt));
-
-    return await query;
-  }
-
-  async archiveStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined> {
-    const [availability] = await db.update(staffAvailability)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(and(
-        eq(staffAvailability.id, id),
-        eq(staffAvailability.tenantId, tenantId)
-      ))
-      .returning();
-    return availability;
-  }
-
-  async getAvailabilityConflicts(tenantId: number): Promise<any[]> {
-    // Mock conflict analysis - in production this would analyze actual staffing requirements
-    const conflicts = [
-      {
-        day: "Monday",
-        shiftType: "AM",
-        staffCount: 2,
-        minRequired: 4,
-        isUnderStaffed: true
-      },
-      {
-        day: "Friday",
-        shiftType: "Active Night",
-        staffCount: 1,
-        minRequired: 3,
-        isUnderStaffed: true
-      }
-    ];
-    return conflicts;
-  }
 
   async getIncidentReportsWithClosures(tenantId: number): Promise<any[]> {
     return await db.select({
