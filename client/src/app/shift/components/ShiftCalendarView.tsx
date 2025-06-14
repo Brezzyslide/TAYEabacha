@@ -77,8 +77,8 @@ export default function ShiftCalendarView({ shifts, onShiftClick, getClientName 
             ))}
           </div>
 
-          {/* Calendar Days */}
-          <div className="grid grid-cols-7 gap-2">
+          {/* Rectangular Calendar Grid */}
+          <div className="grid grid-cols-7 gap-0 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             {calendarDays.map(day => {
               const dayShifts = getShiftsForDay(day);
               const isCurrentMonth = day.getMonth() === currentDate.getMonth();
@@ -87,73 +87,67 @@ export default function ShiftCalendarView({ shifts, onShiftClick, getClientName 
               return (
                 <div
                   key={day.toISOString()}
-                  className={`min-h-[120px] p-2 border rounded-lg ${
+                  className={`aspect-square min-h-[140px] p-2 border-r border-b border-gray-200 dark:border-gray-700 last:border-r-0 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                     isCurrentMonth 
-                      ? 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700' 
-                      : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-800'
-                  } ${isDayToday ? 'ring-2 ring-blue-500' : ''}`}
+                      ? isDayToday 
+                        ? 'bg-blue-50 dark:bg-blue-900/20' 
+                        : 'bg-white dark:bg-gray-900'
+                      : 'bg-gray-50 dark:bg-gray-800'
+                  }`}
                 >
-                  <div className={`text-sm font-medium mb-2 ${
-                    isDayToday 
-                      ? 'text-blue-600 dark:text-blue-400' 
-                      : isCurrentMonth 
-                        ? 'text-gray-900 dark:text-white' 
-                        : 'text-gray-400 dark:text-gray-600'
-                  }`}>
-                    {format(day, 'd')}
-                  </div>
-                  
-                  <div className="space-y-1">
-                    {dayShifts.map(shift => {
-                      // Determine shift colors based on status and assignment
-                      const isUnassigned = !shift.userId;
-                      const isRequested = (shift as any).status === "requested";
-                      
-                      let shiftColors = "";
-                      if (isUnassigned && !isRequested) {
-                        // Unassigned shifts - green (available to request)
-                        shiftColors = "bg-green-50 dark:bg-green-950 hover:bg-green-100 dark:hover:bg-green-900 border-green-200 dark:border-green-800 text-green-900 dark:text-green-100";
-                      } else if (isRequested) {
-                        // Requested shifts - orange (pending approval)
-                        shiftColors = "bg-orange-50 dark:bg-orange-950 hover:bg-orange-100 dark:hover:bg-orange-900 border-orange-200 dark:border-orange-800 text-orange-900 dark:text-orange-100";
-                      } else {
-                        // Assigned shifts - blue (your shifts)
-                        shiftColors = "bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100";
-                      }
-
-                      return (
-                        <div
-                          key={shift.id}
-                          onClick={() => onShiftClick(shift)}
-                          className={`cursor-pointer p-1 rounded text-xs border ${shiftColors} ${
-                            isUnassigned && !isRequested ? 'ring-1 ring-green-300 dark:ring-green-700' : ''
-                          }`}
-                          title={isUnassigned && !isRequested ? "Click to request this shift" : ""}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium truncate">
+                  <div className="h-full flex flex-col">
+                    <div className={`text-sm font-medium mb-2 ${
+                      isDayToday 
+                        ? 'text-blue-600 dark:text-blue-400' 
+                        : isCurrentMonth 
+                          ? 'text-gray-900 dark:text-gray-100'
+                          : 'text-gray-400 dark:text-gray-600'
+                    }`}>
+                      {format(day, 'd')}
+                    </div>
+                    
+                    <div className="flex-1 space-y-1 overflow-y-auto">
+                      {dayShifts.map(shift => {
+                        const isAssigned = shift.userId !== null;
+                        const clientName = getClientName(shift.clientId);
+                        
+                        return (
+                          <div
+                            key={shift.id}
+                            onClick={() => onShiftClick(shift)}
+                            className={`p-1.5 rounded text-xs cursor-pointer hover:scale-105 transform transition-all duration-200 shadow-sm ${
+                              isAssigned 
+                                ? 'bg-green-500 text-white border border-green-600' 
+                                : 'bg-red-500 text-white border border-red-600'
+                            }`}
+                          >
+                            <div className="font-medium truncate mb-1">
                               {shift.title}
-                            </span>
-                            <ShiftStatusTag 
-                              status={isUnassigned && !isRequested ? "available" : (shift as any).status || "assigned"} 
-                              className="text-xs px-1 py-0" 
-                            />
-                          </div>
-                          
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{format(new Date(shift.startTime), "h:mm a")}</span>
-                          </div>
-                          
-                          {shift.clientId && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <User className="h-3 w-3" />
-                              <span className="truncate">{getClientName(shift.clientId)}</span>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                            
+                            <div className="flex items-center gap-1 text-xs opacity-90">
+                              <Clock className="h-3 w-3" />
+                              <span>
+                                {shift.startTime ? format(new Date(shift.startTime), 'HH:mm') : 'TBD'}
+                              </span>
+                            </div>
+                            
+                            {isAssigned && (
+                              <div className="flex items-center gap-1 text-xs opacity-90 mt-1">
+                                <User className="h-3 w-3" />
+                                <span className="truncate">Assigned</span>
+                              </div>
+                            )}
+                            
+                            {clientName && clientName !== 'Unknown Client' && (
+                              <div className="text-xs opacity-90 mt-1 truncate">
+                                🏠 {clientName}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               );
@@ -165,16 +159,12 @@ export default function ShiftCalendarView({ shifts, onShiftClick, getClientName 
       {/* Legend */}
       <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-100 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded"></div>
-          <span>Your Shifts</span>
+          <div className="w-3 h-3 bg-green-500 rounded"></div>
+          <span>Assigned Shifts</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-100 dark:bg-green-900 border border-green-200 dark:border-green-800 rounded"></div>
-          <span>Available (Click to Request)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-orange-100 dark:bg-orange-900 border border-orange-200 dark:border-orange-800 rounded"></div>
-          <span>Requested (Pending Approval)</span>
+          <div className="w-3 h-3 bg-red-500 rounded"></div>
+          <span>Unassigned Shifts</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 border-2 border-blue-500 rounded"></div>
