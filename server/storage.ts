@@ -896,9 +896,15 @@ export class DatabaseStorage implements IStorage {
 
   async updateHourAllocation(id: number, updateAllocation: Partial<InsertHourAllocation>, tenantId: number): Promise<HourAllocation | undefined> {
     // Convert number fields to strings for decimal columns
-    const processedData = { ...updateAllocation, updatedAt: new Date() };
+    const processedData: any = { ...updateAllocation, updatedAt: new Date() };
     if (updateAllocation.maxHours !== undefined) {
       processedData.maxHours = updateAllocation.maxHours.toString();
+      // Recalculate remaining hours
+      const currentAllocation = await this.getHourAllocation(id, tenantId);
+      if (currentAllocation) {
+        const currentUsed = parseFloat(currentAllocation.hoursUsed);
+        processedData.remainingHours = (updateAllocation.maxHours - currentUsed).toString();
+      }
     }
     
     const [allocation] = await db.update(hourAllocations)

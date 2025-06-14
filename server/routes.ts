@@ -1658,7 +1658,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivityLog({
         userId: req.user.id,
         action: "create_hour_allocation",
-        details: `Created hour allocation for staff ${allocationData.staffId}`,
+        resourceType: "hour_allocation",
+        description: `Created hour allocation for staff ${allocationData.staffId}`,
         tenantId: req.user.tenantId,
       });
       
@@ -1693,7 +1694,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivityLog({
         userId: req.user.id,
         action: "update_hour_allocation",
-        details: `Updated hour allocation ${allocationId}`,
+        resourceType: "hour_allocation",
+        description: `Updated hour allocation ${allocationId}`,
         tenantId: req.user.tenantId,
       });
       
@@ -1717,7 +1719,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivityLog({
         userId: req.user.id,
         action: "delete_hour_allocation",
-        details: `Deleted hour allocation ${allocationId}`,
+        resourceType: "hour_allocation",
+        description: `Deleted hour allocation ${allocationId}`,
         tenantId: req.user.tenantId,
       });
       
