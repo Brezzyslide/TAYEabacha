@@ -688,6 +688,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current user's availability
+  app.get("/api/staff-availability/current", requireAuth, async (req: any, res) => {
+    try {
+      const availability = await storage.getUserAvailability(req.user.id, req.user.tenantId);
+      res.json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch current availability" });
+    }
+  });
+
+  // Get quick patterns
+  app.get("/api/staff-availability/patterns", requireAuth, async (req: any, res) => {
+    try {
+      const patterns = await storage.getQuickPatterns(req.user.id, req.user.tenantId);
+      res.json(patterns);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch patterns" });
+    }
+  });
+
+  // Get conflict analysis
+  app.get("/api/staff-availability/conflicts", requireAuth, requireRole(["Admin", "TeamLeader"]), async (req: any, res) => {
+    try {
+      const conflicts = await storage.getAvailabilityConflicts(req.user.tenantId);
+      res.json(conflicts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch conflicts" });
+    }
+  });
+
+  // Admin - get all staff availability
+  app.get("/api/manage-staff-availability", requireAuth, requireRole(["Admin", "TeamLeader"]), async (req: any, res) => {
+    try {
+      const { archived } = req.query;
+      const showArchived = archived === 'true';
+      const availability = await storage.getAllStaffAvailability(req.user.tenantId, showArchived);
+      res.json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch staff availability" });
+    }
+  });
+
+  // Archive availability
+  app.post("/api/staff-availability/:id/archive", requireAuth, requireRole(["Admin", "TeamLeader"]), async (req: any, res) => {
+    try {
+      const availabilityId = parseInt(req.params.id);
+      const availability = await storage.archiveStaffAvailability(availabilityId, req.user.tenantId);
+      
+      if (!availability) {
+        return res.status(404).json({ message: "Staff availability not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "archive_availability",
+        resourceType: "staff_availability",
+        resourceId: availabilityId,
+        description: "Archived staff availability",
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to archive availability" });
+    }
+  });
+
+  // Override availability
+  app.put("/api/staff-availability/:id/override", requireAuth, requireRole(["Admin", "TeamLeader"]), async (req: any, res) => {
+    try {
+      const availabilityId = parseInt(req.params.id);
+      const updateData = { ...req.body, overrideByManager: true };
+      
+      const availability = await storage.updateStaffAvailability(availabilityId, updateData, req.user.tenantId);
+      
+      if (!availability) {
+        return res.status(404).json({ message: "Staff availability not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "override_availability",
+        resourceType: "staff_availability",
+        resourceId: availabilityId,
+        description: "Modified staff availability",
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to override availability" });
+    }
+  });
+
   app.put("/api/staff-availability/:id", requireAuth, async (req: any, res) => {
     try {
       const availabilityId = parseInt(req.params.id);

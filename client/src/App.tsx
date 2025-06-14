@@ -21,7 +21,8 @@ import ClientListPage from "@/app/support-work/client-profile/components/ClientL
 import SupportWorkPage from "@/pages/support-work";
 import ShiftDashboard from "@/app/shift/ShiftDashboard";
 import ShiftCalendar from "@/app/shift/ShiftCalendar";
-import MyAvailabilityPage from "@/app/staff-availability/MyAvailabilityPage";
+import StaffAvailabilityPage from "@/app/staff-availability/StaffAvailabilityPage";
+import ManageStaffAvailabilityPage from "@/app/manage-staff-availability/ManageStaffAvailabilityPage";
 import ObservationDashboard from "@/app/hourly-observations/ObservationDashboard";
 import CaseNoteDashboard from "@/app/case-notes/CaseNoteDashboard";
 import IncidentDashboard from "@/app/incident-management/IncidentDashboard";
@@ -44,7 +45,8 @@ function Router() {
       <ProtectedRoute path="/support-work/client-profile/create" component={CreateClientForm} />
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
-      <ProtectedRoute path="/staff-availability" component={MyAvailabilityPage} />
+      <ProtectedRoute path="/staff-availability" component={StaffAvailabilityPage} />
+      <ProtectedRoute path="/manage-staff-availability" component={ManageStaffAvailabilityPage} />
       <ProtectedRoute path="/hourly-observations" component={ObservationDashboard} />
       <ProtectedRoute path="/case-notes" component={CaseNoteDashboard} />
       <ProtectedRoute path="/incident-management" component={IncidentDashboard} />
