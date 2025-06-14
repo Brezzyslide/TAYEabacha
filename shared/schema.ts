@@ -882,7 +882,7 @@ export const ndisPricing = pgTable("ndis_pricing", {
   id: serial("id").primaryKey(),
   companyId: text("company_id").notNull().references(() => companies.id),
   shiftType: text("shift_type").notNull(), // "AM", "PM", "ActiveNight", "Sleepover"
-  ratio: text("ratio").notNull(), // "1:1", "1:2", "1:3", "1:4"
+  ratio: text("ratio").notNull(), // "1:1", "1:2", "1:3", "1:4", "2:1"
   rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -903,7 +903,7 @@ export const insertNdisPricingSchema = createInsertSchema(ndisPricing).omit({
   companyId: true,
 }).extend({
   shiftType: z.enum(["AM", "PM", "ActiveNight", "Sleepover"]),
-  ratio: z.enum(["1:1", "1:2", "1:3", "1:4"]),
+  ratio: z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"]),
   rate: z.number().positive("Rate must be positive"),
 });
 
@@ -959,13 +959,13 @@ export const insertNdisBudgetSchema = createInsertSchema(ndisBudgets).omit({
   clientId: z.number().positive("Client ID is required"),
   silTotal: z.number().min(0, "SIL total must be non-negative"),
   silRemaining: z.number().min(0, "SIL remaining must be non-negative"),
-  silAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])),
+  silAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"])),
   communityAccessTotal: z.number().min(0, "Community Access total must be non-negative"),
   communityAccessRemaining: z.number().min(0, "Community Access remaining must be non-negative"),
-  communityAccessAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])),
+  communityAccessAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"])),
   capacityBuildingTotal: z.number().min(0, "Capacity Building total must be non-negative"),
   capacityBuildingRemaining: z.number().min(0, "Capacity Building remaining must be non-negative"),
-  capacityBuildingAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])),
+  capacityBuildingAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"])),
   priceOverrides: z.object({
     AM: z.number().positive().optional(),
     PM: z.number().positive().optional(),
@@ -987,7 +987,7 @@ export const budgetTransactions = pgTable("budget_transactions", {
   
   category: text("category").notNull(), // "SIL", "CommunityAccess", "CapacityBuilding"
   shiftType: text("shift_type").notNull(), // "AM", "PM", "ActiveNight", "Sleepover"
-  ratio: text("ratio").notNull(), // "1:1", "1:2", "1:3", "1:4"
+  ratio: text("ratio").notNull(), // "1:1", "1:2", "1:3", "1:4", "2:1"
   hours: decimal("hours", { precision: 5, scale: 2 }).notNull(),
   rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
