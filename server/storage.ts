@@ -1,7 +1,7 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
-  customRoles, customPermissions, userRoleAssignments,
+  customRoles, customPermissions, userRoleAssignments, taskBoardTasks,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -11,7 +11,7 @@ import {
   type IncidentReport, type InsertIncidentReport, type IncidentClosure, type InsertIncidentClosure,
   type StaffMessage, type InsertStaffMessage, type HourAllocation, type InsertHourAllocation,
   type CustomRole, type InsertCustomRole, type CustomPermission, type InsertCustomPermission,
-  type UserRoleAssignment, type InsertUserRoleAssignment
+  type UserRoleAssignment, type InsertUserRoleAssignment, type TaskBoardTask, type InsertTaskBoardTask
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";

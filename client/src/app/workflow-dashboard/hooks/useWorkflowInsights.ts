@@ -1,30 +1,28 @@
 import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, subDays, subHours, startOfDay } from "date-fns";
 
-interface WorkflowInsight {
-  id: string;
-  type: "warning" | "error" | "info";
-  title: string;
-  description: string;
-  count: number;
-  icon: string;
-  actionUrl?: string;
-  actionLabel?: string;
+interface InsightData {
+  medicationsDueToday: number;
+  overdueObservations: number;
+  staffCoverageGaps: number;
+  pendingIncidents: number;
+  caseNotesDue: number;
+  budgetUtilization: number;
 }
 
 export function useWorkflowInsights() {
   // Fetch all necessary data
-  const { data: shifts = [] } = useQuery({ queryKey: ['/api/shifts'] });
-  const { data: incidents = [] } = useQuery({ queryKey: ['/api/incident-reports'] });
-  const { data: medicationRecords = [] } = useQuery({ queryKey: ['/api/medication-records'] });
-  const { data: medicationPlans = [] } = useQuery({ queryKey: ['/api/medication-plans'] });
-  const { data: caseNotes = [] } = useQuery({ queryKey: ['/api/case-notes'] });
-  const { data: hourAllocations = [] } = useQuery({ queryKey: ['/api/hour-allocations'] });
-  const { data: clients = [] } = useQuery({ queryKey: ['/api/clients'] });
-  const { data: users = [] } = useQuery({ queryKey: ['/api/users'] });
+  const { data: shifts = [], isLoading: shiftsLoading } = useQuery({ queryKey: ['/api/shifts'] });
+  const { data: incidents = [], isLoading: incidentsLoading } = useQuery({ queryKey: ['/api/incident-reports'] });
+  const { data: medicationRecords = [], isLoading: medRecordsLoading } = useQuery({ queryKey: ['/api/medication-records'] });
+  const { data: medicationPlans = [], isLoading: medPlansLoading } = useQuery({ queryKey: ['/api/medication-plans'] });
+  const { data: caseNotes = [], isLoading: caseNotesLoading } = useQuery({ queryKey: ['/api/case-notes'] });
+  const { data: hourAllocations = [], isLoading: allocationsLoading } = useQuery({ queryKey: ['/api/hour-allocations'] });
+  const { data: clients = [], isLoading: clientsLoading } = useQuery({ queryKey: ['/api/clients'] });
 
-  const generateInsights = (): WorkflowInsight[] => {
-    const insights: WorkflowInsight[] = [];
+  const isLoading = shiftsLoading || incidentsLoading || medRecordsLoading || medPlansLoading || caseNotesLoading || allocationsLoading || clientsLoading;
+
+  const generateInsights = (): InsightData => {
     const now = new Date();
     const today = startOfDay(now);
 

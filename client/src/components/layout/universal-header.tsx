@@ -39,6 +39,8 @@ export default function UniversalHeader() {
       breadcrumbs.push({ label: "Clients" });
     } else if (location.startsWith("/staff")) {
       breadcrumbs.push({ label: "Staff" });
+    } else if (location.startsWith("/workflow-dashboard")) {
+      breadcrumbs.push({ label: "Workflow Dashboard" });
     } else if (location.startsWith("/forms")) {
       breadcrumbs.push({ label: "Forms" });
     } else if (location.startsWith("/reports")) {
