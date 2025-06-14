@@ -21,7 +21,7 @@ export default function ShiftCalendarTab() {
   const [selectedShiftForRequest, setSelectedShiftForRequest] = useState<Shift | null>(null);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
-  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("weekly");
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("fortnightly");
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -91,16 +91,23 @@ export default function ShiftCalendarTab() {
         endDate = endOfWeek(now);
         break;
       case "fortnightly":
-        startDate = subDays(startOfWeek(now), 7);
-        endDate = addDays(endOfWeek(now), 7);
+        // Extend to show more shifts - current week plus next 2 weeks
+        startDate = startOfWeek(now);
+        endDate = addDays(endOfWeek(now), 14);
         break;
       default:
         return shifts;
     }
 
     return shifts.filter(shift => {
-      const shiftDate = new Date(shift.startTime);
-      return shiftDate >= startDate && shiftDate <= endDate;
+      if (!shift.startTime) return false;
+      try {
+        const shiftDate = new Date(shift.startTime);
+        return shiftDate >= startDate && shiftDate <= endDate;
+      } catch (error) {
+        console.warn('Invalid shift date:', shift);
+        return false;
+      }
     });
   }, [shifts, filterPeriod]);
 

@@ -521,7 +521,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                               max="52"
                               placeholder="Enter number of shifts"
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 6)}
                             />
                           </FormControl>
                           <FormMessage />

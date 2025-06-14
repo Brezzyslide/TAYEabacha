@@ -27,7 +27,15 @@ export default function ShiftCalendarView({ shifts, onShiftClick, getClientName 
   });
 
   const getShiftsForDay = (date: Date) => {
-    return shifts.filter(shift => isSameDay(new Date(shift.startTime), date));
+    return shifts.filter(shift => {
+      if (!shift.startTime) return false;
+      try {
+        return isSameDay(new Date(shift.startTime), date);
+      } catch (error) {
+        console.warn('Invalid date in shift:', shift);
+        return false;
+      }
+    });
   };
 
   const nextMonth = () => {
