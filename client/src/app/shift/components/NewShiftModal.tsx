@@ -145,8 +145,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     },
   });
 
-  const generateWeeklyPatternShifts = (data: ShiftFormData) => {
-    const shifts = [];
+  const generateWeeklyPatternShifts = (data: ShiftFormData): any[] => {
+    const shifts: any[] = [];
     const startDate = new Date(data.startDateTime);
     const endDate = data.endDateTime ? new Date(data.endDateTime) : null;
     const duration = endDate ? endDate.getTime() - startDate.getTime() : 8 * 60 * 60 * 1000; // 8 hours default
@@ -400,7 +400,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
               </div>
             </div>
 
-            {/* Recurring Options */}
+            {/* 🔁 Recurring Shift Pattern */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -409,31 +409,37 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                   onCheckedChange={(checked) => {
                     setIsRecurring(checked as boolean);
                     form.setValue("isRecurring", checked as boolean);
+                    if (!checked) {
+                      setSelectedWeekdays([]);
+                      form.setValue("selectedWeekdays", []);
+                    }
                   }}
                 />
                 <label htmlFor="isRecurring" className="text-lg font-medium">
-                  Recurring Shift
+                  🔁 Recurring Shift Pattern
                 </label>
               </div>
 
               {isRecurring && (
-                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                <div className="space-y-6 p-6 border-2 border-blue-200 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Configure Recurring Pattern</h3>
+                  
+                  {/* Frequency Selection */}
                   <FormField
                     control={form.control}
                     name="recurrenceType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Recurrence Pattern</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Frequency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || "weekly"}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select pattern" />
+                              <SelectValue placeholder="Select frequency" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="daily">Daily</SelectItem>
                             <SelectItem value="weekly">Weekly</SelectItem>
-                            <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                            <SelectItem value="fortnightly">Fortnightly (Every 2 weeks)</SelectItem>
                             <SelectItem value="monthly">Monthly</SelectItem>
                           </SelectContent>
                         </Select>
@@ -441,6 +447,37 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                       </FormItem>
                     )}
                   />
+
+                  {/* Weekday Selection */}
+                  <div className="space-y-3">
+                    <FormLabel>Repeat On Days <span className="text-red-500">*</span></FormLabel>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Select which days of the week this shift should repeat</p>
+                    <ToggleGroup
+                      type="multiple"
+                      value={selectedWeekdays}
+                      onValueChange={(value) => {
+                        setSelectedWeekdays(value);
+                        form.setValue("selectedWeekdays", value);
+                      }}
+                      className="grid grid-cols-7 gap-2"
+                    >
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                        <ToggleGroupItem
+                          key={day}
+                          value={day}
+                          className="h-12 data-[state=on]:bg-blue-600 data-[state=on]:text-white data-[state=on]:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900"
+                        >
+                          <div className="text-center">
+                            <div className="text-xs font-medium">{day.slice(0, 3)}</div>
+                            <div className="text-xs opacity-75">{day.slice(3)}</div>
+                          </div>
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                    {selectedWeekdays.length === 0 && isRecurring && (
+                      <p className="text-sm text-red-600 dark:text-red-400">Please select at least one day to enable pattern generation</p>
+                    )}
+                  </div>
 
                   <FormField
                     control={form.control}
@@ -533,6 +570,46 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                         </FormItem>
                       )}
                     />
+                  )}
+
+                  {/* Pattern Preview */}
+                  {selectedWeekdays.length > 0 && (
+                    <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">Pattern Preview</h4>
+                      <div className="text-sm text-green-800 dark:text-green-200 space-y-1">
+                        <p>
+                          <strong>Frequency:</strong> {form.watch("recurrenceType") || "weekly"}
+                        </p>
+                        <p>
+                          <strong>Weekdays:</strong> {selectedWeekdays.join(", ")}
+                        </p>
+                        <p>
+                          <strong>Duration:</strong> {
+                            endConditionType === "occurrences" 
+                              ? `${form.watch("numberOfOccurrences") || 6} occurrences`
+                              : form.watch("recurrenceEndDate")
+                                ? `Until ${format(form.watch("recurrenceEndDate")!, "PPP")}`
+                                : "Until end date selected"
+                          }
+                        </p>
+                        <div className="mt-2 p-2 bg-white dark:bg-gray-900 rounded border">
+                          <p className="text-xs font-medium">
+                            This pattern will generate approximately{" "}
+                            <span className="font-bold text-blue-600">
+                              {(() => {
+                                const formData = form.getValues();
+                                if (formData.selectedWeekdays && formData.selectedWeekdays.length > 0) {
+                                  const previewShifts = generateWeeklyPatternShifts(formData as ShiftFormData);
+                                  return previewShifts.length;
+                                }
+                                return 0;
+                              })()}
+                            </span>{" "}
+                            shifts starting from {format(form.watch("startDateTime") ?? new Date(), "PPP")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
