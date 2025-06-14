@@ -1747,15 +1747,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("API: User info:", { id: req.user.id, tenantId: req.user.tenantId });
       
       const { insertCustomRoleSchema } = await import("@shared/schema");
-      const roleData = insertCustomRoleSchema.parse({
-        ...req.body,
+      const roleData = insertCustomRoleSchema.parse(req.body);
+      
+      // Add backend-only fields
+      const completeRoleData = {
+        ...roleData,
         tenantId: req.user.tenantId,
         createdBy: req.user.id,
-      });
+      };
 
-      console.log("API: Validated role data:", roleData);
+      console.log("API: Complete role data:", completeRoleData);
 
-      const role = await storage.createCustomRole(roleData);
+      const role = await storage.createCustomRole(completeRoleData);
       
       await storage.createActivityLog({
         userId: req.user.id,

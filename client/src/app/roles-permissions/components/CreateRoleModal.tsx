@@ -42,11 +42,11 @@ export default function CreateRoleModal({ isOpen, onClose }: CreateRoleModalProp
     mutationFn: async (data: typeof formData) => {
       console.log("Creating role with data:", data);
       
-      // Clean up the data - remove empty basedOnRole field
+      // Clean up the data - remove empty fields
       const cleanData = {
         ...data,
-        basedOnRole: data.basedOnRole || null,
-        description: data.description || null,
+        basedOnRole: data.basedOnRole || undefined,
+        description: data.description || undefined,
       };
       
       try {

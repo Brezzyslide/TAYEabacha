@@ -752,7 +752,7 @@ export const insertCustomRoleSchema = createInsertSchema(customRoles).omit({
   name: z.string().min(2, "Role name must be at least 2 characters").max(50, "Role name cannot exceed 50 characters"),
   displayName: z.string().min(2, "Display name must be at least 2 characters").max(100, "Display name cannot exceed 100 characters"),
   basedOnRole: z.enum(["SupportWorker", "TeamLeader", "Coordinator", "Admin"]).optional(),
-  description: z.string().optional(),
+  description: z.string().optional().or(z.literal("")),
 });
 
 export const insertCustomPermissionSchema = createInsertSchema(customPermissions).omit({
