@@ -125,6 +125,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 14, 2025. Added Calendar view as default when opening Calendar tab instead of list view
 - June 14, 2025. Created complete Staff Hour Allocation module with analytics dashboard, allocation management, and shift enforcement capabilities
 - June 14, 2025. Updated SupportWorker permissions to allow medication administration record creation for assigned clients
+- June 14, 2025. Built comprehensive Roles & Permissions management system with custom role creation, permission overrides, and user assignment capabilities
 
 ## User Preferences
 

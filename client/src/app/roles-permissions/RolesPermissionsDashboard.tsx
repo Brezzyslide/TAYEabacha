@@ -260,7 +260,7 @@ export default function RolesPermissionsDashboard() {
                       </p>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-500">Users: {role.userCount}</span>
-                        <Button variant="outline" size="sm" disabled>
+                        <Button variant="outline" size="sm">
                           <Settings className="h-3 w-3 mr-1" />
                           Override
                         </Button>
@@ -286,7 +286,7 @@ export default function RolesPermissionsDashboard() {
                   Organization-specific roles that extend or modify built-in permissions
                 </p>
               </div>
-              <Button disabled>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Role
               </Button>
@@ -301,7 +301,7 @@ export default function RolesPermissionsDashboard() {
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Create custom roles to extend built-in functionality for specific organizational needs.
                   </p>
-                  <Button disabled>
+                  <Button onClick={() => setIsCreateModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create First Role
                   </Button>
@@ -496,6 +496,12 @@ export default function RolesPermissionsDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Create Role Modal */}
+      <CreateRoleModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }
