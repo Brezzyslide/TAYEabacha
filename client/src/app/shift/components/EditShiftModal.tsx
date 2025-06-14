@@ -68,10 +68,10 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
       
       const updateData = {
         title,
-        client_id: parseInt(clientId),
-        user_id: userId === "unassigned" ? null : parseInt(userId),
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
+        clientId: parseInt(clientId),
+        userId: userId === "unassigned" ? null : parseInt(userId),
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
         description,
       };
 
