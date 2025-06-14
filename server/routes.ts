@@ -1990,8 +1990,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json(task);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Task creation error:", error);
+      console.error("Error stack:", error.stack);
       res.status(500).json({ message: "Failed to create task", error: error.message });
     }
   });
