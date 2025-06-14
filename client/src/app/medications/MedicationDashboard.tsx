@@ -404,6 +404,12 @@ export default function MedicationDashboard() {
           clientName={recordAdminModal.clientName}
         />
       )}
+
+      {/* Add Medication Plan Modal */}
+      <AddMedicationPlanModal
+        isOpen={addPlanModal}
+        onClose={() => setAddPlanModal(false)}
+      />
     </div>
   );
 }
