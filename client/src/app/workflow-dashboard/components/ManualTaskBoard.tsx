@@ -74,7 +74,7 @@ export default function ManualTaskBoard() {
         status: "todo",
         assignedToUserId: data.assignedToUserId ? parseInt(data.assignedToUserId) : null,
       };
-      return apiRequest('POST', '/api/task-board-tasks', taskData);
+      return apiRequest('/api/task-board-tasks', 'POST', taskData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/task-board-tasks'] });

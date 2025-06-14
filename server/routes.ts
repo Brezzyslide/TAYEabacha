@@ -1971,7 +1971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: req.body.status || "todo",
         dueDateTime: req.body.dueDateTime ? new Date(req.body.dueDateTime) : null,
         assignedToUserId: req.body.assignedToUserId === "unassigned" || !req.body.assignedToUserId ? null : parseInt(req.body.assignedToUserId),
-        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303", // Use the actual company ID from database
+        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303", // Fixed company ID
         createdByUserId: req.user.id,
       };
 

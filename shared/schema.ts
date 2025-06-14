@@ -835,7 +835,7 @@ export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSc
 // Task Board Tasks table
 export const taskBoardTasks = pgTable("task_board_tasks", {
   id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
+  companyId: text("company_id").notNull().references(() => companies.id),
   title: text("title").notNull(),
   description: text("description"),
   status: text("status").notNull().default("todo"), // "todo" | "in-progress" | "done"
