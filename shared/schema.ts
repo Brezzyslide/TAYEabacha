@@ -876,3 +876,167 @@ export const insertTaskBoardTaskSchema = createInsertSchema(taskBoardTasks).omit
 
 export type TaskBoardTask = typeof taskBoardTasks.$inferSelect;
 export type InsertTaskBoardTask = z.infer<typeof insertTaskBoardTaskSchema>;
+
+// NDIS Pricing table
+export const ndisPricing = pgTable("ndis_pricing", {
+  id: serial("id").primaryKey(),
+  companyId: text("company_id").notNull().references(() => companies.id),
+  shiftType: text("shift_type").notNull(), // "AM", "PM", "ActiveNight", "Sleepover"
+  ratio: text("ratio").notNull(), // "1:1", "1:2", "1:3", "1:4"
+  rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const ndisPricingRelations = relations(ndisPricing, ({ one }) => ({
+  company: one(companies, {
+    fields: [ndisPricing.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const insertNdisPricingSchema = createInsertSchema(ndisPricing).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  companyId: true,
+}).extend({
+  shiftType: z.enum(["AM", "PM", "ActiveNight", "Sleepover"]),
+  ratio: z.enum(["1:1", "1:2", "1:3", "1:4"]),
+  rate: z.number().positive("Rate must be positive"),
+});
+
+export type NdisPricing = typeof ndisPricing.$inferSelect;
+export type InsertNdisPricing = z.infer<typeof insertNdisPricingSchema>;
+
+// NDIS Budgets table
+export const ndisBudgets = pgTable("ndis_budgets", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  companyId: text("company_id").notNull().references(() => companies.id),
+  
+  // SIL Category
+  silTotal: decimal("sil_total", { precision: 12, scale: 2 }).default("0").notNull(),
+  silRemaining: decimal("sil_remaining", { precision: 12, scale: 2 }).default("0").notNull(),
+  silAllowedRatios: text("sil_allowed_ratios").array().default([]).notNull(),
+  
+  // Community Access Category
+  communityAccessTotal: decimal("community_access_total", { precision: 12, scale: 2 }).default("0").notNull(),
+  communityAccessRemaining: decimal("community_access_remaining", { precision: 12, scale: 2 }).default("0").notNull(),
+  communityAccessAllowedRatios: text("community_access_allowed_ratios").array().default([]).notNull(),
+  
+  // Capacity Building Category
+  capacityBuildingTotal: decimal("capacity_building_total", { precision: 12, scale: 2 }).default("0").notNull(),
+  capacityBuildingRemaining: decimal("capacity_building_remaining", { precision: 12, scale: 2 }).default("0").notNull(),
+  capacityBuildingAllowedRatios: text("capacity_building_allowed_ratios").array().default([]).notNull(),
+  
+  // Price overrides (optional)
+  priceOverrides: jsonb("price_overrides"),
+  
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const ndisBudgetsRelations = relations(ndisBudgets, ({ one }) => ({
+  client: one(clients, {
+    fields: [ndisBudgets.clientId],
+    references: [clients.id],
+  }),
+  company: one(companies, {
+    fields: [ndisBudgets.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const insertNdisBudgetSchema = createInsertSchema(ndisBudgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  companyId: true,
+}).extend({
+  clientId: z.number().positive("Client ID is required"),
+  silTotal: z.number().min(0, "SIL total must be non-negative"),
+  silRemaining: z.number().min(0, "SIL remaining must be non-negative"),
+  silAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])),
+  communityAccessTotal: z.number().min(0, "Community Access total must be non-negative"),
+  communityAccessRemaining: z.number().min(0, "Community Access remaining must be non-negative"),
+  communityAccessAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])),
+  capacityBuildingTotal: z.number().min(0, "Capacity Building total must be non-negative"),
+  capacityBuildingRemaining: z.number().min(0, "Capacity Building remaining must be non-negative"),
+  capacityBuildingAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])),
+  priceOverrides: z.object({
+    AM: z.number().positive().optional(),
+    PM: z.number().positive().optional(),
+    ActiveNight: z.number().positive().optional(),
+    Sleepover: z.number().positive().optional(),
+  }).optional(),
+});
+
+export type NdisBudget = typeof ndisBudgets.$inferSelect;
+export type InsertNdisBudget = z.infer<typeof insertNdisBudgetSchema>;
+
+// Budget Transactions table for tracking deductions
+export const budgetTransactions = pgTable("budget_transactions", {
+  id: serial("id").primaryKey(),
+  budgetId: integer("budget_id").notNull().references(() => ndisBudgets.id),
+  shiftId: integer("shift_id").references(() => shifts.id),
+  caseNoteId: integer("case_note_id").references(() => caseNotes.id),
+  companyId: text("company_id").notNull().references(() => companies.id),
+  
+  category: text("category").notNull(), // "SIL", "CommunityAccess", "CapacityBuilding"
+  shiftType: text("shift_type").notNull(), // "AM", "PM", "ActiveNight", "Sleepover"
+  ratio: text("ratio").notNull(), // "1:1", "1:2", "1:3", "1:4"
+  hours: decimal("hours", { precision: 5, scale: 2 }).notNull(),
+  rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  description: text("description"),
+  
+  transactionType: text("transaction_type").default("deduction").notNull(), // "deduction", "adjustment", "refund"
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdByUserId: integer("created_by_user_id").notNull().references(() => users.id),
+});
+
+export const budgetTransactionsRelations = relations(budgetTransactions, ({ one }) => ({
+  budget: one(ndisBudgets, {
+    fields: [budgetTransactions.budgetId],
+    references: [ndisBudgets.id],
+  }),
+  shift: one(shifts, {
+    fields: [budgetTransactions.shiftId],
+    references: [shifts.id],
+  }),
+  caseNote: one(caseNotes, {
+    fields: [budgetTransactions.caseNoteId],
+    references: [caseNotes.id],
+  }),
+  company: one(companies, {
+    fields: [budgetTransactions.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [budgetTransactions.createdByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const insertBudgetTransactionSchema = createInsertSchema(budgetTransactions).omit({
+  id: true,
+  createdAt: true,
+  companyId: true,
+  createdByUserId: true,
+}).extend({
+  budgetId: z.number().positive("Budget ID is required"),
+  category: z.enum(["SIL", "CommunityAccess", "CapacityBuilding"]),
+  shiftType: z.enum(["AM", "PM", "ActiveNight", "Sleepover"]),
+  ratio: z.enum(["1:1", "1:2", "1:3", "1:4"]),
+  hours: z.number().positive("Hours must be positive"),
+  rate: z.number().positive("Rate must be positive"),
+  amount: z.number().positive("Amount must be positive"),
+  transactionType: z.enum(["deduction", "adjustment", "refund"]),
+});
+
+export type BudgetTransaction = typeof budgetTransactions.$inferSelect;
+export type InsertBudgetTransaction = z.infer<typeof insertBudgetTransactionSchema>;

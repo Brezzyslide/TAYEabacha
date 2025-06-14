@@ -1,0 +1,118 @@
+Please create a full-featured NDIS Budget Management system in:
+
+📁 `src/app/budget-management/`
+
+This module must include:
+
+---
+
+## 1️⃣ Participant Budget Setup
+
+File: `ParticipantBudgetForm.tsx`
+
+Fields:
+- Client (dropdown filtered by `companyId`)
+- NDIS Budget Categories:
+  - SIL: total + remaining
+  - Community Access: total + remaining
+  - Capacity Building: total + remaining
+- Allowed Ratios per category (multi-select: 1:1, 1:2, 1:3, 1:4)
+- Optional: price overrides per shift type (AM, PM, Active Night, Sleepover)
+
+🧾 On Submit:
+Save to `ndisBudgets` table:
+```ts
+{
+  clientId,
+  companyId,
+  sil: { total, remaining, allowedRatios: string[] },
+  communityAccess: { ... },
+  capacityBuilding: { ... },
+  priceOverrides?: {
+    AM?: number,
+    PM?: number,
+    ActiveNight?: number,
+    Sleepover?: number
+  }
+}
+2️⃣ Connect Shift to Budget Logic
+Update NewShiftModal.tsx (in shift-calendar) to include:
+
+Shift Type (auto-calculated or manual)
+
+Funding Category (dropdown: SIL, Access, Capacity)
+
+🧠 Auto-set shiftType based on time:
+
+ts
+Copy
+Edit
+06:00–20:00 → AM  
+20:00–00:00 → PM  
+00:00–06:00 → Active Night
+3️⃣ Deduct Budget on Case Note Submission
+In CreateCaseNoteModal.tsx:
+
+When a shift is completed and linked to a case note:
+
+Pull shiftType, fundingType, ratio, and hours
+
+Lookup rate from ndisPricing
+
+Calculate:
+
+ts
+Copy
+Edit
+cost = rate × hours × ratioMultiplier
+Subtract from participant’s remainingBudget for that category
+
+4️⃣ Budget Overview Component
+File: BudgetSummaryCard.tsx
+
+Show total, remaining, and used per category
+
+Progress bar visual
+
+Available to Admins + Team Leaders
+
+5️⃣ Permissions (Enforced at UI + API Level)
+Role	View Budget	Edit Budget	View Deductions	View Pricing
+SupportWorker	✅ own clients only	❌	✅ via case notes	❌
+Team Leader	✅	✅	✅	✅
+Admin	✅	✅	✅	✅
+
+All budget forms, edit buttons, and summaries must be:
+
+Conditionally rendered using a usePermissions() or hasPermission() helper
+
+Scoped by companyId and clientId at the data level
+
+6️⃣ Supporting Files
+ParticipantBudgetForm.tsx
+
+BudgetSummaryCard.tsx
+
+useNDISPricing.ts
+
+calculateFundingDeduction.ts
+
+getShiftTypeByTime.ts
+
+roles.ts → update to include "canEditBudget", "canViewPricing"
+
+permissions.ts → map roles to new actions
+
+Use:
+
+TanStack Query
+
+Tailwind + ShadCN
+
+react-hook-form + zod
+
+date-fns
+
+yaml
+Copy
+Edit

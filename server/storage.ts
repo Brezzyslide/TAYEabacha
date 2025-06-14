@@ -1,7 +1,7 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
-  customRoles, customPermissions, userRoleAssignments, taskBoardTasks,
+  customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -11,7 +11,9 @@ import {
   type IncidentReport, type InsertIncidentReport, type IncidentClosure, type InsertIncidentClosure,
   type StaffMessage, type InsertStaffMessage, type HourAllocation, type InsertHourAllocation,
   type CustomRole, type InsertCustomRole, type CustomPermission, type InsertCustomPermission,
-  type UserRoleAssignment, type InsertUserRoleAssignment, type TaskBoardTask, type InsertTaskBoardTask
+  type UserRoleAssignment, type InsertUserRoleAssignment, type TaskBoardTask, type InsertTaskBoardTask,
+  type NdisPricing, type InsertNdisPricing, type NdisBudget, type InsertNdisBudget,
+  type BudgetTransaction, type InsertBudgetTransaction
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -1165,6 +1167,163 @@ export class DatabaseStorage implements IStorage {
         eq(taskBoardTasks.companyId, companyId)
       ));
     return result.rowCount! > 0;
+  }
+
+  // NDIS Pricing methods
+  async getNdisPricing(companyId: string): Promise<NdisPricing[]> {
+    return await db.select().from(ndisPricing)
+      .where(and(
+        eq(ndisPricing.companyId, companyId),
+        eq(ndisPricing.isActive, true)
+      ))
+      .orderBy(ndisPricing.shiftType, ndisPricing.ratio);
+  }
+
+  async createNdisPricing(insertPricing: any): Promise<NdisPricing> {
+    const [pricing] = await db.insert(ndisPricing).values(insertPricing).returning();
+    return pricing;
+  }
+
+  async updateNdisPricing(id: number, updatePricing: any, companyId: string): Promise<NdisPricing | undefined> {
+    const [pricing] = await db.update(ndisPricing)
+      .set({ ...updatePricing, updatedAt: new Date() })
+      .where(and(
+        eq(ndisPricing.id, id),
+        eq(ndisPricing.companyId, companyId)
+      ))
+      .returning();
+    return pricing;
+  }
+
+  async deleteNdisPricing(id: number, companyId: string): Promise<boolean> {
+    const result = await db.update(ndisPricing)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(ndisPricing.id, id),
+        eq(ndisPricing.companyId, companyId)
+      ));
+    return result.rowCount! > 0;
+  }
+
+  // NDIS Budget methods
+  async getNdisBudgets(companyId: string): Promise<NdisBudget[]> {
+    return await db.select().from(ndisBudgets)
+      .where(and(
+        eq(ndisBudgets.companyId, companyId),
+        eq(ndisBudgets.isActive, true)
+      ))
+      .orderBy(desc(ndisBudgets.createdAt));
+  }
+
+  async getNdisBudgetByClient(clientId: number, companyId: string): Promise<NdisBudget | undefined> {
+    const [budget] = await db.select().from(ndisBudgets)
+      .where(and(
+        eq(ndisBudgets.clientId, clientId),
+        eq(ndisBudgets.companyId, companyId),
+        eq(ndisBudgets.isActive, true)
+      ));
+    return budget;
+  }
+
+  async createNdisBudget(insertBudget: any): Promise<NdisBudget> {
+    const [budget] = await db.insert(ndisBudgets).values(insertBudget).returning();
+    return budget;
+  }
+
+  async updateNdisBudget(id: number, updateBudget: any, companyId: string): Promise<NdisBudget | undefined> {
+    const [budget] = await db.update(ndisBudgets)
+      .set({ ...updateBudget, updatedAt: new Date() })
+      .where(and(
+        eq(ndisBudgets.id, id),
+        eq(ndisBudgets.companyId, companyId)
+      ))
+      .returning();
+    return budget;
+  }
+
+  async deactivateNdisBudget(id: number, companyId: string): Promise<boolean> {
+    const result = await db.update(ndisBudgets)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(ndisBudgets.id, id),
+        eq(ndisBudgets.companyId, companyId)
+      ));
+    return result.rowCount! > 0;
+  }
+
+  // Budget Transaction methods
+  async getBudgetTransactions(budgetId: number, companyId: string): Promise<BudgetTransaction[]> {
+    return await db.select().from(budgetTransactions)
+      .where(and(
+        eq(budgetTransactions.budgetId, budgetId),
+        eq(budgetTransactions.companyId, companyId)
+      ))
+      .orderBy(desc(budgetTransactions.createdAt));
+  }
+
+  async createBudgetTransaction(insertTransaction: any): Promise<BudgetTransaction> {
+    const [transaction] = await db.insert(budgetTransactions).values(insertTransaction).returning();
+    return transaction;
+  }
+
+  async processBudgetDeduction(params: {
+    budgetId: number;
+    category: string;
+    shiftType: string;
+    ratio: string;
+    hours: number;
+    rate: number;
+    amount: number;
+    shiftId?: number;
+    caseNoteId?: number;
+    description?: string;
+    companyId: string;
+    createdByUserId: number;
+  }): Promise<{ transaction: BudgetTransaction; updatedBudget: NdisBudget }> {
+    return await db.transaction(async (tx) => {
+      // Create the transaction record
+      const [transaction] = await tx.insert(budgetTransactions).values({
+        budgetId: params.budgetId,
+        shiftId: params.shiftId,
+        caseNoteId: params.caseNoteId,
+        companyId: params.companyId,
+        category: params.category,
+        shiftType: params.shiftType,
+        ratio: params.ratio,
+        hours: params.hours.toString(),
+        rate: params.rate.toString(),
+        amount: params.amount.toString(),
+        description: params.description,
+        transactionType: "deduction",
+        createdByUserId: params.createdByUserId,
+      }).returning();
+
+      // Update the budget remaining amount
+      let updateField;
+      switch (params.category) {
+        case "SIL":
+          updateField = { silRemaining: sql`${ndisBudgets.silRemaining} - ${params.amount}` };
+          break;
+        case "CommunityAccess":
+          updateField = { communityAccessRemaining: sql`${ndisBudgets.communityAccessRemaining} - ${params.amount}` };
+          break;
+        case "CapacityBuilding":
+          updateField = { capacityBuildingRemaining: sql`${ndisBudgets.capacityBuildingRemaining} - ${params.amount}` };
+          break;
+        default:
+          throw new Error(`Invalid category: ${params.category}`);
+      }
+
+      const [updatedBudget] = await tx.update(ndisBudgets)
+        .set({ ...updateField, updatedAt: new Date() })
+        .where(and(
+          eq(ndisBudgets.id, params.budgetId),
+          eq(ndisBudgets.companyId, params.companyId)
+        ))
+        .returning();
+
+      return { transaction, updatedBudget };
+    });
   }
 }
 
