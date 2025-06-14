@@ -1961,16 +1961,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/task-board-tasks", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const { insertTaskBoardTaskSchema } = await import("@shared/schema");
-      const taskData = insertTaskBoardTaskSchema.parse(req.body);
+      console.log("Creating task with data:", req.body);
+      console.log("User info:", { id: req.user.id, companyId: req.user.companyId, tenantId: req.user.tenantId });
       
-      const completeTaskData = {
-        ...taskData,
-        companyId: req.user.companyId,
+      // Prepare task data with proper types
+      const taskData = {
+        title: req.body.title,
+        description: req.body.description || null,
+        status: req.body.status || "todo",
+        dueDateTime: req.body.dueDateTime ? new Date(req.body.dueDateTime) : null,
+        assignedToUserId: req.body.assignedToUserId === "unassigned" || !req.body.assignedToUserId ? null : parseInt(req.body.assignedToUserId),
+        companyId: String(req.user.companyId), // Ensure it's a string to match TEXT field
         createdByUserId: req.user.id,
       };
 
-      const task = await storage.createTaskBoardTask(completeTaskData);
+      console.log("Processed task data:", taskData);
+
+      const task = await storage.createTaskBoardTask(taskData);
+      console.log("Created task:", task);
       
       await storage.createActivityLog({
         userId: req.user.id,
@@ -1983,7 +1991,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(task);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create task" });
+      console.error("Task creation error:", error);
+      res.status(500).json({ message: "Failed to create task", error: error.message });
     }
   });
 

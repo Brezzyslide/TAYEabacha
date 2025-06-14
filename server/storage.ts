@@ -1141,7 +1141,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTaskBoardTask(insertTask: any): Promise<TaskBoardTask> {
+    console.log("Storage: Creating task with data:", insertTask);
     const [task] = await db.insert(taskBoardTasks).values(insertTask).returning();
+    console.log("Storage: Created task:", task);
     return task;
   }
 
