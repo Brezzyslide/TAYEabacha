@@ -120,6 +120,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
           endTime: data.endDateTime?.toISOString(),
           userId: data.userId,
           clientId: data.clientId,
+          fundingCategory: data.fundingCategory,
+          staffRatio: data.staffRatio,
           tenantId: user.tenantId,
         };
         const response = await apiRequest("POST", "/api/shifts", shiftData);
@@ -191,6 +193,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
           endTime: shiftEnd.toISOString(),
           userId: data.userId,
           clientId: data.clientId,
+          fundingCategory: data.fundingCategory,
+          staffRatio: data.staffRatio,
           seriesId: `pattern_${Date.now()}`,
           weekday: weekdayName,
         });
