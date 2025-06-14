@@ -192,14 +192,22 @@ export const medicationPlans = pgTable("medication_plans", {
 // Medication Records table
 export const medicationRecords = pgTable("medication_records", {
   id: serial("id").primaryKey(),
-  medicationPlanId: integer("medication_plan_id").notNull().references(() => medicationPlans.id),
+  medicationPlanId: integer("medication_plan_id").references(() => medicationPlans.id), // Made nullable for manual entries
   clientId: integer("client_id").notNull().references(() => clients.id),
   administeredBy: integer("administered_by").notNull().references(() => users.id),
-  scheduledTime: timestamp("scheduled_time").notNull(),
+  medicationName: text("medication_name"), // Added for direct medication name - nullable initially
+  scheduledTime: timestamp("scheduled_time"),
   actualTime: timestamp("actual_time"),
-  result: text("result").notNull(), // administered, refused, missed, delayed
+  dateTime: timestamp("date_time"), // New field for administration date/time - nullable initially
+  timeOfDay: text("time_of_day"), // Morning, Afternoon, Night - nullable initially
+  route: text("route"), // Oral, Injection, Topical, Other - nullable initially
+  status: text("status"), // Administered, Refused, Missed - nullable initially
+  result: text("result").notNull(), // administered, refused, missed, delayed (legacy field)
   notes: text("notes"),
   refusalReason: text("refusal_reason"),
+  wasWitnessed: boolean("was_witnessed").default(false),
+  attachmentBeforeUrl: text("attachment_before_url"), // Photo before administration
+  attachmentAfterUrl: text("attachment_after_url"), // Photo after administration
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
