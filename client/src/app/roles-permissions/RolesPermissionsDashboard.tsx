@@ -527,6 +527,12 @@ export default function RolesPermissionsDashboard() {
           roleDisplayName={selectedBuiltInRole.displayName}
         />
       )}
+
+      {/* Assign Role Modal */}
+      <AssignRoleModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+      />
     </div>
   );
 }
