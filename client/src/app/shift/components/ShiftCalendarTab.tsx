@@ -8,6 +8,7 @@ import ShiftViewToggle from "./ShiftViewToggle";
 import ShiftCalendarView from "./ShiftCalendarView";
 import ShiftRequestConfirmDialog from "./ShiftRequestConfirmDialog";
 import NewShiftModal from "./NewShiftModal";
+import EditShiftModal from "./EditShiftModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +22,8 @@ export default function ShiftCalendarTab() {
   const [selectedShiftForRequest, setSelectedShiftForRequest] = useState<Shift | null>(null);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
+  const [isEditShiftModalOpen, setIsEditShiftModalOpen] = useState(false);
+  const [selectedShiftForEdit, setSelectedShiftForEdit] = useState<Shift | null>(null);
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("fortnightly");
   
   const { user } = useAuth();
@@ -283,13 +286,19 @@ export default function ShiftCalendarTab() {
         <ShiftCalendarView
           shifts={allViewableShifts}
           onShiftClick={(shift) => {
-            // Only handle unassigned shifts - show confirmation dialog
+            // Check if user can edit shifts (Admin/Team Leader/Coordinator)
+            if (user?.role === "Admin" || user?.role === "TeamLeader" || user?.role === "Coordinator") {
+              setSelectedShiftForEdit(shift);
+              setIsEditShiftModalOpen(true);
+              return;
+            }
+            
+            // For staff - only handle unassigned shifts for requesting
             if (!shift.userId && (shift as any).status !== "requested") {
               setSelectedShiftForRequest(shift);
               setIsRequestDialogOpen(true);
               return;
             }
-            // For assigned shifts, do nothing (viewing only)
           }}
           getClientName={getClientName}
         />
@@ -446,6 +455,17 @@ export default function ShiftCalendarTab() {
         clientName={selectedShiftForRequest ? getClientName(selectedShiftForRequest.clientId) : ""}
         isLoading={requestShiftMutation.isPending}
       />
+
+      {selectedShiftForEdit && (
+        <EditShiftModal
+          isOpen={isEditShiftModalOpen}
+          onClose={() => {
+            setIsEditShiftModalOpen(false);
+            setSelectedShiftForEdit(null);
+          }}
+          shift={selectedShiftForEdit}
+        />
+      )}
     </div>
   );
 }

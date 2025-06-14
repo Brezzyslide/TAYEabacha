@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -18,9 +18,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Select,
   SelectContent,
@@ -28,125 +25,108 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type Shift } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { Shift, Client, User } from "@shared/schema";
 
-const editShiftFormSchema = z.object({
+const editShiftSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  startDateTime: z.date(),
-  endDateTime: z.date().optional(),
-  userId: z.number().optional(),
-  clientId: z.number().optional(),
+  clientId: z.number().min(1, "Client is required"),
+  userId: z.number().nullable(),
+  startTime: z.date(),
+  endTime: z.date(),
+  description: z.string().optional(),
 });
 
-type EditShiftFormData = z.infer<typeof editShiftFormSchema>;
+type EditShiftFormData = z.infer<typeof editShiftSchema>;
 
 interface EditShiftModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  shiftId: number;
+  isOpen: boolean;
+  onClose: () => void;
+  shift: Shift;
 }
 
-export default function EditShiftModal({ open, onOpenChange, shiftId }: EditShiftModalProps) {
-  const { user } = useAuth();
+export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModalProps) {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date(shift.startTime));
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const form = useForm<EditShiftFormData>({
-    resolver: zodResolver(editShiftFormSchema),
-    defaultValues: {
-      title: "",
-      startDateTime: new Date(),
-    },
-  });
-
-  const { data: shift, isLoading: isLoadingShift } = useQuery<Shift>({
-    queryKey: ["/api/shifts", shiftId],
-    queryFn: async () => {
-      const response = await fetch(`/api/shifts/${shiftId}`);
-      if (!response.ok) throw new Error("Failed to fetch shift");
-      return response.json();
-    },
-    enabled: open && !!shiftId,
-  });
-
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-  });
-
-  const { data: clients = [] } = useQuery({
+  // Fetch clients
+  const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
 
-  useEffect(() => {
-    if (shift) {
-      form.reset({
-        title: shift.title || "",
-        startDateTime: new Date(shift.startTime),
-        endDateTime: shift.endTime ? new Date(shift.endTime) : undefined,
-        userId: shift.userId || undefined,
-        clientId: shift.clientId || undefined,
-      });
-    }
-  }, [shift, form]);
+  // Fetch users/staff
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
 
+  const form = useForm<EditShiftFormData>({
+    resolver: zodResolver(editShiftSchema),
+    defaultValues: {
+      title: shift.title || "",
+      clientId: shift.clientId || 0,
+      userId: shift.userId,
+      startTime: new Date(shift.startTime),
+      endTime: new Date(shift.endTime),
+      shiftType: shift.shiftType || "",
+      requirements: shift.requirements || "",
+      notes: shift.notes || "",
+      hourlyRate: shift.hourlyRate || 0,
+    },
+  });
+
+  // Update shift mutation
   const updateShiftMutation = useMutation({
     mutationFn: async (data: EditShiftFormData) => {
-      const updateData = {
-        title: data.title,
-        startTime: data.startDateTime.toISOString(),
-        endTime: data.endDateTime?.toISOString(),
-        userId: data.userId,
-        clientId: data.clientId,
-      };
-
-      const response = await apiRequest("PUT", `/api/shifts/${shiftId}`, updateData);
-      return response.json();
+      return apiRequest(`/api/shifts/${shift.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       toast({
         title: "Shift Updated",
-        description: "Shift has been updated successfully",
+        description: "The shift has been successfully updated.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/shifts", shiftId] });
-      onOpenChange(false);
+      onClose();
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        title: "Failed to Update Shift",
-        description: error.message,
+        title: "Error",
+        description: error.message || "Failed to update shift.",
         variant: "destructive",
       });
     },
   });
 
+  // Delete shift mutation
   const deleteShiftMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("DELETE", `/api/shifts/${shiftId}`);
+      return apiRequest(`/api/shifts/${shift.id}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       toast({
         title: "Shift Deleted",
-        description: "Shift has been deleted successfully",
+        description: "The shift has been successfully deleted.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
-      onOpenChange(false);
+      onClose();
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        title: "Failed to Delete Shift",
-        description: error.message,
+        title: "Error",
+        description: error.message || "Failed to delete shift.",
         variant: "destructive",
       });
     },
@@ -162,170 +142,44 @@ export default function EditShiftModal({ open, onOpenChange, shiftId }: EditShif
     }
   };
 
-  if (isLoadingShift) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      
+      // Update start time with new date
+      const currentStartTime = form.getValues("startTime");
+      const newStartTime = new Date(date);
+      newStartTime.setHours(currentStartTime.getHours(), currentStartTime.getMinutes());
+      form.setValue("startTime", newStartTime);
+      
+      // Update end time with new date
+      const currentEndTime = form.getValues("endTime");
+      const newEndTime = new Date(date);
+      newEndTime.setHours(currentEndTime.getHours(), currentEndTime.getMinutes());
+      form.setValue("endTime", newEndTime);
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Shift</DialogTitle>
-          <DialogDescription>
-            Update shift details and assignments
-          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Shift Title *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter shift title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="startDateTime"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date & Time *</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP HH:mm")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                        <div className="p-3 border-t">
-                          <Input
-                            type="time"
-                            value={field.value ? format(field.value, "HH:mm") : ""}
-                            onChange={(e) => {
-                              const [hours, minutes] = e.target.value.split(":");
-                              const newDate = new Date(field.value || new Date());
-                              newDate.setHours(parseInt(hours), parseInt(minutes));
-                              field.onChange(newDate);
-                            }}
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endDateTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date & Time</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP HH:mm")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                        <div className="p-3 border-t">
-                          <Input
-                            type="time"
-                            value={field.value ? format(field.value, "HH:mm") : ""}
-                            onChange={(e) => {
-                              const [hours, minutes] = e.target.value.split(":");
-                              const newDate = new Date(field.value || new Date());
-                              newDate.setHours(parseInt(hours), parseInt(minutes));
-                              field.onChange(newDate);
-                            }}
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="userId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assign to Staff</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select staff member" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
-                        {(users as any[]).map((user: any) => (
-                          <SelectItem key={user.id} value={user.id.toString()}>
-                            {user.username}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Shift Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter shift title" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -337,17 +191,19 @@ export default function EditShiftModal({ open, onOpenChange, shiftId }: EditShif
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Client</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                    <Select
+                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select client" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Client</SelectItem>
-                        {(clients as any[]).map((client: any) => (
+                        {clients.map((client) => (
                           <SelectItem key={client.id} value={client.id.toString()}>
-                            {client.fullName}
+                            {client.firstName} {client.lastName}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -358,45 +214,230 @@ export default function EditShiftModal({ open, onOpenChange, shiftId }: EditShif
               />
             </div>
 
-            <div className="flex justify-between">
+            {/* Date Selection */}
+            <FormItem>
+              <FormLabel>Shift Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </FormItem>
+
+            {/* Time and Shift Type */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Time</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        value={format(field.value, "HH:mm")}
+                        onChange={(e) => {
+                          const [hours, minutes] = e.target.value.split(':');
+                          const newTime = new Date(selectedDate);
+                          newTime.setHours(parseInt(hours), parseInt(minutes));
+                          field.onChange(newTime);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Time</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        value={format(field.value, "HH:mm")}
+                        onChange={(e) => {
+                          const [hours, minutes] = e.target.value.split(':');
+                          const newTime = new Date(selectedDate);
+                          newTime.setHours(parseInt(hours), parseInt(minutes));
+                          field.onChange(newTime);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="shiftType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Shift Type</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                        <SelectItem value="Active Night">Active Night</SelectItem>
+                        <SelectItem value="Sleepover Night">Sleepover Night</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Assignment and Rate */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="userId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned Staff (Optional)</FormLabel>
+                    <Select
+                      value={field.value?.toString() || "unassigned"}
+                      onValueChange={(value) => 
+                        field.onChange(value === "unassigned" ? null : parseInt(value))
+                      }
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select staff member" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.firstName} {user.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="hourlyRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hourly Rate ($)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Requirements and Notes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="requirements"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Requirements</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter shift requirements..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter additional notes..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={updateShiftMutation.isPending}
+              >
+                {updateShiftMutation.isPending ? "Updating..." : "Update Shift"}
+              </Button>
+              
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={deleteShiftMutation.isPending}
+                className="sm:w-auto"
               >
-                {deleteShiftMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Shift
-                  </>
-                )}
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleteShiftMutation.isPending ? "Deleting..." : "Delete"}
               </Button>
-
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateShiftMutation.isPending}>
-                  {updateShiftMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Update Shift"
-                  )}
-                </Button>
-              </div>
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="sm:w-auto"
+              >
+                Cancel
+              </Button>
             </div>
           </form>
         </Form>
