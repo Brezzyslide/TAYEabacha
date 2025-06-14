@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, Clock, User } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, startOfWeek, endOfWeek } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays } from "date-fns";
 import { type Shift } from "@shared/schema";
 import ShiftStatusTag from "./ShiftStatusTag";
 
@@ -17,15 +17,37 @@ interface ShiftCalendarViewProps {
 export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, getClientName }: ShiftCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
-  
-  const calendarDays = eachDayOfInterval({
-    start: calendarStart,
-    end: calendarEnd
-  });
+  // Dynamic calendar range based on filter period
+  const getCalendarRange = () => {
+    switch (filterPeriod) {
+      case "daily":
+        return {
+          start: startOfDay(currentDate),
+          end: endOfDay(currentDate)
+        };
+      case "weekly":
+        return {
+          start: startOfWeek(currentDate),
+          end: endOfWeek(currentDate)
+        };
+      case "fortnightly":
+        return {
+          start: startOfWeek(currentDate),
+          end: addDays(endOfWeek(currentDate), 7)
+        };
+      case "monthly":
+      default:
+        const monthStart = startOfMonth(currentDate);
+        const monthEnd = endOfMonth(currentDate);
+        return {
+          start: startOfWeek(monthStart),
+          end: endOfWeek(monthEnd)
+        };
+    }
+  };
+
+  const { start: calendarStart, end: calendarEnd } = getCalendarRange();
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getShiftsForDay = (date: Date) => {
     return shifts.filter(shift => {
@@ -77,17 +99,81 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
       {/* Calendar Grid */}
       <Card>
         <CardContent className="p-4">
-          {/* Week Days Header */}
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2">
-                {day}
+          {filterPeriod === "daily" ? (
+            /* Single Day View */
+            <div className="space-y-4">
+              <div className="text-center text-lg font-semibold text-gray-900 dark:text-white">
+                {format(currentDate, 'EEEE, MMMM d, yyyy')}
               </div>
-            ))}
-          </div>
+              <div className="max-w-md mx-auto">
+                {(() => {
+                  const dayShifts = getShiftsForDay(currentDate);
+                  const isDayToday = isToday(currentDate);
+                  
+                  return (
+                    <div className={`p-4 rounded-lg border-2 min-h-[200px] ${
+                      isDayToday 
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
+                        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                    }`}>
+                      <div className="space-y-3">
+                        {dayShifts.length === 0 ? (
+                          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                            <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p>No shifts scheduled for this day</p>
+                          </div>
+                        ) : (
+                          dayShifts.map(shift => {
+                            const isAssigned = shift.userId !== null;
+                            const clientName = getClientName(shift.clientId);
+                            
+                            return (
+                              <div
+                                key={shift.id}
+                                onClick={() => onShiftClick(shift)}
+                                className={`p-3 rounded cursor-pointer hover:scale-105 transform transition-all duration-200 shadow-sm ${
+                                  isAssigned 
+                                    ? 'bg-green-500 text-white border border-green-600' 
+                                    : 'bg-red-500 text-white border border-red-600'
+                                }`}
+                              >
+                                <div className="font-medium text-sm">
+                                  {shift.title || 'Untitled Shift'}
+                                </div>
+                                <div className="text-sm opacity-75">
+                                  {clientName}
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <span className="flex items-center gap-1 text-sm">
+                                    <Clock className="h-3 w-3" />
+                                    {shift.startTime && format(new Date(shift.startTime), 'HH:mm')}
+                                  </span>
+                                  <ShiftStatusTag status={shift.status} size="sm" />
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : (
+            /* Multi-Day Grid View */
+            <>
+              {/* Week Days Header */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2">
+                    {day}
+                  </div>
+                ))}
+              </div>
 
-          {/* Rectangular Calendar Grid */}
-          <div className="grid grid-cols-7 gap-0 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              {/* Collapsed Calendar Grid */}
+              <div className="grid grid-cols-7 gap-0 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             {calendarDays.map(day => {
               const dayShifts = getShiftsForDay(day);
               const isCurrentMonth = day.getMonth() === currentDate.getMonth();
@@ -161,7 +247,9 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                 </div>
               );
             })}
-          </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
