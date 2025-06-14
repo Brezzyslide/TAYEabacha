@@ -249,17 +249,45 @@ export default function ShiftCalendarTab() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Select value={filterPeriod} onValueChange={(value: FilterPeriod) => setFilterPeriod(value)}>
-            <SelectTrigger className="w-40">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="fortnightly">Fortnightly</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Calendar View Options */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+              <Calendar className="h-4 w-4" />
+              <span>View:</span>
+            </div>
+            <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <button
+                onClick={() => setFilterPeriod("daily")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-l-lg transition-colors ${
+                  filterPeriod === "daily"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={() => setFilterPeriod("weekly")}
+                className={`px-3 py-1.5 text-sm font-medium border-x border-gray-200 dark:border-gray-700 transition-colors ${
+                  filterPeriod === "weekly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Weekly
+              </button>
+              <button
+                onClick={() => setFilterPeriod("fortnightly")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition-colors ${
+                  filterPeriod === "fortnightly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Fortnightly
+              </button>
+            </div>
+          </div>
           
           <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
           
