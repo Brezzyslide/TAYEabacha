@@ -52,7 +52,7 @@ export default function CreateRoleModal({ isOpen, onClose }: CreateRoleModalProp
       try {
         const validatedData = insertCustomRoleSchema.parse(cleanData);
         console.log("Validated data:", validatedData);
-        return apiRequest('/api/custom-roles', 'POST', validatedData);
+        return apiRequest('POST', '/api/custom-roles', validatedData);
       } catch (validationError) {
         console.error("Validation error:", validationError);
         throw validationError;
