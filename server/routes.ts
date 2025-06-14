@@ -1949,6 +1949,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Task Board API - TeamLeader+ can manage tasks
+  app.get("/api/task-board-tasks", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const tasks = await storage.getTaskBoardTasks(req.user.companyId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post("/api/task-board-tasks", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { insertTaskBoardTaskSchema } = await import("@shared/schema");
+      const taskData = insertTaskBoardTaskSchema.parse(req.body);
+      
+      const completeTaskData = {
+        ...taskData,
+        companyId: req.user.companyId,
+        createdByUserId: req.user.id,
+      };
+
+      const task = await storage.createTaskBoardTask(completeTaskData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_task",
+        resourceType: "task_board_task",
+        resourceId: task.id,
+        description: `Created task: ${task.title}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  app.put("/api/task-board-tasks/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.updateTaskBoardTask(taskId, req.body, req.user.companyId);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_task",
+        resourceType: "task_board_task",
+        resourceId: taskId,
+        description: `Updated task: ${task.title}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  app.delete("/api/task-board-tasks/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const success = await storage.deleteTaskBoardTask(taskId, req.user.companyId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_task",
+        resourceType: "task_board_task",
+        description: `Deleted task ${taskId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Task deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete task" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
