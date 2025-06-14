@@ -24,7 +24,8 @@ interface MedicationPlan {
   startDate: string;
   endDate?: string;
   instructions: string;
-  isActive: boolean;
+  status: string;
+  isActive?: boolean;
   createdAt: string;
 }
 
@@ -387,7 +388,7 @@ export default function MedicationDashboard() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  {medicationPlans.filter((plan: MedicationPlan) => plan.isActive).length === 0 ? (
+                  {medicationPlans.filter((plan: MedicationPlan) => plan.status === 'active').length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <Pill className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                       <p>No active medication plans available</p>
@@ -396,7 +397,7 @@ export default function MedicationDashboard() {
                   ) : (
                     <div className="space-y-4">
                       {medicationPlans
-                        .filter((plan: MedicationPlan) => plan.isActive)
+                        .filter((plan: MedicationPlan) => plan.status === 'active')
                         .map((plan: MedicationPlan) => (
                           <div key={plan.id} className="border rounded-lg p-4 hover:bg-blue-50 transition-colors">
                             <div className="flex justify-between items-center">
