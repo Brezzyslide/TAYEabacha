@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, MapPin, Users, UserCheck, UserX, TrendingUp, CheckCircle, PlayCircle, Plus, Filter } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 
-type FilterPeriod = "daily" | "weekly" | "fortnightly";
+type FilterPeriod = "daily" | "weekly" | "fortnightly" | "monthly";
 
 export default function ShiftCalendarTab() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
@@ -99,6 +99,11 @@ export default function ShiftCalendarTab() {
         // Only next 2 weeks from today
         startDate = startOfDay(now);
         endDate = addDays(now, 14);
+        break;
+      case "monthly":
+        // Only this month's shifts
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         break;
       default:
         return shifts;
@@ -280,13 +285,23 @@ export default function ShiftCalendarTab() {
               </button>
               <button
                 onClick={() => setFilterPeriod("fortnightly")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium border-x border-gray-200 dark:border-gray-700 transition-colors ${
                   filterPeriod === "fortnightly"
                     ? "bg-blue-500 text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
                 Fortnightly
+              </button>
+              <button
+                onClick={() => setFilterPeriod("monthly")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition-colors ${
+                  filterPeriod === "monthly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Monthly
               </button>
             </div>
           </div>
@@ -315,6 +330,7 @@ export default function ShiftCalendarTab() {
       ) : viewMode === "calendar" ? (
         <ShiftCalendarView
           shifts={allViewableShifts}
+          filterPeriod={filterPeriod}
           onShiftClick={(shift) => {
             // Check if user can edit shifts (ConsoleManager/Admin/Team Leader/Coordinator)
             if (user?.role === "ConsoleManager" || user?.role === "Admin" || user?.role === "TeamLeader" || user?.role === "Coordinator") {

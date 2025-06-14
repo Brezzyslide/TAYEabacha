@@ -9,11 +9,12 @@ import ShiftStatusTag from "./ShiftStatusTag";
 
 interface ShiftCalendarViewProps {
   shifts: Shift[];
+  filterPeriod: "daily" | "weekly" | "fortnightly" | "monthly";
   onShiftClick: (shift: Shift) => void;
   getClientName: (clientId: number | null) => string;
 }
 
-export default function ShiftCalendarView({ shifts, onShiftClick, getClientName }: ShiftCalendarViewProps) {
+export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, getClientName }: ShiftCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const monthStart = startOfMonth(currentDate);
