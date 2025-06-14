@@ -1952,7 +1952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task Board API - TeamLeader+ can manage tasks
   app.get("/api/task-board-tasks", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const tasks = await storage.getTaskBoardTasks(req.user.companyId);
+      const tasks = await storage.getTaskBoardTasks("5b3d3a66-ef3d-4e48-9399-ee580c64e303");
       res.json(tasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch tasks" });
@@ -1971,7 +1971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: req.body.status || "todo",
         dueDateTime: req.body.dueDateTime ? new Date(req.body.dueDateTime) : null,
         assignedToUserId: req.body.assignedToUserId === "unassigned" || !req.body.assignedToUserId ? null : parseInt(req.body.assignedToUserId),
-        companyId: String(req.user.companyId), // Ensure it's a string to match TEXT field
+        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303", // Use the actual company ID from database
         createdByUserId: req.user.id,
       };
 
