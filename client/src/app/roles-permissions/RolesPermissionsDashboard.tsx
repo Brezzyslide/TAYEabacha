@@ -74,24 +74,26 @@ export default function RolesPermissionsDashboard() {
   });
 
   const deletePermissionMutation = useMutation({
-    mutationFn: (permissionId: number) => apiRequest(`/api/custom-permissions/${permissionId}`, 'DELETE'),
+    mutationFn: (permissionId: number) => apiRequest('DELETE', `/api/custom-permissions/${permissionId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/custom-permissions'] });
       toast({ title: "Permission deleted successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete permission", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Delete permission error:", error);
+      toast({ title: "Failed to delete permission", description: error.message, variant: "destructive" });
     },
   });
 
   const revokeAssignmentMutation = useMutation({
-    mutationFn: (assignmentId: number) => apiRequest(`/api/user-role-assignments/${assignmentId}`, 'DELETE'),
+    mutationFn: (assignmentId: number) => apiRequest('DELETE', `/api/user-role-assignments/${assignmentId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-role-assignments'] });
       toast({ title: "Role assignment revoked successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to revoke role assignment", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Revoke assignment error:", error);
+      toast({ title: "Failed to revoke role assignment", description: error.message, variant: "destructive" });
     },
   });
 
