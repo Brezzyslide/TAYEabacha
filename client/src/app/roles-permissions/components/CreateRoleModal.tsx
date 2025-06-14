@@ -40,8 +40,23 @@ export default function CreateRoleModal({ isOpen, onClose }: CreateRoleModalProp
 
   const createRoleMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const validatedData = insertCustomRoleSchema.parse(data);
-      return apiRequest('/api/custom-roles', 'POST', validatedData);
+      console.log("Creating role with data:", data);
+      
+      // Clean up the data - remove empty basedOnRole field
+      const cleanData = {
+        ...data,
+        basedOnRole: data.basedOnRole || null,
+        description: data.description || null,
+      };
+      
+      try {
+        const validatedData = insertCustomRoleSchema.parse(cleanData);
+        console.log("Validated data:", validatedData);
+        return apiRequest('/api/custom-roles', 'POST', validatedData);
+      } catch (validationError) {
+        console.error("Validation error:", validationError);
+        throw validationError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/custom-roles'] });
@@ -50,9 +65,10 @@ export default function CreateRoleModal({ isOpen, onClose }: CreateRoleModalProp
       setFormData({ name: "", displayName: "", description: "", basedOnRole: "" });
     },
     onError: (error: any) => {
+      console.error("Role creation error:", error);
       toast({ 
         title: "Failed to create role", 
-        description: error.message || "Please try again",
+        description: error.message || "Please check the console for details",
         variant: "destructive" 
       });
     },
