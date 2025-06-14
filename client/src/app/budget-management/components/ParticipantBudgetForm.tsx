@@ -17,13 +17,13 @@ const budgetFormSchema = z.object({
   clientId: z.number().positive("Client is required"),
   silTotal: z.number().min(0, "SIL total must be non-negative"),
   silRemaining: z.number().min(0, "SIL remaining must be non-negative"),
-  silAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])).min(1, "At least one SIL ratio required"),
+  silAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"])).min(1, "At least one SIL ratio required"),
   communityAccessTotal: z.number().min(0, "Community Access total must be non-negative"),
   communityAccessRemaining: z.number().min(0, "Community Access remaining must be non-negative"),
-  communityAccessAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])).min(1, "At least one Community Access ratio required"),
+  communityAccessAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"])).min(1, "At least one Community Access ratio required"),
   capacityBuildingTotal: z.number().min(0, "Capacity Building total must be non-negative"),
   capacityBuildingRemaining: z.number().min(0, "Capacity Building remaining must be non-negative"),
-  capacityBuildingAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4"])).min(1, "At least one Capacity Building ratio required"),
+  capacityBuildingAllowedRatios: z.array(z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"])).min(1, "At least one Capacity Building ratio required"),
   priceOverrides: z.object({
     AM: z.number().positive().optional(),
     PM: z.number().positive().optional(),
@@ -40,7 +40,7 @@ interface ParticipantBudgetFormProps {
   onSuccess: () => void;
 }
 
-const ratioOptions = ["1:1", "1:2", "1:3", "1:4"];
+const ratioOptions = ["1:1", "1:2", "1:3", "1:4", "2:1"];
 
 export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: ParticipantBudgetFormProps) {
   const { toast } = useToast();

@@ -17,7 +17,7 @@ import { Plus, Edit, Trash2, DollarSign, Settings } from "lucide-react";
 
 const pricingFormSchema = z.object({
   shiftType: z.enum(["AM", "PM", "ActiveNight", "Sleepover"]),
-  ratio: z.enum(["1:1", "1:2", "1:3", "1:4"]),
+  ratio: z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"]),
   rate: z.number().positive("Rate must be positive"),
 });
 
@@ -229,6 +229,7 @@ export default function NDISPricingManager() {
                               <SelectItem value="1:2">1:2 (One to Two)</SelectItem>
                               <SelectItem value="1:3">1:3 (One to Three)</SelectItem>
                               <SelectItem value="1:4">1:4 (One to Four)</SelectItem>
+                              <SelectItem value="2:1">2:1 (Two to One)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
