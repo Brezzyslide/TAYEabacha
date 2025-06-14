@@ -14,7 +14,8 @@ import {
   UserCheck,
   Lock,
   Key,
-  Building
+  Building,
+  Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -446,7 +447,7 @@ export default function RolesPermissionsDashboard() {
               </div>
               <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  <Info className="h-4 w-4 inline mr-2" />
+                  <Key className="h-4 w-4 inline mr-2" />
                   Click any cell to override permissions for that role and module. Custom overrides will be highlighted.
                 </p>
               </div>
