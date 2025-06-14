@@ -128,6 +128,7 @@ export default function RequestedShiftsTab() {
       ) : viewMode === "calendar" ? (
         <ShiftCalendarView
           shifts={availableShifts}
+          filterPeriod="monthly"
           onShiftClick={() => {}} // TODO: Add shift request functionality
           getClientName={getClientName}
         />
