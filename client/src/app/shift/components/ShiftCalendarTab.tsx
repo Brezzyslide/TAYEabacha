@@ -286,13 +286,8 @@ export default function ShiftCalendarTab() {
         <ShiftCalendarView
           shifts={allViewableShifts}
           onShiftClick={(shift) => {
-            console.log("Shift clicked:", shift);
-            console.log("Current user:", user);
-            console.log("User role:", user?.role);
-            
-            // Check if user can edit shifts (Admin/Team Leader/Coordinator)
-            if (user?.role === "Admin" || user?.role === "TeamLeader" || user?.role === "Coordinator") {
-              console.log("Opening edit modal for admin/leader");
+            // Check if user can edit shifts (ConsoleManager/Admin/Team Leader/Coordinator)
+            if (user?.role === "ConsoleManager" || user?.role === "Admin" || user?.role === "TeamLeader" || user?.role === "Coordinator") {
               setSelectedShiftForEdit(shift);
               setIsEditShiftModalOpen(true);
               return;
@@ -300,13 +295,10 @@ export default function ShiftCalendarTab() {
             
             // For staff - only handle unassigned shifts for requesting
             if (!shift.userId && (shift as any).status !== "requested") {
-              console.log("Opening request dialog for staff");
               setSelectedShiftForRequest(shift);
               setIsRequestDialogOpen(true);
               return;
             }
-            
-            console.log("No action taken - assigned shift or staff role");
           }}
           getClientName={getClientName}
         />
