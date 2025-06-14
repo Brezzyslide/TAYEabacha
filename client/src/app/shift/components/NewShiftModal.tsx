@@ -330,15 +330,15 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Assign to Staff</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                      <Select onValueChange={(value) => field.onChange(value === "unassigned" ? undefined : parseInt(value))}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select staff member" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
-                          {users.map((user) => (
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {(users as any[])?.map((user: any) => (
                             <SelectItem key={user.id} value={user.id.toString()}>
                               {user.username}
                             </SelectItem>
@@ -356,15 +356,15 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                      <Select onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select client" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">No Client</SelectItem>
-                          {clients.map((client) => (
+                          <SelectItem value="none">No Client</SelectItem>
+                          {(clients as any[])?.map((client: any) => (
                             <SelectItem key={client.id} value={client.id.toString()}>
                               {client.fullName}
                             </SelectItem>
