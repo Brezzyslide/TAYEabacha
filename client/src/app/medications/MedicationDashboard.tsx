@@ -20,6 +20,7 @@ interface MedicationPlan {
   medicationName: string;
   dosage: string;
   frequency: string;
+  route?: string;
   startDate: string;
   endDate?: string;
   instructions: string;
@@ -262,7 +263,7 @@ export default function MedicationDashboard() {
             <TabsList>
               <TabsTrigger value="plans">Medication Plans</TabsTrigger>
               <TabsTrigger value="records">Administration Records</TabsTrigger>
-              <TabsTrigger value="schedule">Today's Schedule</TabsTrigger>
+              <TabsTrigger value="schedule">Record Administration</TabsTrigger>
             </TabsList>
 
             <TabsContent value="plans" className="space-y-4">
@@ -378,16 +379,72 @@ export default function MedicationDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5" />
-                    <span>Today's Medication Schedule</span>
+                    <Camera className="h-5 w-5" />
+                    <span>Active Plans - Record Administration</span>
                   </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Select a medication plan below to record administration with photo documentation
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8 text-gray-500">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>No medications scheduled for today</p>
-                    <p className="text-sm">Check back later or create new medication plans</p>
-                  </div>
+                  {medicationPlans.filter((plan: MedicationPlan) => plan.isActive).length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Pill className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No active medication plans available</p>
+                      <p className="text-sm">Create medication plans to enable administration recording</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {medicationPlans
+                        .filter((plan: MedicationPlan) => plan.isActive)
+                        .map((plan: MedicationPlan) => (
+                          <div key={plan.id} className="border rounded-lg p-4 hover:bg-blue-50 transition-colors">
+                            <div className="flex justify-between items-center">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <h3 className="font-semibold text-lg">{plan.medicationName}</h3>
+                                  <Badge className="bg-green-100 text-green-800">Active</Badge>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
+                                  <div>
+                                    <span className="font-medium">Client:</span> {getClientName(plan.clientId)}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Dosage:</span> {plan.dosage}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Frequency:</span> {plan.frequency}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Route:</span> {plan.route || 'Not specified'}
+                                  </div>
+                                </div>
+                                {plan.instructions && (
+                                  <div className="text-sm text-gray-500 mb-3">
+                                    <span className="font-medium">Instructions:</span> {plan.instructions}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="ml-6">
+                                <Button
+                                  onClick={() => setRecordAdminModal({
+                                    isOpen: true,
+                                    clientId: plan.clientId,
+                                    clientName: getClientName(plan.clientId),
+                                  })}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3"
+                                  size="lg"
+                                >
+                                  <Camera className="h-4 w-4 mr-2" />
+                                  Record Administration
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

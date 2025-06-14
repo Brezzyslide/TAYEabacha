@@ -1,0 +1,231 @@
+
+Please update the medication administration form in:
+
+📁 `src/app/medications/components/RecordAdministrationModal.tsx`
+
+---
+
+### 🎯 Functionality:
+
+This modal should allow a staff user to record a medication administration for a client, using the following fields:
+
+- **Medication**: Dropdown populated from active plans for that client
+- **Time of Day**: Dropdown – Morning (AM), Afternoon (PM), Night
+- **Status**: Dropdown – Administered / Refused / Missed
+- **Route**: Dropdown – Oral / Injection / Topical / Other
+- **Date & Time**: Default = now, editable
+- **Notes**: Optional free text
+- **Administration Witnessed**: Toggle switch
+
+---
+
+### 📸 Mandatory Attachments:
+
+1. **Photo of Medication Before Administration**  
+   - Label: "Upload photo before administering medication"  
+   - Required
+
+2. **Photo of Webster Pack After Administration**  
+   - Label: "Upload photo of Webster pack post-administration"  
+   - Required
+
+✅ Both must be attached before allowing form submission.
+
+---
+
+### ✅ On Submit:
+
+Save the following to the `medicationRecords` table:
+
+```ts
+{
+  clientId,
+  companyId,
+  staffId,
+  planId,
+  medicationName,
+  status,              // Administered, Refused, Missed
+  route,               // Oral, Injection, etc.
+  timeOfDay,
+  dateTime,
+  notes,
+  wasWitnessed: true | false,
+  attachmentBeforeUrl,
+  attachmentAfterUrl,
+  createdAt
+}
+Store attachments using cloud storage (mock with uploadPreview URL or placeholder if needed).
+
+💡 UI Requirements:
+Use react-hook-form + zod for validation
+
+Validate that both files are present before enabling submit
+
+Use ShadCN File Input or Dropzone
+
+Add inline error: "Both before and after photos must be uploaded"
+
+🔐 Access:
+Only users with access to clientId and companyId can record
+
+Role check: SupportWorker and above
+
+Tools:
+
+Tailwind + ShadCN
+
+TanStack Query
+
+date-fns
+
+Local preview of images before upload (optional)
+
+yaml
+Copy
+Edit
+
+---
+
+Let me know if you'd like this form to also trigger:
+- A new **Case Note** if medication is refused
+- A **notification to Team Leader** if not witnessed
+
+This now brings your Medication Module up to clinical compliance level.
+
+
+
+
+
+
+
+You said:
+
+This is staff availability, I want the time removed and added in a multile selectable clcikabke button to add AM, PM< Active Night and Sleepover night for staff to select, Once created, I want the my availability to sit under quick pattern for staff and in the calendar view at the top of the screen shot ( currnet availability status)but when my availability is sent, i want it to go to admin's staff availability which is a newsrc/app/ manage staff availability, team leader and amdin should be able to stack as card, list and calendar view ( staff avaibakity status, simalr to screen shot above) baed on dates provided by staff when creating, they should also be able to archive, edit or modify 
+
+ChatGPT said:
+Updated saved memory
+Perfect — you’re redefining how availability is handled with clarity and structure. Let’s now scaffold the entire system with a Replit-ready prompt that includes:
+
+✅ AM / PM / Active Night / Sleepover Night toggle buttons
+
+✅ Availability status per staff visible in their own dashboard
+
+✅ Submissions routed to Admin/Team Leader dashboard
+
+✅ Calendar, list, and card views
+
+✅ Admin controls: archive, edit, and modify
+
+✅ Replit Prompt: Staff Availability Module with Quick Patterns
+Paste this into Replit:
+
+bash
+Copy
+Edit
+# Prompt for Replit Codex Agent
+
+Please build a new Staff Availability Module across the following:
+
+---
+
+## 📁 Path 1: Staff View  
+`src/app/staff-availability/`
+
+### A. AvailabilityEditor.tsx
+
+Replace time picker with multi-select buttons:
+
+- Day checkboxes (Mon–Sun)
+- Under each day, allow selection of:
+  - AM
+  - PM
+  - Active Night
+  - Sleepover Night
+
+Use toggle-style buttons (e.g. ShadCN `ToggleGroup`)
+
+### B. Submission stores in `staffAvailability`:
+```ts
+{
+  id,
+  userId,
+  companyId,
+  availability: {
+    Monday:    ["AM", "PM"],
+    Tuesday:   [],
+    Wednesday: ["Sleepover Night"],
+    ...
+  },
+  createdAt
+}
+C. Upon submit:
+Display under "Current Availability Status"
+
+Save pattern to "Quick Patterns" panel
+
+Forward record to admin panel under /manage-staff-availability/
+
+📁 Path 2: Admin + Team Leader View
+src/app/manage-staff-availability/
+
+A. Dashboard Modes:
+Tabs or toggles for:
+
+Card View
+
+List View
+
+Calendar View
+
+B. Cards:
+Each staff card shows:
+
+Name
+
+Role
+
+Availability breakdown per day
+
+Availability range dates (if set)
+
+Buttons:
+
+Archive
+
+Edit (opens modal)
+
+Modify (admin override)
+
+C. Calendar View:
+Weekly or Monthly layout
+
+Display availability blocks per staff
+
+🔒 Role Access
+Role	Access Type
+SupportWorker	View & submit own availability
+Team Leader	View/edit all in team
+Admin	View/edit/archive company-wide
+
+🧩 Components to Create
+AvailabilityEditor.tsx
+
+CurrentAvailabilityPanel.tsx
+
+AvailabilityCard.tsx
+
+AdminAvailabilityDashboard.tsx
+
+AvailabilityCalendar.tsx
+
+Use:
+
+react-hook-form + zod
+
+TanStack Query
+
+Tailwind + ShadCN UI
+
+date-fns for date logic
+
+Ensure all data is scoped by companyId and userId.
