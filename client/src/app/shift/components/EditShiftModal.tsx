@@ -76,7 +76,7 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
       };
 
       const response = await fetch(`/api/shifts/${shift.id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
