@@ -41,9 +41,13 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 3. **Shift Management** - GPS-verified check-in/check-out with location tracking
 4. **Dynamic Forms** - Custom assessment and intake forms with flexible field types
 5. **Case Notes** - Documentation system for client interactions and care updates
-6. **Medication Management** - Plans and administration tracking
+6. **Medication Management** - Plans and administration tracking with photo documentation
 7. **Incident Reporting** - Safety incident documentation and closure tracking
 8. **Hourly Observations** - Regular client monitoring and documentation
+9. **Workflow Dashboard** - Automated insights panel with manual task board for comprehensive workflow management
+10. **Roles & Permissions** - Custom role creation with granular permission overrides and user assignment
+11. **Staff Hour Allocation** - Budget management with analytics and shift enforcement
+12. **Internal Messaging** - Staff communication system with role-based access
 
 ### Real-time Features
 - Live dashboard with activity monitoring
@@ -128,6 +132,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 14, 2025. Built comprehensive Roles & Permissions management system with custom role creation, permission overrides, and user assignment capabilities
 - June 14, 2025. Fixed custom role creation API - resolved parameter order issue and schema validation for optional fields
 - June 14, 2025. Completed interactive Permission Matrix with clickable cells for direct permission overrides, enabling real-time role customization
+- June 14, 2025. Created complete Workflow Dashboard module featuring Auto Insights Panel for automated system analysis and Manual Task Board with drag-and-drop functionality for comprehensive workflow management
 
 ## User Preferences
 

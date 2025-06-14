@@ -229,7 +229,7 @@ export default function ManualTaskBoard() {
                     <SelectValue placeholder="Select user (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
                     {users.map((user: any) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
                         {user.firstName} {user.lastName}
