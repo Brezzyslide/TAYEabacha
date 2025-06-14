@@ -19,6 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CustomRole, CustomPermission, UserRoleAssignment } from "@shared/schema";
+import CreateRoleModal from "./components/CreateRoleModal";
 
 interface RoleStats {
   totalCustomRoles: number;
@@ -31,6 +32,7 @@ export default function RolesPermissionsDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState<CustomRole | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Fetch data
   const { data: customRoles = [], isLoading: rolesLoading } = useQuery<CustomRole[]>({
@@ -163,7 +165,10 @@ export default function RolesPermissionsDashboard() {
             </p>
           </div>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700" disabled>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Custom Role
         </Button>
