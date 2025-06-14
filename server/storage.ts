@@ -1123,6 +1123,47 @@ export class DatabaseStorage implements IStorage {
       ));
     return result.rowCount! > 0;
   }
+
+  // Task Board Tasks methods
+  async getTaskBoardTasks(companyId: number): Promise<TaskBoardTask[]> {
+    return await db.select().from(taskBoardTasks)
+      .where(eq(taskBoardTasks.companyId, companyId))
+      .orderBy(desc(taskBoardTasks.createdAt));
+  }
+
+  async getTaskBoardTask(id: number, companyId: number): Promise<TaskBoardTask | undefined> {
+    const [task] = await db.select().from(taskBoardTasks)
+      .where(and(
+        eq(taskBoardTasks.id, id),
+        eq(taskBoardTasks.companyId, companyId)
+      ));
+    return task;
+  }
+
+  async createTaskBoardTask(insertTask: any): Promise<TaskBoardTask> {
+    const [task] = await db.insert(taskBoardTasks).values(insertTask).returning();
+    return task;
+  }
+
+  async updateTaskBoardTask(id: number, updateTask: any, companyId: number): Promise<TaskBoardTask | undefined> {
+    const [task] = await db.update(taskBoardTasks)
+      .set({ ...updateTask, updatedAt: new Date() })
+      .where(and(
+        eq(taskBoardTasks.id, id),
+        eq(taskBoardTasks.companyId, companyId)
+      ))
+      .returning();
+    return task;
+  }
+
+  async deleteTaskBoardTask(id: number, companyId: number): Promise<boolean> {
+    const result = await db.delete(taskBoardTasks)
+      .where(and(
+        eq(taskBoardTasks.id, id),
+        eq(taskBoardTasks.companyId, companyId)
+      ));
+    return result.rowCount! > 0;
+  }
 }
 
 export const storage = new DatabaseStorage();

@@ -1,0 +1,90 @@
+Please create the full Workflow Dashboard module at:
+
+📁 `src/app/workflow-dashboard/`
+
+This dashboard should have **two distinct, clearly labeled sections**:
+
+---
+
+## 1️⃣ SECTION: 🧠 Auto Insights Panel (Top of Page)
+
+Component: `AutoInsightsPanel.tsx`
+
+This section automatically displays reminders and alerts pulled from across the system:
+
+Each card should evaluate the following logic using `useWorkflowInsights()`:
+
+### Reminder Triggers:
+- **Unstarted shifts past start time** → “3 shifts are overdue to start”
+- **Open incidents older than 48 hrs** → “1 incident still unresolved”
+- **Medication plans with no record today** → “2 clients have no logged medication”
+- **Clients with no case notes in 7 days** → “Client [X] has no case note this week”
+- **Staff with hoursUsed ≥ 90% of allocation** → “Staff [Y] is nearing allocation cap”
+
+Use:
+- `TanStack Query` to fetch data from:
+  - `incidentReports`
+  - `medicationRecords`
+  - `caseNotes`
+  - `hourAllocations`
+  - `shifts`
+
+Display each insight as a **Card** with:
+- Title
+- Detail
+- Icon
+- Optional “Go to” button (linking to relevant module)
+
+---
+
+## 2️⃣ SECTION: 🗂️ Manual Task Board (Bottom of Page)
+
+Component: `ManualTaskBoard.tsx`
+
+Trello-style Kanban board with 3 columns:
+- **To Do**
+- **In Progress**
+- **Completed**
+
+Use `dnd-kit` or `react-beautiful-dnd` to enable drag-and-drop across columns.
+
+Each task card should include:
+- Task Title
+- Assigned Staff (dropdown)
+- Due Date & Time (picker)
+- Notes (optional tooltip or modal)
+- Created by (autofill current user)
+
+---
+
+### Task Storage Schema (`taskBoardTasks`)
+```ts
+{
+  id,
+  companyId,
+  title,
+  description?,
+  status: "todo" | "in-progress" | "done",
+  dueDateTime,
+  assignedToUserId,
+  createdByUserId,
+  createdAt,
+  updatedAt
+}
+Permissions:
+Role	Can View	Can Create/Edit Tasks
+SupportWorker	Only tasks assigned to them	❌ (view only)
+Team Leader	All team tasks	✅
+Admin	All company tasks	✅
+
+UI Requirements:
+Top section titled: "🔔 Workflow Alerts (System-Generated)"
+
+Bottom section titled: "📋 Task Board (Manual Tasks)"
+
+Sticky header to separate the two visually
+
+Full responsiveness (mobile-ready)
+
+Use Tailwind + ShadCN
+

@@ -831,3 +831,48 @@ export type InsertCustomPermission = z.infer<typeof insertCustomPermissionSchema
 
 export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
 export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
+
+// Task Board Tasks table
+export const taskBoardTasks = pgTable("task_board_tasks", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("todo"), // "todo" | "in-progress" | "done"
+  dueDateTime: timestamp("due_date_time"),
+  assignedToUserId: integer("assigned_to_user_id").references(() => users.id),
+  createdByUserId: integer("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const taskBoardTasksRelations = relations(taskBoardTasks, ({ one }) => ({
+  company: one(companies, {
+    fields: [taskBoardTasks.companyId],
+    references: [companies.id],
+  }),
+  assignedTo: one(users, {
+    fields: [taskBoardTasks.assignedToUserId],
+    references: [users.id],
+  }),
+  createdBy: one(users, {
+    fields: [taskBoardTasks.createdByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const insertTaskBoardTaskSchema = createInsertSchema(taskBoardTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  companyId: true,
+  createdByUserId: true,
+}).extend({
+  title: z.string().min(1, "Title is required").max(200, "Title cannot exceed 200 characters"),
+  description: z.string().optional(),
+  status: z.enum(["todo", "in-progress", "done"]),
+  dueDateTime: z.date().optional(),
+});
+
+export type TaskBoardTask = typeof taskBoardTasks.$inferSelect;
+export type InsertTaskBoardTask = z.infer<typeof insertTaskBoardTaskSchema>;
