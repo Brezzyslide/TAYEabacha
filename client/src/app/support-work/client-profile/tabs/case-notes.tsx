@@ -63,14 +63,19 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   const queryClient = useQueryClient();
 
   // Fetch case notes for this client
-  const { data: caseNotesData, isLoading } = useQuery({
+  const { data: caseNotesData, isLoading, error } = useQuery({
     queryKey: ["/api/clients", clientId, "case-notes"],
     queryFn: async () => {
       const response = await fetch(`/api/clients/${clientId}/case-notes`, {
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to fetch case notes');
-      return response.json();
+      if (!response.ok) {
+        console.error(`API Error: ${response.status} - ${response.statusText}`);
+        throw new Error('Failed to fetch case notes');
+      }
+      const data = await response.json();
+      console.log('Client case notes data:', data);
+      return data;
     },
   });
 
