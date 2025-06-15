@@ -1515,7 +1515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientId,
         administeredBy: req.user.id,
         medicationName: req.body.medicationName,
-        scheduledTime: null, // Not used in this context
+        scheduledTime: actualTime, // Use actual time as scheduled time for database constraint
         actualTime: actualTime,
         dateTime: actualTime, // Duplicate field for compatibility
         timeOfDay: req.body.timeOfDay,
