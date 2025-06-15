@@ -5,30 +5,40 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { insertClientSchema, type InsertClient } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { CalendarIcon, User, Heart, AlertTriangle, Target } from "lucide-react";
+import { User, Calendar } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
-interface CreateClientFormProps {
+const createClientSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  ndisNumber: z.string().min(1, "NDIS number is required"),
+  dateOfBirth: z.date({ required_error: "Date of birth is required" }),
+  address: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+});
+
+type CreateClientFormData = z.infer<typeof createClientSchema>;
+
+interface SimpleCreateClientFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFormProps) {
+export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCreateClientFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<InsertClient>({
-    resolver: zodResolver(insertClientSchema),
+  const form = useForm<CreateClientFormData>({
+    resolver: zodResolver(createClientSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -37,20 +47,25 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
       address: "",
       emergencyContactName: "",
       emergencyContactPhone: "",
-      ndisGoals: "",
-      likesPreferences: "",
-      dislikesAversions: "",
-      allergiesMedicalAlerts: "",
-      primaryDiagnosis: "",
-      tenantId: 1,
-      companyId: "COMP001",
-      createdBy: 1,
-      isActive: true
     },
   });
 
   const createClientMutation = useMutation({
-    mutationFn: (data: InsertClient) => apiRequest("/api/clients", "POST", data),
+    mutationFn: (data: CreateClientFormData) => {
+      const payload = {
+        ...data,
+        tenantId: 1,
+        companyId: "COMP001",
+        createdBy: 1,
+        isActive: true,
+        ndisGoals: "",
+        likesPreferences: "",
+        dislikesAversions: "",
+        allergiesMedicalAlerts: "",
+        primaryDiagnosis: "",
+      };
+      return apiRequest("/api/clients", "POST", payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
@@ -59,44 +74,37 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
       });
       onSuccess?.();
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create client",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = async (data: InsertClient) => {
-    setIsSubmitting(true);
-    try {
-      console.log("Submitting client data:", data);
-      await createClientMutation.mutateAsync(data);
-    } catch (error: any) {
+    onError: (error: any) => {
       console.error("Client creation error:", error);
       toast({
         title: "Error",
         description: error?.message || "Failed to create client",
         variant: "destructive",
       });
+    },
+  });
+
+  const onSubmit = async (data: CreateClientFormData) => {
+    setIsSubmitting(true);
+    try {
+      console.log("Submitting client data:", data);
+      await createClientMutation.mutateAsync(data);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Client</h2>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Add a new client to the system with their care details and preferences
+          Add a new client to the system
         </p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -171,12 +179,12 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
                               ) : (
                                 <span>Pick a date</span>
                               )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
+                          <CalendarComponent
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
@@ -200,7 +208,7 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter full address" {...field} value={field.value || ""} />
+                      <Input placeholder="Enter full address" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -215,7 +223,7 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
                     <FormItem>
                       <FormLabel>Emergency Contact Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contact person name" {...field} />
+                        <Input placeholder="Enter emergency contact name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -229,138 +237,24 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
                     <FormItem>
                       <FormLabel>Emergency Contact Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="+61..." {...field} />
+                        <Input placeholder="Enter emergency contact phone" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="primaryDiagnosis"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Diagnosis</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="e.g., Autism Spectrum Disorder, Intellectual Disability, Dementia..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </CardContent>
           </Card>
 
-          {/* Care & Support */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Heart className="w-5 h-5" />
-                Care & Support
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="ndisGoals"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      NDIS Goals
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe the client's NDIS goals and objectives..."
-                        className="min-h-[100px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="likesPreferences"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Likes & Preferences</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="What does the client enjoy? List hobbies, interests, preferred activities..."
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="dislikesAversions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Dislikes & Aversions</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="What should be avoided? List things the client dislikes or finds distressing..."
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="allergiesMedicalAlerts"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-500" />
-                      Allergies & Medical Alerts
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Important: List all allergies, medical conditions, and emergency medical information..."
-                        className="min-h-[80px] border-red-200 focus:border-red-300"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Form Actions */}
-          <div className="flex justify-end gap-4 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting ? "Creating..." : "Create Client"}
+          <div className="flex justify-end space-x-4">
+            {onCancel && (
+              <Button variant="outline" onClick={onCancel} type="button">
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" disabled={isSubmitting || createClientMutation.isPending}>
+              {isSubmitting || createClientMutation.isPending ? "Creating..." : "Create Client"}
             </Button>
           </div>
         </form>
