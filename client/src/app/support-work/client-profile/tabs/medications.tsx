@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Pill, Clock, CheckCircle, AlertTriangle, Calendar, User } from "lucide-react";
+import { Plus, Search, Pill, Clock, CheckCircle, AlertTriangle, Calendar, User, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import RecordAdministrationModal from "@/app/medications/components/RecordAdministrationModal";
 
@@ -219,6 +219,64 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
             </Card>
           </div>
 
+          {/* Compliance Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Medication Compliance Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {complianceMetrics.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No compliance data available</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-green-600">{totalAdministered}</p>
+                      <p className="text-sm text-gray-600">Successfully Administered</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-red-600">{totalRefused}</p>
+                      <p className="text-sm text-gray-600">Refused</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-orange-600">{totalMissed}</p>
+                      <p className="text-sm text-gray-600">Missed</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {complianceMetrics.map((metric) => (
+                      <div key={metric.planId} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-sm">{metric.medicationName}</span>
+                          <span className="text-sm font-medium">{metric.complianceRate}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${metric.complianceRate >= 80 ? 'bg-green-500' : metric.complianceRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            style={{ width: `${metric.complianceRate}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex gap-4 text-xs text-gray-500">
+                          <span>✓ {metric.administeredCount}</span>
+                          <span>✗ {metric.refusedCount}</span>
+                          <span>○ {metric.missedCount}</span>
+                          <span>Total: {metric.totalRecords}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Active Plans Quick View */}
           <Card>
             <CardHeader>
@@ -235,24 +293,35 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {activePlans.slice(0, 5).map((plan: MedicationPlan) => (
-                    <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{plan.medicationName}</h4>
-                        <p className="text-sm text-gray-600">{plan.dosage} - {plan.frequency}</p>
-                        <p className="text-xs text-gray-500">Route: {plan.route}</p>
-                        {plan.timeOfDay && (
-                          <p className="text-xs text-gray-500">Time: {plan.timeOfDay}</p>
-                        )}
+                  {activePlans.slice(0, 5).map((plan: MedicationPlan) => {
+                    const planCompliance = complianceMetrics.find(m => m.planId === plan.id);
+                    return (
+                      <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{plan.medicationName}</h4>
+                            <Badge variant={planCompliance && planCompliance.complianceRate >= 80 ? 'default' : 'destructive'}>
+                              {planCompliance ? `${planCompliance.complianceRate}%` : '0%'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">{plan.dosage} - {plan.frequency}</p>
+                          {planCompliance && (
+                            <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                              <span>✓ {planCompliance.administeredCount}</span>
+                              <span>✗ {planCompliance.refusedCount}</span>
+                              <span>○ {planCompliance.missedCount}</span>
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => setRecordAdminModal({ isOpen: true, medicationPlan: plan as any })}
+                        >
+                          Record
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => setRecordAdminModal({ isOpen: true, medicationPlan: plan })}
-                      >
-                        Record
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -409,12 +478,12 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                           }>
                             {record.result}
                           </Badge>
-                          {(record.attachmentBeforeUrl || record.attachmentAfterUrl) && (
+                          {((record as any).attachmentBeforeUrl || (record as any).attachmentAfterUrl) && (
                             <div className="flex gap-1">
-                              {record.attachmentBeforeUrl && (
+                              {(record as any).attachmentBeforeUrl && (
                                 <Badge variant="outline" className="text-xs">Photo Before</Badge>
                               )}
-                              {record.attachmentAfterUrl && (
+                              {(record as any).attachmentAfterUrl && (
                                 <Badge variant="outline" className="text-xs">Photo After</Badge>
                               )}
                             </div>
