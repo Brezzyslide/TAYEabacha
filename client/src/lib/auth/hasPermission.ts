@@ -38,7 +38,16 @@ export function hasPermission(
   // ConsoleManager has global access
   if (role.name === "ConsoleManager") return true;
 
-  // Company boundary enforcement (except for ConsoleManager)
+  // Admin has full company access - no company boundary enforcement needed
+  if (role.name === "Admin") {
+    const permission = getPermissions(role.name, module);
+    if (permission) {
+      const hasActionPermission = permission.actions.includes("*") || permission.actions.includes(action);
+      return hasActionPermission;
+    }
+  }
+
+  // Company boundary enforcement (except for ConsoleManager and Admin)
   if (targetCompanyId && user.companyId !== targetCompanyId) {
     return false;
   }
