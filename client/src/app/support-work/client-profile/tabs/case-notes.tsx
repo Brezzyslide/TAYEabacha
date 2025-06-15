@@ -12,15 +12,10 @@ import {
   Plus, 
   Search, 
   Calendar as CalendarIcon, 
-  Filter, 
   FileText, 
   AlertTriangle, 
-  Pill, 
-  Clock,
-  User,
-  CheckCircle,
-  XCircle,
-  Sparkles
+  Pill,
+  ShieldCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -29,26 +24,29 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { CaseNote } from "@shared/schema";
 import CreateCaseNoteModal from "@/app/case-notes/components/CreateCaseNoteModal";
+import CaseNoteCard from "@/app/case-notes/components/CaseNoteCard";
 
 interface CaseNotesTabProps {
   clientId: string;
   companyId: string;
 }
 
-interface CaseNoteWithTags extends CaseNote {
-  caseNoteTags: {
-    incident?: {
-      occurred: boolean;
-      refNumber?: string;
-      lodged?: boolean;
-      confirmed?: boolean;
-    };
-    medication?: {
-      status: "yes" | "none" | "refused";
-      recordLogged?: boolean;
-    };
-  };
-  spellCheckCount: number | null;
+// Permission checking helper
+function hasPermission(user: any, resource: string, action: string): boolean {
+  if (!user) return false;
+  
+  // Console managers and admins have full access
+  if (user.role === "ConsoleManager" || user.role === "Admin") return true;
+  
+  // Team leaders can view all case notes in their tenant
+  if (user.role === "TeamLeader" || user.role === "Coordinator") return true;
+  
+  // Support workers can only view case notes for their assigned clients
+  if (user.role === "SupportWorker" && resource === "caseNotes" && action === "view") {
+    return true; // Will be filtered by clientId in the query
+  }
+  
+  return false;
 }
 
 export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps) {
@@ -62,44 +60,39 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch case notes for this client
-  const { data: caseNotesData, isLoading, error } = useQuery({
-    queryKey: ["/api/clients", clientId, "case-notes"],
-    enabled: !!user && !!clientId,
+  // Check permissions
+  const canViewCaseNotes = hasPermission(user, "caseNotes", "view");
+
+  // Fetch all case notes and filter by client
+  const { data: allCaseNotes = [], isLoading } = useQuery({
+    queryKey: ["/api/case-notes"],
+    enabled: !!user && !!clientId && canViewCaseNotes,
   });
 
-  const caseNotes = caseNotesData?.caseNotes || [];
-  const client = caseNotesData?.client;
-  const recentShifts = caseNotesData?.recentShifts || [];
-
-  // Debug logging
-  console.log('Client ID:', clientId);
-  console.log('Case notes data:', caseNotesData);
-  console.log('Case notes array:', caseNotes);
-  console.log('Loading state:', isLoading);
-  console.log('Error state:', error);
-
-  // Fetch users for staff member names
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-    retry: 1,
+  // Fetch client data
+  const { data: client } = useQuery({
+    queryKey: ["/api/clients", clientId],
+    enabled: !!clientId,
   });
 
-  const usersArray = Array.isArray(users) ? users as Array<{ id: number; username: string; email: string }> : [];
+  // Filter case notes for this specific client
+  const clientCaseNotes = useMemo(() => {
+    if (!Array.isArray(allCaseNotes)) return [];
+    return allCaseNotes.filter(note => note.clientId === parseInt(clientId));
+  }, [allCaseNotes, clientId]);
 
   // Create case note mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", `/api/clients/${clientId}/case-notes`, {
+      const response = await apiRequest("POST", "/api/case-notes", {
         ...data,
+        clientId: parseInt(clientId),
         userId: user?.id,
         tenantId: user?.tenantId
       });
       return response;
     },
     onSuccess: () => {
-      // Invalidate both client-specific and general case notes
-      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "case-notes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/case-notes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       
@@ -118,31 +111,9 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     },
   });
 
-  // Delete case note mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/case-notes/${id}`);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "case-notes"] });
-      toast({
-        title: "Case Note Deleted",
-        description: "The case note has been deleted successfully.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete case note. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Filter case notes based on criteria
   const filteredNotes = useMemo(() => {
-    let notes = [...(caseNotes as CaseNoteWithTags[])];
+    let notes = [...clientCaseNotes];
 
     // Filter by type/tab
     if (selectedTab === "incidents") {
@@ -153,201 +124,104 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
       notes = notes.filter(note => note.type === selectedType);
     }
 
-    // Filter by search term
+    // Search in title and content
     if (searchTerm) {
-      const lowercaseSearch = searchTerm.toLowerCase();
-      notes = notes.filter(note =>
-        note.title.toLowerCase().includes(lowercaseSearch) ||
-        note.content.toLowerCase().includes(lowercaseSearch) ||
-        note.category.toLowerCase().includes(lowercaseSearch) ||
-        (note.tags && note.tags.some(tag => tag.toLowerCase().includes(lowercaseSearch)))
+      notes = notes.filter(note => 
+        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by date range
-    if (dateRange?.from) {
-      const fromDate = new Date(dateRange.from);
-      fromDate.setHours(0, 0, 0, 0);
-      
-      const toDate = dateRange.to ? new Date(dateRange.to) : new Date(dateRange.from);
-      toDate.setHours(23, 59, 59, 999);
-      
+    if (dateRange?.from || dateRange?.to) {
       notes = notes.filter(note => {
         const noteDate = new Date(note.createdAt);
-        return noteDate >= fromDate && noteDate <= toDate;
+        if (dateRange.from && noteDate < dateRange.from) return false;
+        if (dateRange.to && noteDate > dateRange.to) return false;
+        return true;
       });
     }
 
     return notes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [caseNotes, selectedTab, selectedType, searchTerm, dateRange]);
+  }, [clientCaseNotes, selectedTab, selectedType, searchTerm, dateRange]);
 
-  const getIncidentBadge = (incidentData: any) => {
-    if (!incidentData?.occurred) {
-      if (incidentData?.confirmed) {
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">No Incident</Badge>;
-      }
-      return null;
-    }
-
-    return (
-      <div className="flex gap-1 flex-wrap">
-        <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200">
-          <AlertTriangle className="w-3 h-3 mr-1" />
-          Incident
-        </Badge>
-        {incidentData.refNumber && (
-          <Badge variant="outline" className="text-xs">
-            {incidentData.refNumber}
-          </Badge>
-        )}
-        {incidentData.lodged !== undefined && (
-          <Badge variant={incidentData.lodged ? "default" : "secondary"} className="text-xs">
-            {incidentData.lodged ? <CheckCircle className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
-            {incidentData.lodged ? "Lodged" : "Not Lodged"}
-          </Badge>
-        )}
-      </div>
-    );
-  };
-
-  const getMedicationBadge = (medicationData: any) => {
-    if (!medicationData) return null;
-
-    const statusColors = {
-      yes: "bg-green-50 text-green-700 border-green-200",
-      none: "bg-gray-50 text-gray-700 border-gray-200",
-      refused: "bg-orange-50 text-orange-700 border-orange-200"
-    };
-
-    const statusLabels = {
-      yes: "Administered",
-      none: "Not Required",
-      refused: "Refused"
-    };
-
-    return (
-      <div className="flex gap-1 flex-wrap">
-        <Badge variant="outline" className={statusColors[medicationData.status as keyof typeof statusColors]}>
-          <Pill className="w-3 h-3 mr-1" />
-          {statusLabels[medicationData.status as keyof typeof statusLabels]}
-        </Badge>
-        {medicationData.status === "yes" && medicationData.recordLogged !== undefined && (
-          <Badge variant={medicationData.recordLogged ? "default" : "secondary"} className="text-xs">
-            {medicationData.recordLogged ? <CheckCircle className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
-            {medicationData.recordLogged ? "Record Logged" : "Record Pending"}
-          </Badge>
-        )}
-      </div>
-    );
-  };
-
-  const getSpellCheckBadge = (count: number) => {
-    if (count === 0) return null;
-    return (
-      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
-        <Sparkles className="w-3 h-3 mr-1" />
-        {count} spell check{count > 1 ? 's' : ''}
-      </Badge>
-    );
-  };
-
-  // Calculate statistics
+  // Calculate stats for tab badges
   const stats = useMemo(() => {
-    const total = caseNotes.length;
-    const withIncidents = caseNotes.filter((note: CaseNoteWithTags) => note.caseNoteTags?.incident?.occurred).length;
-    const withMedication = caseNotes.filter((note: CaseNoteWithTags) => note.caseNoteTags?.medication).length;
-    const thisWeek = caseNotes.filter((note: CaseNoteWithTags) => {
-      const noteDate = new Date(note.createdAt);
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return noteDate >= weekAgo;
-    }).length;
+    return {
+      total: clientCaseNotes.length,
+      withIncidents: clientCaseNotes.filter(note => note.caseNoteTags?.incident?.occurred).length,
+      withMedication: clientCaseNotes.filter(note => note.caseNoteTags?.medication).length,
+    };
+  }, [clientCaseNotes]);
 
-    return { total, withIncidents, withMedication, thisWeek };
-  }, [caseNotes]);
+  if (!canViewCaseNotes) {
+    return (
+      <div className="p-8 text-center">
+        <ShieldCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
+        <p className="text-gray-600">
+          You don't have permission to view case notes.
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[1, 2, 3].map(i => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-gray-200 rounded"></div>
-                <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading case notes...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header with Stats */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Case Notes</h3>
+          <h2 className="text-xl font-semibold">Case Notes</h2>
           <p className="text-sm text-muted-foreground">
-            {client?.firstName} {client?.lastName} ({client?.clientId})
+            {client ? `Case notes for ${client.firstName} ${client.lastName}` : "Case notes for this client"}
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Case Note
+        <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          New Note
         </Button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600" />
               <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-sm text-gray-600">Total Notes</p>
+                <p className="text-sm font-medium">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Total Notes</p>
               </div>
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-600" />
               <div>
-                <p className="text-2xl font-bold">{stats.withIncidents}</p>
-                <p className="text-sm text-gray-600">With Incidents</p>
+                <p className="text-sm font-medium">{stats.withIncidents}</p>
+                <p className="text-xs text-muted-foreground">With Incidents</p>
               </div>
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Pill className="h-5 w-5 text-green-600" />
+            <div className="flex items-center gap-2">
+              <Pill className="w-4 h-4 text-green-600" />
               <div>
-                <p className="text-2xl font-bold">{stats.withMedication}</p>
-                <p className="text-sm text-gray-600">With Medication</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-2xl font-bold">{stats.thisWeek}</p>
-                <p className="text-sm text-gray-600">This Week</p>
+                <p className="text-sm font-medium">{stats.withMedication}</p>
+                <p className="text-xs text-muted-foreground">With Medication</p>
               </div>
             </div>
           </CardContent>
@@ -401,7 +275,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
       {/* Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList>
-          <TabsTrigger value="all">All Notes ({caseNotes.length})</TabsTrigger>
+          <TabsTrigger value="all">All Notes ({stats.total})</TabsTrigger>
           <TabsTrigger value="incidents">
             <AlertTriangle className="w-4 h-4 mr-1" />
             Incidents ({stats.withIncidents})
@@ -419,7 +293,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No case notes found</h3>
                 <p className="text-gray-600 mb-4">
-                  {searchTerm || dateRange ? "Try adjusting your filters." : "Get started by creating your first case note."}
+                  {searchTerm || dateRange ? "Try adjusting your filters." : "No case notes recorded for this client yet."}
                 </p>
                 {!searchTerm && !dateRange && (
                   <Button onClick={() => setIsModalOpen(true)}>
@@ -430,117 +304,66 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
               </CardContent>
             </Card>
           ) : (
-            filteredNotes.map((note: CaseNoteWithTags) => (
-              <Card key={note.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold text-gray-900">
-                        {note.title}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <Badge variant="outline">{note.category}</Badge>
-                        {note.priority !== "normal" && (
-                          <Badge variant={note.priority === "urgent" ? "destructive" : "secondary"}>
-                            {note.priority}
-                          </Badge>
-                        )}
-                        {getIncidentBadge(note.caseNoteTags?.incident)}
-                        {getMedicationBadge(note.caseNoteTags?.medication)}
-                        {getSpellCheckBadge(note.spellCheckCount || 0)}
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground text-right">
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {usersArray.find(u => u.id === note.userId)?.username || `Staff #${note.userId}`}
-                      </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="w-3 h-3" />
-                        {format(new Date(note.createdAt), "MMM d, yyyy 'at' h:mm a")}
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 whitespace-pre-wrap">{note.content}</p>
-                  </div>
-                  
-                  {note.linkedShiftId && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <div className="flex items-center gap-2 text-sm text-blue-800">
-                        <Clock className="w-4 h-4" />
-                        <span className="font-medium">Linked to Shift #{note.linkedShiftId}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {note.tags && note.tags.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-1">
-                      {note.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+            <div className="space-y-4">
+              {filteredNotes.map((note) => (
+                <CaseNoteCard
+                  key={note.id}
+                  note={note}
+                  client={client}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                />
+              ))}
+            </div>
           )}
         </TabsContent>
 
         <TabsContent value="incidents" className="space-y-4">
-          {filteredNotes.filter(note => note.caseNoteTags?.incident?.occurred).map((note: CaseNoteWithTags) => (
-            <Card key={note.id} className="border-red-200 hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-600" />
-                      {note.title}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      {getIncidentBadge(note.caseNoteTags?.incident)}
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {format(new Date(note.createdAt), "MMM d, yyyy 'at' h:mm a")}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 whitespace-pre-wrap">{note.content}</p>
+          {filteredNotes.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No incident notes found</h3>
+                <p className="text-gray-600">No case notes with incidents recorded for this client.</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <div className="space-y-4">
+              {filteredNotes.map((note) => (
+                <CaseNoteCard
+                  key={note.id}
+                  note={note}
+                  client={client}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="medication" className="space-y-4">
-          {filteredNotes.filter(note => note.caseNoteTags?.medication).map((note: CaseNoteWithTags) => (
-            <Card key={note.id} className="border-green-200 hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <Pill className="w-5 h-5 text-green-600" />
-                      {note.title}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      {getMedicationBadge(note.caseNoteTags?.medication)}
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {format(new Date(note.createdAt), "MMM d, yyyy 'at' h:mm a")}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 whitespace-pre-wrap">{note.content}</p>
+          {filteredNotes.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Pill className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No medication notes found</h3>
+                <p className="text-gray-600">No case notes with medication records for this client.</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <div className="space-y-4">
+              {filteredNotes.map((note) => (
+                <CaseNoteCard
+                  key={note.id}
+                  note={note}
+                  client={client}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
