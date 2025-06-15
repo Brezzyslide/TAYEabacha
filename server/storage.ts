@@ -89,6 +89,7 @@ export interface IStorage {
 
   // Hourly Observations
   getObservations(tenantId: number): Promise<HourlyObservation[]>;
+  getAllObservations(tenantId: number): Promise<HourlyObservation[]>;
   getObservationsByClient(clientId: number, tenantId: number): Promise<HourlyObservation[]>;
   getObservation(id: number, tenantId: number): Promise<HourlyObservation | undefined>;
   createObservation(observation: InsertHourlyObservation): Promise<HourlyObservation>;
@@ -568,6 +569,12 @@ export class DatabaseStorage implements IStorage {
 
   // Hourly Observations methods
   async getObservations(tenantId: number): Promise<HourlyObservation[]> {
+    return await db.select().from(hourlyObservations)
+      .where(eq(hourlyObservations.tenantId, tenantId))
+      .orderBy(desc(hourlyObservations.timestamp));
+  }
+
+  async getAllObservations(tenantId: number): Promise<HourlyObservation[]> {
     return await db.select().from(hourlyObservations)
       .where(eq(hourlyObservations.tenantId, tenantId))
       .orderBy(desc(hourlyObservations.timestamp));

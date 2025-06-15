@@ -2271,6 +2271,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hourly Observations API
+  app.get("/api/observations", requireAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { clientId } = req.query;
+      
+      let observations;
+      if (clientId) {
+        observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+      } else {
+        observations = await storage.getAllObservations(tenantId);
+      }
+      
+      res.json(observations);
+    } catch (error) {
+      console.error("Observations API error:", error);
+      res.status(500).json({ message: "Failed to fetch observations" });
+    }
+  });
+
+  app.get("/api/hourly-observations", requireAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { clientId } = req.query;
+      
+      let observations;
+      if (clientId) {
+        observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+      } else {
+        observations = await storage.getAllObservations(tenantId);
+      }
+      
+      res.json(observations);
+    } catch (error) {
+      console.error("Hourly observations API error:", error);
+      res.status(500).json({ message: "Failed to fetch hourly observations" });
+    }
+  });
+
+  app.get("/api/observations/:id", requireAuth, async (req: any, res) => {
+    try {
+      const observationId = parseInt(req.params.id);
+      const observation = await storage.getObservation(observationId, req.user.tenantId);
+      
+      if (!observation) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+      
+      res.json(observation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch observation" });
+    }
+  });
+
+  app.post("/api/observations", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker"]), async (req: any, res) => {
+    try {
+      const validationResult = insertHourlyObservationSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid observation data", 
+          errors: validationResult.error.issues 
+        });
+      }
+
+      const observationData = {
+        ...validationResult.data,
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+      };
+
+      const observation = await storage.createObservation(observationData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_observation",
+        resourceType: "observation",
+        resourceId: observation.id,
+        description: `Created ${observation.observationType} observation for client ${observation.clientId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(observation);
+    } catch (error) {
+      console.error("Create observation error:", error);
+      res.status(500).json({ message: "Failed to create observation" });
+    }
+  });
+
+  app.put("/api/observations/:id", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker"]), async (req: any, res) => {
+    try {
+      const observationId = parseInt(req.params.id);
+      const validationResult = insertHourlyObservationSchema.partial().safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid observation data", 
+          errors: validationResult.error.issues 
+        });
+      }
+
+      const observation = await storage.updateObservation(observationId, validationResult.data, req.user.tenantId);
+      if (!observation) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_observation",
+        resourceType: "observation",
+        resourceId: observation.id,
+        description: `Updated ${observation.observationType} observation for client ${observation.clientId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(observation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update observation" });
+    }
+  });
+
+  app.delete("/api/observations/:id", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const observationId = parseInt(req.params.id);
+      const success = await storage.deleteObservation(observationId, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_observation",
+        resourceType: "observation",
+        description: `Deleted observation ${observationId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Observation deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete observation" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
