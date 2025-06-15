@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Filter, MessageSquare, Send, Inbox, AlertTriangle, Clock } from "lucide-react";
-import Sidebar from "@/components/layout/sidebar";
-import UniversalHeader from "@/components/layout/universal-header";
+
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
