@@ -1304,8 +1304,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tenantId = req.user.tenantId;
       
-      // Use the storage layer instead of direct DB query
-      const records = await storage.getMedicationRecords(0, tenantId); // Pass 0 for clientId to get all records
+      // Get records with user information
+      const records = await db.select({
+        id: medicationRecords.id,
+        medicationPlanId: medicationRecords.medicationPlanId,
+        clientId: medicationRecords.clientId,
+        administeredBy: medicationRecords.administeredBy,
+        medicationName: medicationRecords.medicationName,
+        scheduledTime: medicationRecords.scheduledTime,
+        actualTime: medicationRecords.actualTime,
+        dateTime: medicationRecords.dateTime,
+        timeOfDay: medicationRecords.timeOfDay,
+        route: medicationRecords.route,
+        status: medicationRecords.status,
+        result: medicationRecords.result,
+        notes: medicationRecords.notes,
+        refusalReason: medicationRecords.refusalReason,
+        wasWitnessed: medicationRecords.wasWitnessed,
+        attachmentBeforeUrl: medicationRecords.attachmentBeforeUrl,
+        attachmentAfterUrl: medicationRecords.attachmentAfterUrl,
+        tenantId: medicationRecords.tenantId,
+        createdAt: medicationRecords.createdAt,
+        // Include administrator info
+        administratorName: users.username,
+        // Include client info
+        clientName: clients.fullName,
+        clientFirstName: clients.firstName,
+        clientLastName: clients.lastName,
+      })
+      .from(medicationRecords)
+      .leftJoin(users, eq(medicationRecords.administeredBy, users.id))
+      .leftJoin(clients, eq(medicationRecords.clientId, clients.id))
+      .where(eq(medicationRecords.tenantId, tenantId))
+      .orderBy(desc(medicationRecords.createdAt));
       
       res.json(records);
     } catch (error) {

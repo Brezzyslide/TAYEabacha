@@ -346,16 +346,18 @@ export default function MedicationDashboard() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {medicationRecords.slice(0, 10).map((record: MedicationRecord) => (
+                      {medicationRecords.slice(0, 10).map((record: any) => (
                         <div key={record.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-2">
-                                <Badge className={getStatusBadge(record.result)}>
-                                  {record.result}
+                                <Badge className={getStatusBadge(record.result || record.status)}>
+                                  {record.result || record.status}
                                 </Badge>
                                 <span className="text-sm text-gray-500">
-                                  {format(new Date(record.scheduledTime), 'MMM dd, yyyy HH:mm')}
+                                  {record.dateTime ? format(new Date(record.dateTime), 'MMM dd, yyyy HH:mm') : 
+                                   record.scheduledTime ? format(new Date(record.scheduledTime), 'MMM dd, yyyy HH:mm') :
+                                   format(new Date(record.createdAt), 'MMM dd, yyyy HH:mm')}
                                 </span>
                               </div>
                               {record.administeredTime && (
