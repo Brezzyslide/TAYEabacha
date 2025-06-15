@@ -24,10 +24,7 @@ import ShiftDashboard from "@/app/shift/ShiftDashboard";
 import ShiftCalendar from "@/app/shift/ShiftCalendar";
 import StaffAvailabilityPage from "@/app/staff-availability/StaffAvailabilityPage";
 import ManageStaffAvailabilityPage from "@/app/manage-staff-availability/ManageStaffAvailabilityPage";
-import ObservationDashboard from "@/app/hourly-observations/ObservationDashboard";
-import CaseNoteDashboard from "@/app/case-notes/CaseNoteDashboard";
-import IncidentDashboard from "@/app/incident-management/IncidentDashboard";
-import MedicationDashboard from "@/app/medications/MedicationDashboard";
+
 import MessageDashboard from "@/app/messages/MessageDashboard";
 import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
@@ -53,10 +50,7 @@ function Router() {
       <ProtectedRoute path="/staff-availability" component={StaffAvailabilityPage} />
       <ProtectedRoute path="/manage-staff-availability" component={ManageStaffAvailabilityPage} />
       <ProtectedRoute path="/staff-hour-allocations" component={StaffHourDashboard} />
-      <ProtectedRoute path="/hourly-observations" component={ObservationDashboard} />
-      <ProtectedRoute path="/case-notes" component={CaseNoteDashboard} />
-      <ProtectedRoute path="/incident-management" component={IncidentDashboard} />
-      <ProtectedRoute path="/medications" component={MedicationDashboard} />
+
       <ProtectedRoute path="/messages" component={MessageDashboard} />
       <ProtectedRoute path="/staff" component={Staff} />
       <ProtectedRoute path="/roles-permissions" component={RolesPermissionsDashboard} />
