@@ -90,8 +90,10 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
             </div>
           </div>
           <div className="text-sm text-muted-foreground">
-            <p>DOB: {clientData.dateOfBirth}</p>
-            <p>{clientData.address}</p>
+            {clientData.dateOfBirth && (
+              <p>DOB: {new Date(clientData.dateOfBirth).toLocaleDateString()}</p>
+            )}
+            {clientData.address && <p>{clientData.address}</p>}
           </div>
         </CardHeader>
       </Card>
