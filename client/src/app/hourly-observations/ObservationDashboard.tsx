@@ -33,13 +33,13 @@ const observationSchema = z.object({
   intensity: z.number().min(1).max(5).optional(),
   timestamp: z.date({ required_error: "Please select a date and time" })
 }).refine((data) => {
-  // Make subtype required for behaviour observations
-  if (data.observationType === "behaviour" && (!data.subtype || data.subtype.trim() === "")) {
+  // Make subtype required for behaviour and ADL observations
+  if ((data.observationType === "behaviour" || data.observationType === "adl") && (!data.subtype || data.subtype.trim() === "")) {
     return false;
   }
   return true;
 }, {
-  message: "Subtype is required for behaviour observations",
+  message: "Subtype is required for behaviour and ADL observations",
   path: ["subtype"]
 }).refine((data) => {
   // Make intensity required for behaviour observations
@@ -64,6 +64,20 @@ const behaviourSubtypes = [
   "Repetitive Behaviour",
   "Non-Compliance",
   "Appropriate Social Interaction"
+];
+
+// ADL subtypes for care-related observations
+const adlSubtypes = [
+  "Personal Hygiene",
+  "Meal Preparation", 
+  "Medication Administration",
+  "Mobility Assistance",
+  "Communication Support",
+  "Household Tasks",
+  "Toileting Assistance",
+  "Dressing/Grooming",
+  "Transportation",
+  "Shopping/Errands"
 ];
 
 type ObservationFormData = z.infer<typeof observationSchema>;
@@ -256,19 +270,53 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Subtype */}
+              {/* Subtype - Dynamic based on observation type */}
               <FormField
                 control={form.control}
                 name="subtype"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Subtype (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="e.g., verbal aggression, mobility assistance" 
-                        {...field} 
-                      />
-                    </FormControl>
+                    <FormLabel>
+                      Subtype {(form.watch("observationType") === "behaviour" || form.watch("observationType") === "adl") ? "(Required)" : "(Optional)"}
+                    </FormLabel>
+                    {form.watch("observationType") === "behaviour" ? (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select behaviour subtype" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {behaviourSubtypes.map((subtype) => (
+                            <SelectItem key={subtype} value={subtype}>
+                              {subtype}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : form.watch("observationType") === "adl" ? (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select ADL subtype" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {adlSubtypes.map((subtype) => (
+                            <SelectItem key={subtype} value={subtype}>
+                              {subtype}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g., family interaction, pain management" 
+                          {...field} 
+                        />
+                      </FormControl>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
