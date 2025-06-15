@@ -12,7 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { CaseNote, Client } from "@shared/schema";
 import CaseNoteFilterBar from "./components/CaseNoteFilterBar";
 import CaseNoteCard from "./components/CaseNoteCard";
-import CaseNoteModal from "@/components/case-notes/CaseNoteModal";
+import CreateCaseNoteModal from "./components/CreateCaseNoteModal";
 
 export default function CaseNoteDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
