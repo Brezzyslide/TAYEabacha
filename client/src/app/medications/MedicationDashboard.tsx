@@ -172,13 +172,7 @@ export default function MedicationDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col">
-        <UniversalHeader />
-        
-        <main className="flex-1 p-6 space-y-6">
+    <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
@@ -678,8 +672,6 @@ export default function MedicationDashboard() {
               </Card>
             </TabsContent>
           </Tabs>
-        </main>
-      </div>
 
       {/* Record Administration Modal */}
       {recordAdminModal.isOpen && recordAdminModal.clientId && recordAdminModal.clientName && (

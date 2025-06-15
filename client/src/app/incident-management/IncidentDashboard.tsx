@@ -102,29 +102,17 @@ export default function IncidentDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <UniversalHeader />
-          <main className="flex-1 p-6">
-            <div className="text-center py-12">Loading incidents...</div>
-          </main>
-        </div>
+      <div className="p-6">
+        <div className="text-center py-12">Loading incidents...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <UniversalHeader />
-          <main className="flex-1 p-6">
-            <div className="text-center py-12 text-red-600">
-              Error loading incidents. Please try again.
-            </div>
-          </main>
+      <div className="p-6">
+        <div className="text-center py-12 text-red-600">
+          Error loading incidents. Please try again.
         </div>
       </div>
     );
@@ -216,7 +204,7 @@ export default function IncidentDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
