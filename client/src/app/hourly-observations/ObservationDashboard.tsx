@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Search, Download, FileText, Grid3X3, List, Filter, Home, Eye, Star, Clock, User, X } from "lucide-react";
+import { Plus, Search, Download, FileText, Grid3X3, List, Filter, Home, Eye, Star, Clock, User, X, ZoomIn } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -84,23 +84,130 @@ const adlSubtypes = [
 type ObservationFormData = z.infer<typeof observationSchema>;
 
 // Observation display components
-const ObservationCard = ({ observation, clientName }: { observation: any; clientName: string }) => (
+const ObservationCard = ({ observation, clientName, onQuickView }: { 
+  observation: any; 
+  clientName: string; 
+  onQuickView: (obs: any) => void;
+}) => (
   <Card className="mb-4">
     <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Eye className="w-5 h-5" />
-        {observation.observationType || 'Observation'}
-        {observation.intensity && (
-          <Badge variant="secondary">Intensity: {observation.intensity}/5</Badge>
-        )}
-      </CardTitle>
+      <div className="flex items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <Eye className="w-5 h-5" />
+          <span className={`px-2 py-1 rounded text-xs ${
+            observation.observationType === 'behaviour' 
+              ? 'bg-red-100 text-red-800' 
+              : 'bg-blue-100 text-blue-800'
+          }`}>
+            {observation.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
+          </span>
+        </CardTitle>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onQuickView(observation)}
+          className="gap-2"
+        >
+          <ZoomIn className="w-4 h-4" />
+          Quick View
+        </Button>
+      </div>
     </CardHeader>
     <CardContent>
-      <p className="text-gray-600 mb-2">{observation.notes || 'No notes available'}</p>
-      {observation.subtype && (
-        <p className="text-sm text-blue-600 mb-2">Subtype: {observation.subtype}</p>
+      {/* ADL Observation */}
+      {observation.observationType === 'adl' && (
+        <div className="space-y-3">
+          {observation.subtype && (
+            <div>
+              <span className="text-sm font-medium text-gray-700">Activity:</span>
+              <p className="text-sm text-gray-900 mt-1">{observation.subtype}</p>
+            </div>
+          )}
+          {observation.notes && (
+            <div>
+              <span className="text-sm font-medium text-gray-700">Notes:</span>
+              <p className="text-sm text-gray-900 mt-1 line-clamp-3">{observation.notes}</p>
+            </div>
+          )}
+        </div>
       )}
-      <div className="flex gap-2 text-sm text-gray-500">
+
+      {/* Behaviour Observation with Star Chart */}
+      {observation.observationType === 'behaviour' && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-gray-700">Star Chart Assessment</h4>
+          
+          {/* Settings */}
+          {observation.settings && (
+            <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div className="flex-1">
+                <span className="text-xs font-medium text-gray-600">Settings</span>
+                <p className="text-xs text-gray-800 line-clamp-2">{observation.settings}</p>
+              </div>
+              <div className="flex items-center ml-2">
+                {[1,2,3,4,5].map(star => (
+                  <span key={star} className={`text-sm ${
+                    star <= (observation.settingsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                  }`}>★</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Time */}
+          {observation.time && (
+            <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div className="flex-1">
+                <span className="text-xs font-medium text-gray-600">Time</span>
+                <p className="text-xs text-gray-800 line-clamp-2">{observation.time}</p>
+              </div>
+              <div className="flex items-center ml-2">
+                {[1,2,3,4,5].map(star => (
+                  <span key={star} className={`text-sm ${
+                    star <= (observation.timeRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                  }`}>★</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Antecedents */}
+          {observation.antecedents && (
+            <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div className="flex-1">
+                <span className="text-xs font-medium text-gray-600">Antecedents</span>
+                <p className="text-xs text-gray-800 line-clamp-2">{observation.antecedents}</p>
+              </div>
+              <div className="flex items-center ml-2">
+                {[1,2,3,4,5].map(star => (
+                  <span key={star} className={`text-sm ${
+                    star <= (observation.antecedentsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                  }`}>★</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Response */}
+          {observation.response && (
+            <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div className="flex-1">
+                <span className="text-xs font-medium text-gray-600">Response</span>
+                <p className="text-xs text-gray-800 line-clamp-2">{observation.response}</p>
+              </div>
+              <div className="flex items-center ml-2">
+                {[1,2,3,4,5].map(star => (
+                  <span key={star} className={`text-sm ${
+                    star <= (observation.responseRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                  }`}>★</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2 text-sm text-gray-500 mt-4 pt-3 border-t">
         <Clock className="w-4 h-4" />
         <span>{observation.timestamp ? new Date(observation.timestamp).toLocaleString() : 'No date'}</span>
         <span>•</span>
@@ -608,6 +715,8 @@ export default function ObservationDashboard() {
   const [selectedType, setSelectedType] = useState<FilterType>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [selectedObservation, setSelectedObservation] = useState<any>(null);
 
   // Fetch observations
   const { data: observations = [], isLoading } = useQuery({
@@ -688,6 +797,11 @@ export default function ObservationDashboard() {
   const getClientName = (clientId: number) => {
     const client = (clients as any[]).find(c => c.id === clientId);
     return client?.fullName || "Unknown Client";
+  };
+
+  const handleQuickView = (observation: any) => {
+    setSelectedObservation(observation);
+    setIsQuickViewOpen(true);
   };
 
   const handleExportPDF = () => {
@@ -903,6 +1017,7 @@ export default function ObservationDashboard() {
                     key={observation.id}
                     observation={observation}
                     clientName={getClientName(observation.clientId)}
+                    onQuickView={handleQuickView}
                   />
                 ))}
               </div>
@@ -933,6 +1048,146 @@ export default function ObservationDashboard() {
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
       />
+
+      {/* Quick View Modal */}
+      <Dialog open={isQuickViewOpen} onOpenChange={setIsQuickViewOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Observation Details - {selectedObservation?.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedObservation && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Date & Time:</span>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {new Date(selectedObservation.timestamp).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Client:</span>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {getClientName(selectedObservation.clientId)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Type:</span>
+                  <p className="text-sm text-gray-900 mt-1">
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      selectedObservation.observationType === 'behaviour' 
+                        ? 'bg-red-100 text-red-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {selectedObservation.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* ADL Observation Details */}
+              {selectedObservation.observationType === 'adl' && (
+                <div className="space-y-4">
+                  {selectedObservation.subtype && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Activity Type:</span>
+                      <p className="text-sm text-gray-900 mt-1 p-3 bg-green-50 rounded">
+                        {selectedObservation.subtype}
+                      </p>
+                    </div>
+                  )}
+                  {selectedObservation.notes && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Notes:</span>
+                      <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded whitespace-pre-wrap">
+                        {selectedObservation.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Behaviour Observation Details (Star Chart) */}
+              {selectedObservation.observationType === 'behaviour' && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Star Chart Assessment</h4>
+                  
+                  {selectedObservation.settings && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Settings</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.settingsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.settingsRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.settings}</p>
+                    </div>
+                  )}
+
+                  {selectedObservation.time && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Time</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.timeRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.timeRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.time}</p>
+                    </div>
+                  )}
+
+                  {selectedObservation.antecedents && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Antecedents</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.antecedentsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.antecedentsRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.antecedents}</p>
+                    </div>
+                  )}
+
+                  {selectedObservation.response && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Response</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.responseRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.responseRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.response}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
