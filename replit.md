@@ -155,6 +155,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 15, 2025. Completely resolved duplicate sidebar issue across all components - removed redundant Sidebar and Header imports from Dashboard, Support Work page, and ClientProfileDashboard components, ensuring all layout rendering is handled exclusively by the centralized ProtectedRoute component for consistent navigation experience throughout the entire application
 - June 15, 2025. Enhanced logout button visibility by removing responsive hiding class, ensuring logout functionality is always visible in header navigation across all screen sizes for improved user experience
 - June 15, 2025. Implemented horizontal scrolling for top navigation area with hidden scrollbars - added overflow-x-auto, flex-shrink-0 classes, and custom CSS utilities to enable smooth left/right scrolling on mobile and desktop while maintaining clean visual appearance
+- June 15, 2025. Fixed missing header component in ProtectedRoute layout - restored Header import and positioning to ensure logout button, user initials, and navigation controls are visible across all authenticated pages
 
 ## User Preferences
 

@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 
 export function ProtectedRoute({
   path,
@@ -35,6 +36,7 @@ export function ProtectedRoute({
       <div className="min-h-screen flex">
         <Sidebar />
         <div className="flex-1 flex flex-col">
+          <Header />
           <main className="flex-1 p-6">
             <Component />
           </main>
