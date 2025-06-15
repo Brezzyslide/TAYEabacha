@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Clock, User } from "lucide-react";
+import { TrendingUp, Clock, User, Eye } from "lucide-react";
 
 interface ObservationsTabProps {
   clientId: string;

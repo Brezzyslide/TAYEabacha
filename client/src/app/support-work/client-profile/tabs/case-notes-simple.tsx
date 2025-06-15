@@ -32,11 +32,24 @@ function hasPermission(user: any, resource: string, action: string): boolean {
 export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps) {
   const { user } = useAuth();
 
+  // Handle missing clientId
+  if (!clientId) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Client ID Missing</h3>
+          <p className="text-gray-600">Client ID is missing from URL.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Check permissions
   const canViewCaseNotes = hasPermission(user, "caseNotes", "view");
 
   // Fetch all case notes and filter by client
-  const { data: allCaseNotes = [], isLoading } = useQuery({
+  const { data: allCaseNotes = [], isLoading, error } = useQuery({
     queryKey: ["/api/case-notes"],
     enabled: !!user && !!clientId && canViewCaseNotes,
   });
