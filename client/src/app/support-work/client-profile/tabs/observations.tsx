@@ -23,8 +23,8 @@ export default function ObservationsTab({ clientId, companyId }: ObservationsTab
 
   // Fetch hourly observations for this client
   const { data: observations = [], isLoading, error } = useQuery({
-    queryKey: ["/api/hourly-observations", { clientId }],
-    queryFn: () => fetch(`/api/hourly-observations?clientId=${clientId}`).then(res => {
+    queryKey: ["/api/observations", { clientId }],
+    queryFn: () => fetch(`/api/observations?clientId=${clientId}`).then(res => {
       if (!res.ok) throw new Error('Failed to fetch observations');
       return res.json();
     }),
@@ -69,7 +69,7 @@ export default function ObservationsTab({ clientId, companyId }: ObservationsTab
                     <div className="flex items-center space-x-2 mb-2">
                       <Clock className="h-4 w-4 text-gray-500" />
                       <span className="font-medium">
-                        {new Date(observation.observationTime).toLocaleString()}
+                        {new Date(observation.timestamp).toLocaleString()}
                       </span>
                     </div>
                     {observation.observedBy && (
@@ -81,51 +81,107 @@ export default function ObservationsTab({ clientId, companyId }: ObservationsTab
                       </div>
                     )}
                   </div>
-                  <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                    Observation
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    observation.observationType === 'behaviour' 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {observation.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
                   </span>
                 </div>
 
-                {observation.mood && (
-                  <div className="mb-3">
-                    <span className="text-sm font-medium text-gray-700">Mood: </span>
-                    <span className={`px-2 py-1 rounded text-xs ml-1 ${
-                      observation.mood === 'happy' ? 'bg-green-100 text-green-800' :
-                      observation.mood === 'sad' ? 'bg-red-100 text-red-800' :
-                      observation.mood === 'anxious' ? 'bg-yellow-100 text-yellow-800' :
-                      observation.mood === 'calm' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {observation.mood}
-                    </span>
-                  </div>
+                {/* ADL Observation Display */}
+                {observation.observationType === 'adl' && (
+                  <>
+                    {observation.subtype && (
+                      <div className="mb-3">
+                        <span className="text-sm font-medium text-gray-700">Activity: </span>
+                        <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800 ml-1">
+                          {observation.subtype}
+                        </span>
+                      </div>
+                    )}
+                    {observation.notes && (
+                      <div className="mt-3 pt-3 border-t">
+                        <span className="text-sm font-medium text-gray-700">Notes: </span>
+                        <p className="text-sm text-gray-600 mt-1">{observation.notes}</p>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {observation.behavior && (
-                  <div className="mb-3">
-                    <span className="text-sm font-medium text-gray-700">Behavior: </span>
-                    <span className="text-sm text-gray-600">{observation.behavior}</span>
-                  </div>
-                )}
+                {/* Behaviour Observation Display (Star Chart) */}
+                {observation.observationType === 'behaviour' && (
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium text-gray-700 mb-2">Star Chart Assessment:</div>
+                    
+                    {observation.settings && (
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-sm font-medium text-gray-700">Settings:</span>
+                          <div className="flex items-center space-x-1">
+                            {[1,2,3,4,5].map(star => (
+                              <span key={star} className={`text-sm ${
+                                star <= (observation.settingsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                              }`}>★</span>
+                            ))}
+                            <span className="text-xs text-gray-500 ml-1">({observation.settingsRating}/5)</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">{observation.settings}</p>
+                      </div>
+                    )}
 
-                {observation.activities && (
-                  <div className="mb-3">
-                    <span className="text-sm font-medium text-gray-700">Activities: </span>
-                    <span className="text-sm text-gray-600">{observation.activities}</span>
-                  </div>
-                )}
+                    {observation.time && (
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-sm font-medium text-gray-700">Time:</span>
+                          <div className="flex items-center space-x-1">
+                            {[1,2,3,4,5].map(star => (
+                              <span key={star} className={`text-sm ${
+                                star <= (observation.timeRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                              }`}>★</span>
+                            ))}
+                            <span className="text-xs text-gray-500 ml-1">({observation.timeRating}/5)</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">{observation.time}</p>
+                      </div>
+                    )}
 
-                {observation.notes && (
-                  <div className="mt-3 pt-3 border-t">
-                    <span className="text-sm font-medium text-gray-700">Notes: </span>
-                    <p className="text-sm text-gray-600 mt-1">{observation.notes}</p>
-                  </div>
-                )}
+                    {observation.antecedents && (
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-sm font-medium text-gray-700">Antecedents:</span>
+                          <div className="flex items-center space-x-1">
+                            {[1,2,3,4,5].map(star => (
+                              <span key={star} className={`text-sm ${
+                                star <= (observation.antecedentsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                              }`}>★</span>
+                            ))}
+                            <span className="text-xs text-gray-500 ml-1">({observation.antecedentsRating}/5)</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">{observation.antecedents}</p>
+                      </div>
+                    )}
 
-                {observation.concernsRaised && (
-                  <div className="mt-3 pt-3 border-t bg-yellow-50 p-3 rounded">
-                    <span className="text-sm font-medium text-yellow-800">Concerns Raised: </span>
-                    <p className="text-sm text-yellow-700 mt-1">{observation.concernsRaised}</p>
+                    {observation.response && (
+                      <div className="p-3 bg-gray-50 rounded">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-sm font-medium text-gray-700">Response:</span>
+                          <div className="flex items-center space-x-1">
+                            {[1,2,3,4,5].map(star => (
+                              <span key={star} className={`text-sm ${
+                                star <= (observation.responseRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                              }`}>★</span>
+                            ))}
+                            <span className="text-xs text-gray-500 ml-1">({observation.responseRating}/5)</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">{observation.response}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
