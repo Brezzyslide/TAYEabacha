@@ -43,7 +43,7 @@ export default function CaseNoteDashboard() {
   // Create case note mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("/api/case-notes", "POST", {
+      const response = await apiRequest("POST", "/api/case-notes", {
         ...data,
         userId: user?.id,
         tenantId: user?.tenantId

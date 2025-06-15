@@ -79,7 +79,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Create case note mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest(`/api/clients/${clientId}/case-notes`, "POST", {
+      const response = await apiRequest("POST", `/api/clients/${clientId}/case-notes`, {
         ...data,
         userId: user?.id,
         tenantId: user?.tenantId
