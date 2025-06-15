@@ -1486,10 +1486,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Medication Records API
-  app.get("/api/clients/:clientId/medication-records", async (req: any, res) => {
+  app.get("/api/clients/:clientId/medication-records", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
-      const tenantId = req.user?.tenantId || 1; // Default tenant for testing
+      const tenantId = req.user.tenantId;
       const records = await storage.getMedicationRecords(clientId, tenantId);
       res.json(records);
     } catch (error) {

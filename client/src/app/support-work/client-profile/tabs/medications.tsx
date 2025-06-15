@@ -93,7 +93,9 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
   // Fetch medication records for this specific client
   const { data: medicationRecords = [], isLoading: recordsLoading } = useQuery({
     queryKey: ["/api/clients", clientId, "medication-records"],
-    queryFn: () => fetch(`/api/clients/${clientId}/medication-records`).then(res => {
+    queryFn: () => fetch(`/api/clients/${clientId}/medication-records`, {
+      credentials: 'include'
+    }).then(res => {
       if (!res.ok) throw new Error('Failed to fetch medication records');
       return res.json();
     }),
