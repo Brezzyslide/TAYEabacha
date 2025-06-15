@@ -195,7 +195,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
         <div>
           <h2 className="text-xl font-semibold">Case Notes</h2>
           <p className="text-sm text-muted-foreground">
-            {client ? `Case notes for ${client.firstName} ${client.lastName}` : "Case notes for this client"}
+            {client ? `Case notes for ${(client as any).firstName} ${(client as any).lastName}` : "Case notes for this client"}
           </p>
         </div>
         <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
@@ -322,7 +322,6 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
                 <CaseNoteCard
                   key={note.id}
                   note={note}
-                  client={client}
                   onEdit={() => {}}
                   onDelete={() => {}}
                 />
@@ -346,7 +345,6 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
                 <CaseNoteCard
                   key={note.id}
                   note={note}
-                  client={client}
                   onEdit={() => {}}
                   onDelete={() => {}}
                 />
@@ -370,7 +368,6 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
                 <CaseNoteCard
                   key={note.id}
                   note={note}
-                  client={client}
                   onEdit={() => {}}
                   onDelete={() => {}}
                 />
