@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Calendar, MapPin, Phone, Mail, AlertCircle } from "lucide-react";
+import { User, Calendar, MapPin, Phone, Mail, AlertCircle, Heart, Target, ThumbsDown, Shield } from "lucide-react";
 
 interface OverviewTabProps {
   clientId?: string;
@@ -68,6 +68,12 @@ export default function OverviewTab({ clientId, companyId }: OverviewTabProps) {
               <label className="text-sm font-medium text-gray-700">NDIS Number</label>
               <p className="text-sm text-gray-900">{client.ndisNumber || 'Not provided'}</p>
             </div>
+            {client.primaryDiagnosis && (
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-gray-700">Primary Diagnosis</label>
+                <p className="text-sm text-gray-900">{client.primaryDiagnosis}</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -117,6 +123,69 @@ export default function OverviewTab({ clientId, companyId }: OverviewTabProps) {
                 <label className="text-sm font-medium text-gray-700">Phone</label>
                 <p className="text-sm text-gray-900">{client.emergencyContactPhone || 'Not provided'}</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* NDIS Information */}
+      {client.ndisGoals && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Target className="h-5 w-5" />
+              <span>NDIS Goals</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{client.ndisGoals}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Care Preferences */}
+      {(client.likesPreferences || client.dislikesAversions) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Heart className="h-5 w-5" />
+              <span>Care Preferences</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {client.likesPreferences && (
+              <div>
+                <label className="text-sm font-medium text-green-700 flex items-center space-x-1">
+                  <span>Likes & Preferences</span>
+                </label>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap mt-1">{client.likesPreferences}</p>
+              </div>
+            )}
+            {client.dislikesAversions && (
+              <div>
+                <label className="text-sm font-medium text-red-700 flex items-center space-x-1">
+                  <ThumbsDown className="h-4 w-4" />
+                  <span>Dislikes & Aversions</span>
+                </label>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap mt-1">{client.dislikesAversions}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Medical Alerts */}
+      {client.allergiesMedicalAlerts && (
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-red-700">
+              <Shield className="h-5 w-5" />
+              <span>Medical Alerts & Allergies</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-red-50 p-3 rounded-md">
+              <p className="text-sm text-red-800 whitespace-pre-wrap">{client.allergiesMedicalAlerts}</p>
             </div>
           </CardContent>
         </Card>

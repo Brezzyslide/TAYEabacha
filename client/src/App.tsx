@@ -43,11 +43,11 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
-      <ProtectedRoute path="/clients/create" component={SimpleCreateClientForm} />
+      <ProtectedRoute path="/clients/create" component={() => <SimpleCreateClientForm />} />
       <ProtectedRoute path="/client/:clientId" component={ClientProfilePage} />
       <ProtectedRoute path="/support-work" component={SupportWorkPage} />
       <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
-      <ProtectedRoute path="/support-work/client-profile/create" component={SimpleCreateClientForm} />
+      <ProtectedRoute path="/support-work/client-profile/create" component={() => <SimpleCreateClientForm />} />
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfilePage} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
       <ProtectedRoute path="/staff-availability" component={StaffAvailabilityPage} />
