@@ -1013,26 +1013,26 @@ export default function ObservationDashboard() {
               />
             ))}
           </div>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Observations List</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="space-y-0">
-                    {filteredObservations.map((observation: any, index: number) => (
-                      <ObservationRow
-                        key={observation.id}
-                        observation={observation}
-                        clientName={getClientName(observation.clientId)}
-                        isLast={index === filteredObservations.length - 1}
-                      />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Observations List</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="space-y-0">
+                {filteredObservations.map((observation: any, index: number) => (
+                  <ObservationRow
+                    key={observation.id}
+                    observation={observation}
+                    clientName={getClientName(observation.clientId)}
+                    isLast={index === filteredObservations.length - 1}
+                    onQuickView={handleQuickView}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <ObservationFormModal
