@@ -338,10 +338,55 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : form.watch("observationType") === "health" ? (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select health subtype" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {healthSubtypes.map((subtype) => (
+                            <SelectItem key={subtype} value={subtype}>
+                              {subtype}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : form.watch("observationType") === "social" ? (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select social subtype" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {socialSubtypes.map((subtype) => (
+                            <SelectItem key={subtype} value={subtype}>
+                              {subtype}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : form.watch("observationType") === "communication" ? (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select communication subtype" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {communicationSubtypes.map((subtype) => (
+                            <SelectItem key={subtype} value={subtype}>
+                              {subtype}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <FormControl>
                         <Input 
-                          placeholder="e.g., family interaction, pain management" 
+                          placeholder="Enter custom subtype" 
                           {...field} 
                         />
                       </FormControl>
