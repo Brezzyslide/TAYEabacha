@@ -74,6 +74,7 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      form.reset(); // Reset the form after successful creation
       toast({
         title: "Success",
         description: "Client created successfully",
