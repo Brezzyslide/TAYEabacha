@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Clock, User, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, Clock, User, Eye, ZoomIn } from "lucide-react";
+import { useState } from "react";
 
 interface ObservationsTabProps {
   clientId: string;
@@ -8,6 +11,9 @@ interface ObservationsTabProps {
 }
 
 export default function ObservationsTab({ clientId, companyId }: ObservationsTabProps) {
+  const [selectedObservation, setSelectedObservation] = useState<any>(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+
   // Handle missing clientId
   if (!clientId) {
     return (
@@ -20,6 +26,11 @@ export default function ObservationsTab({ clientId, companyId }: ObservationsTab
       </Card>
     );
   }
+
+  const handleQuickView = (observation: any) => {
+    setSelectedObservation(observation);
+    setIsQuickViewOpen(true);
+  };
 
   // Fetch hourly observations for this client
   const { data: observations = [], isLoading, error } = useQuery({
@@ -81,13 +92,24 @@ export default function ObservationsTab({ clientId, companyId }: ObservationsTab
                       </div>
                     )}
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    observation.observationType === 'behaviour' 
-                      ? 'bg-red-100 text-red-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {observation.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickView(observation)}
+                      className="h-8 px-2"
+                    >
+                      <ZoomIn className="h-3 w-3 mr-1" />
+                      Quick View
+                    </Button>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      observation.observationType === 'behaviour' 
+                        ? 'bg-red-100 text-red-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {observation.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* ADL Observation Display */}
@@ -189,6 +211,140 @@ export default function ObservationsTab({ clientId, companyId }: ObservationsTab
           </div>
         </CardContent>
       </Card>
+
+      {/* Quick View Modal */}
+      <Dialog open={isQuickViewOpen} onOpenChange={setIsQuickViewOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Observation Details - {selectedObservation?.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedObservation && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Date & Time:</span>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {new Date(selectedObservation.timestamp).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Type:</span>
+                  <p className="text-sm text-gray-900 mt-1">
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      selectedObservation.observationType === 'behaviour' 
+                        ? 'bg-red-100 text-red-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {selectedObservation.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* ADL Observation Details */}
+              {selectedObservation.observationType === 'adl' && (
+                <div className="space-y-4">
+                  {selectedObservation.subtype && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Activity Type:</span>
+                      <p className="text-sm text-gray-900 mt-1 p-3 bg-green-50 rounded">
+                        {selectedObservation.subtype}
+                      </p>
+                    </div>
+                  )}
+                  {selectedObservation.notes && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Notes:</span>
+                      <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded whitespace-pre-wrap">
+                        {selectedObservation.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Behaviour Observation Details (Star Chart) */}
+              {selectedObservation.observationType === 'behaviour' && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Star Chart Assessment</h4>
+                  
+                  {selectedObservation.settings && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Settings</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.settingsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.settingsRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.settings}</p>
+                    </div>
+                  )}
+
+                  {selectedObservation.time && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Time</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.timeRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.timeRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.time}</p>
+                    </div>
+                  )}
+
+                  {selectedObservation.antecedents && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Antecedents</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.antecedentsRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.antecedentsRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.antecedents}</p>
+                    </div>
+                  )}
+
+                  {selectedObservation.response && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-base font-medium text-gray-700">Response</span>
+                        <div className="flex items-center space-x-1">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className={`text-lg ${
+                              star <= (selectedObservation.responseRating || 0) ? 'text-yellow-500' : 'text-gray-300'
+                            }`}>★</span>
+                          ))}
+                          <span className="text-sm text-gray-500 ml-2">({selectedObservation.responseRating}/5)</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedObservation.response}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
