@@ -452,7 +452,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
                     <div className="text-sm text-muted-foreground text-right">
                       <div className="flex items-center gap-1">
                         <User className="w-3 h-3" />
-                        {users.find(u => u.id === note.userId)?.username || `Staff #${note.userId}`}
+                        {usersArray.find(u => u.id === note.userId)?.username || `Staff #${note.userId}`}
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3" />

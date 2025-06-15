@@ -134,6 +134,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 14, 2025. Completed interactive Permission Matrix with clickable cells for direct permission overrides, enabling real-time role customization
 - June 14, 2025. Created complete Workflow Dashboard module featuring Auto Insights Panel for automated system analysis and Manual Task Board with drag-and-drop functionality for comprehensive workflow management
 - June 14, 2025. Built comprehensive NDIS Budget Management system with participant budget setup, automatic shift-to-budget deductions, pricing management, transaction tracking, and role-based permissions for budget oversight
+- June 15, 2025. Completed comprehensive Case Note module with GPT-4o spell checking (2-check limit), shift auto-fetching, incident reporting toggle, medication administration tracking, enhanced database schema with caseNoteTags JSONB column, and fixed API endpoint synchronization between main dashboard and client profile views
 
 ## User Preferences
 
