@@ -667,7 +667,7 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   ndisNumber: z.string().min(1, "NDIS number is required"),
-  dateOfBirth: z.date({ required_error: "Date of birth is required" }),
+  dateOfBirth: z.coerce.date({ required_error: "Date of birth is required" }),
 });
 
 export const insertFormTemplateSchema = createInsertSchema(formTemplates).omit({
