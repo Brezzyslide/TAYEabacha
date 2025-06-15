@@ -1,0 +1,3304 @@
+[33mcommit 447fccc6a226c7f592f7a2ad0682b10ca50ee297[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;33mtag: [m[1;33mv1.1.0[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:22:41 2025 +0000
+
+    Improve task board and dashboard appearance for better user experience
+    
+    Reduces padding and gaps in ManualTaskBoard and Dashboard components to enhance UI.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d871686f-e520-4350-af75-be0861007656.jpg
+
+M	client/src/app/workflow-dashboard/components/ManualTaskBoard.tsx
+M	client/src/pages/dashboard.tsx
+
+[33mcommit 4566c127d8524a5b707ef097f7f4308da8235d66[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:19:29 2025 +0000
+
+    Refine quick actions card and layout for a cleaner dashboard appearance
+    
+    Updates styles and removes page breaker from quick actions card in dashboard.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d871686f-e520-4350-af75-be0861007656.jpg
+
+M	client/src/components/dashboard/quick-actions.tsx
+M	client/src/pages/dashboard.tsx
+
+[33mcommit 36fe3b41f045ee9feb8b0baa4cc332ae8fd95989[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:16:02 2025 +0000
+
+    Allow selection of budget type and staffing ratio when creating shifts
+    
+    Adds `fundingCategory` and `staffRatio` fields to the shift creation form data.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d871686f-e520-4350-af75-be0861007656.jpg
+
+M	client/src/app/shift/components/NewShiftModal.tsx
+
+[33mcommit 9f343c240bfde474c960698b0cd415e5239fca40[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:15:07 2025 +0000
+
+    Add the ability to select budget type and staff ratio when creating shifts
+    
+    Implements fundingCategory and staffRatio dropdowns in NewShiftModal.tsx and updates shifts schema in shared/schema.ts using Zod enums.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/569361bb-d218-480b-a068-425e5a342085.jpg
+
+M	client/src/app/shift/components/NewShiftModal.tsx
+M	shared/schema.ts
+
+[33mcommit 36104709ff1f0f787d8c4837fa37407083144665[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:09:39 2025 +0000
+
+    Add option for two-to-one support ratio in budget management forms
+    
+    Extends the support ratio options in NDISPricingManager and ParticipantBudgetForm components to include "2:1" by updating the corresponding Zod schemas and ratio options arrays.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ffd9b5b6-1a2f-4221-b035-1bac5abbde1f.jpg
+
+M	client/src/app/budget-management/components/NDISPricingManager.tsx
+M	client/src/app/budget-management/components/ParticipantBudgetForm.tsx
+
+[33mcommit 982c7a14dfd24125ac226ace70b28e8586708a0a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:07:47 2025 +0000
+
+    Allow for new staff to client support ratio when scheduling shifts
+    
+    Adds "2:1" ratio as a valid option for NDIS pricing, budgets, and transactions in shared/schema.ts using Drizzle and Zod.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b3a0edad-ed76-45d8-940b-c96a76adf29b.jpg
+
+M	shared/schema.ts
+
+[33mcommit 76ddc472373e2ec4aba966373c26367624ce2d07[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:05:29 2025 +0000
+
+    Improve task board stability and display error messages when loading fails
+    
+    Enhances ManualTaskBoard with retry logic, caching, error handling, and persists the component across dashboard page changes.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/84e070a3-04f2-4ec1-b1ff-3924975cef6d.jpg
+
+M	client/src/app/workflow-dashboard/components/ManualTaskBoard.tsx
+M	client/src/pages/dashboard.tsx
+
+[33mcommit 14d7a2444e4308c9cf37b4edc7445c03689167f4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:03:38 2025 +0000
+
+    Add tool to help users manage budgets and track spending effectively
+    
+    Implements NDIS Budget Management feature with shift-to-budget deductions.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/84e070a3-04f2-4ec1-b1ff-3924975cef6d.jpg
+
+M	client/src/components/layout/sidebar.tsx
+M	replit.md
+
+[33mcommit 955b1a02d2ec8f1bdf53c89a6c280d3fbb33f110[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 10:02:33 2025 +0000
+
+    Add budget management features for tracking and adjusting finances
+    
+    Implements the BudgetDashboard, NDISPricingManager, and related utils for calculating funding deductions, shift types and permissions using React, Zod and Drizzle ORM.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/2182a332-0fc2-4fac-b4d7-62d340270b2a.jpg
+
+M	client/src/App.tsx
+A	client/src/app/budget-management/components/NDISPricingManager.tsx
+A	client/src/app/budget-management/utils/calculateFundingDeduction.ts
+A	client/src/app/budget-management/utils/getShiftTypeByTime.ts
+M	client/src/lib/auth/permissions.ts
+
+[33mcommit fe282de84cfeba7f81970df97fa29f8d7eaa762f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:59:40 2025 +0000
+
+    Enable management of NDIS budgets and pricing through the user interface
+    
+    Adds API endpoints and UI components for managing NDIS budgets and pricing, including CRUD operations and role-based access control.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a8e513bf-be84-4974-9a11-3973bb6aa1e7.jpg
+
+A	client/src/app/budget-management/BudgetDashboard.tsx
+A	client/src/app/budget-management/components/BudgetSummaryCard.tsx
+A	client/src/app/budget-management/components/BudgetTransactionsList.tsx
+A	client/src/app/budget-management/components/ParticipantBudgetForm.tsx
+M	server/routes.ts
+
+[33mcommit c4c613ac74bcb7ae3c6a496bc445bb17fea9577e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:55:02 2025 +0000
+
+    Implement NDIS budget management system with pricing and allocation tracking
+    
+    Adds NDIS pricing, budget tables, and related CRUD operations to storage.ts and shared/schema.ts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/569adf37-d879-40cd-80ee-8a775c320da5.jpg
+
+A	attached_assets/Pasted-Please-create-a-full-featured-NDIS-Budget-Management-system-in-src-app-budget-management-Th-1749894741981_1749894741981.txt
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit dfddcb741c942fc73c83c9621b95df5ac0cf3683[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:51:41 2025 +0000
+
+    Make quick action buttons work as intended on the dashboard page
+    
+    Fix: Prevents page navigation when clicking quick action buttons by stopping event propagation.
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e3bf4ee8-34df-4616-9d02-664bf6ca1695.jpg
+
+M	client/src/components/dashboard/quick-actions.tsx
+
+[33mcommit fa6183951dff1dd4d33ebb4efa9fd446c14485cb[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:50:00 2025 +0000
+
+    Improve how task assignments are displayed and managed on the task board
+    
+    Fixes API request method order and uses `fullName` or `username` for user display in `ManualTaskBoard.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/62cace37-7e68-46c2-9ae7-4eef5d61ffd0.jpg
+
+M	client/src/app/workflow-dashboard/components/ManualTaskBoard.tsx
+
+[33mcommit d352c4250016b3d91e556e82237df87fff5ac9ec[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:49:08 2025 +0000
+
+    Improve task management by correctly associating tasks with their company
+    
+    Fixes an issue where task assignments were failing due to a foreign key constraint, and updates apiRequest call order.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/62cace37-7e68-46c2-9ae7-4eef5d61ffd0.jpg
+
+M	client/src/app/workflow-dashboard/components/ManualTaskBoard.tsx
+M	server/routes.ts
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit e90a8e71b2793a3f1a98ca88e5d836efb73f90a3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:46:15 2025 +0000
+
+    Fix temporary problem preventing task information from loading correctly
+    
+    Temporarily hardcodes companyId in task board routes and task creation due to a user ID issue.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ed80360b-ff71-4f0e-a693-dbf2db88eef0.jpg
+
+M	server/routes.ts
+
+[33mcommit c76e07dacaff0f0907c4f7a9f6dd3c7ab7a9ea93[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:45:37 2025 +0000
+
+    Improve error handling when creating tasks to provide better debugging information
+    
+    Adds error stack logging for task creation failures to aid in debugging 500 errors.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ed80360b-ff71-4f0e-a693-dbf2db88eef0.jpg
+
+M	server/routes.ts
+
+[33mcommit 79bf3e69b579f81f48072dbd83b8427222a0ccdf[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:43:47 2025 +0000
+
+    Improve task creation process and provide more detailed error feedback
+    
+    Adds detailed logging and error messages to debug task creation failure.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 7679f8904ef0cd9b18c44c3298dabb7b411cc9ae[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:42:02 2025 +0000
+
+    Make quick actions on the dashboard more useful and easier to navigate
+    
+    Updates quick action onClick navigations in QuickActions component.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	client/src/components/dashboard/quick-actions.tsx
+
+[33mcommit a0fd5845e8d2c52579dc16cbb46d4b8efa40d5fc[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:41:31 2025 +0000
+
+    Always show task board, insights, and quick actions on the dashboard
+    
+    Remove RBAC conditional rendering of the Tabs component in `dashboard.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	client/src/pages/dashboard.tsx
+
+[33mcommit efb3030a0656429e7e73dc77bbd7d2572e4d9d12[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:40:34 2025 +0000
+
+    Improve dashboard task board and resolve issues with quick actions
+    
+    Fixes display errors and adds drag-and-drop functionality to the task board components on the main dashboard.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+[33mcommit 5e6a51e97e92673e769b65d5824bb87cf73bd591[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:38:55 2025 +0000
+
+    Restrict workflow dashboard access to specific user roles
+    
+    Refactors role-based access control for workflow dashboard visibility by directly checking user roles instead of using the `hasPermission` function.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	client/src/pages/dashboard.tsx
+
+[33mcommit 63acdf0e8f8b03f16e0abd19c7ecfedaf21f54f3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:37:54 2025 +0000
+
+    Improve dashboard by adding workflow tabs and role-based content display
+    
+    Refactors dashboard.tsx to use Tabs component and RBAC for workflow insights and task management.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	client/src/pages/dashboard.tsx
+
+[33mcommit f37d892a4131b0ff24aa2cc7cffbf5ad8170119d[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:36:30 2025 +0000
+
+    Update dashboard with quick access to workflow and operational insights
+    
+    Adds a "Workflow Dashboard" quick action card and removes the "Create Form" card in `client/src/components/dashboard/quick-actions.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	client/src/components/dashboard/quick-actions.tsx
+
+[33mcommit 3419e9de04731659407b3d5a76b6b9aa0ac0a06f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:35:28 2025 +0000
+
+    Improve task assignments and add workflow dashboard with new features
+    
+    Fixes unassigned user value and updates the replit.md to reflect new features.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	client/src/app/workflow-dashboard/components/ManualTaskBoard.tsx
+M	replit.md
+
+[33mcommit a651dc1ac94754da2049b6e9909dc734eb300432[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:33:51 2025 +0000
+
+    Provide real-time insight into pending tasks and outstanding client needs
+    
+    Refactor useWorkflowInsights hook to prioritize real-time alerts for pending tasks.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83bc9ef7-6177-419a-a941-67ba555e99be.jpg
+
+M	client/src/app/workflow-dashboard/hooks/useWorkflowInsights.ts
+
+[33mcommit 57b5769d29582c4be25d8d8eed68807a32a2974e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:32:36 2025 +0000
+
+    Show key operational insights for staff and improve workflow navigation
+    
+    Implements workflow insights on the dashboard and adds a workflow dashboard link to the header.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ffe5206e-22ec-4edb-a4e8-c3645e73a199.jpg
+
+M	client/src/app/workflow-dashboard/components/AutoInsightsPanel.tsx
+M	client/src/app/workflow-dashboard/hooks/useWorkflowInsights.ts
+M	client/src/components/layout/universal-header.tsx
+M	server/storage.ts
+
+[33mcommit 2c7d96da32f60501547d93cf1f1bd79c98315ee7[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:30:45 2025 +0000
+
+    Enable task management by team leaders to oversee team workflows
+    
+    Adds a new workflow dashboard with API endpoints to manage task board tasks with CRUD operations and role-based access control.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/f8db2d5c-5f0b-47d4-b8d3-02d8309bc8af.jpg
+
+M	client/src/App.tsx
+A	client/src/app/workflow-dashboard/components/ManualTaskBoard.tsx
+M	server/routes.ts
+
+[33mcommit d3c60fdb41267a4a76bf6cc23d977ee9c38427bc[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:27:46 2025 +0000
+
+    Introduce workflow dashboard to monitor alerts and manage tasks
+    
+    Implements TaskBoardTasks schema, storage methods, and WorkflowDashboard UI with AutoInsightsPanel and ManualTaskBoard components.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/257054b7-af18-4832-88a7-5bc2359ccfb2.jpg
+
+A	attached_assets/Pasted-Please-create-the-full-Workflow-Dashboard-module-at-src-app-workflow-dashboard-This-dashboa-1749893109396_1749893109396.txt
+A	client/src/app/workflow-dashboard/WorkflowDashboard.tsx
+A	client/src/app/workflow-dashboard/components/AutoInsightsPanel.tsx
+A	client/src/app/workflow-dashboard/hooks/useWorkflowInsights.ts
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit db701c096f8e990482805390bf23c8af7a0a40a6[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:24:31 2025 +0000
+
+    Improve the ability to remove roles and permissions from the system
+    
+    Refactors `apiRequest` calls in `useMutation` for delete operations and enhances error handling with toast messages in `RolesPermissionsDashboard.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0d4667bf-5735-4fc7-bdb2-6e69e52f861f.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+
+[33mcommit 6c8b0b441cde3a2b23674dc67bf24577c5d57b0a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:23:47 2025 +0000
+
+    Add a system to customize roles, and modify user permissions directly
+    
+    Implement interactive permission matrix with clickable cells for real-time role customization in replit.md.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0d4667bf-5735-4fc7-bdb2-6e69e52f861f.jpg
+
+M	replit.md
+
+[33mcommit 008415458e6075ab3608545cb266b4b1c83666c3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:20:37 2025 +0000
+
+    Update icon in roles and permissions dashboard for clarity
+    
+    Replaces the `Info` icon with the `Key` icon in the roles and permissions dashboard.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0d4667bf-5735-4fc7-bdb2-6e69e52f861f.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+
+[33mcommit 1dec88e14cd447f522f5d333522ac3f6f215a92b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:19:23 2025 +0000
+
+    Replace permission list with an interactive table for easier management
+    
+    Implements a table-based UI for `RolesPermissionsDashboard.tsx` to improve permission management.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/f0287d64-f9c4-4768-9ee8-11fac5ea35b0.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+
+[33mcommit 95f8f64b7b7212b1bcec74faba95cc426353f3b6[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:17:54 2025 +0000
+
+    Enable assignment of roles to users through a new interactive interface
+    
+    Implements AssignRoleModal component and integrates it into the RolesPermissionsDashboard.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/f0287d64-f9c4-4768-9ee8-11fac5ea35b0.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+
+[33mcommit 0afe5a9e6d99cd3e94405dd994a3d40aa9dcfae9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:17:01 2025 +0000
+
+    Enable assigning custom roles to users and create specific permission sets
+    
+    Adds AssignRoleModal and enhances PermissionOverrideModal with module/action selection.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/f0287d64-f9c4-4768-9ee8-11fac5ea35b0.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+A	client/src/app/roles-permissions/components/AssignRoleModal.tsx
+M	client/src/app/roles-permissions/components/PermissionOverrideModal.tsx
+
+[33mcommit fefb055fe8588cbc4d9514cfca2fb4738dbcc70a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:12:13 2025 +0000
+
+    Improve custom role creation by fixing validation and data handling
+    
+    Fixes an issue where creating custom roles failed due to schema validation and incorrect data insertion.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83445379-88d4-4f9b-8629-431102feb8c7.jpg
+
+M	client/src/app/roles-permissions/components/CreateRoleModal.tsx
+M	replit.md
+M	server/routes.ts
+M	shared/schema.ts
+
+[33mcommit e8ee6265df4e8561c3426ffc00397936ab9942d7[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:10:45 2025 +0000
+
+    Correct the way new roles are added to the system via the website interface
+    
+    Fixes incorrect argument order in `apiRequest` call in `CreateRoleModal.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83445379-88d4-4f9b-8629-431102feb8c7.jpg
+
+M	client/src/app/roles-permissions/components/CreateRoleModal.tsx
+
+[33mcommit 18bb0c908d999c00417163bfc51b503b9a20bc36[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:08:57 2025 +0000
+
+    Fix error that prevents administrators from creating new user roles
+    
+    Implements error handling and validation to resolve issues preventing role creation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5caa9d17-3a9a-4bcb-a7bd-276a8b6d8b67.jpg
+
+[33mcommit dbb8cb584ca53cc4938251dc455124a4660970d1[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:08:50 2025 +0000
+
+    Improve custom role creation process with better error handling
+    
+    Adds error logging, tenant/user assignment, and schema adjustments for custom roles.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5caa9d17-3a9a-4bcb-a7bd-276a8b6d8b67.jpg
+
+M	server/routes.ts
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit ad16e29bcf305337e6b11f443fdd61b5cea3d312[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:04:42 2025 +0000
+
+    Fix error that prevents new roles from being created when clicking button
+    
+    Adds data cleaning and error handling to the create role mutation for improved stability.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ef8420fa-fa9f-452c-a515-cb9b912eb7aa.jpg
+
+M	client/src/app/roles-permissions/components/CreateRoleModal.tsx
+
+[33mcommit 790eb942bfc39de5ff2ea808c3acd8318bbb0e12[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 09:00:37 2025 +0000
+
+    Enable administrators to customize access for different roles in the system
+    
+    Adds a modal to override built-in permissions for user roles using `PermissionOverrideModal.tsx` and updates `RolesPermissionsDashboard.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ef8420fa-fa9f-452c-a515-cb9b912eb7aa.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+A	client/src/app/roles-permissions/components/PermissionOverrideModal.tsx
+
+[33mcommit 9575c027ae7190cb9723d32a20934bf58b80fc20[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 08:56:27 2025 +0000
+
+    Enable creating custom roles and override default permissions for users
+    
+    Enable the create role button and add a CreateRoleModal component.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ef8420fa-fa9f-452c-a515-cb9b912eb7aa.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+M	replit.md
+
+[33mcommit 23f3517f63f4cd049c623883cbe66e0ed4b6f1d9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 08:55:42 2025 +0000
+
+    Enable users to create custom roles and tailor permissions as needed
+    
+    Implements CreateRoleModal component and enables onClick functionality for opening the modal.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ef8420fa-fa9f-452c-a515-cb9b912eb7aa.jpg
+
+M	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+A	client/src/app/roles-permissions/components/CreateRoleModal.tsx
+
+[33mcommit 1a3e0530ee89e5a7de441a9a3839fdd68fcfffb4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 08:51:21 2025 +0000
+
+    Add role management feature so admins can modify and create user roles
+    
+    Implement role management module with RBAC to manage permissions.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d39d71e8-c454-4102-98d1-e5c296f17f57.jpg
+
+[33mcommit 91d5e9fc9f31ca9e564c640a3b9cdcf5f6971970[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 08:50:34 2025 +0000
+
+    Enable administrators to modify and manage roles and permissions for staff
+    
+    Adds RolesPermissionsDashboard, custom roles API, and custom permissions API.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d39d71e8-c454-4102-98d1-e5c296f17f57.jpg
+
+M	client/src/App.tsx
+A	client/src/app/roles-permissions/RolesPermissionsDashboard.tsx
+M	client/src/components/layout/sidebar.tsx
+M	server/routes.ts
+
+[33mcommit c27929319c51e3595d6a8e652318c7cda3066fd5[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 08:47:00 2025 +0000
+
+    Implement customizable roles and permissions for enhanced user management
+    
+    Adds Drizzle schema and storage methods for custom roles, permissions, and user role assignments in `server/storage.ts` and `shared/schema.ts`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4d53e836-5904-416b-9711-1a3cf30874d7.jpg
+
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit a3f84c65f7908dee90fbfa92d59a23eac07a373d[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 08:44:47 2025 +0000
+
+    Enable administrators to customize staff roles and permissions within the system
+    
+    Adds custom roles, permissions, and user role assignment tables with Drizzle ORM in shared/schema.ts, and updates SupportWorker permissions in client/src/lib/auth/permissions.ts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/7400795c-e77f-4f44-8ba4-545f5e4cea1d.jpg
+
+M	client/src/lib/auth/permissions.ts
+M	replit.md
+M	shared/schema.ts
+
+[33mcommit e19c5614791763db61c859233bd332aea352763a[m
+Author: Brezzyslide <taye.ajao90@yahoo.com>
+Date:   Sat Jun 14 01:57:01 2025 +0000
+
+    chore: remove stray file from incorrect commit message on June 14
+
+D	"from June 14 \342\200\223 shift recurrence, medication images, incident flow\""
+
+[33mcommit 95d0933f057e18c0e62ac9e950a19fc57e86b597[m
+Author: Brezzyslide <taye.ajao90@yahoo.com>
+Date:   Sat Jun 14 01:45:29 2025 +0000
+
+    feat: all changes from June 14 – shift recurrence, medication images, incident flow
+
+A	"from June 14 \342\200\223 shift recurrence, medication images, incident flow\""
+
+[33mcommit f2d100c7876b94c77bfb9dbfb93832339ab6bfc6[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:43:46 2025 +0000
+
+    Revamp staff hour allocations page to improve information clarity
+    
+    Refactors the StaffHourDashboard component to display allocation data more effectively, changes the route name in the sidebar.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d29abf3f-a2f2-4335-b784-4519f2beeba3.jpg
+
+M	client/src/app/staff-hour-allocations/StaffHourDashboard.tsx
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit 316ba2496f3388728de570ee323ff8438b521352[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:41:24 2025 +0000
+
+    Add a tool for admins to manage and analyze how staff hours are allocated
+    
+    Implements StaffHourDashboard with routes and updates replit.md to reflect changes.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/51ea1def-536e-4a46-bb4e-c741d3f1de76.jpg
+
+M	client/src/App.tsx
+M	replit.md
+
+[33mcommit 553a220e364522e635dd42bb1b11d6ea56512849[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:40:05 2025 +0000
+
+    Improve hour allocation tracking and display details to staff members
+    
+    Updates activity logs for hour allocations, recalculates remaining hours, and adds a staff hour allocation card.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3d18ca4f-919a-4ec4-90a0-413e587f3085.jpg
+
+A	client/src/app/staff-hour-allocations/components/MyAllocationCard.tsx
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 71225aea207af085a8a4b438b1b72cbb760299d9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:38:19 2025 +0000
+
+    Add the ability to manage staff hour allocations within the care management platform
+    
+    Implement hour allocation management via new API endpoints and Drizzle ORM schema.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4e423afa-d4d4-40e1-b4c5-457ed6f85e44.jpg
+
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 43f9ed53de7bb38eea9b94c4601a5d77c0e7b2d4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:36:01 2025 +0000
+
+    Enable managers to set and track staff working hour limits effectively
+    
+    Implements staff hour allocation dashboard with CRUD operations using React, TanStack Query, Zod, and ShadCN.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/acfba904-7546-4eba-862c-2c46b56211f5.jpg
+
+A	client/src/app/staff-hour-allocations/StaffHourDashboard.tsx
+A	client/src/app/staff-hour-allocations/components/CreateAllocationModal.tsx
+A	client/src/app/staff-hour-allocations/components/StaffAllocationCard.tsx
+
+[33mcommit 1e3bdaaaf1595f5a9db9931313200946e23e8580[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:33:28 2025 +0000
+
+    Enable admins to set and manage staff working hour limits and shift enforcement
+    
+    Implements hour allocations with Drizzle schema, Zod validation, and converts string timestamps to Date objects in the API.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/32779276-0139-4f25-be1f-b69333802104.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-create-a-complete-Staff-Hour-Allocation-module-with-analytic-1749864662924_1749864662924.txt
+M	client/src/app/shift/components/EditShiftModal.tsx
+M	server/routes.ts
+A	shared/hourAllocations.ts
+M	shared/schema.ts
+
+[33mcommit ccc0b5cca925674fd20c1a1f7be62ebd1e481be4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:30:43 2025 +0000
+
+    Ensure shifts are saved correctly and calendar view displays first
+    
+    Fixes shift update failure by sending Date objects instead of ISO strings and sets the default calendar view.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d5b19d29-75fd-48f1-bf50-9ce131a2d9e9.jpg
+
+M	client/src/app/shift/components/EditShiftModal.tsx
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+M	replit.md
+
+[33mcommit 68a9f5b3d984cdb45e04bef6a33418fcb13ba5ed[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:29:21 2025 +0000
+
+    Ensure newly updated shifts appear correctly under employee's schedule
+    
+    Fixes an issue where updated shift assignments were not appearing under the correct employee's schedule.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/be031bea-825b-495d-92c3-865c39c299d2.jpg
+
+[33mcommit b4a5f6fea52d0b68ba416735baad58d58d918973[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:28:55 2025 +0000
+
+    Improve shift update process to ensure changes appear correctly for users
+    
+    Refactor EditShiftModal.tsx to use camelCase for `clientId`, `userId`, `startTime`, and `endTime` in updateData object.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/be031bea-825b-495d-92c3-865c39c299d2.jpg
+
+M	client/src/app/shift/components/EditShiftModal.tsx
+
+[33mcommit 12ef38df17a59774ad75c883d83168fa39d6a88f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:26:38 2025 +0000
+
+    Fix shift editing to correctly save changes and improve calendar views
+    
+    Fixes shift update data mapping and implements dynamic calendar view switching.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/6addfc98-9411-4ffd-963d-7c16a27ffc3c.jpg
+
+M	client/src/app/shift/components/EditShiftModal.tsx
+M	replit.md
+
+[33mcommit e53cbf6d83f94cb761b3a496108525f480b7e945[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:25:53 2025 +0000
+
+    Add debugging to help find problems when updating shift details
+    
+    Adds console logs to debug shift update requests and responses in EditShiftModal.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/6addfc98-9411-4ffd-963d-7c16a27ffc3c.jpg
+
+M	client/src/app/shift/components/EditShiftModal.tsx
+
+[33mcommit 3b9564124db205512adab5607106aefb36726fa7[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:24:52 2025 +0000
+
+    Improve role-based access control and add enhanced debugging information
+    
+    Adds role-based access control checks, debug logs, and a test route for verifying role permissions in `server/routes.ts`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/cfac6e80-aa06-4669-a794-d407c9ed6ff3.jpg
+
+M	server/routes.ts
+
+[33mcommit 2cac3f2662b1bb9eeeb1e3e28ba5a615d3bae778[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:23:32 2025 +0000
+
+    Improve shift update logging for debugging and tracking user actions
+    
+    Adds detailed logging to the /shifts/:id PUT route for debugging.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/33fef772-7f0b-4233-aa6d-586a4fe0a77d.jpg
+
+M	server/routes.ts
+
+[33mcommit eb8e383a9e7a498eb63d47dc9f2485b4284f1435[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:22:13 2025 +0000
+
+    Correctly save changes made when editing the details of a shift
+    
+    Fix: Updates the HTTP method from PATCH to PUT in the shift update API call.
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/33fef772-7f0b-4233-aa6d-586a4fe0a77d.jpg
+
+M	client/src/app/shift/components/EditShiftModal.tsx
+
+[33mcommit aa32e439c46f7a9cb1ed7578e76d3e46ad886b78[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:21:06 2025 +0000
+
+    Ensure the calendar displays all shifts and correctly avoids filtering
+    
+    Passes filterPeriod="monthly" prop to ShiftCalendarView to show all shifts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/33fef772-7f0b-4233-aa6d-586a4fe0a77d.jpg
+
+M	client/src/app/shift/components/RequestedShiftsTab.tsx
+
+[33mcommit f441dd745b582e65955d2ea923fd1993c96c268e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:20:32 2025 +0000
+
+    Improve calendar view to display shifts correctly for all time periods
+    
+    Adjusts the calendar view to properly render shifts based on daily, weekly, bi-weekly or monthly filters.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/6f007a9b-0387-44cd-9e37-40115a29d81f.jpg
+
+M	client/src/app/shift/components/ShiftCalendarView.tsx
+
+[33mcommit 505188dbadc6dd80bb4542810f09dde000abe244[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:17:01 2025 +0000
+
+    Add ability to filter and display shifts on a monthly basis
+    
+    Extends shift filtering to include "monthly" with corresponding date range logic and UI updates.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0df34cf4-e3fd-400a-86e6-1be4481debda.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+M	client/src/app/shift/components/ShiftCalendarView.tsx
+
+[33mcommit 48e965d4774ab9bdef5d52d1bca5bcef3e30384d[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:15:05 2025 +0000
+
+    Show only shifts for the selected day and use a list for display
+    
+    Updates shift filtering logic to strictly display shifts within the selected period and changes default view to list in `ShiftCalendarTab.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0df34cf4-e3fd-400a-86e6-1be4481debda.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit 0317a2638290c7fccb1848b8154d50cd5cd05b34[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:13:19 2025 +0000
+
+    Replace shift calendar filter with options to collapse the calendar view
+    
+    Replaces the Select component with toggle buttons for "daily", "weekly", and "fortnightly" calendar view options in ShiftCalendarTab.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0df34cf4-e3fd-400a-86e6-1be4481debda.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit 68d178b6f3b829abad0779c37b933332d4c0bb12[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:11:16 2025 +0000
+
+    Grant more roles permission to edit shifts and streamline staff shift requests
+    
+    Updates shift edit permissions to include ConsoleManager role and removes unnecessary console logs.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0df34cf4-e3fd-400a-86e6-1be4481debda.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit fc485cf9c0c3d3432da69a23262487b4facbd122[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:10:18 2025 +0000
+
+    Improve shift interaction by clarifying user actions and permissions
+    
+    Adds console logs for debugging shift click events and user role-based actions in ShiftCalendarTab.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0df34cf4-e3fd-400a-86e6-1be4481debda.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit 4d45be9e61ba5787d04b43adca4629cbbbb2fe22[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:08:08 2025 +0000
+
+    Enable staff to modify existing shift details, including times and assignments
+    
+    Refactors EditShiftModal to use useState and fetch for shift updates instead of react-hook-form.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0df34cf4-e3fd-400a-86e6-1be4481debda.jpg
+
+M	client/src/app/shift/components/EditShiftModal.tsx
+
+[33mcommit 647564b1fa9dbadc58f714d4236fcc324d99cf62[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:06:29 2025 +0000
+
+    Enable staff to request shifts and authorized users to edit them
+    
+    Implements shift request functionality for staff and edit shift modal for authorized users.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d1a62e8e-fed4-4f9a-9000-4fb1da2ae06a.jpg
+
+M	client/src/app/shift/components/EditShiftModal.tsx
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit 45aaf83fda8e982924362ecdfe070197b434e0bf[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:03:32 2025 +0000
+
+    Improve display of shifts in calendar and handle invalid shift data
+    
+    Fixes shift display issues, sets default shift count, and handles invalid dates.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ec9b7045-fb6f-408f-b7f9-f1bbae094de5.jpg
+
+M	client/src/app/shift/components/NewShiftModal.tsx
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+M	client/src/app/shift/components/ShiftCalendarView.tsx
+
+[33mcommit 9698a39b7114b3f46c60da0599752a06cc06a39e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 01:00:55 2025 +0000
+
+    Add recurring shift functionality to easily schedule repetitive shifts
+    
+    Implements recurring shift pattern configuration in `NewShiftModal.tsx` using frequency selection, weekday toggles, and `generateWeeklyPatternShifts()` utility.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4f3ae2c1-75e0-40a6-97c4-15f98a179a47.jpg
+
+M	client/src/app/shift/components/NewShiftModal.tsx
+
+[33mcommit 590ef97163696281ab9ca02e55177e12b47cef73[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:59:22 2025 +0000
+
+    Enable repeating shifts with weekly patterns and custom day selection
+    
+    Implements recurring shift functionality with `generateWeeklyPatternShifts` and adds UI components for weekday selection and recurrence options.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/124d25c2-1a8e-49e2-91ab-b27bff94831d.jpg
+
+M	client/src/app/shift/components/NewShiftModal.tsx
+
+[33mcommit 95a369d72e3d5ce7a80577a3b38593b5b50ef7df[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:55:07 2025 +0000
+
+    Reorder tabs in shift calendar to prioritize overall calendar view
+    
+    Modify TabsList component to display 'shift-calendar' tab before 'my-shifts' tab.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/60ed5fee-ef5c-4f1d-af02-2211e0b31075.jpg
+
+M	client/src/app/shift/ShiftDashboard.tsx
+
+[33mcommit 8420ef51b8f75af82afca93cc2910c352029d032[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:53:42 2025 +0000
+
+    Improve calendar layout and appearance for better user experience
+    
+    Refactors ShiftCalendarView.tsx to use a rectangular grid layout with enhanced styling.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0cc9c020-e96b-45cb-b839-bea3a793619d.jpg
+
+M	client/src/app/shift/components/ShiftCalendarView.tsx
+
+[33mcommit 705aa56642f98aea1c4e9fa2b11cf6bcad219db3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:52:36 2025 +0000
+
+    Improve the shift creation form by linking staff and client selections
+    
+    Updates Select components to allow unassigning staff/clients in NewShiftModal.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/82d08383-64c9-48bb-80be-1a6d22bb7d40.jpg
+
+M	client/src/app/shift/components/NewShiftModal.tsx
+
+[33mcommit 6d6887d001440eb8d74bc20111181727d998f595[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:49:03 2025 +0000
+
+    Enable all users to create new shifts and manage workforce scheduling
+    
+    Add "New Shift" button to ShiftCalendarTab component, removing role-based restriction for shift creation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/2dafbddb-9197-4c01-81a9-32efa7ef0253.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit f77a87a107d0e13058d8c0f3d8c058b8cac6454b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:47:10 2025 +0000
+
+    Enhance shift calendar with filtering and improved card display
+    
+    Adds shift filtering, new shift creation, and improves card display in calendar.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/f8a6e3cf-adba-4df5-a59d-2f3e892c3a7c.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit 4b98816899c710d9de76cd805ca87163ed1a18ad[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:44:31 2025 +0000
+
+    Show organizational shift statistics at the bottom of the calendar
+    
+    Implement shift analytics using database data in ShiftCalendarTab.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/74a99d55-523d-4001-9478-d0bc05bf73c9.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit a66663f0f7436f24ddc894e52bccce9a720e0018[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:42:55 2025 +0000
+
+    Rename 'Requested' shifts tab to 'Available' for clarity
+    
+    Updates the tab name in the shift dashboard to reflect the shift's status.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b057781a-39d9-48c7-a0c8-71982bda0f68.jpg
+
+M	client/src/app/shift/ShiftDashboard.tsx
+
+[33mcommit 3490a65dc3afe04bfa23a46c7a60a4d34d62d654[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:42:30 2025 +0000
+
+    Improve shift management interface with focus on staff shift requests
+    
+    Refactors shift tabs, removing new shift creation from staff and filtering available shifts for request in `MyShiftsTab.tsx` and `RequestedShiftsTab.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/995f5195-79a8-4801-affd-e5a492bba72f.jpg
+
+M	client/src/app/shift/components/MyShiftsTab.tsx
+M	client/src/app/shift/components/RequestedShiftsTab.tsx
+
+[33mcommit b76a2dfcfb08056f972f972cd9139730ebcc95af[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:37:27 2025 +0000
+
+    Allow staff to create and schedule new shifts directly from the shift calendar
+    
+    Adds a "New Shift" button and modal using the Plus icon and NewShiftModal component.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/407f19ea-9bff-4e7b-8dba-9de52b614444.jpg
+
+M	client/src/app/shift/components/MyShiftsTab.tsx
+
+[33mcommit 0a1035358c440e7f7e7c881ef76f0a9712ef84e3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:32:11 2025 +0000
+
+    Improve staff availability tracking and fix data retrieval inconsistencies
+    
+    Fixes tenant ID mismatches and adds quick pattern support to staff availability queries in `server/storage.ts`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3944cd08-ba3f-471e-86d3-c6f03ce86ca3.jpg
+
+M	server/storage.ts
+
+[33mcommit a0e015665300f5af477b51398d7ea2430cacb4e4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:29:31 2025 +0000
+
+    Enable staff to manage availability, view conflicts, and archive entries
+    
+    Adds StaffAvailabilityPage, ManageStaffAvailabilityPage, and related API endpoints for managing and archiving staff availability using Express and Drizzle ORM.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/81f54a9b-8508-4513-a331-f62158c22a68.jpg
+
+M	client/src/App.tsx
+A	client/src/app/manage-staff-availability/ManageStaffAvailabilityPage.tsx
+A	client/src/app/staff-availability/StaffAvailabilityPage.tsx
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 0736dacc3968f7fa60cdd9994115fcc6552231e0[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:27:34 2025 +0000
+
+    Enable admins to view and manage staff availability schedules
+    
+    Implements a new AdminAvailabilityDashboard with conflict detection, calendar and card views.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/437be171-567f-4b3f-8e82-4236cca786b3.jpg
+
+A	client/src/app/manage-staff-availability/AdminAvailabilityDashboard.tsx
+A	client/src/app/manage-staff-availability/AvailabilityCalendar.tsx
+A	client/src/app/manage-staff-availability/AvailabilityCard.tsx
+A	client/src/app/staff-availability/AvailabilityEditor.tsx
+M	shared/schema.ts
+
+[33mcommit c9deb3f869e1fbc367f65d7c2f46fee46b59625e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:22:20 2025 +0000
+
+    Enhance medication administration form with required photo uploads
+    
+    Adds a description to the dialog and a detailed prompt file for medication administration enhancements.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/aaad8293-e0a3-4d14-85a2-3a26a234691f.jpg
+
+A	attached_assets/Pasted--Please-update-the-medication-administration-form-in-src-app-medications-components-RecordAdmi-1749860518567_1749860518568.txt
+M	client/src/app/medications/components/RecordAdministrationModal.tsx
+
+[33mcommit 1a798e3cab4b0052fd3a69e91b669534f6a4b1f9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:21:34 2025 +0000
+
+    Enable users to create and view medication plans for clients securely
+    
+    Adds new API endpoints for fetching and creating medication plans and updates UI.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/aaad8293-e0a3-4d14-85a2-3a26a234691f.jpg
+
+M	client/src/app/medications/components/AddMedicationPlanModal.tsx
+M	server/routes.ts
+
+[33mcommit e541cb39445f74b90e190fd9157518e4dc79f225[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:19:00 2025 +0000
+
+    Show only current medication plans to ensure users see relevant information
+    
+    Replaces `isActive` boolean with `status` string to filter medication plans.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e863c05e-d91e-40a8-822d-253608053174.jpg
+
+M	client/src/app/medications/MedicationDashboard.tsx
+
+[33mcommit 04b3eeb1f66564fa78990bfd9d9fee6f976c06ab[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:17:52 2025 +0000
+
+    Update medication administration feature for better record keeping
+    
+    Updates the medication dashboard to record administration with photo documentation and active plan selection.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e1853f81-a134-4db7-b441-e8aaec629f13.jpg
+
+A	attached_assets/Pasted--Please-update-the-medication-administration-form-in-src-app-medications-components-RecordAdmi-1749860217014_1749860217015.txt
+M	client/src/app/medications/MedicationDashboard.tsx
+
+[33mcommit be2e4a4ad36f7933ec5c78ba7645b5ed139e8bd9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:15:29 2025 +0000
+
+    Enable users to create medication plans directly from the dashboard
+    
+    Implements AddMedicationPlanModal component and integrates it into the MedicationDashboard component.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/1d56218e-f97d-4cdb-b59c-77ed76888d50.jpg
+
+M	client/src/app/medications/MedicationDashboard.tsx
+
+[33mcommit eecf271dfc270fcde13c61f392b8fd4d90e057fd[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:14:57 2025 +0000
+
+    Enable adding new medication plans and fix medication records retrieval
+    
+    Adds a modal to create medication plans and uses the storage layer to fetch medication records in MedicationDashboard.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/2f519e2f-3d51-4b9a-b4aa-77e802b4a702.jpg
+
+M	client/src/app/medications/MedicationDashboard.tsx
+A	client/src/app/medications/components/AddMedicationPlanModal.tsx
+M	server/routes.ts
+
+[33mcommit 0c9a1ff72ce3691d1e5b4206f1966c246bdd5c54[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:11:49 2025 +0000
+
+    Enable staff to record medication administrations directly in the platform
+    
+    Adds a new feature to record medication administrations, including API endpoints and UI components.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/2d826179-491f-404b-8ebe-bba2e81d57d2.jpg
+
+M	client/src/app/medications/MedicationDashboard.tsx
+M	server/routes.ts
+
+[33mcommit 287007906c8891509651e4cbc3ac45bdd8c84fa1[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:09:55 2025 +0000
+
+    Enable tracking of medication administration with photos and detailed records
+    
+    Adds a modal to record medication administration details, including photos and status, and updates the medication records schema.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5eb3d947-12c8-45c6-96db-1c45ff6649ef.jpg
+
+A	client/src/app/medications/components/RecordAdministrationModal.tsx
+M	shared/schema.ts
+
+[33mcommit 9e2c14b2459b7656c41bc17afb3e35ffb7017bb3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:05:56 2025 +0000
+
+    Simplify message composition by removing role-based recipient selection
+    
+    Removes the 'selectedRoles' field from the form state and related UI elements in ComposeMessageModal.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b29170be-c7bf-410f-933d-dcea8470f5f5.jpg
+
+M	client/src/app/messages/ComposeMessageModal.tsx
+
+[33mcommit 0489fd18f63b2b40084e69c355f5d03acca21abb[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:05:26 2025 +0000
+
+    Revamp message composition to simplify recipient selection for staff
+    
+    Removes role-based recipient selection in ComposeMessageModal.tsx, streamlining message composition to allow sending only to selected users or all staff.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a25eb255-9e27-4f1c-a33e-47d85d720b11.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-update-the-medication-administration-form-in-src-app-me-1749859462433_1749859462434.txt
+A	"attached_assets/Screenshot 2025-06-14 at 10.03.20\342\200\257am_1749859416990.png"
+M	client/src/app/messages/ComposeMessageModal.tsx
+
+[33mcommit 97408a6bc9de818084258653b237f93577b9c9df[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Sat Jun 14 00:02:19 2025 +0000
+
+    Update messaging to target staff and refine recipient selection
+    
+    Adjusts message recipient selection in ComposeMessageModal.tsx to target active staff based on role, enhancing recipient filtering and role-based access.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/74139493-b898-4f4a-96ba-1029fd201bc7.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-update-the-medication-administration-form-in-src-app-me-1749859164044_1749859164044.txt
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-update-the-medication-administration-form-in-src-app-me-1749859233162_1749859233162.txt
+M	client/src/app/messages/ComposeMessageModal.tsx
+A	replit.md
+
+[33mcommit cc7fa1dff3f206c8517d1e09c6281c63b9d97d2c[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 23:57:50 2025 +0000
+
+    Enable staff to send and receive messages within the platform
+    
+    Adds MessageDashboard and conditional user ID check to message filters.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3893ecac-53e0-407e-9809-7bf44ca52464.jpg
+
+M	client/src/App.tsx
+M	client/src/app/messages/MessageDashboard.tsx
+
+[33mcommit 370e4016df27b81c622b7df28835d5daa45f1a02[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 23:56:38 2025 +0000
+
+    Enable staff to send messages to individuals or groups within the platform
+    
+    Implements staff messaging feature with create, read, update, and delete (CRUD) operations, including UI components and API endpoints.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/80058d10-8414-491f-b821-83d9cf2a6ce9.jpg
+
+A	client/src/app/messages/ComposeMessageModal.tsx
+A	client/src/app/messages/MessageCard.tsx
+M	client/src/app/messages/MessageDashboard.tsx
+A	client/src/app/messages/ReplyModal.tsx
+A	client/src/app/messages/ViewMessageModal.tsx
+M	server/routes.ts
+
+[33mcommit 1586a57b7ba211f98d047444ac32759a30400dff[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 23:53:10 2025 +0000
+
+    Enable staff to send and receive messages within the care management platform
+    
+    Implements staff messaging feature with API endpoints, database schema, and UI components in `server/storage.ts`, `client/src/app/messages/MessageDashboard.tsx`, and related files.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b8610dcb-18f3-4fa4-af9c-5d66c348b73c.jpg
+
+A	client/src/app/messages/MessageDashboard.tsx
+M	server/storage.ts
+
+[33mcommit 4cb7aee424d808f524112e67aacce1b2cd8b1c45[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 23:50:50 2025 +0000
+
+    Enable internal messaging between staff members within the platform
+    
+    Adds database schema and Zod validation for staff messaging functionality.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/7d6e54d0-5ee6-4203-9acc-b0bf646262a3.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-create-a-complete-Internal-Messaging-System-under-src--1749858524619_1749858524619.txt
+M	shared/schema.ts
+
+[33mcommit cd5c658d7ac3178caf8288f7bfb5606649677ff0[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 12:17:35 2025 +0000
+
+    Allow staff to view relevant notes related to client care and well-being
+    
+    Implements /api/case-notes endpoint to retrieve case notes by clientId or tenantId.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3d527d95-5dc0-4483-ba7a-31433cd35c37.jpg
+
+M	server/routes.ts
+
+[33mcommit 8d253295e694fe66cb73d4af386d1e328b555709[m
+Author: Brezzyslide <taye.ajao90@yahoo.com>
+Date:   Fri Jun 13 12:04:47 2025 +0000
+
+    chore: initial dev-full-build branch push
+
+[33mcommit 35314d4d3e20b4319c1eb148feb7c402f3bccde5[m
+Author: Brezzyslide <taye.ajao90@yahoo.com>
+Date:   Fri Jun 13 12:01:38 2025 +0000
+
+    chore: initialize dev-full-build branch
+
+[33mcommit 5e6c463e67ec4c58582273593e2b20c9f59bcacd[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 11:57:48 2025 +0000
+
+    Add medication tracking dashboard for managing patient medication schedules
+    
+    Implements MedicationDashboard with data fetching using TanStack Query and UI components from ShadCN.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/c94461fd-5b04-4fc0-8c41-cce24ce32081.jpg
+
+M	client/src/App.tsx
+A	client/src/app/medications/MedicationDashboard.tsx
+
+[33mcommit a9474b9da4d5efcb11ebe7b9fa423db58c3e97c8[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 11:54:56 2025 +0000
+
+    Enhance incident tracking page with new layout and secure data retrieval
+    
+    Integrates universal header/sidebar and adds credentials/headers to incident fetch for authentication.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e83bba16-b7c3-4d24-a448-38baed86071b.jpg
+
+M	client/src/app/incident-management/IncidentDashboard.tsx
+
+[33mcommit 554137dda57437fa00b824df182e1ad1729b4cb5[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 11:53:59 2025 +0000
+
+    Improve incident report loading and display relevant staff information
+    
+    Updates IncidentDashboard to handle loading/error states and retrieves staff username instead of first/last name.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/65b3c0ef-7f22-4efd-a9e1-280e071578c0.jpg
+
+M	client/src/app/incident-management/IncidentDashboard.tsx
+M	server/storage.ts
+
+[33mcommit 71c2ddbbdea393e6675ceb6072294b5a93878f15[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 11:03:59 2025 +0000
+
+    Add a way to report incidents directly from the dashboard
+    
+    Adds incident report functionality to the dashboard and renames `/incidents` to `/incident-management`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b907b4b7-dba1-4b4d-b691-102c05d7a4d0.jpg
+
+M	client/src/components/dashboard/quick-actions.tsx
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit 8f0578ed1d8db54f797c49b7011ad2f46d2c18ee[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 11:02:50 2025 +0000
+
+    Enable staff to record and manage incidents within the care platform
+    
+    Implements Incident Management dashboard with Create/View/Close modals and updates the router and UniversalHeader components.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/cdb00528-b9e6-4a98-b691-d5311d9ae886.jpg
+
+M	client/src/App.tsx
+M	client/src/app/incident-management/IncidentDashboard.tsx
+A	client/src/app/incident-management/components/CloseIncidentModal.tsx
+A	client/src/app/incident-management/components/CreateIncidentModal.tsx
+A	client/src/app/incident-management/components/ViewIncidentModal.tsx
+M	client/src/components/layout/universal-header.tsx
+
+[33mcommit 87e7ad4136303d1ced30b4d2997263111f49f018[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:58:05 2025 +0000
+
+    Enable users to manage and track safety incidents within the system
+    
+    Adds API endpoints and UI components for creating, viewing, updating, and deleting incident reports with closure functionality.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d18f33c8-0d93-4445-8fca-146a430b7983.jpg
+
+A	client/src/app/incident-management/IncidentDashboard.tsx
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit a2a64a9d6a1cafd5e02371ef7d624cb62166a9ab[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:54:46 2025 +0000
+
+    Enable the creation, modification, and retrieval of incident reports
+    
+    Implements CRUD operations for incident reports and closures in server/storage.ts, and defines new types in shared/schema.ts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a0938e46-06a9-4006-ab59-4f337fb5df53.jpg
+
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit 07cbeb96e61a4de4020548c76a9af909c3c6f16f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:52:35 2025 +0000
+
+    Implement incident reporting feature to track and manage safety events
+    
+    Adds incidentReports and incidentClosures tables with relations and schemas.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e98ca8ad-2a6f-42a3-bae3-b4d90dd1c58d.jpg
+
+A	attached_assets/Pasted-Place-the-incident-system-in-pgsql-Copy-Edit-src-app-incident-management--1749811802257_1749811802258.txt
+M	shared/schema.ts
+
+[33mcommit 1888ab7ab3d9feb464ba2407d434cdbc85b943d9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:49:39 2025 +0000
+
+    Streamline case note updates and deletion with simpler API requests
+    
+    Refactors `apiRequest` calls in `CaseNoteDashboard.tsx` for PATCH/DELETE and renames `CreateCaseNoteModal` to `CaseNoteModal` with `caseNote` and `userRole` props.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ea268cd2-7457-48a6-baf4-eb13cc045d58.jpg
+
+M	client/src/app/case-notes/CaseNoteDashboard.tsx
+
+[33mcommit 04b42caf0cdb50c622153c48f723acf4de3b57f7[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:48:55 2025 +0000
+
+    Improve case note functionality by adding client association and validation
+    
+    Refactors CaseNoteModal to include client selection, adds content validation, and updates API request method in CaseNoteDashboard.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4b83da8b-7941-46ec-aa0d-9e9df5d6dc53.jpg
+
+M	client/src/app/case-notes/CaseNoteDashboard.tsx
+M	client/src/components/case-notes/CaseNoteModal.tsx
+M	client/src/components/layout/universal-header.tsx
+
+[33mcommit b13971782ceec678bd1238f8b5d6040369efc90f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:46:40 2025 +0000
+
+    Add ability to create and view case notes for clients on their profile
+    
+    Implements CaseNote feature with modals, API endpoints, data fetching, and UI components.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ec095c7d-15e9-4c81-be90-55b847030d88.jpg
+
+M	client/src/App.tsx
+M	client/src/app/case-notes/components/CreateCaseNoteModal.tsx
+M	client/src/app/support-work/client-profile/tabs/case-notes.tsx
+M	shared/schema.ts
+
+[33mcommit 030c388526c24d496cb8e4249780ac69eb94a39c[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:44:19 2025 +0000
+
+    Implement case note module for documenting client interactions
+    
+    Adds CaseNoteDashboard with creation, filtering, display, and role-based access control using React, TanStack Query, Zod, and ShadCN.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ed6fddea-8248-40a4-86f0-eb38a58edbcc.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-build-the-full-Case-Notes-module-under-src-app-case-notes--1749811197845_1749811197846.txt
+A	client/src/app/case-notes/CaseNoteDashboard.tsx
+A	client/src/app/case-notes/components/CaseNoteCard.tsx
+A	client/src/app/case-notes/components/CaseNoteFilterBar.tsx
+A	client/src/app/case-notes/components/CreateCaseNoteModal.tsx
+
+[33mcommit 9cbad675c3f058eb58fff530bf80b24dce7f9f58[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:37:10 2025 +0000
+
+    Ensure only authorized users can view client case notes securely
+    
+    Implements requireAuth middleware to secure the "/api/clients/:clientId/case-notes" endpoint and dynamically assigns tenantId from req.user.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/6a131dc5-4418-4c77-9c39-754aa773f981.jpg
+
+M	server/routes.ts
+
+[33mcommit f17f51357923e8b5599ab4c93f5a26bf7cdc4af4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:32:34 2025 +0000
+
+    Display the client's primary diagnosis on the client list page
+    
+    Replaced "Care Level" with "Primary Diagnosis" in ClientListPage.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4a93543c-e512-43e9-8c6d-ad386dd19351.jpg
+
+M	client/src/app/support-work/client-profile/components/ClientListPage.tsx
+
+[33mcommit 575ff5972c22752584a65587185496bd56e4e354[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:31:25 2025 +0000
+
+    Replace the level of care with the client's main medical condition
+    
+    Replaces `careLevel` with `primaryDiagnosis` in the Create Client form and client list, updating the schema and CSV export.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/fbcad09d-3902-4ec4-b59e-a909d17dc7c4.jpg
+
+M	client/src/app/support-work/client-profile/components/ClientListPage.tsx
+M	client/src/app/support-work/client-profile/components/CreateClientForm.tsx
+M	server/routes.ts
+M	shared/schema.ts
+
+[33mcommit 04a751ae044ffbbc3becd13c198153988982974f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:26:19 2025 +0000
+
+    Expand client management area with ability to add and view client details
+    
+    Adds ClientListPage and CreateClientForm routes and components to App.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/fd297cc1-206c-46b1-a357-dbc0560d649c.jpg
+
+M	client/src/App.tsx
+
+[33mcommit 038474aa1702875661aff9e760b60790d72b81bd[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:25:48 2025 +0000
+
+    Add client management features to better organize patient information
+    
+    Implements client creation, listing, and enhanced medication management UI components and API endpoints.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/83149ff7-8641-4975-8a8b-57d1a99d47db.jpg
+
+M	client/src/App.tsx
+A	client/src/app/support-work/client-profile/components/ClientListPage.tsx
+A	client/src/app/support-work/client-profile/components/CreateClientForm.tsx
+A	client/src/app/support-work/client-profile/tabs/enhanced-medications.tsx
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 27840edc6b0c94cac4d55daaa4860b8880bfb38e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:22:08 2025 +0000
+
+    Enhance client management by adding new fields and improving data handling
+    
+    Updates the client schema with additional fields, validations, and auto-generated unique ID.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/798a2c98-0bd8-4904-8d45-b5fd8d18b26e.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-update-the-Client-Profile-module-at-src-app-support-work-cl-1749810019063_1749810019064.txt
+M	shared/schema.ts
+
+[33mcommit aa17591f9b18eb71e777c9b3483486376b14d81b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:18:43 2025 +0000
+
+    Place a persistent header across the app for easier navigation and access
+    
+    Adds a UniversalHeader component and removes breadcrumbs from individual pages.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a4423e1c-ec6b-4390-bcb4-6fd5d4b9ffb3.jpg
+
+M	client/src/App.tsx
+M	client/src/app/shift/ShiftDashboard.tsx
+M	client/src/app/support-work/client-profile/ClientProfilePage.tsx
+A	client/src/components/layout/universal-header.tsx
+
+[33mcommit 06a2cc3ee15bcda9ecd9939374f023c62952820d[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:15:45 2025 +0000
+
+    Enable easy navigation for support staff managing client information
+    
+    Adds a SupportWorkPage with links to client profiles and modifies breadcrumbs in ClientProfilePage using React and ShadCN UI.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/15fd99d4-b263-4859-b63f-d69ed0db7666.jpg
+
+M	client/src/App.tsx
+M	client/src/app/support-work/client-profile/ClientProfilePage.tsx
+A	client/src/pages/support-work.tsx
+
+[33mcommit 9e6ec0634f91d68689e06f9be7fd74e12edfbf46[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:13:51 2025 +0000
+
+    Improve navigation and fix errors on client profile pages
+    
+    Removes `companyId` prop and adjusts `clientId` handling in `CaseNotesTab` and `MedicationsTab` to resolve issues and enhance navigation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b67e3f16-7f43-40d8-a9a2-86e8f071b085.jpg
+
+M	client/src/app/support-work/client-profile/ClientProfilePage.tsx
+M	client/src/app/support-work/client-profile/tabs/case-notes.tsx
+M	client/src/app/support-work/client-profile/tabs/medications.tsx
+
+[33mcommit 40ca246d057399cdd1aac349eeb644b0e0de4236[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:12:48 2025 +0000
+
+    Improve navigation by adding direct links back to the main dashboard
+    
+    Implement dashboard navigation links on observation and shift pages using wouter.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/fb9a1314-bccd-46a3-87c9-43970aaaa57b.jpg
+
+M	client/src/app/hourly-observations/ObservationDashboard.tsx
+M	client/src/app/shift/ShiftDashboard.tsx
+M	client/src/app/support-work/client-profile/tabs/overview.tsx
+
+[33mcommit 1ac9819564df722185a580977e31c759317a3f44[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:11:11 2025 +0000
+
+    Add dashboard navigation to client profiles for improved accessibility
+    
+    Implement breadcrumb navigation with links to dashboard and support work pages in ClientProfilePage.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/1fe2e311-13d6-4e82-b31a-b3c1805da1cb.jpg
+
+M	client/src/app/support-work/client-profile/ClientProfilePage.tsx
+
+[33mcommit 415c12360b7dcdd4d4a06d15d2ebda189bf3eda0[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:08:01 2025 +0000
+
+    Show client's name and NDIS number even when data is temporarily unavailable
+    
+    Add default client data to display client information gracefully during loading states.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/9b2b7011-646e-4e87-a863-bed86b2239dd.jpg
+
+M	client/src/app/support-work/client-profile/tabs/medications.tsx
+
+[33mcommit afdfe6bfa5fedab4f22817d98f30957efb0a9d1b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:06:49 2025 +0000
+
+    Improve medication data handling and access for client profiles
+    
+    Refactors medication plan/record API requests to use a simplified `apiRequest` method and adds a default tenant ID for testing.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/cb4c6d4a-35df-4f3b-a05b-b54384b38493.jpg
+
+M	client/src/app/support-work/client-profile/tabs/medications.tsx
+M	server/routes.ts
+
+[33mcommit 5cc4cc5e1f4830af257c2ac33516a5a64ab593a9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:04:51 2025 +0000
+
+    Enable users to manage client medications, plans, and records efficiently
+    
+    Implements Medications Tab with medication plan and record management, using TanStack Query and Zod for data handling.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/8efb7ed6-2d7d-4193-bd2e-60ced8aa349f.jpg
+
+M	client/src/app/support-work/client-profile/tabs/medications.tsx
+M	server/routes.ts
+
+[33mcommit 39e80270ffc539a08866ccfc223345199bd9be17[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:02:11 2025 +0000
+
+    Enable tracking and managing client medication plans and records
+    
+    Implements medication plan and record management in storage.ts and adds schema imports to routes.ts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/ff633365-81e4-43bf-8dcc-960850a8a6d0.jpg
+
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit f493e2283482d72736cf07def08af675f91d1f0f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 10:00:35 2025 +0000
+
+    Enable tracking of client medication plans and administration records
+    
+    Adds `medicationPlans` and `medicationRecords` tables to `shared/schema.ts` with relations to clients, users, and tenants.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4274203b-142d-4b4b-81b7-b98357d50a54.jpg
+
+M	shared/schema.ts
+
+[33mcommit da426663c296ddba8f615b3ef63f15d9de58c3fc[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:53:23 2025 +0000
+
+    Enable users to easily submit behavior ratings by tapping on the star icons
+    
+    Fixes an issue where star ratings were unclickable by preventing event propagation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/8d63e822-37f1-44f6-b46b-c811a6b89e4c.jpg
+
+M	client/src/app/hourly-observations/components/ObservationFormModal.tsx
+
+[33mcommit 44d9d8e7dd6440ff92cf29abad11b516dc91a99c[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:51:37 2025 +0000
+
+    Improve observation form with notes and enhanced rating interactions
+    
+    Adds text input fields for behavior notes and makes star ratings clickable in the observation form using Zod and TanStack Form.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/9a958117-0ef7-4a67-bc6d-a6b70d58bee4.jpg
+
+M	client/src/app/hourly-observations/components/ObservationFormModal.tsx
+
+[33mcommit 34ae30d8b08d3232e263d95c322d81369e70e5ac[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:40:21 2025 +0000
+
+    Add star chart for rating behavior support categories in observations
+    
+    Implements behavior rating star chart in ObservationFormModal.tsx, adding behaviorRatings schema, categories, and StarRating component.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5cf0f9a1-624d-4ddb-9d3e-fbe6c0103b99.jpg
+
+M	client/src/app/hourly-observations/components/ObservationFormModal.tsx
+
+[33mcommit 88731857752d184f7c69c7eb59e12e2377db8fd7[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:38:46 2025 +0000
+
+    Enable specific forms based on observation type for better data input
+    
+    Implements conditional rendering of star chart and text input components in `ObservationFormModal.tsx` based on the selected observation type.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a3d7ae42-6fed-4fba-a9f2-8dd845a9c8db.jpg
+
+M	client/src/app/hourly-observations/components/ObservationFormModal.tsx
+
+[33mcommit c756421a0a21097983d4653678c4b24a39bfb86f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:27:41 2025 +0000
+
+    Add navigation to the hourly observations module in the application
+    
+    Adds the hourly observations module and updates its route in the sidebar.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a3d7ae42-6fed-4fba-a9f2-8dd845a9c8db.jpg
+
+M	client/src/App.tsx
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit 0765c6de9d1381e71f14eda240b325d89165bf4f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:26:52 2025 +0000
+
+    Enable staff to record and review client hourly observations securely
+    
+    Implements hourly observation module with API endpoints, role-based access, and database storage, including Zod schema validation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/505aee28-0121-465a-8190-35cf65f67f25.jpg
+
+M	client/src/App.tsx
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 5035e3ce2b5c46f041386d2cfd13ef2220ffc966[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:25:10 2025 +0000
+
+    Enable tracking and managing of client hourly observation records
+    
+    Implements hourly observation functionality with schema, Drizzle ORM models, and database storage methods.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/7507b033-652f-4b5b-a465-63ab00e89c0e.jpg
+
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit 798fd2930298672a51c6e2667f8f536d56da1b8b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:23:29 2025 +0000
+
+    Implement module to record and track client hourly observations
+    
+    Adds Hourly Observations module with dashboard, form, cards, list, and client profile integration using React, TanStack Query, and ShadCN UI.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b69b86ab-7d1c-4727-94af-709f0cdd2d1c.jpg
+
+A	client/src/app/hourly-observations/ObservationDashboard.tsx
+A	client/src/app/hourly-observations/components/ObservationCard.tsx
+A	client/src/app/hourly-observations/components/ObservationFormModal.tsx
+A	client/src/app/hourly-observations/components/ObservationRow.tsx
+M	client/src/app/support-work/client-profile/tabs/observations.tsx
+M	shared/schema.ts
+
+[33mcommit 7d9d5b696a3ce915b8d6fd860f67fcf43cff853e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:17:35 2025 +0000
+
+    Enable administrators to approve or deny shift requests from staff members
+    
+    Implements shift request approval/rejection endpoints and updates the UI to trigger them.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b1edacfb-2940-4c35-b841-7388ee72372b.jpg
+
+M	client/src/app/shift/components/ShiftRequestsTab.tsx
+M	server/routes.ts
+
+[33mcommit 4b3d96883a01ee53a59f360c4ee45ec9619c66d3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:16:16 2025 +0000
+
+    Enable staff to request unassigned shifts and admins to manage requests
+    
+    Implements shift request feature with confirmation dialog and admin approval via ShiftRequestConfirmDialog.tsx, ShiftCalendarTab.tsx, and ShiftRequestsTab.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/c8292955-3d39-4c3a-93b9-8484126bcab9.jpg
+
+M	client/src/app/shift/components/ShiftCalendarTab.tsx
+A	client/src/app/shift/components/ShiftRequestConfirmDialog.tsx
+M	client/src/app/shift/components/ShiftRequestsTab.tsx
+
+[33mcommit ed0c14a8ad51bdf1d33f8586b8f2ffe9f2ca8287[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:11:38 2025 +0000
+
+    Show upcoming shifts on a calendar for easier planning and management
+    
+    Adds a ShiftCalendarTab component and integrates it into the ShiftDashboard using TanStack Query.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d6af668e-5b51-43ae-b317-cd1a13f55fbb.jpg
+
+M	client/src/app/shift/ShiftDashboard.tsx
+M	client/src/app/shift/components/MyShiftsTab.tsx
+A	client/src/app/shift/components/ShiftCalendarTab.tsx
+
+[33mcommit 18aaeb25d8c5c9a194fab8081139ce722f8f548c[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 09:04:53 2025 +0000
+
+    Remove the shift request feature to streamline shift management
+    
+    Removes RequestShiftModal and related components/logic from ShiftDashboard.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5b86d2b7-c895-4b19-af67-4d39147776e3.jpg
+
+M	client/src/app/shift/ShiftDashboard.tsx
+
+[33mcommit a603f07e8140f021791bc66eaa5298d7de25e837[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:23:54 2025 +0000
+
+    Enable staff to request shifts and track request status on the calendar
+    
+    Implements shift request functionality via PATCH /api/shifts/:id, updates ShiftStatusTag component, and adds calendar color-coding.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/33d7c272-f6ea-4266-bf12-224691ee11dc.jpg
+
+M	client/src/app/shift/components/ShiftCalendarView.tsx
+M	client/src/app/shift/components/ShiftStatusTag.tsx
+M	server/routes.ts
+
+[33mcommit fdb147986cd10aaca5267e44d6812554568b8367[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:22:32 2025 +0000
+
+    Enable staff to request unassigned shifts and view pending requests
+    
+    Implements shift request functionality and adds a RequestedShiftsTab component to display pending shift requests.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/24087528-76e0-4284-b402-f72609fc4457.jpg
+
+M	client/src/app/shift/ShiftDashboard.tsx
+M	client/src/app/shift/components/MyShiftsTab.tsx
+A	client/src/app/shift/components/RequestedShiftsTab.tsx
+M	client/src/app/shift/components/ShiftCalendarView.tsx
+
+[33mcommit 847f55e1b28cbb8ea0227ad2299bda3c473bcd6b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:18:28 2025 +0000
+
+    Show user shifts in a calendar, making it easy to view and manage upcoming work
+    
+    Implement ShiftCalendarView component and toggle between list/calendar views in MyShiftsTab.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b6460949-7e6a-44e2-97c3-c8910ae66e2f.jpg
+
+M	client/src/app/shift/components/MyShiftsTab.tsx
+
+[33mcommit 364001a78878723af0e969eae8e40961529840e1[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:17:46 2025 +0000
+
+    Enable employees to request unassigned shifts directly from the dashboard
+    
+    Implements a RequestShiftModal component and integrates it into the ShiftDashboard, allowing users to request shifts with Zod validation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/47c69d3b-dba6-4b0a-8119-71dfde67d3d7.jpg
+
+M	client/src/app/shift/ShiftDashboard.tsx
+M	client/src/app/shift/components/MyShiftsTab.tsx
+A	client/src/app/shift/components/RequestShiftModal.tsx
+A	client/src/app/shift/components/ShiftCalendarView.tsx
+
+[33mcommit a02a9d2eba647a82c70f7f205415df3296a2a121[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:10:38 2025 +0000
+
+    Update shift management modals to improve user interaction and accessibility
+    
+    Refactor NewShiftModal and EditShiftModal components to utilize `open` and `onOpenChange` props for better modal control.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/18070012-12ae-4672-b2b0-2b42979c06ae.jpg
+
+M	client/src/app/shift/components/AllShiftsTab.tsx
+
+[33mcommit fdac03978900350d0410650fe6394e320eed3fe0[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:09:45 2025 +0000
+
+    Improve shift display and data handling for clarity across the platform
+    
+    Refactors shift components to handle date formatting, optional descriptions, and API request methods using `apiRequest` utility.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/9fb718de-01ea-491e-980d-64882d66387e.jpg
+
+M	client/src/app/shift/components/EndShiftModal.tsx
+M	client/src/app/shift/components/MyShiftsTab.tsx
+M	client/src/app/shift/components/ShiftRequestsTab.tsx
+
+[33mcommit 94432d7e6f0ab4dd065ec7a8c19b93853603034c[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:08:41 2025 +0000
+
+    Enhance shift management with more detail and improved data handling
+    
+    Adds description, status and tracking fields to shifts schema; updates shift route.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/02c5bdfa-2d40-4fc9-ba9c-dec995102fca.jpg
+
+M	client/src/App.tsx
+M	client/src/app/shift/components/StartShiftModal.tsx
+M	shared/schema.ts
+
+[33mcommit da6b0c72cd86181422eef190bb056ea9dc082d5c[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:07:17 2025 +0000
+
+    Restructure shift management dashboard with enhanced views and shift actions
+    
+    Refactors ShiftDashboard.tsx to use tabs for My Shifts, Requests, and All Shifts, and adds StartShiftModal.tsx and EndShiftModal.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/107806cb-4b9e-4371-835c-abdc2fbe6c14.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-refactor-the-shift-interface-located-in-src-app-shift-Shift-1749798208377_1749798208377.txt
+A	client/src/app/shift/ShiftDashboard.tsx
+A	client/src/app/shift/components/AllShiftsTab.tsx
+A	client/src/app/shift/components/EndShiftModal.tsx
+A	client/src/app/shift/components/MyShiftsTab.tsx
+A	client/src/app/shift/components/ShiftRequestsTab.tsx
+A	client/src/app/shift/components/ShiftStatusTag.tsx
+A	client/src/app/shift/components/ShiftViewToggle.tsx
+A	client/src/app/shift/components/StartShiftModal.tsx
+
+[33mcommit 1afda36eac95824b1415a43861a4c70cf841140a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:03:11 2025 +0000
+
+    Make viewing client case notes more reliable by retrying requests
+    
+    Fixes a 404 error on the CaseNotesTab component by enabling retries for the useQuery hook fetching case notes.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/55a2c8c6-592d-4a81-b416-e2bbab68d1a4.jpg
+
+M	client/src/app/support-work/client-profile/tabs/case-notes.tsx
+
+[33mcommit 229b89828f66b3815fe91a69467fbf95e279de0f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:02:33 2025 +0000
+
+    Fix error when accessing case notes and related client information
+    
+    Temporarily set a fixed tenantId and added error logging for case notes API.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/453069d7-475e-492c-a9f2-653579e3fbbd.jpg
+
+M	server/routes.ts
+
+[33mcommit 013aea9e452770345692d5ab86c41468dc5ce5f3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:01:22 2025 +0000
+
+    Fix a problem that prevents viewing notes about client cases
+    
+    Removes requireAuth middleware from the "/api/clients/:clientId/case-notes" route in server/routes.ts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e533b0b8-3801-4fa0-abc4-2539c3b6a3de.jpg
+
+M	server/routes.ts
+
+[33mcommit 4cd7e58a95945eaa5ac83822f426aad4b7dcfe8e[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 07:00:14 2025 +0000
+
+    Improve error handling and loading of client case notes information
+    
+    Adds a retry mechanism and detailed error display to the CaseNotesTab component, and ensures user authentication for data fetching.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3f24af11-6963-4ab3-864a-106e93c67521.jpg
+
+M	client/src/app/support-work/client-profile/tabs/case-notes.tsx
+
+[33mcommit 87f8ad9c2bffedef57777170173b1445062e0875[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:58:19 2025 +0000
+
+    Improve case note handling and data fetching for client profiles
+    
+    Refactors case note creation, update, and delete operations to use `fetch`, adds error handling, and fixes a `rowCount` nullability issue in `DatabaseStorage`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/63dd9667-f666-4bb2-ae13-cc4fa87b49a2.jpg
+
+M	client/src/app/support-work/client-profile/tabs/case-notes.tsx
+M	server/storage.ts
+
+[33mcommit ba8c27920080ff45e608a0b284f195194b7c32f1[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:57:02 2025 +0000
+
+    Enhance case notes module with shift linking, AI spell check, and UI improvements
+    
+    Refactor CaseNotesTab with shift linking, AI spell check, tabbed views, optimized display, search, tenancy filters, and adds CaseNoteModal and SpellCheckModal components.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/724a78ab-3498-4219-b752-b5c39ed28097.jpg
+
+M	client/src/app/support-work/client-profile/tabs/case-notes.tsx
+A	client/src/components/case-notes/CaseNoteModal.tsx
+A	client/src/components/case-notes/SpellCheckModal.tsx
+
+[33mcommit 3c00b13189d706c90fd34b6ad73a7409e3c7a6ca[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:52:25 2025 +0000
+
+    Enable creation, modification, and display of client case notes
+    
+    Implements API endpoints and database functions for case note management.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5ac518d8-929f-4497-a099-3463cfe1cbb7.jpg
+
+M	server/routes.ts
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit a7ea5a2f76a78ff3d82b2fc0e7600096bb0683b3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:50:08 2025 +0000
+
+    Enable staff to create and manage detailed records of client interactions
+    
+    Adds OpenAI package and defines database schema for case notes using Zod and pgTable.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/fcba63a9-774f-4535-bc35-725d8f647ed4.jpg
+
+M	package-lock.json
+M	package.json
+M	shared/schema.ts
+
+[33mcommit 3b31471a4ba855fe27629c650065218e96fbb585[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:45:36 2025 +0000
+
+    Enable staff members to submit and manage their availability preferences
+    
+    Adds API endpoints and database schema for staff availability management.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/d0e12477-5a61-4aac-acca-f7a8df81fc6e.jpg
+
+D	client/src/app/shift-management/ShiftCalendar.tsx
+D	client/src/app/shift-management/components/EditShiftModal.tsx
+D	client/src/app/shift-management/components/ShiftActionButtons.tsx
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 9a9197b4feb1c2c141f34ae21863ba5b6498cfe6[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:44:24 2025 +0000
+
+    Update shift scheduling and add staff availability management features
+    
+    Refactors shift calendar route, introduces MyAvailabilityPage, and implements staff availability CRUD operations in the storage layer.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e3e8837c-20ad-46be-977b-cf54b41b8d1c.jpg
+
+M	client/src/App.tsx
+M	client/src/app/staff-availability/MyAvailabilityPage.tsx
+M	client/src/components/layout/sidebar.tsx
+M	server/storage.ts
+
+[33mcommit 2ed08477ca0a098b4e978fdcbe5787f011778fda[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:43:13 2025 +0000
+
+    Implement shift management and staff availability features for platform
+    
+    Adds shift scheduling, staff availability management, conflict detection, and geolocation-based shift tracking using React, TanStack Query, and Zod.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0b638ee6-2ed6-4fa3-af0f-93cf9517e375.jpg
+
+A	client/src/app/shift/ShiftCalendar.tsx
+A	client/src/app/shift/components/EditShiftModal.tsx
+A	client/src/app/shift/components/NewShiftModal.tsx
+A	client/src/app/shift/components/ShiftActionButtons.tsx
+A	client/src/app/staff-availability/MyAvailabilityPage.tsx
+A	client/src/app/staff-availability/components/ConflictDetectionBanner.tsx
+
+[33mcommit a6a848cf7fdd900959860623c4357fc8a51dd5b1[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:37:46 2025 +0000
+
+    Update shift tracking to improve data management and tenant oversight
+    
+    Refactors the `shifts` table schema, introduces `getAllShifts` in `DatabaseStorage`, and updates relations for improved data handling.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/040e8823-1890-4dd8-b841-889225a3a9eb.jpg
+
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit dd370f288ec33f8af2c5933e9487b1c521c9f064[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:36:33 2025 +0000
+
+    Implement comprehensive shift management and staff availability tracking
+    
+    Adds `shifts` and `staffAvailability` tables with relations, replacing legacy shift management with a unified `shift` module.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/820502bd-4fcc-4413-a186-c457f090b7b0.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Completely-replace-the-existing-shift-management-or-scheduled-sh-1749796501113_1749796501114.txt
+M	shared/schema.ts
+
+[33mcommit aa8b125044b97ef637ef0bbad6ed3197a75a3f5a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:33:41 2025 +0000
+
+    Remove an old shift and immediately begin tracking a brand new work period
+    
+    Implements a hard delete for the previous shift and creates a new shift record.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/434c85b4-bc84-4295-a91a-71d9c66c3af6.jpg
+
+[33mcommit 626f4ca8dce82d2349fab439a89d25cc87caaa2d[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 06:33:32 2025 +0000
+
+    Remove ability to start new shifts and related components
+    
+    This commit removes the ShiftLogging page, ShiftControls component, and the "/api/shifts/start" endpoint.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/434c85b4-bc84-4295-a91a-71d9c66c3af6.jpg
+
+M	client/src/App.tsx
+M	client/src/components/layout/sidebar.tsx
+D	client/src/components/shifts/shift-controls.tsx
+D	client/src/pages/shift-logging.tsx
+M	server/routes.ts
+
+[33mcommit e241a25c2afc4624a10ed0b41f5163792db35285[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 05:46:50 2025 +0000
+
+    Improve navigation and fix loading issues within client profiles
+    
+    Fixes broken sidebar links and adds a loading indicator to ClientProfilePage.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 92c8df2c-77b9-4630-bb1e-218bb8fc0e25
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/f972f19a-9c42-4e7b-9dd9-806902359929.jpg
+
+M	client/src/app/support-work/client-profile/ClientProfilePage.tsx
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit c9565f0ad2688612d7eb2fd713f01e6bd2e6f397[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 05:24:01 2025 +0000
+
+    Require comprehensive documentation to start a shift for audit compliance
+    
+    Implements required fields and validation for starting a shift, including client selection, shift type, handover notes, and client assessment using React, TanStack Query, and ShadCN UI.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4492c0c8-b071-45a8-ac54-d14b8e8dcaed.jpg
+
+A	attached_assets/Pasted-Staff-Shift-Start-End-Instructions-Complete-Guide-What-is-the-Start-End-Shift-Function-The-Start--1749792099574_1749792099575.txt
+A	"attached_assets/Screenshot 2025-06-13 at 3.11.20\342\200\257pm_1749791489103.png"
+A	"attached_assets/Screenshot 2025-06-13 at 3.11.35\342\200\257pm_1749791520830.png"
+M	client/src/components/shifts/shift-controls.tsx
+M	client/src/pages/shift-logging.tsx
+
+[33mcommit 7798dbd41344dd632c7d0f82c975748899b892ce[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 05:10:33 2025 +0000
+
+    Update shift calendar title for better clarity and add supporting images
+    
+    Updates the ShiftCalendar component title and adds supporting images to the project.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/402ce1c7-44a1-4f13-ad60-6ce17f993427.jpg
+
+A	"attached_assets/Screenshot 2025-06-13 at 3.07.32\342\200\257pm_1749791286009.png"
+A	"attached_assets/Screenshot 2025-06-13 at 3.08.53\342\200\257pm_1749791352839.png"
+A	"attached_assets/Screenshot 2025-06-13 at 3.08.53\342\200\257pm_1749791372047.png"
+A	"attached_assets/Screenshot 2025-06-13 at 3.09.24\342\200\257pm_1749791380633.png"
+A	"attached_assets/Screenshot 2025-06-13 at 3.09.49\342\200\257pm_1749791399131.png"
+M	client/src/app/shift-management/ShiftCalendar.tsx
+
+[33mcommit 7f601a55e7d0635485fd9b212ee267afe9d3f488[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 05:07:31 2025 +0000
+
+    Improve shift calendar clarity and ensure accurate shift duration display
+    
+    Updates ShiftCalendar to improve clarity with a new title and instruction block, and fixes shift duration calculation in shift-logging page by handling date objects.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/402ce1c7-44a1-4f13-ad60-6ce17f993427.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+M	client/src/pages/shift-logging.tsx
+
+[33mcommit 48dee18b98ddfe7100a66cf9bcf3269a98059b61[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 05:05:43 2025 +0000
+
+    Clarify shift start options and improve shift scheduling defaults
+    
+    Updates shift logging page to clearly differentiate scheduled shifts from unscheduled shifts and sets default values for recurring shifts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5096303f-e0aa-4bf2-89bb-ab077ef3220d.jpg
+
+M	client/src/app/shift-management/components/EditShiftModal.tsx
+M	client/src/components/layout/sidebar.tsx
+M	client/src/pages/shift-logging.tsx
+
+[33mcommit 746ff2d5cba2485c5e77ab66d013403dcc84c7a3[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 05:01:54 2025 +0000
+
+    Enable workers to start and end shifts with timestamps and geolocation
+    
+    Implements ShiftActionButtons.tsx to update shift status with timestamp/location using TanStack Mutation, ShadCN, and browser geolocation API.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/52991bb2-79a6-48cc-94c8-49d75ce9db34.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+M	client/src/app/shift-management/components/EditShiftModal.tsx
+A	client/src/app/shift-management/components/ShiftActionButtons.tsx
+M	server/routes.ts
+
+[33mcommit 55d886e81b8adab8894ac50bc6aec23d9092f8f7[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:58:11 2025 +0000
+
+    Enable users to create and manage single and recurring shifts efficiently
+    
+    Implements batch shift creation with recurring series support and audit logging.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/e3ec4530-f4d9-4773-bb27-c8eb85b58e96.jpg
+
+M	client/src/app/shift-management/components/EditShiftModal.tsx
+M	server/routes.ts
+M	shared/schema.ts
+
+[33mcommit 1e74630d366eadb38c75d35e60667955024a30f8[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:56:49 2025 +0000
+
+    Improve shift assignment and add support for recurring shift series
+    
+    Implements unassignment of staff/clients in EditShiftModal and adds seriesId to recurring shifts generated by generateRecurringShifts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/82371766-12a4-46ff-ba36-ce46b1def828.jpg
+
+M	client/src/app/shift-management/components/EditShiftModal.tsx
+M	client/src/lib/utils/generateRecurringShifts.ts
+
+[33mcommit 335ce116ae77ac0cc336a88e24abd9b3705b58f9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:55:01 2025 +0000
+
+    Enable users to create new shifts and modify existing shifts using the form
+    
+    Conditionally renders create/update shift button and logic based on shiftId.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/6dd20221-ca07-4553-aa85-78f2495a2c09.jpg
+
+M	client/src/app/shift-management/components/EditShiftModal.tsx
+
+[33mcommit d40064edc311995961c8e8c32f63b3d35879af69[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:54:04 2025 +0000
+
+    Enable administrators to create new shifts directly from the shift calendar
+    
+    Implements create shift functionality by adding a createShiftMutation with recurring shift support.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3a0a0336-058a-41e8-836a-30b9e53229b0.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+M	client/src/app/shift-management/components/EditShiftModal.tsx
+
+[33mcommit b81a16aa2ae6187d797bbeacd38b59e0bf6e8eb1[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:52:43 2025 +0000
+
+    Improve error reporting and reliability when managing work shifts
+    
+    Adds detailed error logging and ensures shift deletion functions correctly.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/7b486b93-7a8c-4f4b-b1c3-c412bbfbf76f.jpg
+
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 92983e6e522c7c5c3ef66e9798c393b261606687[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:50:12 2025 +0000
+
+    Enable creation of shifts that repeat on a weekly, bi-weekly, or monthly basis
+    
+    Implements recurring shift generation via `generateRecurringShifts.ts` and adds API routes to create and delete shifts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/4dd29f2d-63d2-446c-aef5-ac315eb5d710.jpg
+
+M	client/src/app/shift-management/components/EditShiftModal.tsx
+A	client/src/lib/utils/generateRecurringShifts.ts
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit d596bfd8afc996bff5532341430b582241d4a9e4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:46:25 2025 +0000
+
+    Enable editing existing shifts directly from the calendar view
+    
+    Implements EditShiftModal and integrates it into ShiftCalendar.tsx, passing shiftId to the modal.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/b42fdf9a-4412-4485-9b98-32c6b3ebbcdf.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+M	client/src/components/ui/label.tsx
+M	package-lock.json
+
+[33mcommit de6143d7be13e98a0dc54ff3c480f16c57fa830b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:45:31 2025 +0000
+
+    Enable authorized users to modify and reschedule existing shifts easily
+    
+    Implements EditShiftModal.tsx, adds shift editing functionality to ShiftCalendar.tsx, and enhances shift management in server/storage.ts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/0422c360-7cd3-472d-b58c-1a595e65d671.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+M	client/src/components/ui/calendar.tsx
+M	client/src/components/ui/popover.tsx
+M	server/storage.ts
+
+[33mcommit 0e382e2b10be891633f7f537f00880a0e6ff19ae[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:43:54 2025 +0000
+
+    Enable editing existing shifts with recurrence and assignment options
+    
+    Adds EditShiftModal.tsx to handle shift updates, recurrence, and staff/client assignment with role-based access control.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3cba7501-35ac-45bf-a0f6-b88df0bafda0.jpg
+
+A	client/src/app/shift-management/components/EditShiftModal.tsx
+M	client/src/components/ui/form.tsx
+M	server/routes.ts
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit 988fadbb7c75a094462756dbb7fc01e1ae63a122[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:39:43 2025 +0000
+
+    Show shifts within a full-month calendar view with individual shift cards
+    
+    Implement a full-month calendar view for shifts, using currentDate state and utility functions to render the calendar days.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/499262a5-42e6-4c1b-874d-81923c39c8dd.jpg
+
+A	"attached_assets/Screenshot 2025-06-13 at 2.37.42\342\200\257pm_1749789473689.png"
+M	client/src/app/shift-management/ShiftCalendar.tsx
+
+[33mcommit 43f47d76bc71050db5016936e5ca31be97367466[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:36:04 2025 +0000
+
+    Display shifts as cards within the calendar view based on respective dates
+    
+    Implements shift display within the ShiftCalendar component, grouping shifts by date using a grid layout and updating UI with shift counts.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/35da132e-c76f-4d38-bed5-dbf658246800.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+
+[33mcommit e679d81f64894db481f603d756ffe5f3109bc97b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:34:37 2025 +0000
+
+    Give users ability to switch between card, list, and calendar views for shifts
+    
+    Implements a view toggle using `react-aria` and `cva` in ShiftCalendar.tsx and adds Toggle.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/93108440-c909-421b-96c7-01b181f91144.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+M	client/src/components/ui/toggle.tsx
+
+[33mcommit f2976df1e14eb5efc09369b064d22bd080124d79[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:30:30 2025 +0000
+
+    Improve shift data fetching to filter by company for tenant isolation
+    
+    Refactor useQuery hook to filter shifts by tenantId for multi-tenancy support.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/c0d4e9e2-21ce-4a54-af1d-1bba4bd55434.jpg
+
+M	client/src/app/shift-management/ShiftCalendar.tsx
+
+[33mcommit 0b21e9c84503cc73fe50398338ac99bac90fcfdd[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:29:58 2025 +0000
+
+    Show summary of shift assignments on the admin calendar page
+    
+    Adds a shift analytics summary visible to admins using TanStack Query.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/57c66aa4-e952-4d49-856e-6511d7986ba6.jpg
+
+A	attached_assets/Pasted--Prompt-for-Replit-Codex-Agent-Please-scaffold-a-full-Shift-Work-Assignment-module-at-src-app-s-1749788840595_1749788840596.txt
+M	client/src/App.tsx
+A	client/src/app/shift-management/ShiftCalendar.tsx
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit e07affc6a5a6cf9863fbc599a19ca3481a74d453[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:26:29 2025 +0000
+
+    Give console managers ability to view companies across the entire platform
+    
+    Modify /api/admin/companies route to allow both 'admin' and 'ConsoleManager' roles via requireRole middleware.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/bd11999c-5977-46c8-9ab9-c2702b86ad42.jpg
+
+M	server/routes.ts
+
+[33mcommit 2c7eadc3bc408fc325d5470157ed0100017d869a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:17:36 2025 +0000
+
+    Update navigation to allow easy access to client profiles
+    
+    Changes the client profile navigation link to the client profiles dashboard.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/55f5e47e-0989-4f0a-bb81-c36135f2971a.jpg
+
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit ae9b6aba5751e52e7d02f9267fc16a3d3125f6c0[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:16:51 2025 +0000
+
+    Show client profiles and allow users to view, edit, and manage them
+    
+    Adds a client profile dashboard with role-based access control and route definitions.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/2c7d0d6c-2429-4231-82fc-fa986417679c.jpg
+
+M	client/src/App.tsx
+M	client/src/app/support-work/client-profile/ClientProfileDashboard.tsx
+
+[33mcommit e3cd8b7f7548214d9727d31f9681b5b09487fae1[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:15:36 2025 +0000
+
+    Enable support workers to manage clients and view their information
+    
+    Implements ClientProfileDashboard with card/list views, search, quick view modal, and routing using React, TanStack Query, and ShadCN UI.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/c8fe72a2-ca94-4083-a37b-a8f3dacb5e0d.jpg
+
+A	client/src/app/support-work/client-profile/ClientProfileDashboard.tsx
+A	client/src/app/support-work/client-profile/components/ClientProfileCard.tsx
+A	client/src/app/support-work/client-profile/components/ClientQuickViewModal.tsx
+M	shared/schema.ts
+
+[33mcommit d9b2d1bc10d411b59f3e26d4147de86d4d08ebf9[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:04:11 2025 +0000
+
+    Restrict access to client data based on user roles and permissions
+    
+    Implements PermissionGuard component and usePermission hook for RBAC in client page.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/babcab21-9ebc-49ba-beef-85ac7cc3e545.jpg
+
+A	client/src/components/auth/PermissionGuard.tsx
+M	client/src/pages/clients.tsx
+
+[33mcommit 8aef0824224cbeffb6d9f275cf12e190df064b7d[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 04:02:59 2025 +0000
+
+    Implement role-based access control to secure features across the platform
+    
+    Adds role-based access control using roles.ts, permissions.ts, hasPermission.ts, scopes.ts and updates Sidebar.tsx.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/db5e2cdf-5e8a-45ff-b34a-e15b85e88457.jpg
+
+A	attached_assets/Pasted--bash-Copy-Edit-Prompt-for-Replit-Codex-Agent-Please-scaffold-a-role-and-permission-system-for-a--1749787283145_1749787283145.txt
+M	client/src/components/layout/sidebar.tsx
+A	client/src/lib/auth/hasPermission.ts
+A	client/src/lib/auth/index.ts
+A	client/src/lib/auth/permissions.ts
+A	client/src/lib/auth/roles.ts
+A	client/src/lib/auth/scopes.ts
+
+[33mcommit 6c3eab047c44d3cad75ce9c87ce2ac4af2a4a44b[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:55:56 2025 +0000
+
+    Show company management options to all users, not just administrators
+    
+    Modify sidebar component to display company management options to all roles.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/cb0423e9-2555-4cf0-a479-b820b7b5c6b0.jpg
+
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit e9d3ee761819efaf324085f656eca81e39566e37[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:54:42 2025 +0000
+
+    Add a consistent navigation bar to access the dashboard and log out easily
+    
+    Introduce Header component for consistent navigation across CompanySummaryPage.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/be361336-8ad9-4a04-9928-829b014807a8.jpg
+
+M	client/src/app/admin/company-summary/CompanySummaryPage.tsx
+
+[33mcommit 2148e525590581109369450e8bd3c8bea669cd77[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:53:40 2025 +0000
+
+    Add navigation bar with logout and dashboard options for easy access
+    
+    Implements a Header component with logout and dashboard navigation using `wouter` and updates the `CreateCompanyPage` layout.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/9d5a5ba5-e873-4017-ae52-b4c9fca522ef.jpg
+
+M	client/src/app/admin/create-company/CreateCompanyPage.tsx
+M	client/src/components/layout/header.tsx
+
+[33mcommit 97e1a712ea9d4f659758d0354d1b900c43585b31[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:51:22 2025 +0000
+
+    Add company management section to easily view and organize all companies
+    
+    Adds CompanyListPage component and route to display a list of companies under /admin/companies.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/c63895b9-bcac-4a2b-bd4a-26443b72af7b.jpg
+
+M	client/src/App.tsx
+M	client/src/components/ui/table.tsx
+
+[33mcommit 152676851e3d9484e774e83e7429c7f8441fba16[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:50:37 2025 +0000
+
+    Add company management feature so admin can create and view companies
+    
+    Implements company management module with sidebar navigation, API endpoint, and CompanyListPage.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/c9c526e5-8d21-45fe-bd2f-28f9a19bd333.jpg
+
+A	client/src/app/admin/companies/CompanyListPage.tsx
+M	client/src/components/layout/sidebar.tsx
+M	server/routes.ts
+
+[33mcommit f6dcc93d51edb5a807705ac3fe6223452f1cc598[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:48:14 2025 +0000
+
+    Improve navigation by adding clear links to main dashboard and other pages
+    
+    Adds dashboard and login navigation buttons to CompanySummaryPage and CreateCompanyPage using `wouter` and `lucide-react` icons.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/cc6d7510-ac77-4126-b293-428b844742b1.jpg
+
+M	client/src/app/admin/company-summary/CompanySummaryPage.tsx
+M	client/src/app/admin/create-company/CreateCompanyPage.tsx
+
+[33mcommit 635ebfc7b2b50eeb8f750a66b105120ffc40eb98[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:46:19 2025 +0000
+
+    Enable administrators to register new companies into the management system
+    
+    Adds CreateCompanyPage and CompanySummaryPage components with routing, using ShadCN components, react-hook-form, and zod.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/cc6d7510-ac77-4126-b293-428b844742b1.jpg
+
+M	client/src/App.tsx
+A	client/src/app/admin/company-summary/CompanySummaryPage.tsx
+M	client/src/components/ui/textarea.tsx
+
+[33mcommit 87652053a1ba72b9b19846c2870e1eb33b83c20c[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:45:14 2025 +0000
+
+    Enable administrators to register new companies within the system
+    
+    Implements a /api/admin/create-company endpoint, adds createCompany and getCompany methods to storage.ts, and includes password hashing.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/2671bccc-6f1b-4e11-9d99-9ea529fc9b6f.jpg
+
+M	server/routes.ts
+M	server/storage.ts
+
+[33mcommit 378b6c988576c5a71e0d84b02fac12bb6070849f[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:43:42 2025 +0000
+
+    Add ability to register new companies and assign initial administrator user
+    
+    Implements company registration with schema and storage functions for creating companies, and assigns an admin user on creation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/3d76adb7-09b1-4f40-9114-cf62d41de146.jpg
+
+M	server/storage.ts
+M	shared/schema.ts
+
+[33mcommit 2a857bc57399e4f8a5c9ba1185eb0839f57bd537[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:41:59 2025 +0000
+
+    Add interface for administrators to register and onboard new companies
+    
+    Implements `CreateCompanyPage` and `CompanyForm` using React Hook Form, Zod, ShadCN, and TanStack Query; defines `companies` table in `shared/schema.ts`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/2ae11a81-79c7-47b4-b20b-406b4e723467.jpg
+
+A	client/src/app/admin/create-company/CreateCompanyPage.tsx
+A	client/src/app/admin/create-company/components/CompanyForm.tsx
+M	shared/schema.ts
+
+[33mcommit 8eaf793a2f93006bf39f93f025f660510060d5d4[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:23:42 2025 +0000
+
+    Show the navigation menu on larger screens so users can access options
+    
+    Fix: display left sidebar navigation on larger screens by removing 'hidden lg:block'.
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a5b83702-06c8-41ec-9fba-06285b16ca31.jpg
+
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit cee500eff15edfa26bcd7661e767f8d84703893a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:22:34 2025 +0000
+
+    Restructure sidebar navigation for improved clarity and accessibility
+    
+    Refactors sidebar navigation in `client/src/components/layout/sidebar.tsx` to align with new layout requirements and add an image to assets.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/a5b83702-06c8-41ec-9fba-06285b16ca31.jpg
+
+A	"attached_assets/Screenshot 2025-06-13 at 1.20.53\342\200\257pm_1749784862669.png"
+M	client/src/components/layout/sidebar.tsx
+
+[33mcommit e70a8ddd3cdc4940854329e90c5a11a67b9a10ce[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:19:49 2025 +0000
+
+    Add ability to view detailed client profiles directly from the client list
+    
+    Implements a "View Profile" button with `<Eye>` icon, redirecting to `/client/:id` on click.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5fc4cc96-c382-4eda-b9f1-abb4ecfe3b72.jpg
+
+M	client/src/pages/clients.tsx
+
+[33mcommit f761a728e5b7b063abdce17d277dcee426aea2dd[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:19:05 2025 +0000
+
+    Implement client profile page with tab-based navigation and data display
+    
+    Introduces a new client profile page with tabs for overview, medications, care plans, notes, incidents, schedules and observations.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/9b0365cf-37df-4c06-9856-386f0abf63b8.jpg
+
+M	client/src/App.tsx
+A	client/src/app/support-work/client-profile/ClientProfileDemo.tsx
+M	client/src/app/support-work/client-profile/ClientProfilePage.tsx
+
+[33mcommit d7833ab0bf65362f9982511ce16a8942482fc11a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:16:54 2025 +0000
+
+    Implement client profile page with tab-based navigation and data display
+    
+    Adds ClientProfilePage with Overview, Medications, CarePlans, CaseNotes, Incidents, Schedules, and Observations tabs, fetching mock data.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/415c80eb-72c3-46f2-b15f-da8d2738d69c.jpg
+
+M	client/src/App.tsx
+A	client/src/app/support-work/client-profile/tabs/case-notes.tsx
+A	client/src/app/support-work/client-profile/tabs/incidents.tsx
+A	client/src/app/support-work/client-profile/tabs/observations.tsx
+A	client/src/app/support-work/client-profile/tabs/schedules.tsx
+
+[33mcommit 527be0f4892e007854a765c03e8641194250d86d[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 03:12:29 2025 +0000
+
+    Create a client profile page with multiple tabs for support workers
+    
+    Implement ClientProfilePage with lazy-loaded tabs using React, ShadCN UI, and mock data via useQuery.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/c433baa8-94b8-4c70-af6b-b097758d2b80.jpg
+
+A	client/src/app/support-work/client-profile/ClientProfilePage.tsx
+A	client/src/app/support-work/client-profile/tabs/care-plans.tsx
+A	client/src/app/support-work/client-profile/tabs/medications.tsx
+A	client/src/app/support-work/client-profile/tabs/overview.tsx
+
+[33mcommit 11a60f8edf8c9cad835c31082982174f590d7cdb[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 02:52:57 2025 +0000
+
+    Provide instructions to setup the project on GitHub with deployment guides
+    
+    Adds a GITHUB_SETUP.md guide and MIT LICENSE file, and fixes a potential null value issue in `server/storage.ts`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5d98233f-017a-4623-8053-8742c191cedb.jpg
+
+A	GITHUB_SETUP.md
+A	LICENSE
+M	server/storage.ts
+
+[33mcommit de73de660f4a132cc1ecaa2cc40b34bcb0023832[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 02:52:07 2025 +0000
+
+    Prepare the application for deployment and improve project documentation
+    
+    Adds deployment guides, updates .gitignore, and modifies storage.ts to address session store typing.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/5d98233f-017a-4623-8053-8742c191cedb.jpg
+
+M	.gitignore
+A	DEPLOYMENT.md
+A	README.md
+M	server/storage.ts
+A	vercel.json
+
+[33mcommit 4d91748bda21ff92fbb4762852e4325633609fed[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 02:40:12 2025 +0000
+
+    Set up the main structure and core components for the web application
+    
+    Initialize the React frontend with essential UI components and routing.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/dfa1c93e-22e7-4a41-940d-04115919166e/8f951623-0396-4d21-aedb-d327e0ff15b8.jpg
+
+A	.gitignore
+M	.replit
+A	client/index.html
+A	client/src/App.tsx
+A	client/src/components/dashboard/current-shifts.tsx
+A	client/src/components/dashboard/quick-actions.tsx
+A	client/src/components/dashboard/recent-activity.tsx
+A	client/src/components/dashboard/stats-cards.tsx
+A	client/src/components/forms/form-builder.tsx
+A	client/src/components/layout/header.tsx
+A	client/src/components/layout/sidebar.tsx
+A	client/src/components/shifts/shift-controls.tsx
+A	client/src/components/ui/accordion.tsx
+A	client/src/components/ui/alert-dialog.tsx
+A	client/src/components/ui/alert.tsx
+A	client/src/components/ui/aspect-ratio.tsx
+A	client/src/components/ui/avatar.tsx
+A	client/src/components/ui/badge.tsx
+A	client/src/components/ui/breadcrumb.tsx
+A	client/src/components/ui/button.tsx
+A	client/src/components/ui/calendar.tsx
+A	client/src/components/ui/card.tsx
+A	client/src/components/ui/carousel.tsx
+A	client/src/components/ui/chart.tsx
+A	client/src/components/ui/checkbox.tsx
+A	client/src/components/ui/collapsible.tsx
+A	client/src/components/ui/command.tsx
+A	client/src/components/ui/context-menu.tsx
+A	client/src/components/ui/dialog.tsx
+A	client/src/components/ui/drawer.tsx
+A	client/src/components/ui/dropdown-menu.tsx
+A	client/src/components/ui/form.tsx
+A	client/src/components/ui/hover-card.tsx
+A	client/src/components/ui/input-otp.tsx
+A	client/src/components/ui/input.tsx
+A	client/src/components/ui/label.tsx
+A	client/src/components/ui/menubar.tsx
+A	client/src/components/ui/navigation-menu.tsx
+A	client/src/components/ui/pagination.tsx
+A	client/src/components/ui/popover.tsx
+A	client/src/components/ui/progress.tsx
+A	client/src/components/ui/radio-group.tsx
+A	client/src/components/ui/resizable.tsx
+A	client/src/components/ui/scroll-area.tsx
+A	client/src/components/ui/select.tsx
+A	client/src/components/ui/separator.tsx
+A	client/src/components/ui/sheet.tsx
+A	client/src/components/ui/sidebar.tsx
+A	client/src/components/ui/skeleton.tsx
+A	client/src/components/ui/slider.tsx
+A	client/src/components/ui/switch.tsx
+A	client/src/components/ui/table.tsx
+A	client/src/components/ui/tabs.tsx
+A	client/src/components/ui/textarea.tsx
+A	client/src/components/ui/toast.tsx
+A	client/src/components/ui/toaster.tsx
+A	client/src/components/ui/toggle-group.tsx
+A	client/src/components/ui/toggle.tsx
+A	client/src/components/ui/tooltip.tsx
+A	client/src/hooks/use-auth.tsx
+A	client/src/hooks/use-mobile.tsx
+A	client/src/hooks/use-toast.ts
+A	client/src/index.css
+A	client/src/lib/protected-route.tsx
+A	client/src/lib/queryClient.ts
+A	client/src/lib/utils.ts
+A	client/src/main.tsx
+A	client/src/pages/auth-page.tsx
+A	client/src/pages/clients.tsx
+A	client/src/pages/dashboard.tsx
+A	client/src/pages/export.tsx
+A	client/src/pages/forms.tsx
+A	client/src/pages/not-found.tsx
+A	client/src/pages/reports.tsx
+A	client/src/pages/shift-logging.tsx
+A	client/src/pages/staff.tsx
+A	components.json
+A	drizzle.config.ts
+A	package-lock.json
+A	package.json
+A	postcss.config.js
+A	server/auth.ts
+A	server/db.ts
+A	server/index.ts
+A	server/routes.ts
+A	server/storage.ts
+A	server/vite.ts
+A	shared/schema.ts
+A	tailwind.config.ts
+A	tsconfig.json
+A	vite.config.ts
+
+[33mcommit febadc8e31002e9886eb3d8888339b8f7b237c0a[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 02:32:01 2025 +0000
+
+    Started building your app
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 81f9d30d-b66f-40f5-a528-17846c9fb785
+
+[33mcommit 012b85a7ec1af26edfb226a49fe10c0c4970d4fd[m
+Author: paradoxfix90 <42618849-paradoxfix90@users.noreply.replit.com>
+Date:   Fri Jun 13 02:32:01 2025 +0000
+
+    Initial commit
+
+A	.replit

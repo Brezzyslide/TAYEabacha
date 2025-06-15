@@ -2172,6 +2172,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Spell Check API using OpenAI
+  app.post("/api/spellcheck-gpt", requireAuth, async (req: any, res) => {
+    try {
+      const { content } = req.body;
+      
+      if (!content) {
+        return res.status(400).json({ message: "Content is required for spell check" });
+      }
+
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a spell checker. Only fix spelling errors and obvious typos. Do NOT rewrite, restructure, or change the meaning of the text. Maintain the original tone, style, and formatting. Return ONLY the corrected text."
+          },
+          {
+            role: "user",
+            content: `Please spell check this text and fix only spelling errors:\n\n${content}`
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 2000,
+      });
+
+      const correctedContent = response.choices[0].message.content;
+      
+      res.json({ 
+        original: content,
+        corrected: correctedContent 
+      });
+    } catch (error: any) {
+      console.error("Spell check error:", error);
+      res.status(500).json({ message: "Failed to perform spell check", error: error.message });
+    }
+  });
+
+  // Fetch shifts by client and staff for case note linking
+  app.get("/api/shifts-by-client-staff", requireAuth, async (req: any, res) => {
+    try {
+      const { clientId, staffId } = req.query;
+      const tenantId = req.user.tenantId;
+      
+      if (!clientId || !staffId) {
+        return res.status(400).json({ message: "Client ID and Staff ID are required" });
+      }
+
+      const allShifts = await storage.getAllShifts(tenantId);
+      const relevantShifts = allShifts.filter(shift => 
+        shift.clientId === parseInt(clientId) && 
+        (shift.userId === parseInt(staffId) || shift.userId === null) // Include unassigned shifts
+      );
+
+      // Sort by most recent first and limit to recent shifts
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const recentShifts = relevantShifts
+        .filter(shift => new Date(shift.startTime) >= sevenDaysAgo)
+        .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+        .slice(0, 10); // Limit to 10 most recent
+      
+      res.json(recentShifts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch shifts" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

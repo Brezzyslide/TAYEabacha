@@ -151,6 +151,8 @@ export const caseNotes = pgTable("case_notes", {
   tags: text("tags").array().default([]),
   linkedShiftId: integer("linked_shift_id").references(() => shifts.id),
   attachments: jsonb("attachments").default([]),
+  caseNoteTags: jsonb("case_note_tags").default({}), // { incident: { occurred: boolean, refNumber?: string, lodged?: boolean }, medication: { status: string, recordLogged?: boolean } }
+  spellCheckCount: integer("spell_check_count").default(0),
   incidentData: jsonb("incident_data"),
   medicationData: jsonb("medication_data"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

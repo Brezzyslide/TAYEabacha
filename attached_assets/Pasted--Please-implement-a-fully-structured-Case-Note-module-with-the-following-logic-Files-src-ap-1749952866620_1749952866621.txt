@@ -1,0 +1,132 @@
+
+Please implement a fully structured Case Note module with the following logic.
+
+📁 Files:
+- `src/app/case-notes/components/CreateCaseNoteModal.tsx`
+- `src/app/support-work/client-profile/tabs/case-notes.tsx`
+
+---
+
+## ✅ 1. SHIFT AUTO-FETCHING
+
+When a client is selected:
+- Automatically fetch all **assigned shifts** for that staff member and client
+- Use current time to suggest the most relevant (closest) shift
+- If multiple eligible shifts exist, require the user to select one before proceeding
+
+```ts
+fetchShiftsByClientAndStaff(clientId, staffId)
+✅ 2. INCIDENT REPORTING SECTION
+Form Logic:
+
+User must toggle whether an incident occurred
+
+If “No”:
+
+Show text field: “Are you sure?” → require “Yes” or “No”
+
+If “Yes”: Require an Incident Report Number
+
+If “Yes”: show Has Incident Been Lodged? toggle
+
+Store the response as a caseNoteTags.incident = { occurred: true/false, refNumber: string }
+
+✅ 3. MEDICATION ADMINISTRATION SECTION
+Dropdown:
+
+"Was medication administered?"
+Options:
+
+Yes – Medication was administered
+
+No – No medication required
+
+Refused – Client refused medication
+
+If “Yes”:
+
+Show confirmation:
+
+“Has a Medication Administration record been submitted?”
+
+Yes / No (must select)
+
+Save logic in caseNoteTags.medication = { status: "yes" | "none" | "refused", recordLogged?: true }
+
+✅ 4. CASE NOTE TEXT AREA
+Minimum word count = 130
+
+Show real-time word counter
+
+Button: “Check Spelling”
+
+Uses GPT for spell checking only — no rewriting
+
+Limit to 2 spell checks per submission
+
+Track spell check usage with state
+
+Show remaining checks: “1 check remaining”
+
+Spell check request sends case note content to:
+
+ts
+Copy
+Edit
+POST /api/spellcheck-gpt
+...and returns corrected version for preview/accept.
+
+✅ 5. SUBMISSION STRUCTURE
+Save case note with:
+
+ts
+Copy
+Edit
+{
+  clientId,
+  staffId,
+  companyId,
+  shiftId,
+  content,
+  attachments: File[],
+  caseNoteTags: {
+    incident: {...},
+    medication: {...}
+  },
+  createdAt
+}
+✅ 6. CLIENT PROFILE TAB: CASE NOTES
+File: client-profile/tabs/case-notes.tsx
+
+Display completed case notes for that client
+
+Pull directly from the main caseNotes module
+
+Filter by clientId and companyId
+
+Same visual component as main module (reuse CaseNoteCard.tsx)
+
+Display incident and medication tags as badges on each card
+
+✅ 7. ACCESS & PERMISSION LOGIC
+Role	Action
+SupportWorker	Create + View own clients
+Team Leader	View + Edit staff notes
+Admin	Full visibility
+
+Use hasPermission(user, "caseNotes", "create") and hasPermission(user, "caseNotes", "view") to control field access and tab visibility.
+
+✅ UI Requirements
+Tailwind + ShadCN
+
+react-hook-form + zod
+
+Live form validation for toggles
+
+Friendly prompts when fields become required
+
+GPT-based spell check should not trigger expansion or rewriting, only fix spelling
+
+yaml
+Copy
+Edit
