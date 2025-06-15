@@ -143,11 +143,8 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
     resolver: zodResolver(observationSchema),
     defaultValues: {
       timestamp: new Date(),
-      notes: "",
       observationType: "behaviour",
-      subtype: "",
-      clientId: undefined,
-      intensity: undefined
+      clientId: 0
     }
   });
 
