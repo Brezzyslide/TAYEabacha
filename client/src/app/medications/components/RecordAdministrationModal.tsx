@@ -108,15 +108,15 @@ export default function RecordAdministrationModal({
 
   // Fetch active medication plans for this client (if no specific plan provided)
   const { data: medicationPlans = [] } = useQuery({
-    queryKey: ["/api/medication-plans", clientId],
+    queryKey: ["/api/clients", clientId, "medication-plans"],
     queryFn: async () => {
-      const response = await fetch(`/api/medication-plans?clientId=${clientId}`, {
+      const response = await fetch(`/api/clients/${clientId}/medication-plans`, {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to fetch medication plans");
       return response.json();
     },
-    enabled: isOpen && !!clientId && !medicationPlan,
+    enabled: isOpen && !!clientId,
   });
 
   const form = useForm<MedicationAdministrationForm>({
