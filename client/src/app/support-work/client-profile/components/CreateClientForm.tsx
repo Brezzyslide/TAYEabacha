@@ -46,14 +46,11 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
       companyId: "COMP001",
       createdBy: 1,
       isActive: true
-    },
+    } as InsertClient,
   });
 
   const createClientMutation = useMutation({
-    mutationFn: (data: InsertClient) => apiRequest("/api/clients", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: InsertClient) => apiRequest("/api/clients", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
@@ -74,7 +71,15 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
   const onSubmit = async (data: InsertClient) => {
     setIsSubmitting(true);
     try {
+      console.log("Submitting client data:", data);
       await createClientMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Client creation error:", error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to create client",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -136,9 +141,9 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
                   name="ndisNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>NDIS Number</FormLabel>
+                      <FormLabel>NDIS Number *</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., 43000012345 (optional)" {...field} />
+                        <Input placeholder="e.g., 43000012345" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
