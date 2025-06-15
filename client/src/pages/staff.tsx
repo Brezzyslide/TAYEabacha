@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User } from "@shared/schema";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
 import { UserCircle, Mail, Shield } from "lucide-react";
 
 export default function Staff() {
@@ -39,21 +37,14 @@ export default function Staff() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
+        <p className="text-gray-600 mt-1">View and manage your team members</p>
+      </div>
       
-      <div className="flex-1 flex flex-col">
-        <Header />
-        
-        <main className="flex-1 p-6">
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
-              <p className="text-gray-600 mt-1">View and manage your team members</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -166,8 +157,6 @@ export default function Staff() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </main>
       </div>
     </div>
   );
