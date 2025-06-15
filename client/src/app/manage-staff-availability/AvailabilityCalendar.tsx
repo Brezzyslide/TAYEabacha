@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, AlertTriangle, Users } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, addMonths, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, addMonths, subMonths, addYears, subYears } from "date-fns";
 
 interface StaffAvailability {
   id: number;
@@ -105,11 +105,30 @@ export default function AvailabilityCalendar({
               <span>Staff Availability Calendar - {format(selectedMonth, 'MMMM yyyy')}</span>
             </CardTitle>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+              {/* Year Navigation */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onMonthChange(subYears(selectedMonth, 1))}
+                title="Previous Year"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 -ml-2" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')} title="Previous Month">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
+              <Button variant="outline" size="sm" onClick={() => navigateMonth('next')} title="Next Month">
                 <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onMonthChange(addYears(selectedMonth, 1))}
+                title="Next Year"
+              >
+                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 -ml-2" />
               </Button>
             </div>
           </div>
