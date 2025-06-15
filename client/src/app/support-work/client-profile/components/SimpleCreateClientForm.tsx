@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { insertClientSchema, type InsertClient } from "@shared/schema";
 import { User, Calendar } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -16,22 +17,10 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
-const createClientSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  ndisNumber: z.string().min(1, "NDIS number is required"),
-  dateOfBirth: z.date({ required_error: "Date of birth is required" }),
-  address: z.string().optional(),
-  emergencyContactName: z.string().optional(),
-  emergencyContactPhone: z.string().optional(),
-  primaryDiagnosis: z.string().optional(),
-  ndisGoals: z.string().optional(),
-  likesPreferences: z.string().optional(),
-  dislikesAversions: z.string().optional(),
-  allergiesMedicalAlerts: z.string().optional(),
-});
+// Use the server schema for proper validation
+const clientFormSchema = insertClientSchema.omit({ tenantId: true, createdBy: true });
 
-type CreateClientFormData = z.infer<typeof createClientSchema>;
+type CreateClientFormData = z.infer<typeof clientFormSchema>;
 
 interface SimpleCreateClientFormProps {
   onSuccess?: () => void;
@@ -44,33 +33,29 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateClientFormData>({
-    resolver: zodResolver(createClientSchema),
+    resolver: zodResolver(clientFormSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
       ndisNumber: "",
       dateOfBirth: new Date(),
-      address: "",
-      emergencyContactName: "",
-      emergencyContactPhone: "",
-      primaryDiagnosis: "",
-      ndisGoals: "",
-      likesPreferences: "",
-      dislikesAversions: "",
-      allergiesMedicalAlerts: "",
+      address: null,
+      emergencyContactName: null,
+      emergencyContactPhone: null,
+      primaryDiagnosis: null,
+      ndisGoals: null,
+      likesPreferences: null,
+      dislikesAversions: null,
+      allergiesMedicalAlerts: null,
+      companyId: "COMP001",
+      isActive: true,
     },
   });
 
   const createClientMutation = useMutation({
     mutationFn: (data: CreateClientFormData) => {
-      const payload = {
-        ...data,
-        tenantId: 1,
-        companyId: "COMP001",
-        createdBy: 1,
-        isActive: true,
-      };
-      return apiRequest("POST", "/api/clients", payload);
+      // Server will add tenantId and createdBy from auth context
+      return apiRequest("POST", "/api/clients", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
@@ -214,7 +199,7 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter full address" {...field} />
+                      <Input placeholder="Enter full address" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
