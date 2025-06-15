@@ -33,10 +33,9 @@ type CreateStaffFormData = z.infer<typeof createStaffSchema>;
 
 const editStaffSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
-  email: z.string().email("Invalid email address").optional(),
+  email: z.string().optional(),
   role: z.enum(["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"]),
   fullName: z.string().min(1, "Full name is required"),
-  phone: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -52,135 +51,87 @@ function EditStaffForm({
   onSubmit: (data: Partial<User>) => void; 
   isLoading: boolean;
 }) {
-  const editForm = useForm<EditStaffFormData>({
-    resolver: zodResolver(editStaffSchema),
-    defaultValues: {
-      username: staff.username,
-      email: staff.email || "",
-      role: staff.role as any,
-      fullName: staff.fullName || "",
-      phone: "",
-      isActive: staff.isActive || false,
-    },
+  const [formData, setFormData] = useState({
+    username: staff.username,
+    email: staff.email || "",
+    role: staff.role,
+    fullName: staff.fullName || "",
+    isActive: staff.isActive || false,
   });
 
-  const handleSubmit = (data: EditStaffFormData) => {
-    onSubmit(data);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
   return (
-    <Form {...editForm}>
-      <form onSubmit={editForm.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={editForm.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="username">Username</Label>
+        <Input
+          id="username"
+          value={formData.username}
+          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+          className="mt-1"
         />
-        
-        <FormField
-          control={editForm.control}
-          name="fullName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+      </div>
+      
+      <div>
+        <Label htmlFor="fullName">Full Name</Label>
+        <Input
+          id="fullName"
+          value={formData.fullName}
+          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+          className="mt-1"
         />
+      </div>
 
-        <FormField
-          control={editForm.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input {...field} type="email" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          className="mt-1"
         />
+      </div>
 
-        <FormField
-          control={editForm.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+      <div>
+        <Label htmlFor="role">Role</Label>
+        <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+          <SelectTrigger className="mt-1">
+            <SelectValue placeholder="Select a role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="SupportWorker">Support Worker</SelectItem>
+            <SelectItem value="TeamLeader">Team Leader</SelectItem>
+            <SelectItem value="Coordinator">Coordinator</SelectItem>
+            <SelectItem value="Admin">Admin</SelectItem>
+            <SelectItem value="ConsoleManager">Console Manager</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="isActive"
+          checked={formData.isActive}
+          onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+          className="h-4 w-4"
         />
+        <Label htmlFor="isActive" className="text-sm font-normal">
+          Active Status
+        </Label>
+      </div>
 
-        <FormField
-          control={editForm.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="SupportWorker">Support Worker</SelectItem>
-                  <SelectItem value="TeamLeader">Team Leader</SelectItem>
-                  <SelectItem value="Coordinator">Coordinator</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="ConsoleManager">Console Manager</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex items-center space-x-2">
-          <FormField
-            control={editForm.control}
-            name="isActive"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                <FormControl>
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    className="h-4 w-4"
-                  />
-                </FormControl>
-                <FormLabel className="text-sm font-normal">
-                  Active Status
-                </FormLabel>
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="flex justify-end space-x-2">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Updating..." : "Update Staff"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      <div className="flex justify-end space-x-2">
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Updating..." : "Update Staff"}
+        </Button>
+      </div>
+    </form>
   );
 }
 

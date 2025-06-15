@@ -2639,7 +2639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = req.body;
       
       // Update user in database
-      const updatedUser = await storage.updateUser(staffId, updateData);
+      const updatedUser = await storage.updateUser(staffId, updateData, req.user.tenantId);
       
       if (!updatedUser) {
         return res.status(404).json({ message: "Staff member not found" });
@@ -2674,7 +2674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await hashPassword(newPassword.trim());
       
       // Update user password
-      const updatedUser = await storage.updateUser(staffId, { passwordHash: hashedPassword });
+      const updatedUser = await storage.updateUser(staffId, { password: hashedPassword }, req.user.tenantId);
       
       if (!updatedUser) {
         return res.status(404).json({ message: "Staff member not found" });
