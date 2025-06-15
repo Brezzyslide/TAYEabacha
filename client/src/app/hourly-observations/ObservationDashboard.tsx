@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 
 
 type ViewMode = "card" | "list";
@@ -815,36 +816,28 @@ export default function ObservationDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </main>
+      <div className="p-6">
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto px-4 py-8 max-w-7xl">
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Home className="w-4 h-4" />
-                  Dashboard
-                </Button>
-              </Link>
-              <span>/</span>
-              <span className="text-foreground font-medium">Hourly Observations</span>
-            </div>
+    <>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <Home className="w-4 h-4" />
+              Dashboard
+            </Button>
+          </Link>
+          <span>/</span>
+          <span className="text-foreground font-medium">Hourly Observations</span>
+        </div>
 
             {/* Header */}
             <div className="mb-8">
@@ -1040,8 +1033,6 @@ export default function ObservationDashboard() {
               </Card>
             )}
           </div>
-        </main>
-      </div>
 
       <ObservationFormModal
         isOpen={isFormModalOpen}
@@ -1187,6 +1178,7 @@ export default function ObservationDashboard() {
           )}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
