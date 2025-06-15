@@ -165,10 +165,18 @@ export const hourlyObservations = pgTable("hourly_observations", {
   clientId: integer("client_id").notNull().references(() => clients.id),
   userId: integer("user_id").notNull().references(() => users.id),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
-  observationType: text("observation_type").notNull(), // behaviour, adl, health, social, communication
-  subtype: text("subtype"), // specific subcategory based on type
-  notes: text("notes").notNull(),
-  intensity: integer("intensity"), // 1-5 for behaviour observations
+  observationType: text("observation_type").notNull(), // behaviour, adl
+  subtype: text("subtype"), // specific subcategory based on type (for ADL)
+  notes: text("notes"), // for ADL observations
+  // Star chart fields for behaviour observations
+  settings: text("settings"), // environmental settings description
+  settingsRating: integer("settings_rating"), // 1-5 rating
+  time: text("time"), // timing factors description
+  timeRating: integer("time_rating"), // 1-5 rating
+  antecedents: text("antecedents"), // what happened before description
+  antecedentsRating: integer("antecedents_rating"), // 1-5 rating
+  response: text("response"), // how incident was handled description
+  responseRating: integer("response_rating"), // 1-5 rating
   timestamp: timestamp("timestamp").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -704,6 +712,20 @@ export const insertHourlyObservationSchema = createInsertSchema(hourlyObservatio
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  observationType: z.enum(["behaviour", "adl"]),
+  // Star chart fields for behaviour observations
+  settings: z.string().optional(),
+  settingsRating: z.number().min(1).max(5).optional(),
+  time: z.string().optional(),
+  timeRating: z.number().min(1).max(5).optional(),
+  antecedents: z.string().optional(),
+  antecedentsRating: z.number().min(1).max(5).optional(),
+  response: z.string().optional(),
+  responseRating: z.number().min(1).max(5).optional(),
+  // ADL fields
+  subtype: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
