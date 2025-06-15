@@ -29,9 +29,7 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
   const companyId = propCompanyId || "1";
   const [activeTab, setActiveTab] = useState("overview");
 
-  console.log("ClientProfilePage - Route params:", params);
-  console.log("ClientProfilePage - URL extracted ID:", urlClientId);
-  console.log("ClientProfilePage - Final clientId:", clientId);
+
 
 
 
