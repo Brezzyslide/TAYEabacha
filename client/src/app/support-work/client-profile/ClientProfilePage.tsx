@@ -25,6 +25,8 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
   const companyId = propCompanyId || "1";
   const [activeTab, setActiveTab] = useState("overview");
 
+
+
   // Fetch real client data
   const { data: clientData, isLoading: clientLoading, error } = useQuery({
     queryKey: ["/api/clients", clientId],
