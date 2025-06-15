@@ -77,21 +77,8 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
 
   // Filter case notes for this specific client
   const clientCaseNotes = useMemo(() => {
-    console.log('Raw case notes data:', allCaseNotes);
-    console.log('Client ID:', clientId, 'Parsed:', parseInt(clientId));
-    
-    if (!Array.isArray(allCaseNotes)) {
-      console.log('Case notes is not an array:', typeof allCaseNotes);
-      return [];
-    }
-    
-    const filtered = allCaseNotes.filter(note => {
-      console.log('Note client ID:', note.clientId, 'Target:', parseInt(clientId), 'Match:', note.clientId === parseInt(clientId));
-      return note.clientId === parseInt(clientId);
-    });
-    
-    console.log('Filtered case notes for client:', filtered);
-    return filtered;
+    if (!Array.isArray(allCaseNotes)) return [];
+    return allCaseNotes.filter(note => note.clientId === parseInt(clientId));
   }, [allCaseNotes, clientId]);
 
   // Create case note mutation
