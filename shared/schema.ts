@@ -739,7 +739,10 @@ export const insertMedicationPlanSchema = createInsertSchema(medicationPlans).om
   updatedAt: true,
 }).extend({
   startDate: z.coerce.date(),
-  endDate: z.coerce.date().optional(),
+  endDate: z.string().optional().transform((val) => {
+    if (!val || val === "") return undefined;
+    return new Date(val);
+  }),
 });
 
 export const insertMedicationRecordSchema = createInsertSchema(medicationRecords).omit({
