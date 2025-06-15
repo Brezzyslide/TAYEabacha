@@ -1500,15 +1500,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/clients/:clientId/medication-records", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
+      
+      // Parse and validate the date
+      let actualTime = new Date();
+      if (req.body.dateTime) {
+        const parsedDate = new Date(req.body.dateTime);
+        if (!isNaN(parsedDate.getTime())) {
+          actualTime = parsedDate;
+        }
+      }
+      
       const recordData = {
-        ...req.body,
+        medicationPlanId: req.body.medicationPlanId || null,
         clientId,
         administeredBy: req.user.id,
-        tenantId: req.user.tenantId,
-        // Map status to result for backward compatibility
+        medicationName: req.body.medicationName,
+        scheduledTime: null, // Not used in this context
+        actualTime: actualTime,
+        dateTime: actualTime, // Duplicate field for compatibility
+        timeOfDay: req.body.timeOfDay,
+        route: req.body.route,
+        status: req.body.status,
         result: req.body.status?.toLowerCase() || "administered",
-        // Map dateTime to actualTime for database compatibility
-        actualTime: req.body.dateTime ? new Date(req.body.dateTime) : new Date(),
+        notes: req.body.notes || null,
+        refusalReason: null,
+        wasWitnessed: req.body.wasWitnessed || false,
+        attachmentBeforeUrl: req.body.attachmentBeforeUrl || null,
+        attachmentAfterUrl: req.body.attachmentAfterUrl || null,
+        tenantId: req.user.tenantId,
       };
 
       const record = await storage.createMedicationRecord(recordData);
