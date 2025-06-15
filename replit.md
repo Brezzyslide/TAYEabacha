@@ -136,6 +136,8 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 14, 2025. Built comprehensive NDIS Budget Management system with participant budget setup, automatic shift-to-budget deductions, pricing management, transaction tracking, and role-based permissions for budget oversight
 - June 15, 2025. Completed comprehensive Case Note module with GPT-4o spell checking (2-check limit), shift auto-fetching, incident reporting toggle, medication administration tracking, enhanced database schema with caseNoteTags JSONB column, and fixed API endpoint synchronization between main dashboard and client profile views
 - June 15, 2025. Cleaned up all client profile tabs by removing placeholder/demo content - overview, incidents, medications, schedules, observations, care-plans, and enhanced-medications tabs now display clean empty states ready for live data integration while preserving functional case notes implementation
+- June 15, 2025. Fixed case notes filtering issue where all client profiles showed shared data - now properly filters by clientId parameter, ensuring data isolation between clients
+- June 15, 2025. Performed database cleanup removing demo content - deleted 3 medication plans, 45 shift records, and 5 medication administration records while preserving 3 client profiles and 1 user-generated case note
 
 ## User Preferences
 
