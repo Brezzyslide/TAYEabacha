@@ -116,11 +116,11 @@ export default function MedicationDashboard() {
       const metric = metricsMap.get(key);
       metric.totalRecords++;
       
-      if (record.result === 'Given') {
+      if (record.result === 'Given' || record.result === 'administered') {
         metric.administeredCount++;
-      } else if (record.result === 'Refused') {
+      } else if (record.result === 'Refused' || record.result === 'refused') {
         metric.refusedCount++;
-      } else if (record.result === 'Missed') {
+      } else if (record.result === 'Missed' || record.result === 'missed') {
         metric.missedCount++;
       }
     });
