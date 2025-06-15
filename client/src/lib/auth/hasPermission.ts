@@ -38,9 +38,13 @@ export function hasPermission(
   // ConsoleManager has global access
   if (role.name === "ConsoleManager") return true;
 
-  // Company boundary enforcement (except for ConsoleManager and Admin)
-  if (targetCompanyId && user.companyId !== targetCompanyId && role.name !== "Admin") {
-    return false;
+  // Company boundary enforcement
+  // ConsoleManager has global access, Admin has full company access
+  if (targetCompanyId && user.companyId !== targetCompanyId) {
+    // Only ConsoleManager can cross company boundaries
+    if (role.name !== "ConsoleManager") {
+      return false;
+    }
   }
 
   // Get permissions for this role and module

@@ -162,6 +162,29 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 15, 2025. Work in progress: Admin permission consistency issue - "Add New Client" button should appear consistently across all companies for Admin users but still experiencing issues with permission system logic, needs further investigation
 - June 15, 2025. Fixed React hooks error in authentication flow - resolved "Rendered fewer hooks than expected" error by ensuring all hooks are called before any conditional returns in AuthPage component, eliminating login flow crashes
 - June 15, 2025. Simplified authentication page by removing user registration functionality - removed registration form, tabs, and related code since user creation is handled through internal system, creating cleaner login-only interface
+- June 15, 2025. CRITICAL FIX: Resolved multi-tenant permission inconsistency - fixed hasPermission logic where Admin users were incorrectly blocked from staff editing/password reset features across different companies, implemented comprehensive Multi-Tenant Development Protocol with mandatory testing checklist to prevent future tenant-boundary permission issues, ensuring all features work consistently across ALL tenants while maintaining proper data isolation
+
+## Multi-Tenant Development Protocol
+
+### Critical Multi-Tenant Requirements
+1. **All features MUST work consistently across ALL tenants/companies**
+2. **Permission systems must respect tenant boundaries while ensuring role consistency**
+3. **Every feature implementation requires testing across multiple tenants**
+4. **Admin users must have full company access without cross-tenant restrictions**
+
+### Multi-Tenant Testing Checklist
+Before marking any feature complete:
+- [ ] Test with ConsoleManager (global access)
+- [ ] Test with Admin from Company A 
+- [ ] Test with Admin from Company B
+- [ ] Verify data isolation between companies
+- [ ] Confirm permission consistency across tenants
+
+### Development Guidelines
+- Admin role = Full company access (not cross-company)
+- ConsoleManager role = Global system access
+- Features implemented for one tenant must work for all tenants
+- Permission logic must not block legitimate role access within tenant boundaries
 
 ## User Preferences
 
