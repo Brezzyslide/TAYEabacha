@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pill } from "lucide-react";
+import { Pill, User } from "lucide-react";
 
 interface MedicationsTabProps {
   clientId: string;
@@ -112,6 +112,10 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                           Administered: {new Date(record.actualTime).toLocaleString()}
                         </p>
                       )}
+                      <p className="text-sm text-green-600 flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        Administered by: {record.administratorName || 'Unknown'}
+                      </p>
                     </div>
                     <span className={`px-2 py-1 rounded text-xs ${
                       record.result === 'administered' ? 'bg-green-100 text-green-800' :

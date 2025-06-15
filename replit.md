@@ -146,6 +146,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 15, 2025. Fixed medication plan creation API error by correcting parameter order in apiRequest function call and updated role permissions to include ConsoleManager access for medication plan endpoints, ensuring comprehensive medication management functionality across all administrative roles
 - June 15, 2025. Implemented universal ConsoleManager permissions by updating requireRole middleware to automatically grant ConsoleManager access to all endpoints, establishing proper administrative hierarchy where ConsoleManager has unrestricted system access
 - June 15, 2025. Completed medication management system fixes: resolved ConsoleManager permissions for medication plan creation, fixed date validation with z.coerce.date() and empty date field handling, enhanced client profile medications tab to display active plans with detailed information and Record buttons, updated medication administration form with auto-population of medication details (name, dosage, route, time of day) and automatic "administered by" field population with current user for complete compliance tracking
+- June 15, 2025. Added comprehensive "Administered By" column to medication records display across all views - enhanced API to include administrator username information in medication records, updated Medication Dashboard and client profile medication tabs to show who administered each medication with user icon for improved accountability and audit trail compliance
 
 ## User Preferences
 

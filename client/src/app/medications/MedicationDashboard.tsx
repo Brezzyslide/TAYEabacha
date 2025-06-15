@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, Pill, Clock, CheckCircle, AlertTriangle, Calendar, Camera } from "lucide-react";
+import { Plus, Search, Filter, Pill, Clock, CheckCircle, AlertTriangle, Calendar, Camera, User } from "lucide-react";
 import Sidebar from "@/components/layout/sidebar";
 import UniversalHeader from "@/components/layout/universal-header";
 import { format } from "date-fns";
@@ -365,6 +365,10 @@ export default function MedicationDashboard() {
                                   Administered: {format(new Date(record.administeredTime), 'MMM dd, yyyy HH:mm')}
                                 </p>
                               )}
+                              <p className="text-sm text-green-600 flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                Administered by: {record.administratorName || 'Unknown'}
+                              </p>
                               {record.notes && (
                                 <p className="text-sm text-gray-500">{record.notes}</p>
                               )}
