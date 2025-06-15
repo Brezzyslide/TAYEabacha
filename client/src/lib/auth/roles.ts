@@ -42,7 +42,22 @@ export const roles: Role[] = [
 ];
 
 export const getRoleByName = (name: string): Role | undefined => {
-  return roles.find(role => role.name === name);
+  // Handle case-insensitive role matching for database compatibility
+  const normalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  
+  // Map legacy database role names to proper role names
+  const roleMapping: { [key: string]: string } = {
+    "admin": "Admin",
+    "consolemanager": "ConsoleManager",
+    "coordinator": "Coordinator",
+    "teamleader": "TeamLeader", 
+    "supportworker": "SupportWorker",
+    "staff": "SupportWorker", // Legacy mapping
+    "viewer": "SupportWorker" // Legacy mapping
+  };
+  
+  const mappedRole = roleMapping[name.toLowerCase()] || normalizedName;
+  return roles.find(role => role.name === mappedRole);
 };
 
 export const getRoleById = (id: number): Role | undefined => {
