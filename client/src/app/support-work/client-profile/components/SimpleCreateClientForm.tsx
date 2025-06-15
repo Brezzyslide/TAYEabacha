@@ -70,7 +70,7 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
         createdBy: 1,
         isActive: true,
       };
-      return apiRequest("/api/clients", "POST", payload);
+      return apiRequest("POST", "/api/clients", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
