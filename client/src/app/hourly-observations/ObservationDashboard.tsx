@@ -20,36 +20,49 @@ import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 
 type ViewMode = "card" | "list";
-type FilterType = "all" | "behaviour" | "adl" | "health" | "social" | "communication";
+type FilterType = "all" | "behaviour" | "adl";
 
 // Observation form schema with conditional validation
 const observationSchema = z.object({
   clientId: z.number({ required_error: "Please select a client" }),
-  observationType: z.enum(["behaviour", "adl", "health", "social", "communication"], {
+  observationType: z.enum(["behaviour", "adl"], {
     required_error: "Please select an observation type"
   }),
   subtype: z.string().optional(),
-  notes: z.string().min(10, "Notes must be at least 10 characters long"),
-  intensity: z.number().min(1).max(5).optional(),
-  timestamp: z.date({ required_error: "Please select a date and time" })
+  notes: z.string().optional(),
+  timestamp: z.date({ required_error: "Please select a date and time" }),
+  // Behaviour-specific star chart fields
+  settings: z.string().optional(),
+  settingsRating: z.number().min(1).max(5).optional(),
+  time: z.string().optional(),
+  timeRating: z.number().min(1).max(5).optional(),
+  antecedents: z.string().optional(),
+  antecedentsRating: z.number().min(1).max(5).optional(),
+  response: z.string().optional(),
+  responseRating: z.number().min(1).max(5).optional(),
 }).refine((data) => {
-  // Make subtype required for all observation types
-  if (!data.subtype || data.subtype.trim() === "") {
-    return false;
+  // For behaviour observations, require all star chart fields
+  if (data.observationType === "behaviour") {
+    if (!data.settings || !data.settingsRating || !data.time || !data.timeRating || 
+        !data.antecedents || !data.antecedentsRating || !data.response || !data.responseRating) {
+      return false;
+    }
   }
   return true;
 }, {
-  message: "Subtype is required for all observations",
+  message: "All star chart fields are required for behaviour observations",
+  path: ["settings"]
+}).refine((data) => {
+  // For ADL observations, require subtype and notes
+  if (data.observationType === "adl") {
+    if (!data.subtype || data.subtype.trim() === "" || !data.notes || data.notes.trim() === "") {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Subtype and notes are required for ADL observations",
   path: ["subtype"]
-}).refine((data) => {
-  // Make intensity required for behaviour observations
-  if (data.observationType === "behaviour" && !data.intensity) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Intensity rating is required for behaviour observations",
-  path: ["intensity"]
 });
 
 // Behaviour subtypes for psychology-related observations
