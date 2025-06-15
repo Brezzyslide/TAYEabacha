@@ -21,7 +21,7 @@ interface ClientProfilePageProps {
 
 function ClientProfilePageInner({ clientId: propClientId, companyId: propCompanyId }: ClientProfilePageProps) {
   const params = useParams();
-  const clientId = propClientId || params.clientId || "1";
+  const clientId = propClientId || params.clientId;
   const companyId = propCompanyId || "1";
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -31,6 +31,27 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
     queryFn: () => fetch(`/api/clients/${clientId}`).then(res => res.json()),
     enabled: !!clientId,
   });
+
+  // Handle missing clientId
+  if (!clientId) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Invalid Client ID</h3>
+            <p className="text-gray-600 mb-4">No client ID provided in the URL.</p>
+            <Link href="/support-work/client-profile">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Client List
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const LoadingSpinner = () => (
     <div className="flex items-center justify-center py-8">
@@ -111,31 +132,31 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab clientId={clientId} companyId={companyId} />
+          <OverviewTab clientId={clientId!} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="medications" className="mt-6">
-          <MedicationsTab clientId={clientId} companyId={companyId} />
+          <MedicationsTab clientId={clientId!} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="care-plans" className="mt-6">
-          <CarePlansTab clientId={clientId} companyId={companyId} />
+          <CarePlansTab clientId={clientId!} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="case-notes" className="mt-6">
-          <CaseNotesTab clientId={clientId} companyId={companyId} />
+          <CaseNotesTab clientId={clientId!} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="incidents" className="mt-6">
-          <IncidentsTab clientId={clientId} companyId={companyId} />
+          <IncidentsTab clientId={clientId!} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="schedules" className="mt-6">
-          <SchedulesTab clientId={clientId} companyId={companyId} />
+          <SchedulesTab clientId={clientId!} companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="observations" className="mt-6">
-          <ObservationsTab clientId={clientId} companyId={companyId} />
+          <ObservationsTab clientId={clientId!} companyId={companyId} />
         </TabsContent>
       </Tabs>
     </div>

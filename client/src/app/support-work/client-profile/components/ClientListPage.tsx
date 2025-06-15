@@ -47,7 +47,7 @@ const ClientCard = ({ client, onQuickView, onArchive }: ClientCardProps) => {
                 Quick View
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/support-work/client-profile?clientId=${client.clientId}`}>
+                <Link href={`/support-work/client-profile/${client.id}`}>
                   <User className="mr-2 h-4 w-4" />
                   Full Profile
                 </Link>
