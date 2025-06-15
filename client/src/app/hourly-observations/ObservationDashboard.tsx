@@ -33,13 +33,13 @@ const observationSchema = z.object({
   intensity: z.number().min(1).max(5).optional(),
   timestamp: z.date({ required_error: "Please select a date and time" })
 }).refine((data) => {
-  // Make subtype required for behaviour and ADL observations
-  if ((data.observationType === "behaviour" || data.observationType === "adl") && (!data.subtype || data.subtype.trim() === "")) {
+  // Make subtype required for all observation types
+  if (!data.subtype || data.subtype.trim() === "") {
     return false;
   }
   return true;
 }, {
-  message: "Subtype is required for behaviour and ADL observations",
+  message: "Subtype is required for all observations",
   path: ["subtype"]
 }).refine((data) => {
   // Make intensity required for behaviour observations
@@ -78,6 +78,35 @@ const adlSubtypes = [
   "Dressing/Grooming",
   "Transportation",
   "Shopping/Errands"
+];
+
+// Health subtypes for health-related observations
+const healthSubtypes = [
+  "Eating/Nutrition",
+  "Sleep",
+  "Hygiene", 
+  "Mobility",
+  "Communication"
+];
+
+// Social subtypes for social interaction observations
+const socialSubtypes = [
+  "Peer Interaction",
+  "Staff Interaction",
+  "Family Contact",
+  "Community Participation",
+  "Social Skills",
+  "Isolation"
+];
+
+// Communication subtypes for communication observations
+const communicationSubtypes = [
+  "Verbal Communication",
+  "Non-verbal Cues",
+  "Technology Use",
+  "Sign Language",
+  "Written Communication",
+  "Understanding"
 ];
 
 type ObservationFormData = z.infer<typeof observationSchema>;
