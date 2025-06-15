@@ -21,14 +21,17 @@ interface ClientProfilePageProps {
 
 function ClientProfilePageInner({ clientId: propClientId, companyId: propCompanyId }: ClientProfilePageProps) {
   const params = useParams();
-  const clientId = propClientId || params.clientId;
+  // Try multiple parameter extraction methods
+  const routeClientId = params.clientId || params.id;
+  // Also try extracting from URL directly as fallback
+  const urlClientId = window.location.pathname.split('/').pop();
+  const clientId = propClientId || routeClientId || (urlClientId !== 'client-profile' ? urlClientId : null);
   const companyId = propCompanyId || "1";
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Debug parameter extraction
   console.log("ClientProfilePage - Route params:", params);
-  console.log("ClientProfilePage - Extracted clientId:", clientId);
-  console.log("ClientProfilePage - Current URL:", window.location.pathname);
+  console.log("ClientProfilePage - URL extracted ID:", urlClientId);
+  console.log("ClientProfilePage - Final clientId:", clientId);
 
 
 
