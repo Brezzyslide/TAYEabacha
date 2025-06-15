@@ -136,9 +136,9 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
                   name="ndisNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>NDIS Number *</FormLabel>
+                      <FormLabel>NDIS Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., NDIS-2024-001" {...field} />
+                        <Input placeholder="e.g., 43000012345 (optional)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

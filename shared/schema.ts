@@ -46,7 +46,7 @@ export const clients = pgTable("clients", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   fullName: text("full_name").notNull(),
-  ndisNumber: text("ndis_number").notNull(),
+  ndisNumber: text("ndis_number"),
   dateOfBirth: timestamp("date_of_birth").notNull(),
   address: text("address"),
   emergencyContactName: text("emergency_contact_name"),
@@ -666,7 +666,7 @@ export const insertClientSchema = createInsertSchema(clients).omit({
 }).extend({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  ndisNumber: z.string().min(1, "NDIS number is required"),
+  ndisNumber: z.string().optional(),
   dateOfBirth: z.date({ required_error: "Date of birth is required" }),
 });
 
