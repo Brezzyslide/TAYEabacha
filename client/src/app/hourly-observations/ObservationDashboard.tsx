@@ -225,7 +225,7 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Observation</DialogTitle>
         </DialogHeader>
