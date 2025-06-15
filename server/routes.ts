@@ -1495,6 +1495,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get staff directory (filtered by tenant)
+  app.get("/api/staff", requireAuth, async (req: any, res) => {
+    try {
+      const users = await storage.getUsersByTenant(req.user.tenantId);
+      
+      // Return staff info using available User schema fields
+      const staffData = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt
+      }));
+      
+      res.json(staffData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
+  // Create staff member (Admin/ConsoleManager only)
+  app.post("/api/users", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { username, email, password, role, firstName, lastName, isActive } = req.body;
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Check if email already exists by getting all users in tenant
+      const allUsers = await storage.getUsersByTenant(req.user.tenantId);
+      const existingEmail = allUsers.find(user => user.email === email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Create user data using existing User schema
+      const userData = {
+        username,
+        email: email || null,
+        password: hashedPassword,
+        role,
+        fullName: `${firstName} ${lastName}`,
+        isActive: isActive !== undefined ? isActive : true,
+        tenantId: req.user.tenantId,
+        isFirstLogin: true,
+      };
+
+      const newUser = await storage.createUser(userData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_staff",
+        resourceType: "user",
+        resourceId: newUser.id,
+        description: `Created staff member: ${newUser.fullName} (${newUser.role})`,
+        tenantId: req.user.tenantId,
+      });
+
+      // Return user without password
+      const { password: _, ...safeUser } = newUser;
+      res.status(201).json(safeUser);
+    } catch (error) {
+      console.error("Create staff error:", error);
+      res.status(500).json({ message: "Failed to create staff member" });
+    }
+  });
+
   // Medication Records API
   app.get("/api/clients/:clientId/medication-records", requireAuth, async (req: any, res) => {
     try {
