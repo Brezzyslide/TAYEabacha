@@ -1500,12 +1500,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/clients/:clientId/medication-records", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
-      const recordData = insertMedicationRecordSchema.parse({
+      const recordData = {
         ...req.body,
         clientId,
         administeredBy: req.user.id,
         tenantId: req.user.tenantId,
-      });
+        // Map status to result for backward compatibility
+        result: req.body.status?.toLowerCase() || "administered",
+        // Map dateTime to actualTime for database compatibility
+        actualTime: req.body.dateTime ? new Date(req.body.dateTime) : new Date(),
+      };
 
       const record = await storage.createMedicationRecord(recordData);
       
@@ -1514,13 +1518,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: "create_medication_record",
         resourceType: "medication_record",
         resourceId: record.id,
-        description: `Recorded medication administration: ${record.result}`,
+        description: `Recorded medication administration: ${record.medicationName} - ${record.status || record.result}`,
         tenantId: req.user.tenantId,
       });
 
       res.json(record);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create medication record" });
+      console.error("Create medication record error:", error);
+      res.status(500).json({ message: "Failed to create medication record", error: error.message });
     }
   });
 
