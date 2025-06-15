@@ -88,6 +88,55 @@ export default function MedicationDashboard() {
     },
   });
 
+  // Calculate compliance metrics
+  const getComplianceMetrics = () => {
+    if (!medicationRecords || medicationRecords.length === 0) return [];
+    
+    const metricsMap = new Map();
+    
+    medicationRecords.forEach((record: any) => {
+      const planId = record.medicationPlanId;
+      const plan = medicationPlans.find((p: any) => p.id === planId);
+      
+      if (!plan) return;
+      
+      const key = planId;
+      if (!metricsMap.has(key)) {
+        metricsMap.set(key, {
+          planId,
+          medicationName: plan.medicationName,
+          clientId: plan.clientId,
+          administeredCount: 0,
+          refusedCount: 0,
+          missedCount: 0,
+          totalRecords: 0
+        });
+      }
+      
+      const metric = metricsMap.get(key);
+      metric.totalRecords++;
+      
+      if (record.result === 'Given') {
+        metric.administeredCount++;
+      } else if (record.result === 'Refused') {
+        metric.refusedCount++;
+      } else if (record.result === 'Missed') {
+        metric.missedCount++;
+      }
+    });
+    
+    return Array.from(metricsMap.values());
+  };
+
+  const complianceMetrics = getComplianceMetrics();
+  
+  // Calculate totals for organizational view
+  const totalAdministered = complianceMetrics.reduce((sum, m) => sum + m.administeredCount, 0);
+  const totalRefused = complianceMetrics.reduce((sum, m) => sum + m.refusedCount, 0);
+  const totalMissed = complianceMetrics.reduce((sum, m) => sum + m.missedCount, 0);
+  const totalRecords = complianceMetrics.reduce((sum, m) => sum + m.totalRecords, 0);
+  const overallCompliance = totalRecords > 0 ? Math.round((totalAdministered / totalRecords) * 100) : 0;
+
   // Fetch clients
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
@@ -155,68 +204,57 @@ export default function MedicationDashboard() {
             </Button>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Pill className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Active Plans</p>
-                    <p className="text-2xl font-bold">{medicationPlans.filter((p: MedicationPlan) => p.isActive).length}</p>
+          {/* Organizational Compliance Summary */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Organizational Medication Compliance Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                  <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-3xl font-bold text-blue-600">{medicationPlans.length}</p>
+                    <p className="text-sm text-gray-600">Total Plans</p>
+                    <p className="text-xs text-gray-500">Active & Inactive</p>
+                  </div>
+                  <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-3xl font-bold text-green-600">{totalAdministered}</p>
+                    <p className="text-sm text-gray-600">Successful</p>
+                    <p className="text-xs text-gray-500">{totalRecords > 0 ? Math.round((totalAdministered / totalRecords) * 100) : 0}%</p>
+                  </div>
+                  <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-3xl font-bold text-red-600">{totalRefused}</p>
+                    <p className="text-sm text-gray-600">Refused</p>
+                    <p className="text-xs text-gray-500">{totalRecords > 0 ? Math.round((totalRefused / totalRecords) * 100) : 0}%</p>
+                  </div>
+                  <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-3xl font-bold text-orange-600">{totalMissed}</p>
+                    <p className="text-sm text-gray-600">Missed</p>
+                    <p className="text-xs text-gray-500">{totalRecords > 0 ? Math.round((totalMissed / totalRecords) * 100) : 0}%</p>
+                  </div>
+                  <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-3xl font-bold text-purple-600">{totalRecords}</p>
+                    <p className="text-sm text-gray-600">Total Records</p>
+                    <p className="text-xs text-gray-500">All Administrations</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Given Today</p>
-                    <p className="text-2xl font-bold">
-                      {medicationRecords.filter((r: MedicationRecord) => 
-                        r.result === 'Given' && 
-                        format(new Date(r.createdAt), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-                      ).length}
-                    </p>
+                
+                {/* Overall Progress Bar */}
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">Overall Organizational Compliance</span>
+                    <span className="text-sm font-bold">{overallCompliance}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className={`h-3 rounded-full ${overallCompliance >= 80 ? 'bg-green-500' : overallCompliance >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                      style={{ width: `${overallCompliance}%` }}
+                    ></div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Missed Today</p>
-                    <p className="text-2xl font-bold">
-                      {medicationRecords.filter((r: MedicationRecord) => 
-                        r.result === 'Missed' && 
-                        format(new Date(r.createdAt), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-                      ).length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Pending</p>
-                    <p className="text-2xl font-bold">
-                      {medicationRecords.filter((r: MedicationRecord) => r.result === 'Pending').length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Filters */}
           <div className="flex flex-wrap gap-4 items-center">
@@ -264,6 +302,7 @@ export default function MedicationDashboard() {
             <TabsList>
               <TabsTrigger value="plans">Medication Plans</TabsTrigger>
               <TabsTrigger value="records">Administration Records</TabsTrigger>
+              <TabsTrigger value="compliance">Compliance Analytics</TabsTrigger>
               <TabsTrigger value="schedule">Record Administration</TabsTrigger>
             </TabsList>
 
@@ -376,6 +415,196 @@ export default function MedicationDashboard() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="compliance" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Medication Compliance Analytics</CardTitle>
+                  <p className="text-sm text-gray-600">
+                    {searchTerm || clientFilter !== 'all' ? 
+                      'Filtered compliance analytics - showing client-specific metrics' : 
+                      'Organizational-wide medication compliance overview'}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {complianceMetrics.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No compliance data available</p>
+                      <p className="text-sm">Administration records will appear here after medication administration</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Filter-specific summary */}
+                      {(searchTerm || clientFilter !== 'all') && (
+                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                          <h3 className="text-lg font-semibold mb-3 text-blue-800">
+                            Filtered Results - Client-Specific Analytics
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <p className="text-2xl font-bold text-green-600">
+                                {complianceMetrics
+                                  .filter(m => {
+                                    const client = clients.find((c: Client) => c.id === m.clientId);
+                                    const clientName = client ? `${client.firstName} ${client.lastName}` : '';
+                                    const matchesSearch = !searchTerm || 
+                                      m.medicationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                                    const matchesClient = clientFilter === 'all' || m.clientId.toString() === clientFilter;
+                                    return matchesSearch && matchesClient;
+                                  })
+                                  .reduce((sum, m) => sum + m.administeredCount, 0)}
+                              </p>
+                              <p className="text-xs text-green-600">Successful</p>
+                            </div>
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <p className="text-2xl font-bold text-red-600">
+                                {complianceMetrics
+                                  .filter(m => {
+                                    const client = clients.find((c: Client) => c.id === m.clientId);
+                                    const clientName = client ? `${client.firstName} ${client.lastName}` : '';
+                                    const matchesSearch = !searchTerm || 
+                                      m.medicationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                                    const matchesClient = clientFilter === 'all' || m.clientId.toString() === clientFilter;
+                                    return matchesSearch && matchesClient;
+                                  })
+                                  .reduce((sum, m) => sum + m.refusedCount, 0)}
+                              </p>
+                              <p className="text-xs text-red-600">Refused</p>
+                            </div>
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <p className="text-2xl font-bold text-orange-600">
+                                {complianceMetrics
+                                  .filter(m => {
+                                    const client = clients.find((c: Client) => c.id === m.clientId);
+                                    const clientName = client ? `${client.firstName} ${client.lastName}` : '';
+                                    const matchesSearch = !searchTerm || 
+                                      m.medicationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                                    const matchesClient = clientFilter === 'all' || m.clientId.toString() === clientFilter;
+                                    return matchesSearch && matchesClient;
+                                  })
+                                  .reduce((sum, m) => sum + m.missedCount, 0)}
+                              </p>
+                              <p className="text-xs text-orange-600">Missed</p>
+                            </div>
+                            <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                              <p className="text-2xl font-bold text-purple-600">
+                                {complianceMetrics
+                                  .filter(m => {
+                                    const client = clients.find((c: Client) => c.id === m.clientId);
+                                    const clientName = client ? `${client.firstName} ${client.lastName}` : '';
+                                    const matchesSearch = !searchTerm || 
+                                      m.medicationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                                    const matchesClient = clientFilter === 'all' || m.clientId.toString() === clientFilter;
+                                    return matchesSearch && matchesClient;
+                                  })
+                                  .reduce((sum, m) => sum + m.totalRecords, 0)}
+                              </p>
+                              <p className="text-xs text-purple-600">Total</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Individual Medication Analytics */}
+                      <div className="space-y-4">
+                        {complianceMetrics
+                          .filter(metric => {
+                            const client = clients.find((c: Client) => c.id === metric.clientId);
+                            const clientName = client ? `${client.firstName} ${client.lastName}` : '';
+                            const matchesSearch = !searchTerm || 
+                              metric.medicationName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                            const matchesClient = clientFilter === 'all' || metric.clientId.toString() === clientFilter;
+                            return matchesSearch && matchesClient;
+                          })
+                          .map((metric: any) => {
+                            const successRate = metric.totalRecords > 0 ? Math.round((metric.administeredCount / metric.totalRecords) * 100) : 0;
+                            const refusedRate = metric.totalRecords > 0 ? Math.round((metric.refusedCount / metric.totalRecords) * 100) : 0;
+                            const missedRate = metric.totalRecords > 0 ? Math.round((metric.missedCount / metric.totalRecords) * 100) : 0;
+                            const client = clients.find((c: Client) => c.id === metric.clientId);
+                            const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown Client';
+                            
+                            return (
+                              <div key={metric.planId} className="border rounded-lg p-4">
+                                <div className="flex justify-between items-center mb-3">
+                                  <div>
+                                    <span className="font-medium text-lg">{metric.medicationName}</span>
+                                    <p className="text-sm text-gray-600">Client: {clientName}</p>
+                                  </div>
+                                  <Badge variant={successRate >= 80 ? 'default' : 'destructive'}>
+                                    {successRate}% Success Rate
+                                  </Badge>
+                                </div>
+                                
+                                {/* Visual Progress Bars */}
+                                <div className="space-y-2 mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-green-600 w-16">Success:</span>
+                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className="h-2 rounded-full bg-green-500"
+                                        style={{ width: `${successRate}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs text-green-600 w-8">{successRate}%</span>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-red-600 w-16">Refused:</span>
+                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className="h-2 rounded-full bg-red-500"
+                                        style={{ width: `${refusedRate}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs text-red-600 w-8">{refusedRate}%</span>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-orange-600 w-16">Missed:</span>
+                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className="h-2 rounded-full bg-orange-500"
+                                        style={{ width: `${missedRate}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs text-orange-600 w-8">{missedRate}%</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Detailed Numbers */}
+                                <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                                  <div className="bg-green-50 rounded p-2">
+                                    <p className="font-bold text-green-600">{metric.administeredCount}</p>
+                                    <p className="text-green-600">Successful</p>
+                                  </div>
+                                  <div className="bg-red-50 rounded p-2">
+                                    <p className="font-bold text-red-600">{metric.refusedCount}</p>
+                                    <p className="text-red-600">Refused</p>
+                                  </div>
+                                  <div className="bg-orange-50 rounded p-2">
+                                    <p className="font-bold text-orange-600">{metric.missedCount}</p>
+                                    <p className="text-orange-600">Missed</p>
+                                  </div>
+                                  <div className="bg-blue-50 rounded p-2">
+                                    <p className="font-bold text-blue-600">{metric.totalRecords}</p>
+                                    <p className="text-blue-600">Total</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
                     </div>
                   )}
                 </CardContent>
