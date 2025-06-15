@@ -110,12 +110,30 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   const createMutation = useMutation({
     mutationFn: async (data: ObservationFormData) => {
+      // Clean the data to match server expectations
+      const cleanData = {
+        clientId: data.clientId,
+        observationType: data.observationType,
+        subtype: data.subtype || null,
+        notes: data.notes,
+        intensity: data.intensity || null,
+        timestamp: data.timestamp.toISOString(),
+      };
+      
+      console.log("Sending observation data:", cleanData);
+      
       const response = await fetch("/api/observations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(cleanData),
       });
-      if (!response.ok) throw new Error("Failed to create observation");
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server response error:", errorData);
+        throw new Error(errorData.message || "Failed to create observation");
+      }
+      
       return response.json();
     },
     onSuccess: () => {
