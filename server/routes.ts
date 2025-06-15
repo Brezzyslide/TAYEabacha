@@ -865,6 +865,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/case-notes", requireAuth, async (req: any, res) => {
+    try {
+      const caseNoteData = {
+        ...req.body,
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+      };
+      
+      const caseNote = await storage.createCaseNote(caseNoteData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_case_note",
+        resourceType: "case_note",
+        resourceId: caseNote.id,
+        description: `Created case note: ${caseNote.title}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(caseNote);
+    } catch (error) {
+      console.error("Case note creation error:", error);
+      res.status(500).json({ message: "Failed to create case note" });
+    }
+  });
+
   app.get("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
