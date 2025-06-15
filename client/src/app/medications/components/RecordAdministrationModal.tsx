@@ -138,9 +138,15 @@ export default function RecordAdministrationModal({
   // Create medication record mutation
   const createRecordMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/medication-records", data);
+      if (!clientId) {
+        throw new Error("Client ID is required for medication record creation");
+      }
+      return await apiRequest("POST", `/api/clients/${clientId}/medication-records`, data);
     },
     onSuccess: () => {
+      // Invalidate both client-specific and general queries
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "medication-records"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "medication-plans"] });
       queryClient.invalidateQueries({ queryKey: ["/api/medication-records"] });
       queryClient.invalidateQueries({ queryKey: ["/api/medication-plans"] });
       toast({
