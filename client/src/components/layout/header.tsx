@@ -50,13 +50,13 @@ export default function Header() {
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 overflow-x-auto scrollbar-hide pb-2 min-w-0">
           {/* Dashboard Button */}
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleDashboard}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 flex-shrink-0"
           >
             <Home className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -68,7 +68,7 @@ export default function Header() {
             size="sm"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
-            className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50"
+            className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
           >
             <LogOut className="h-4 w-4" />
             <span>
@@ -77,13 +77,13 @@ export default function Header() {
           </Button>
           
           {/* Location Status */}
-          <div className="hidden md:flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
+          <div className="hidden md:flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm flex-shrink-0">
             <MapPin className="h-4 w-4" />
             <span>Location Verified</span>
           </div>
           
           {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative">
+          <Button variant="ghost" size="sm" className="relative flex-shrink-0">
             <Bell className="h-5 w-5 text-gray-500" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
               3
@@ -93,7 +93,7 @@ export default function Header() {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900">
+              <Button variant="ghost" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900 flex-shrink-0">
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
                   {userInitials}
                 </div>
