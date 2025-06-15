@@ -68,7 +68,7 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
   });
 
   const createClientMutation = useMutation({
-    mutationFn: (data: CreateClientFormData) => {
+    mutationFn: (data: any) => {
       // Server will add tenantId and createdBy from auth context
       return apiRequest("POST", "/api/clients", data);
     },
@@ -93,10 +93,12 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
   const onSubmit = async (data: CreateClientFormData) => {
     setIsSubmitting(true);
     try {
-      // Prepare data for server - convert empty strings to null for optional fields
+      // Prepare data for server - convert empty strings to null for database
       const submissionData = {
-        ...data,
-        dateOfBirth: new Date(data.dateOfBirth),
+        firstName: data.firstName,
+        lastName: data.lastName,
+        ndisNumber: data.ndisNumber,
+        dateOfBirth: data.dateOfBirth, // Already a Date object from the input handler
         address: data.address || null,
         emergencyContactName: data.emergencyContactName || null,
         emergencyContactPhone: data.emergencyContactPhone || null,
@@ -105,6 +107,8 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
         likesPreferences: data.likesPreferences || null,
         dislikesAversions: data.dislikesAversions || null,
         allergiesMedicalAlerts: data.allergiesMedicalAlerts || null,
+        companyId: data.companyId,
+        isActive: data.isActive,
       };
       console.log("Submitting client data:", submissionData);
       await createClientMutation.mutateAsync(submissionData);
@@ -181,39 +185,25 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
                   control={form.control}
                   name="dateOfBirth"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem>
                       <FormLabel>Date of Birth *</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <Calendar className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
+                      <FormControl>
+                        <Input
+                          type="date"
+                          value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              // Create a new Date object from the input value
+                              const newDate = new Date(e.target.value + "T00:00:00.000Z");
+                              field.onChange(newDate);
+                            } else {
+                              field.onChange(undefined);
                             }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                          }}
+                          max={format(new Date(), "yyyy-MM-dd")}
+                          min="1920-01-01"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
