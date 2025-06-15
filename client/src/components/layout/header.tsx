@@ -71,7 +71,7 @@ export default function Header() {
             className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50"
           >
             <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">
+            <span>
               {logoutMutation.isPending ? "Logging out..." : "Logout"}
             </span>
           </Button>

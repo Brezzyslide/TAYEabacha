@@ -153,6 +153,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 15, 2025. Fixed medication analytics data mapping issue - corrected organizational dashboard to recognize actual database values ("administered", "missed", "refused") instead of incorrect values ("Given", "Refused", "Missed"), ensuring all existing medication records are properly reflected in compliance calculations across both client profile and organizational dashboards
 - June 15, 2025. Fixed client profile schedules tab showing all organizational shifts instead of client-specific data - updated shifts API endpoint to properly filter by clientId parameter, ensuring schedules tab displays only shifts assigned to the specific client being viewed
 - June 15, 2025. Completely resolved duplicate sidebar issue across all components - removed redundant Sidebar and Header imports from Dashboard, Support Work page, and ClientProfileDashboard components, ensuring all layout rendering is handled exclusively by the centralized ProtectedRoute component for consistent navigation experience throughout the entire application
+- June 15, 2025. Enhanced logout button visibility by removing responsive hiding class, ensuring logout functionality is always visible in header navigation across all screen sizes for improved user experience
 
 ## User Preferences
 
