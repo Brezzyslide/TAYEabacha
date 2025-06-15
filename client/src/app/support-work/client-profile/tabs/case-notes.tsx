@@ -87,7 +87,11 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
       return response;
     },
     onSuccess: () => {
+      // Invalidate both client-specific and general case notes
       queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId, "case-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/case-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      
       toast({
         title: "Case Note Created",
         description: "Your case note has been saved successfully.",

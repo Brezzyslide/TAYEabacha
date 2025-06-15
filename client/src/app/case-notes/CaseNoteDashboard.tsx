@@ -50,8 +50,11 @@ export default function CaseNoteDashboard() {
       });
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      // Invalidate both general case notes and client-specific queries
       queryClient.invalidateQueries({ queryKey: ["/api/case-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      
       toast({
         title: "Case Note Created",
         description: "Your case note has been created successfully.",
