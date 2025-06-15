@@ -8,10 +8,27 @@ interface SchedulesTabProps {
 }
 
 export default function SchedulesTab({ clientId, companyId }: SchedulesTabProps) {
+  // Handle missing clientId
+  if (!clientId) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Client ID Missing</h3>
+          <p className="text-gray-600">Client ID is missing from URL.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Fetch shifts for this client
-  const { data: shifts = [], isLoading } = useQuery({
+  const { data: shifts = [], isLoading, error } = useQuery({
     queryKey: ["/api/shifts", { clientId }],
-    queryFn: () => fetch(`/api/shifts?clientId=${clientId}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/shifts?clientId=${clientId}`).then(res => {
+      if (!res.ok) throw new Error('Failed to fetch shifts');
+      return res.json();
+    }),
+    enabled: !!clientId,
   });
 
   if (isLoading) {

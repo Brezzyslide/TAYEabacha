@@ -8,10 +8,27 @@ interface ObservationsTabProps {
 }
 
 export default function ObservationsTab({ clientId, companyId }: ObservationsTabProps) {
+  // Handle missing clientId
+  if (!clientId) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Client ID Missing</h3>
+          <p className="text-gray-600">Client ID is missing from URL.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Fetch hourly observations for this client
-  const { data: observations = [], isLoading } = useQuery({
+  const { data: observations = [], isLoading, error } = useQuery({
     queryKey: ["/api/hourly-observations", { clientId }],
-    queryFn: () => fetch(`/api/hourly-observations?clientId=${clientId}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/hourly-observations?clientId=${clientId}`).then(res => {
+      if (!res.ok) throw new Error('Failed to fetch observations');
+      return res.json();
+    }),
+    enabled: !!clientId,
   });
 
   if (isLoading) {

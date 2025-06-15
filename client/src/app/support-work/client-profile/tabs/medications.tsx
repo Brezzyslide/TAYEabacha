@@ -8,16 +8,37 @@ interface MedicationsTabProps {
 }
 
 export default function MedicationsTab({ clientId, companyId }: MedicationsTabProps) {
+  // Handle missing clientId
+  if (!clientId) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Pill className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Client ID Missing</h3>
+          <p className="text-gray-600">Client ID is missing from URL.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Fetch medication plans for this client
-  const { data: medicationPlans = [], isLoading } = useQuery({
+  const { data: medicationPlans = [], isLoading, error } = useQuery({
     queryKey: ["/api/medication-plans", { clientId }],
-    queryFn: () => fetch(`/api/medication-plans?clientId=${clientId}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/medication-plans?clientId=${clientId}`).then(res => {
+      if (!res.ok) throw new Error('Failed to fetch medication plans');
+      return res.json();
+    }),
+    enabled: !!clientId,
   });
 
   // Fetch medication records for this client
   const { data: medicationRecords = [] } = useQuery({
     queryKey: ["/api/medication-records", { clientId }],
-    queryFn: () => fetch(`/api/medication-records?clientId=${clientId}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/medication-records?clientId=${clientId}`).then(res => {
+      if (!res.ok) throw new Error('Failed to fetch medication records');
+      return res.json();
+    }),
+    enabled: !!clientId,
   });
 
   if (isLoading) {

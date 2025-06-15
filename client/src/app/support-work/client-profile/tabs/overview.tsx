@@ -8,10 +8,26 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ clientId, companyId }: OverviewTabProps) {
+  // Handle missing clientId
+  if (!clientId) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Client ID Missing</h3>
+          <p className="text-gray-600">Client ID is missing from URL.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Fetch client details
-  const { data: client, isLoading } = useQuery({
+  const { data: client, isLoading, error } = useQuery({
     queryKey: ["/api/clients", clientId],
-    queryFn: () => fetch(`/api/clients/${clientId}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/clients/${clientId}`).then(res => {
+      if (!res.ok) throw new Error('Failed to fetch client');
+      return res.json();
+    }),
     enabled: !!clientId,
   });
 
@@ -26,7 +42,7 @@ export default function OverviewTab({ clientId, companyId }: OverviewTabProps) {
     );
   }
 
-  if (!client) {
+  if (error || !client) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
