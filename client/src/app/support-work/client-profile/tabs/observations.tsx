@@ -2,11 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 
 interface ObservationsTabProps {
-  clientId: number;
-  clientName: string;
+  clientId: string;
+  companyId: string;
 }
 
-export default function ObservationsTab({ clientId, clientName }: ObservationsTabProps) {
+export default function ObservationsTab({ clientId, companyId }: ObservationsTabProps) {
   return (
     <div className="space-y-6">
       <Card>
