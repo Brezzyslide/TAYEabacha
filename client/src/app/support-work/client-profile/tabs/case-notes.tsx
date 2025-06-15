@@ -65,8 +65,10 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
 
   // Fetch all case notes and filter by client
   const { data: allCaseNotes = [], isLoading } = useQuery({
-    queryKey: ["/api/case-notes"],
+    queryKey: ["/api/case-notes", Date.now()],
     enabled: !!user && !!clientId && canViewCaseNotes,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   // Fetch client data
