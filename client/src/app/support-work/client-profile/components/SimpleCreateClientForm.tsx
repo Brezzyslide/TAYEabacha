@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -23,6 +24,11 @@ const createClientSchema = z.object({
   address: z.string().optional(),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
+  primaryDiagnosis: z.string().optional(),
+  ndisGoals: z.string().optional(),
+  likesPreferences: z.string().optional(),
+  dislikesAversions: z.string().optional(),
+  allergiesMedicalAlerts: z.string().optional(),
 });
 
 type CreateClientFormData = z.infer<typeof createClientSchema>;
@@ -47,6 +53,11 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
       address: "",
       emergencyContactName: "",
       emergencyContactPhone: "",
+      primaryDiagnosis: "",
+      ndisGoals: "",
+      likesPreferences: "",
+      dislikesAversions: "",
+      allergiesMedicalAlerts: "",
     },
   });
 
@@ -58,11 +69,6 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
         companyId: "COMP001",
         createdBy: 1,
         isActive: true,
-        ndisGoals: "",
-        likesPreferences: "",
-        dislikesAversions: "",
-        allergiesMedicalAlerts: "",
-        primaryDiagnosis: "",
       };
       return apiRequest("/api/clients", "POST", payload);
     },
@@ -244,6 +250,113 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="primaryDiagnosis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Primary Diagnosis</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter primary diagnosis" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>NDIS Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="ndisGoals"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NDIS Goals</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter NDIS goals and objectives" 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Care Preferences</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="likesPreferences"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Likes & Preferences</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter client's likes, preferences, and things they enjoy" 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dislikesAversions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dislikes & Aversions</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter client's dislikes, aversions, and things to avoid" 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Medical Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="allergiesMedicalAlerts"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Allergies & Medical Alerts</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter allergies, medical alerts, and important medical information" 
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
