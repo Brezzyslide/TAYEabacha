@@ -189,26 +189,12 @@ export default function MessageDashboard() {
 
   if (messagesLoading) {
     return (
-      <div className="min-h-screen flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <UniversalHeader />
-          <main className="flex-1 p-6">
-            <div className="text-center py-12">Loading messages...</div>
-          </main>
-        </div>
-      </div>
+      <div className="text-center py-12">Loading messages...</div>
     );
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col">
-        <UniversalHeader />
-        
-        <main className="flex-1 p-6 space-y-6">
+    <div className="space-y-6">
           {/* Header */}
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
@@ -390,43 +376,41 @@ export default function MessageDashboard() {
               </Card>
             </TabsContent>
           </Tabs>
-        </main>
-      </div>
 
-      {/* Modals */}
-      <ComposeMessageModal
-        isOpen={isComposeModalOpen}
-        onClose={() => setIsComposeModalOpen(false)}
-        users={users}
-      />
-
-      {selectedMessage && (
-        <>
-          <ViewMessageModal
-            isOpen={isViewModalOpen}
-            onClose={() => {
-              setIsViewModalOpen(false);
-              setSelectedMessage(null);
-            }}
-            message={selectedMessage}
-            senderName={getSenderName(selectedMessage.senderId)}
-            onReply={() => {
-              setIsViewModalOpen(false);
-              setIsReplyModalOpen(true);
-            }}
-          />
-
-          <ReplyModal
-            isOpen={isReplyModalOpen}
-            onClose={() => {
-              setIsReplyModalOpen(false);
-              setSelectedMessage(null);
-            }}
-            originalMessage={selectedMessage}
+          {/* Modals */}
+          <ComposeMessageModal
+            isOpen={isComposeModalOpen}
+            onClose={() => setIsComposeModalOpen(false)}
             users={users}
           />
-        </>
-      )}
+
+          {selectedMessage && (
+            <>
+              <ViewMessageModal
+                isOpen={isViewModalOpen}
+                onClose={() => {
+                  setIsViewModalOpen(false);
+                  setSelectedMessage(null);
+                }}
+                message={selectedMessage}
+                senderName={getSenderName(selectedMessage.senderId)}
+                onReply={() => {
+                  setIsViewModalOpen(false);
+                  setIsReplyModalOpen(true);
+                }}
+              />
+
+              <ReplyModal
+                isOpen={isReplyModalOpen}
+                onClose={() => {
+                  setIsReplyModalOpen(false);
+                  setSelectedMessage(null);
+                }}
+                originalMessage={selectedMessage}
+                users={users}
+              />
+            </>
+          )}
     </div>
   );
 }
