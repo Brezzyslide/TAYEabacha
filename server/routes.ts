@@ -1565,7 +1565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return user without password
       const { password: _, ...safeUser } = newUser;
       res.status(201).json(safeUser);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Create staff error:", error);
       res.status(500).json({ message: "Failed to create staff member" });
     }
@@ -1628,7 +1628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(record);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Create medication record error:", error);
       res.status(500).json({ message: "Failed to create medication record", error: error.message });
     }

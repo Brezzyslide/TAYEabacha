@@ -128,6 +128,9 @@ export default function Staff() {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Create New Staff Member</DialogTitle>
+              <DialogDescription>
+                Add a new team member to your organization with their credentials and role assignment.
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
