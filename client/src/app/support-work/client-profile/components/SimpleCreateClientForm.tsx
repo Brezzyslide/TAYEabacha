@@ -17,8 +17,23 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
-// Use the server schema for proper validation
-const clientFormSchema = insertClientSchema.omit({ tenantId: true, createdBy: true });
+// Create a custom form schema that handles nullable fields properly
+const clientFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  ndisNumber: z.string().min(1, "NDIS number is required"),
+  dateOfBirth: z.date(),
+  address: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+  primaryDiagnosis: z.string().optional(),
+  ndisGoals: z.string().optional(),
+  likesPreferences: z.string().optional(),
+  dislikesAversions: z.string().optional(),
+  allergiesMedicalAlerts: z.string().optional(),
+  companyId: z.string(),
+  isActive: z.boolean(),
+});
 
 type CreateClientFormData = z.infer<typeof clientFormSchema>;
 
@@ -39,14 +54,14 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
       lastName: "",
       ndisNumber: "",
       dateOfBirth: new Date(),
-      address: null,
-      emergencyContactName: null,
-      emergencyContactPhone: null,
-      primaryDiagnosis: null,
-      ndisGoals: null,
-      likesPreferences: null,
-      dislikesAversions: null,
-      allergiesMedicalAlerts: null,
+      address: "",
+      emergencyContactName: "",
+      emergencyContactPhone: "",
+      primaryDiagnosis: "",
+      ndisGoals: "",
+      likesPreferences: "",
+      dislikesAversions: "",
+      allergiesMedicalAlerts: "",
       companyId: "COMP001",
       isActive: true,
     },
@@ -78,8 +93,21 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
   const onSubmit = async (data: CreateClientFormData) => {
     setIsSubmitting(true);
     try {
-      console.log("Submitting client data:", data);
-      await createClientMutation.mutateAsync(data);
+      // Prepare data for server - convert empty strings to null for optional fields
+      const submissionData = {
+        ...data,
+        dateOfBirth: new Date(data.dateOfBirth),
+        address: data.address || null,
+        emergencyContactName: data.emergencyContactName || null,
+        emergencyContactPhone: data.emergencyContactPhone || null,
+        primaryDiagnosis: data.primaryDiagnosis || null,
+        ndisGoals: data.ndisGoals || null,
+        likesPreferences: data.likesPreferences || null,
+        dislikesAversions: data.dislikesAversions || null,
+        allergiesMedicalAlerts: data.allergiesMedicalAlerts || null,
+      };
+      console.log("Submitting client data:", submissionData);
+      await createClientMutation.mutateAsync(submissionData);
     } finally {
       setIsSubmitting(false);
     }
