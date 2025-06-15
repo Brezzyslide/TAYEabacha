@@ -138,7 +138,7 @@ export default function RecordAdministrationModal({
   // Create medication record mutation
   const createRecordMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/medication-records", "POST", data);
+      return await apiRequest("POST", "/api/medication-records", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/medication-records"] });
@@ -266,7 +266,7 @@ export default function RecordAdministrationModal({
           priority: "medium",
         };
         
-        await apiRequest("/api/case-notes", "POST", caseNoteData);
+        await apiRequest("POST", "/api/case-notes", caseNoteData);
       }
 
     } catch (error) {
@@ -435,6 +435,28 @@ export default function RecordAdministrationModal({
                 )}
               />
             </div>
+
+            {/* Administered By */}
+            <FormField
+              control={form.control}
+              name="administeredBy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Administered By *</FormLabel>
+                  <FormControl>
+                    <div className="p-3 bg-gray-50 rounded-md border">
+                      <p className="text-sm font-medium text-gray-900">
+                        {currentUser?.username || 'Loading...'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Current logged in user
+                      </p>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Administration Witnessed */}
             <FormField
