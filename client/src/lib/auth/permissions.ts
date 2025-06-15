@@ -52,11 +52,13 @@ export const permissions: Permission[] = [
 
   // Admin permissions - full company access
   { roleName: "Admin", module: "*", actions: ["*"], scope: "company" },
+  { roleName: "Admin", module: "staff", actions: ["view", "create", "edit", "delete", "reset-password"], scope: "company" },
 
   // ConsoleManager permissions - global system access
   { roleName: "ConsoleManager", module: "*", actions: ["*"], scope: "global" },
   { roleName: "ConsoleManager", module: "companies", actions: ["view", "create", "edit", "delete"], scope: "global" },
   { roleName: "ConsoleManager", module: "tenants", actions: ["view", "create", "edit", "delete"], scope: "global" },
+  { roleName: "ConsoleManager", module: "staff", actions: ["view", "create", "edit", "delete", "reset-password"], scope: "global" },
 ];
 
 /**

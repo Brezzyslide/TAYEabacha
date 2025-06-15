@@ -6,7 +6,7 @@ import { db } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users } = schema;
-import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema } from "@shared/schema";
+import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
@@ -242,6 +242,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sanitizedStaff);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
+  app.put("/api/staff/:id", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const staffId = parseInt(req.params.id);
+      const updateData = insertUserSchema.partial().parse(req.body);
+      
+      const updatedUser = await storage.updateUser(staffId, updateData, req.user.tenantId);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      // Remove sensitive data
+      const { password, ...sanitizedUser } = updatedUser;
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update",
+        resourceType: "user",
+        resourceId: staffId,
+        description: `Updated staff member: ${updatedUser.fullName}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid staff data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update staff member" });
+    }
+  });
+
+  app.post("/api/staff/:id/reset-password", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const staffId = parseInt(req.params.id);
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+      
+      const hashedPassword = await hashPassword(newPassword);
+      const updatedUser = await storage.updateUser(staffId, { password: hashedPassword }, req.user.tenantId);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "reset-password",
+        resourceType: "user",
+        resourceId: staffId,
+        description: `Reset password for staff member: ${updatedUser.fullName}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reset password" });
     }
   });
 
