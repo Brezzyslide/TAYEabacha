@@ -892,127 +892,127 @@ export default function ObservationDashboard() {
             </div>
           </div>
 
-              {/* Second Row - Filters and View Toggle */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex gap-4 items-center">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
-                  </div>
-
-                  <Select value={selectedClient} onValueChange={setSelectedClient}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="All Clients" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Clients</SelectItem>
-                      {(clients as any[]).map((client) => (
-                        <SelectItem key={client.id} value={client.id.toString()}>
-                          {client.fullName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedType} onValueChange={(value: FilterType) => setSelectedType(value)}>
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="behaviour">Behaviour</SelectItem>
-                      <SelectItem value="adl">ADL</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="All Dates" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Dates</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">Past Week</SelectItem>
-                      <SelectItem value="month">Past Month</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* View Toggle */}
-                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === "card" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("card")}
-                    className="flex items-center gap-2"
-                  >
-                    <Grid3X3 className="h-4 w-4" />
-                    Cards
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className="flex items-center gap-2"
-                  >
-                    <List className="h-4 w-4" />
-                    List
-                  </Button>
-                </div>
+          {/* Second Row - Filters and View Toggle */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
               </div>
 
-              {/* Results Summary */}
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="text-sm">
-                  {filteredObservations.length} observation{filteredObservations.length !== 1 ? 's' : ''} found
-                </Badge>
-                {searchTerm && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSearchTerm("")}
-                    className="text-sm text-gray-500 hover:text-gray-700"
-                  >
-                    Clear search
-                  </Button>
-                )}
-              </div>
+              <Select value={selectedClient} onValueChange={setSelectedClient}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clients</SelectItem>
+                  {(clients as any[]).map((client) => (
+                    <SelectItem key={client.id} value={client.id.toString()}>
+                      {client.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedType} onValueChange={(value: FilterType) => setSelectedType(value)}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="behaviour">Behaviour</SelectItem>
+                  <SelectItem value="adl">ADL</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="All Dates" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Dates</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">Past Week</SelectItem>
+                  <SelectItem value="month">Past Month</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Content */}
-            {filteredObservations.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="text-gray-400 mb-4">📝</div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No observations found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {searchTerm || selectedClient !== "all" || selectedType !== "all" || dateFilter !== "all"
-                      ? "Try adjusting your filters or search terms."
-                      : "Get started by creating your first observation."
-                    }
-                  </p>
-                  <Button
-                    onClick={() => setIsFormModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Observation
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : viewMode === "card" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredObservations.map((observation: any) => (
-                  <ObservationCard
-                    key={observation.id}
-                    observation={observation}
-                    clientName={getClientName(observation.clientId)}
-                    onQuickView={handleQuickView}
-                  />
-                ))}
-              </div>
+            {/* View Toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <Button
+                variant={viewMode === "card" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("card")}
+                className="flex items-center gap-2"
+              >
+                <Grid3X3 className="h-4 w-4" />
+                Cards
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="flex items-center gap-2"
+              >
+                <List className="h-4 w-4" />
+                List
+              </Button>
+            </div>
+          </div>
+
+          {/* Results Summary */}
+          <div className="flex items-center gap-4">
+            <Badge variant="outline" className="text-sm">
+              {filteredObservations.length} observation{filteredObservations.length !== 1 ? 's' : ''} found
+            </Badge>
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchTerm("")}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Clear search
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        {filteredObservations.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="text-gray-400 mb-4">📝</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No observations found
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                {searchTerm || selectedClient !== "all" || selectedType !== "all" || dateFilter !== "all"
+                  ? "Try adjusting your filters or search terms."
+                  : "Get started by creating your first observation."
+                }
+              </p>
+              <Button
+                onClick={() => setIsFormModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Observation
+              </Button>
+            </CardContent>
+          </Card>
+        ) : viewMode === "card" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredObservations.map((observation: any) => (
+              <ObservationCard
+                key={observation.id}
+                observation={observation}
+                clientName={getClientName(observation.clientId)}
+                onQuickView={handleQuickView}
+              />
+            ))}
+          </div>
             ) : (
               <Card>
                 <CardHeader>
