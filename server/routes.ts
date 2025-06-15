@@ -2632,6 +2632,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff Management API - Edit staff and password reset
+  app.put("/api/staff/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const staffId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Update user in database
+      const updatedUser = await storage.updateUser(staffId, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_staff",
+        resourceType: "user",
+        resourceId: staffId,
+        description: `Updated staff member: ${updatedUser.username}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Update staff error:", error);
+      res.status(500).json({ message: "Failed to update staff member", error: error.message });
+    }
+  });
+
+  app.post("/api/staff/:id/reset-password", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const staffId = parseInt(req.params.id);
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.trim().length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters" });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword.trim());
+      
+      // Update user password
+      const updatedUser = await storage.updateUser(staffId, { passwordHash: hashedPassword });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "reset_password",
+        resourceType: "user",
+        resourceId: staffId,
+        description: `Reset password for staff member: ${updatedUser.username}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Password reset successfully" });
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password", error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

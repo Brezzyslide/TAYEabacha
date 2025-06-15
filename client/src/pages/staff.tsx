@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { Label } from "@/components/ui/label";
 
 const createStaffSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
@@ -29,6 +30,159 @@ const createStaffSchema = z.object({
 });
 
 type CreateStaffFormData = z.infer<typeof createStaffSchema>;
+
+const editStaffSchema = z.object({
+  username: z.string().min(2, "Username must be at least 2 characters"),
+  email: z.string().email("Invalid email address").optional(),
+  role: z.enum(["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"]),
+  fullName: z.string().min(1, "Full name is required"),
+  phone: z.string().optional(),
+  isActive: z.boolean(),
+});
+
+type EditStaffFormData = z.infer<typeof editStaffSchema>;
+
+// EditStaffForm component
+function EditStaffForm({ 
+  staff, 
+  onSubmit, 
+  isLoading 
+}: { 
+  staff: User; 
+  onSubmit: (data: Partial<User>) => void; 
+  isLoading: boolean;
+}) {
+  const editForm = useForm<EditStaffFormData>({
+    resolver: zodResolver(editStaffSchema),
+    defaultValues: {
+      username: staff.username,
+      email: staff.email || "",
+      role: staff.role as any,
+      fullName: staff.fullName || "",
+      phone: "",
+      isActive: staff.isActive || false,
+    },
+  });
+
+  const handleSubmit = (data: EditStaffFormData) => {
+    onSubmit(data);
+  };
+
+  return (
+    <Form {...editForm}>
+      <form onSubmit={editForm.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={editForm.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={editForm.control}
+          name="fullName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={editForm.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input {...field} type="email" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={editForm.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={editForm.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="SupportWorker">Support Worker</SelectItem>
+                  <SelectItem value="TeamLeader">Team Leader</SelectItem>
+                  <SelectItem value="Coordinator">Coordinator</SelectItem>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="ConsoleManager">Console Manager</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex items-center space-x-2">
+          <FormField
+            control={editForm.control}
+            name="isActive"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4"
+                  />
+                </FormControl>
+                <FormLabel className="text-sm font-normal">
+                  Active Status
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Updating..." : "Update Staff"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
 
 export default function Staff() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -481,6 +635,67 @@ export default function Staff() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Staff Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Staff Member</DialogTitle>
+            <DialogDescription>
+              Update staff member information
+            </DialogDescription>
+          </DialogHeader>
+          {editingStaff && (
+            <EditStaffForm 
+              staff={editingStaff} 
+              onSubmit={handleEditSubmit}
+              isLoading={editStaffMutation.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Reset password for {resetPasswordStaff?.username}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsResetPasswordOpen(false);
+                  setNewPassword("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePasswordReset}
+                disabled={!newPassword.trim() || resetPasswordMutation.isPending}
+              >
+                {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
