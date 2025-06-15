@@ -392,15 +392,13 @@ export default function CaseNoteDashboard() {
       </Tabs>
 
       {/* Create/Edit Modal */}
-      <CaseNoteModal
+      <CreateCaseNoteModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setEditingNote(undefined);
         }}
-        onSubmit={handleSubmit}
-        caseNote={editingNote}
-        userRole={user?.role || "SupportWorker"}
+        onSubmit={createMutation.mutate}
       />
     </div>
   );
