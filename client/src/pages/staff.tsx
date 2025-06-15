@@ -54,7 +54,7 @@ export default function Staff() {
 
   const createStaffMutation = useMutation({
     mutationFn: async (data: CreateStaffFormData) => {
-      return apiRequest("/api/users", "POST", data);
+      return apiRequest("POST", "/api/users", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
