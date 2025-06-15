@@ -1039,7 +1039,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/observations", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const validationResult = insertHourlyObservationSchema.safeParse(req.body);
+      // Prepare data with server-side fields before validation
+      const observationData = {
+        ...req.body,
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+        timestamp: new Date(req.body.timestamp), // Convert string to Date
+      };
+
+      const validationResult = insertHourlyObservationSchema.safeParse(observationData);
       if (!validationResult.success) {
         return res.status(400).json({ 
           message: "Invalid observation data", 
@@ -1047,13 +1055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const observationData = {
-        ...validationResult.data,
-        userId: req.user.id,
-        tenantId: req.user.tenantId,
-      };
-
-      const observation = await storage.createObservation(observationData);
+      const observation = await storage.createObservation(validationResult.data);
       
       // Log activity
       await storage.createActivityLog({

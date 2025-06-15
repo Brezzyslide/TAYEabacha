@@ -22,7 +22,7 @@ import Header from "@/components/layout/header";
 type ViewMode = "card" | "list";
 type FilterType = "all" | "behaviour" | "adl" | "health" | "social" | "communication";
 
-// Observation form schema
+// Observation form schema with conditional validation
 const observationSchema = z.object({
   clientId: z.number({ required_error: "Please select a client" }),
   observationType: z.enum(["behaviour", "adl", "health", "social", "communication"], {
@@ -32,7 +32,39 @@ const observationSchema = z.object({
   notes: z.string().min(10, "Notes must be at least 10 characters long"),
   intensity: z.number().min(1).max(5).optional(),
   timestamp: z.date({ required_error: "Please select a date and time" })
+}).refine((data) => {
+  // Make subtype required for behaviour observations
+  if (data.observationType === "behaviour" && (!data.subtype || data.subtype.trim() === "")) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Subtype is required for behaviour observations",
+  path: ["subtype"]
+}).refine((data) => {
+  // Make intensity required for behaviour observations
+  if (data.observationType === "behaviour" && !data.intensity) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Intensity rating is required for behaviour observations",
+  path: ["intensity"]
 });
+
+// Behaviour subtypes for psychology-related observations
+const behaviourSubtypes = [
+  "Positive Behaviour",
+  "Verbal Aggression", 
+  "Physical Aggression",
+  "Self-Injury",
+  "Property Damage",
+  "Withdrawal/Isolation",
+  "Anxiety/Distress",
+  "Repetitive Behaviour",
+  "Non-Compliance",
+  "Appropriate Social Interaction"
+];
 
 type ObservationFormData = z.infer<typeof observationSchema>;
 
