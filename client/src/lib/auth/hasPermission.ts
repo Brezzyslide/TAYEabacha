@@ -28,50 +28,82 @@ export function hasPermission(
   targetCompanyId?: string,
   targetClientId?: number
 ): boolean {
+  // Debug logging for staff module
+  const isStaffModule = module === "staff" && (action === "edit" || action === "reset-password");
+  
   // Null checks
-  if (!user || !user.role) return false;
+  if (!user || !user.role) {
+    if (isStaffModule) console.log(`[hasPermission] FAIL: No user or role`);
+    return false;
+  }
 
   // Get role definition
   const role = getRoleByName(user.role);
-  if (!role) return false;
+  if (!role) {
+    if (isStaffModule) console.log(`[hasPermission] FAIL: Role not found for ${user.role}`);
+    return false;
+  }
 
   // ConsoleManager has global access
-  if (role.name === "ConsoleManager") return true;
+  if (role.name === "ConsoleManager") {
+    if (isStaffModule) console.log(`[hasPermission] PASS: ConsoleManager global access`);
+    return true;
+  }
 
-  // Company boundary enforcement
-  // ConsoleManager has global access, Admin has full company access
-  if (targetCompanyId && user.companyId !== targetCompanyId) {
-    // Only ConsoleManager can cross company boundaries
+  // Tenant boundary enforcement  
+  // For multi-tenant system, we use tenantId for data isolation
+  // No cross-tenant access allowed except for ConsoleManager
+  if (targetCompanyId && user.tenantId.toString() !== targetCompanyId) {
+    // Only ConsoleManager can cross tenant boundaries
     if (role.name !== "ConsoleManager") {
+      if (isStaffModule) console.log(`[hasPermission] FAIL: Tenant boundary violation`, { userTenant: user.tenantId, targetCompany: targetCompanyId });
       return false;
     }
   }
 
   // Get permissions for this role and module
   const permission = getPermissions(role.name, module);
-  if (!permission) return false;
+  if (!permission) {
+    if (isStaffModule) console.log(`[hasPermission] FAIL: No permission found for role ${role.name} module ${module}`);
+    return false;
+  }
 
   // Check if action is allowed
   const hasActionPermission = permission.actions.includes("*") || permission.actions.includes(action);
-  if (!hasActionPermission) return false;
+  if (!hasActionPermission) {
+    if (isStaffModule) console.log(`[hasPermission] FAIL: Action ${action} not in permissions`, permission.actions);
+    return false;
+  }
 
   // Scope-based access control
   switch (permission.scope) {
     case SCOPES.GLOBAL:
+      if (isStaffModule) console.log(`[hasPermission] PASS: Global scope`);
       return true;
 
     case SCOPES.COMPANY:
       // Admin has full company access without targetCompanyId restrictions
-      if (role.name === "Admin") return true;
-      // User must belong to the same company
-      return !targetCompanyId || user.companyId === targetCompanyId;
+      if (role.name === "Admin") {
+        if (isStaffModule) console.log(`[hasPermission] PASS: Admin company access`);
+        return true;
+      }
+      // User must belong to the same tenant
+      const tenantResult = !targetCompanyId || user.tenantId.toString() === targetCompanyId;
+      if (isStaffModule) console.log(`[hasPermission] Tenant scope result:`, tenantResult, { userTenant: user.tenantId, targetCompany: targetCompanyId });
+      return tenantResult;
 
     case SCOPES.ASSIGNED:
       // User must be assigned to the specific client
-      if (!targetClientId) return false;
-      return user.clientAssignments?.includes(targetClientId) ?? false;
+      if (!targetClientId) {
+        if (isStaffModule) console.log(`[hasPermission] FAIL: Assigned scope requires targetClientId`);
+        return false;
+      }
+      const assignedResult = user.clientAssignments?.includes(targetClientId) ?? false;
+      if (isStaffModule) console.log(`[hasPermission] Assigned scope result:`, assignedResult);
+      return assignedResult;
 
     default:
+      if (isStaffModule) console.log(`[hasPermission] FAIL: Unknown scope ${permission.scope}`);
       return false;
   }
 }

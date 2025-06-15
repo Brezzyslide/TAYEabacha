@@ -28,6 +28,17 @@ export function PermissionGuard({
 
   const canAccess = hasPermission(user, module, action, targetCompanyId, targetClientId);
 
+  // Debug logging for staff module permissions
+  if (module === "staff" && (action === "edit" || action === "reset-password")) {
+    console.log(`[PermissionGuard] Staff ${action} check:`, {
+      user: { role: user.role, id: user.id, tenantId: user.tenantId },
+      module,
+      action,
+      targetCompanyId,
+      canAccess
+    });
+  }
+
   return canAccess ? <>{children}</> : <>{fallback}</>;
 }
 
