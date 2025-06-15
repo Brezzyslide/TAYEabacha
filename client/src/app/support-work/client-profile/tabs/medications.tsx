@@ -235,42 +235,120 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-green-600">{totalAdministered}</p>
-                      <p className="text-sm text-gray-600">Successfully Administered</p>
+                  {/* Overall Summary Stats */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border">
+                    <h3 className="text-lg font-semibold mb-4 text-center">Overall Medication Administration Summary</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                        <p className="text-3xl font-bold text-green-600">{totalAdministered}</p>
+                        <p className="text-sm text-gray-600">Successful</p>
+                        <p className="text-xs text-gray-500">{totalRecords > 0 ? Math.round((totalAdministered / totalRecords) * 100) : 0}%</p>
+                      </div>
+                      <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                        <p className="text-3xl font-bold text-red-600">{totalRefused}</p>
+                        <p className="text-sm text-gray-600">Refused</p>
+                        <p className="text-xs text-gray-500">{totalRecords > 0 ? Math.round((totalRefused / totalRecords) * 100) : 0}%</p>
+                      </div>
+                      <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                        <p className="text-3xl font-bold text-orange-600">{totalMissed}</p>
+                        <p className="text-sm text-gray-600">Missed</p>
+                        <p className="text-xs text-gray-500">{totalRecords > 0 ? Math.round((totalMissed / totalRecords) * 100) : 0}%</p>
+                      </div>
+                      <div className="text-center bg-white rounded-lg p-4 shadow-sm">
+                        <p className="text-3xl font-bold text-blue-600">{totalRecords}</p>
+                        <p className="text-sm text-gray-600">Total Records</p>
+                        <p className="text-xs text-gray-500">All Time</p>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-red-600">{totalRefused}</p>
-                      <p className="text-sm text-gray-600">Refused</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-orange-600">{totalMissed}</p>
-                      <p className="text-sm text-gray-600">Missed</p>
+                    
+                    {/* Overall Progress Bar */}
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium">Overall Compliance</span>
+                        <span className="text-sm font-bold">{overallCompliance}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className={`h-3 rounded-full ${overallCompliance >= 80 ? 'bg-green-500' : overallCompliance >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${overallCompliance}%` }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
-                    {complianceMetrics.map((metric) => (
-                      <div key={metric.planId} className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-sm">{metric.medicationName}</span>
-                          <span className="text-sm font-medium">{metric.complianceRate}%</span>
+                  <div className="space-y-4">
+                    {complianceMetrics.map((metric: any) => {
+                      const successRate = metric.totalRecords > 0 ? Math.round((metric.administeredCount / metric.totalRecords) * 100) : 0;
+                      const refusedRate = metric.totalRecords > 0 ? Math.round((metric.refusedCount / metric.totalRecords) * 100) : 0;
+                      const missedRate = metric.totalRecords > 0 ? Math.round((metric.missedCount / metric.totalRecords) * 100) : 0;
+                      
+                      return (
+                        <div key={metric.planId} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="font-medium">{metric.medicationName}</span>
+                            <Badge variant={successRate >= 80 ? 'default' : 'destructive'}>
+                              {successRate}% Success
+                            </Badge>
+                          </div>
+                          
+                          {/* Visual Progress Bars */}
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-green-600 w-16">Success:</span>
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="h-2 rounded-full bg-green-500"
+                                  style={{ width: `${successRate}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-green-600 w-8">{successRate}%</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-red-600 w-16">Refused:</span>
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="h-2 rounded-full bg-red-500"
+                                  style={{ width: `${refusedRate}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-red-600 w-8">{refusedRate}%</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-orange-600 w-16">Missed:</span>
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="h-2 rounded-full bg-orange-500"
+                                  style={{ width: `${missedRate}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-orange-600 w-8">{missedRate}%</span>
+                            </div>
+                          </div>
+                          
+                          {/* Detailed Numbers */}
+                          <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                            <div className="bg-green-50 rounded p-2">
+                              <p className="font-bold text-green-600">{metric.administeredCount}</p>
+                              <p className="text-green-600">Successful</p>
+                            </div>
+                            <div className="bg-red-50 rounded p-2">
+                              <p className="font-bold text-red-600">{metric.refusedCount}</p>
+                              <p className="text-red-600">Refused</p>
+                            </div>
+                            <div className="bg-orange-50 rounded p-2">
+                              <p className="font-bold text-orange-600">{metric.missedCount}</p>
+                              <p className="text-orange-600">Missed</p>
+                            </div>
+                            <div className="bg-blue-50 rounded p-2">
+                              <p className="font-bold text-blue-600">{metric.totalRecords}</p>
+                              <p className="text-blue-600">Total</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${metric.complianceRate >= 80 ? 'bg-green-500' : metric.complianceRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                            style={{ width: `${metric.complianceRate}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex gap-4 text-xs text-gray-500">
-                          <span>✓ {metric.administeredCount}</span>
-                          <span>✗ {metric.refusedCount}</span>
-                          <span>○ {metric.missedCount}</span>
-                          <span>Total: {metric.totalRecords}</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -294,7 +372,7 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
               ) : (
                 <div className="space-y-4">
                   {activePlans.slice(0, 5).map((plan: MedicationPlan) => {
-                    const planCompliance = complianceMetrics.find(m => m.planId === plan.id);
+                    const planCompliance = complianceMetrics.find((m: any) => m.planId === plan.id);
                     return (
                       <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
