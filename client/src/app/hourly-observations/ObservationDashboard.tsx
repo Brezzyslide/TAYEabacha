@@ -65,22 +65,10 @@ const observationSchema = z.object({
   path: ["subtype"]
 });
 
-// Behaviour subtypes for psychology-related observations
-const behaviourSubtypes = [
-  "Positive Behaviour",
-  "Verbal Aggression", 
-  "Physical Aggression",
-  "Self-Injury",
-  "Property Damage",
-  "Withdrawal/Isolation",
-  "Anxiety/Distress",
-  "Repetitive Behaviour",
-  "Non-Compliance",
-  "Appropriate Social Interaction"
-];
-
-// ADL subtypes for care-related observations
+// ADL subtypes for Activities of Daily Living observations
 const adlSubtypes = [
+  "Sleep",
+  "Eating/Nutrition",
   "Personal Hygiene",
   "Meal Preparation", 
   "Medication Administration",
@@ -91,35 +79,6 @@ const adlSubtypes = [
   "Dressing/Grooming",
   "Transportation",
   "Shopping/Errands"
-];
-
-// Health subtypes for health-related observations
-const healthSubtypes = [
-  "Eating/Nutrition",
-  "Sleep",
-  "Hygiene", 
-  "Mobility",
-  "Communication"
-];
-
-// Social subtypes for social interaction observations
-const socialSubtypes = [
-  "Peer Interaction",
-  "Staff Interaction",
-  "Family Contact",
-  "Community Participation",
-  "Social Skills",
-  "Isolation"
-];
-
-// Communication subtypes for communication observations
-const communicationSubtypes = [
-  "Verbal Communication",
-  "Non-verbal Cues",
-  "Technology Use",
-  "Sign Language",
-  "Written Communication",
-  "Understanding"
 ];
 
 type ObservationFormData = z.infer<typeof observationSchema>;
@@ -199,14 +158,33 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
   const createMutation = useMutation({
     mutationFn: async (data: ObservationFormData) => {
       // Clean the data to match server expectations
-      const cleanData = {
+      let cleanData: any = {
         clientId: data.clientId,
         observationType: data.observationType,
-        subtype: data.subtype || null,
-        notes: data.notes,
-        intensity: data.intensity || null,
         timestamp: data.timestamp.toISOString(),
       };
+
+      if (data.observationType === "behaviour") {
+        // For behaviour observations, send star chart data
+        cleanData = {
+          ...cleanData,
+          settings: data.settings,
+          settingsRating: data.settingsRating,
+          time: data.time,
+          timeRating: data.timeRating,
+          antecedents: data.antecedents,
+          antecedentsRating: data.antecedentsRating,
+          response: data.response,
+          responseRating: data.responseRating,
+        };
+      } else {
+        // For ADL observations, send subtype and notes
+        cleanData = {
+          ...cleanData,
+          subtype: data.subtype,
+          notes: data.notes,
+        };
+      }
       
       console.log("Sending observation data:", cleanData);
       
@@ -300,9 +278,7 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
                       <SelectContent>
                         <SelectItem value="behaviour">Behaviour</SelectItem>
                         <SelectItem value="adl">Activities of Daily Living</SelectItem>
-                        <SelectItem value="health">Health</SelectItem>
-                        <SelectItem value="social">Social</SelectItem>
-                        <SelectItem value="communication">Communication</SelectItem>
+
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -311,36 +287,208 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Subtype - Dynamic based on observation type */}
-              <FormField
-                control={form.control}
-                name="subtype"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Subtype {(form.watch("observationType") === "behaviour" || form.watch("observationType") === "adl") ? "(Required)" : "(Optional)"}
-                    </FormLabel>
-                    {form.watch("observationType") === "behaviour" ? (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select behaviour subtype" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {behaviourSubtypes.map((subtype) => (
-                            <SelectItem key={subtype} value={subtype}>
-                              {subtype}
-                            </SelectItem>
+            {/* Conditional content based on observation type */}
+            {form.watch("observationType") === "behaviour" ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Star Chart Assessment</h3>
+                
+                {/* Settings */}
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="settings"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Settings</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe the environmental settings during the incident"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="settingsRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contribution (1-5)</FormLabel>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <button
+                              key={rating}
+                              type="button"
+                              onClick={() => field.onChange(rating)}
+                              className={`w-8 h-8 ${
+                                field.value >= rating ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                            >
+                              <Star className="w-full h-full fill-current" />
+                            </button>
                           ))}
-                        </SelectContent>
-                      </Select>
-                    ) : form.watch("observationType") === "adl" ? (
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Time */}
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="time"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Time</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe the timing factors related to the incident"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="timeRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contribution (1-5)</FormLabel>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <button
+                              key={rating}
+                              type="button"
+                              onClick={() => field.onChange(rating)}
+                              className={`w-8 h-8 ${
+                                field.value >= rating ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                            >
+                              <Star className="w-full h-full fill-current" />
+                            </button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Antecedents */}
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="antecedents"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Antecedents</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe what happened before the incident"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="antecedentsRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contribution (1-5)</FormLabel>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <button
+                              key={rating}
+                              type="button"
+                              onClick={() => field.onChange(rating)}
+                              className={`w-8 h-8 ${
+                                field.value >= rating ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                            >
+                              <Star className="w-full h-full fill-current" />
+                            </button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Response */}
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="response"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Response</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe how the incident was handled"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="responseRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contribution (1-5)</FormLabel>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <button
+                              key={rating}
+                              type="button"
+                              onClick={() => field.onChange(rating)}
+                              className={`w-8 h-8 ${
+                                field.value >= rating ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                            >
+                              <Star className="w-full h-full fill-current" />
+                            </button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* ADL Form */
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="subtype"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ADL Activity Type</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select ADL subtype" />
+                            <SelectValue placeholder="Select ADL activity" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -351,92 +499,30 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
                           ))}
                         </SelectContent>
                       </Select>
-                    ) : form.watch("observationType") === "health" ? (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select health subtype" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {healthSubtypes.map((subtype) => (
-                            <SelectItem key={subtype} value={subtype}>
-                              {subtype}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : form.watch("observationType") === "social" ? (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select social subtype" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {socialSubtypes.map((subtype) => (
-                            <SelectItem key={subtype} value={subtype}>
-                              {subtype}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : form.watch("observationType") === "communication" ? (
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select communication subtype" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {communicationSubtypes.map((subtype) => (
-                            <SelectItem key={subtype} value={subtype}>
-                              {subtype}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter custom subtype" 
-                          {...field} 
-                        />
-                      </FormControl>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Intensity (for behaviour observations) */}
-              {form.watch("observationType") === "behaviour" && (
-                <FormField
-                  control={form.control}
-                  name="intensity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Intensity (1-5)</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select intensity" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="1">1 - Very Low</SelectItem>
-                          <SelectItem value="2">2 - Low</SelectItem>
-                          <SelectItem value="3">3 - Moderate</SelectItem>
-                          <SelectItem value="4">4 - High</SelectItem>
-                          <SelectItem value="5">5 - Very High</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-            </div>
+                
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe the ADL activity and any observations"
+                          className="min-h-[100px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
             {/* Timestamp */}
             <FormField
@@ -714,9 +800,6 @@ export default function ObservationDashboard() {
                       <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="behaviour">Behaviour</SelectItem>
                       <SelectItem value="adl">ADL</SelectItem>
-                      <SelectItem value="health">Health</SelectItem>
-                      <SelectItem value="social">Social</SelectItem>
-                      <SelectItem value="communication">Communication</SelectItem>
                     </SelectContent>
                   </Select>
 
