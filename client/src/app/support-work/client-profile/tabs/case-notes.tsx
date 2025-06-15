@@ -63,12 +63,11 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Check permissions
   const canViewCaseNotes = hasPermission(user, "caseNotes", "view");
 
-  // Fetch all case notes and filter by client
+  // Fetch case notes for this specific client
   const { data: allCaseNotes = [], isLoading } = useQuery({
-    queryKey: ["/api/case-notes", Date.now()],
+    queryKey: ["/api/case-notes", { clientId }],
+    queryFn: () => fetch(`/api/case-notes?clientId=${clientId}`).then(res => res.json()),
     enabled: !!user && !!clientId && canViewCaseNotes,
-    staleTime: 0,
-    cacheTime: 0,
   });
 
   // Fetch client data
@@ -77,11 +76,11 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     enabled: !!clientId,
   });
 
-  // Filter case notes for this specific client
+  // Case notes are already filtered by clientId from the API
   const clientCaseNotes = useMemo(() => {
     if (!Array.isArray(allCaseNotes)) return [];
-    return allCaseNotes.filter(note => note.clientId === parseInt(clientId));
-  }, [allCaseNotes, clientId]);
+    return allCaseNotes;
+  }, [allCaseNotes]);
 
   // Create case note mutation
   const createMutation = useMutation({
