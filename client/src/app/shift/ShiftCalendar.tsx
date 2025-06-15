@@ -8,8 +8,6 @@ import { Calendar, Clock, Plus, Users, MapPin } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { type Shift } from "@shared/schema";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
 import NewShiftModal from "./components/NewShiftModal";
 import EditShiftModal from "./components/EditShiftModal";
 import ShiftActionButtons from "./components/ShiftActionButtons";
