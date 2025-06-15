@@ -15,7 +15,7 @@ import Staff from "@/pages/staff";
 import Forms from "@/pages/forms";
 import Reports from "@/pages/reports";
 import Export from "@/pages/export";
-import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
+import ClientProfilePage from "@/app/support-work/client-profile/ClientProfilePage";
 import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProfileDashboard";
 import CreateClientForm from "@/app/support-work/client-profile/components/CreateClientForm";
 import ClientListPage from "@/app/support-work/client-profile/components/ClientListPage";
@@ -44,11 +44,11 @@ function Router() {
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
       <ProtectedRoute path="/clients/create" component={CreateClientForm} />
-      <ProtectedRoute path="/client/:clientId" component={ClientProfileDemo} />
+      <ProtectedRoute path="/client/:clientId" component={ClientProfilePage} />
       <ProtectedRoute path="/support-work" component={SupportWorkPage} />
       <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
       <ProtectedRoute path="/support-work/client-profile/create" component={CreateClientForm} />
-      <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
+      <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfilePage} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
       <ProtectedRoute path="/staff-availability" component={StaffAvailabilityPage} />
       <ProtectedRoute path="/manage-staff-availability" component={ManageStaffAvailabilityPage} />

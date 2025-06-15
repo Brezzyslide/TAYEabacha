@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Home } from "lucide-react";
+import { Loader2, ArrowLeft, Home, AlertCircle } from "lucide-react";
 import OverviewTab from "./tabs/overview";
 import MedicationsTab from "./tabs/medications";
 import CarePlansTab from "./tabs/care-plans";
@@ -24,22 +25,51 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
   const companyId = propCompanyId || "1";
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Mock client data - in real app would come from useQuery
-  const clientData = {
-    id: clientId,
-    name: "Sarah Johnson",
-    ndisNumber: "43000012345",
-    status: "Active",
-    planType: "Core Support",
-    dateOfBirth: "1985-03-15",
-    address: "123 Oak Street, Melbourne VIC 3000"
-  };
+  // Fetch real client data
+  const { data: clientData, isLoading: clientLoading, error } = useQuery({
+    queryKey: ["/api/clients", clientId],
+    queryFn: () => fetch(`/api/clients/${clientId}`).then(res => res.json()),
+    enabled: !!clientId,
+  });
 
   const LoadingSpinner = () => (
     <div className="flex items-center justify-center py-8">
       <Loader2 className="h-6 w-6 animate-spin" />
     </div>
   );
+
+  if (clientLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading client profile...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !clientData) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Client not found</h3>
+            <p className="text-gray-600 mb-4">Unable to load client profile.</p>
+            <Link href="/clients">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Clients
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -49,12 +79,14 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">{clientData.name}</CardTitle>
-              <p className="text-muted-foreground">NDIS: {clientData.ndisNumber}</p>
+              <CardTitle className="text-2xl">{clientData.firstName} {clientData.lastName}</CardTitle>
+              <p className="text-muted-foreground">
+                {clientData.clientId} {clientData.ndisNumber && `• NDIS: ${clientData.ndisNumber}`}
+              </p>
             </div>
             <div className="flex gap-2">
-              <Badge variant="outline">{clientData.status}</Badge>
-              <Badge variant="secondary">{clientData.planType}</Badge>
+              <Badge variant="outline">Active</Badge>
+              {clientData.ndisNumber && <Badge variant="secondary">NDIS Client</Badge>}
             </div>
           </div>
           <div className="text-sm text-muted-foreground">
