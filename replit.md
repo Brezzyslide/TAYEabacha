@@ -139,6 +139,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 15, 2025. Fixed case notes filtering issue where all client profiles showed shared data - now properly filters by clientId parameter, ensuring data isolation between clients
 - June 15, 2025. Performed database cleanup removing demo content - deleted 3 medication plans, 45 shift records, and 5 medication administration records while preserving 3 client profiles and 1 user-generated case note
 - June 15, 2025. Fixed client creation form date validation by implementing z.coerce.date() in server schema to handle JSON date string serialization, replaced complex calendar picker with HTML date input for easier birth year selection (1920-current range), and enhanced all calendar components with year navigation toggles using double-chevron buttons for quick year jumping
+- June 15, 2025. Fixed clientId routing inconsistencies by standardizing navigation to use route parameters (/support-work/client-profile/:clientId) instead of query parameters, updated ClientCard and clients.tsx navigation links to use client.id for proper route matching, and added proper error handling for missing clientId parameters
 
 ## User Preferences
 
