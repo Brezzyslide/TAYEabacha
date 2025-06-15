@@ -30,6 +30,13 @@ function requireAuth(req: any, res: any, next: any) {
 function requireRole(roles: string[]) {
   return (req: any, res: any, next: any) => {
     console.log(`[ROLE CHECK] User role: ${req.user.role}, Required roles: ${roles.join(', ')}`);
+    
+    // ConsoleManager has access to everything
+    if (req.user.role === 'ConsoleManager') {
+      console.log(`[ROLE CHECK] PASSED - ConsoleManager has universal access`);
+      return next();
+    }
+    
     if (!roles.includes(req.user.role)) {
       console.log(`[ROLE CHECK] FAILED - User ${req.user.id} with role '${req.user.role}' denied access`);
       return res.status(403).json({ message: "Insufficient permissions" });
