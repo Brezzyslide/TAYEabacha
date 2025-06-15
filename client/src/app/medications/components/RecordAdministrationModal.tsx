@@ -37,7 +37,8 @@ import { Camera, Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 const medicationAdministrationSchema = z.object({
-  planId: z.number().min(1, "Please select a medication"),
+  medicationPlanId: z.number().min(1, "Medication plan is required"),
+  clientId: z.number().min(1, "Client ID is required"),
   timeOfDay: z.enum(["Morning", "Afternoon", "Night"], {
     required_error: "Please select time of day",
   }),
@@ -51,6 +52,7 @@ const medicationAdministrationSchema = z.object({
   notes: z.string().optional(),
   wasWitnessed: z.boolean(),
   medicationName: z.string().min(1, "Medication name is required"),
+  administeredBy: z.number().min(1, "Administrator is required"),
 });
 
 type MedicationAdministrationForm = z.infer<typeof medicationAdministrationSchema>;
@@ -61,19 +63,32 @@ interface MedicationPlan {
   medicationName: string;
   dosage: string;
   frequency: string;
-  isActive: boolean;
+  route: string;
+  timeOfDay?: string;
+  startDate: string;
+  endDate?: string;
+  prescribedBy: string;
+  instructions?: string;
+  sideEffects: string[];
+  status: string;
+  createdBy: number;
+  tenantId: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface RecordAdministrationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  clientId: number;
-  clientName: string;
+  medicationPlan?: MedicationPlan;
+  clientId?: number;
+  clientName?: string;
 }
 
 export default function RecordAdministrationModal({
   isOpen,
   onClose,
+  medicationPlan,
   clientId,
   clientName,
 }: RecordAdministrationModalProps) {
@@ -85,7 +100,13 @@ export default function RecordAdministrationModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch active medication plans for this client
+  // Get current user for administered by field
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/user'],
+    queryFn: () => fetch('/api/user').then(res => res.json())
+  });
+
+  // Fetch active medication plans for this client (if no specific plan provided)
   const { data: medicationPlans = [] } = useQuery({
     queryKey: ["/api/medication-plans", clientId],
     queryFn: async () => {
@@ -95,20 +116,22 @@ export default function RecordAdministrationModal({
       if (!response.ok) throw new Error("Failed to fetch medication plans");
       return response.json();
     },
-    enabled: isOpen && !!clientId,
+    enabled: isOpen && !!clientId && !medicationPlan,
   });
 
   const form = useForm<MedicationAdministrationForm>({
     resolver: zodResolver(medicationAdministrationSchema),
     defaultValues: {
-      planId: 0,
-      timeOfDay: "Morning",
+      medicationPlanId: medicationPlan?.id || 0,
+      clientId: medicationPlan?.clientId || clientId || 0,
+      timeOfDay: (medicationPlan?.timeOfDay as "Morning" | "Afternoon" | "Night") || "Morning",
       status: "Administered",
-      route: "Oral",
+      route: (medicationPlan?.route as "Oral" | "Injection" | "Topical" | "Other") || "Oral",
       dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       notes: "",
       wasWitnessed: false,
-      medicationName: "",
+      medicationName: medicationPlan?.medicationName || "",
+      administeredBy: currentUser?.id || 0,
     },
   });
 
@@ -204,25 +227,23 @@ export default function RecordAdministrationModal({
   };
 
   const onSubmit = async (data: MedicationAdministrationForm) => {
-    // Validate that both photos are present
-    if (!beforePhoto || !afterPhoto) {
-      toast({
-        title: "Photos Required",
-        description: "Both before and after photos must be uploaded before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      // Upload photos
-      const beforeUrl = await uploadPhoto(beforePhoto);
-      const afterUrl = await uploadPhoto(afterPhoto);
+      let beforeUrl = null;
+      let afterUrl = null;
 
-      // Create medication record
+      // Upload photos if present
+      if (beforePhoto) {
+        beforeUrl = await uploadPhoto(beforePhoto);
+      }
+      if (afterPhoto) {
+        afterUrl = await uploadPhoto(afterPhoto);
+      }
+
+      // Create medication record with updated field names
       const recordData = {
-        clientId,
-        planId: data.planId,
+        medicationPlanId: data.medicationPlanId,
+        clientId: data.clientId,
+        administeredBy: data.administeredBy,
         medicationName: data.medicationName,
         status: data.status,
         route: data.route,
@@ -239,7 +260,7 @@ export default function RecordAdministrationModal({
       // Create case note if medication was refused
       if (data.status === "Refused") {
         const caseNoteData = {
-          clientId,
+          clientId: data.clientId,
           type: "Medication",
           content: `Medication "${data.medicationName}" was refused. Route: ${data.route}. Time: ${data.timeOfDay}. ${data.notes ? `Notes: ${data.notes}` : ""}`,
           priority: "medium",
@@ -253,7 +274,7 @@ export default function RecordAdministrationModal({
     }
   };
 
-  const activePlans = medicationPlans.filter((plan: MedicationPlan) => plan.isActive);
+  const activePlans = medicationPlans.filter((plan: MedicationPlan) => plan.status === 'active');
   const bothPhotosUploaded = beforePhoto && afterPhoto;
 
   return (
@@ -275,7 +296,7 @@ export default function RecordAdministrationModal({
             {/* Medication Selection */}
             <FormField
               control={form.control}
-              name="planId"
+              name="medicationPlanId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Medication *</FormLabel>
@@ -287,6 +308,10 @@ export default function RecordAdministrationModal({
                       field.onChange(planId);
                       if (selectedPlan) {
                         form.setValue("medicationName", selectedPlan.medicationName);
+                        form.setValue("route", selectedPlan.route as "Oral" | "Injection" | "Topical" | "Other");
+                        if (selectedPlan.timeOfDay) {
+                          form.setValue("timeOfDay", selectedPlan.timeOfDay as "Morning" | "Afternoon" | "Night");
+                        }
                       }
                     }}
                   >
