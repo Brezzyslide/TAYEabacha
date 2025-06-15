@@ -83,6 +83,13 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   const client = caseNotesData?.client;
   const recentShifts = caseNotesData?.recentShifts || [];
 
+  // Debug logging
+  console.log('Client ID:', clientId);
+  console.log('Case notes data:', caseNotesData);
+  console.log('Case notes array:', caseNotes);
+  console.log('Loading state:', isLoading);
+  console.log('Error state:', error);
+
   // Fetch users for staff member names
   const { data: users = [] } = useQuery({
     queryKey: ["/api/users"],
