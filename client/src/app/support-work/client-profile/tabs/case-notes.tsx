@@ -36,7 +36,7 @@ interface CaseNotesTabProps {
 }
 
 interface CaseNoteWithTags extends CaseNote {
-  caseNoteTags?: {
+  caseNoteTags: {
     incident?: {
       occurred: boolean;
       refNumber?: string;
@@ -48,7 +48,7 @@ interface CaseNoteWithTags extends CaseNote {
       recordLogged?: boolean;
     };
   };
-  spellCheckCount?: number;
+  spellCheckCount: number | null;
 }
 
 export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps) {
@@ -533,7 +533,14 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
       <CreateCaseNoteModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={createMutation.mutate}
+        onSubmit={async (data) => {
+          return new Promise<void>((resolve, reject) => {
+            createMutation.mutate(data, {
+              onSuccess: () => resolve(),
+              onError: (error) => reject(error)
+            });
+          });
+        }}
         clientId={parseInt(clientId)}
       />
     </div>

@@ -307,8 +307,8 @@ export default function CreateCaseNoteModal({
                   <FormItem>
                     <FormLabel>Related Shift</FormLabel>
                     <Select 
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
-                      value={field.value?.toString()}
+                      onValueChange={(value) => field.onChange(value === "0" ? undefined : parseInt(value))}
+                      value={field.value?.toString() || "0"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -316,7 +316,7 @@ export default function CreateCaseNoteModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No shift selected</SelectItem>
+                        <SelectItem value="0">No shift selected</SelectItem>
                         {availableShifts?.map((shift: Shift) => (
                           <SelectItem key={shift.id} value={shift.id.toString()}>
                             {format(new Date(shift.startTime), "MMM d, yyyy 'at' h:mm a")} - {shift.title}

@@ -398,7 +398,14 @@ export default function CaseNoteDashboard() {
           setIsModalOpen(false);
           setEditingNote(undefined);
         }}
-        onSubmit={createMutation.mutate}
+        onSubmit={async (data) => {
+          return new Promise<void>((resolve, reject) => {
+            createMutation.mutate(data, {
+              onSuccess: () => resolve(),
+              onError: (error) => reject(error)
+            });
+          });
+        }}
       />
     </div>
   );
