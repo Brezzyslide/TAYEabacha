@@ -1183,7 +1183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/medication-plans", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+  app.post("/api/medication-plans", requireAuth, requireRole(["Admin", "Coordinator", "ConsoleManager"]), async (req: any, res) => {
     try {
       const planData = insertMedicationPlanSchema.parse({
         ...req.body,
@@ -1209,7 +1209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients/:clientId/medication-plans", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+  app.post("/api/clients/:clientId/medication-plans", requireAuth, requireRole(["Admin", "Coordinator", "ConsoleManager"]), async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
       const planData = insertMedicationPlanSchema.parse({
