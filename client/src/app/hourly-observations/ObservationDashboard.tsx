@@ -284,6 +284,25 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
               />
             </div>
 
+            {/* Timestamp */}
+            <FormField
+              control={form.control}
+              name="timestamp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date & Time *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="datetime-local"
+                      value={field.value ? new Date(field.value.getTime() - field.value.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                      onChange={(e) => field.onChange(new Date(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Conditional content based on observation type */}
             {form.watch("observationType") === "behaviour" ? (
               <div className="space-y-4">
