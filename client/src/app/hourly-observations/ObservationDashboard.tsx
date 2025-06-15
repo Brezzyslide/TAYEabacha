@@ -839,58 +839,58 @@ export default function ObservationDashboard() {
           <span className="text-foreground font-medium">Hourly Observations</span>
         </div>
 
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hourly Observations</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Track and manage client observations and behavioral data
-              </p>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hourly Observations</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Track and manage client observations and behavioral data
+          </p>
+        </div>
+
+        {/* Controls */}
+        <div className="mb-6 space-y-4">
+          {/* Top Row - Search and Actions */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by client name, NDIS number, or keywords..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
 
-            {/* Controls */}
-            <div className="mb-6 space-y-4">
-              {/* Top Row - Search and Actions */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex-1 max-w-md">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search by client name, NDIS number, or keywords..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportPDF}
-                    className="flex items-center gap-2"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Export PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportExcel}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Export Excel
-                  </Button>
-                  <Button
-                    onClick={() => setIsFormModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create New Observation
-                  </Button>
-                </div>
-              </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPDF}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Export PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportExcel}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export Excel
+              </Button>
+              <Button
+                onClick={() => setIsFormModalOpen(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Observation
+              </Button>
+            </div>
+          </div>
 
               {/* Second Row - Filters and View Toggle */}
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -1033,6 +1033,7 @@ export default function ObservationDashboard() {
               </Card>
             )}
           </div>
+      </div>
 
       <ObservationFormModal
         isOpen={isFormModalOpen}
@@ -1178,7 +1179,6 @@ export default function ObservationDashboard() {
           )}
         </DialogContent>
       </Dialog>
-
-    </div>
+    </>
   );
 }
