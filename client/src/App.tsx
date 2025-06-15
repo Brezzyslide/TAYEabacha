@@ -18,6 +18,11 @@ import Export from "@/pages/export";
 import ClientProfileDemo from "@/app/support-work/client-profile/ClientProfileDemo";
 import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProfileDashboard";
 import CreateClientForm from "@/app/support-work/client-profile/components/CreateClientForm";
+
+// Wrapper component for routing
+function CreateClientFormPage() {
+  return <CreateClientForm onSuccess={() => window.history.back()} onCancel={() => window.history.back()} />;
+}
 import ClientListPage from "@/app/support-work/client-profile/components/ClientListPage";
 import SupportWorkPage from "@/pages/support-work";
 import ShiftDashboard from "@/app/shift/ShiftDashboard";
@@ -40,11 +45,11 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
-      <ProtectedRoute path="/clients/create" component={CreateClientForm} />
+      <ProtectedRoute path="/clients/create" component={CreateClientFormPage} />
       <ProtectedRoute path="/client/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/support-work" component={SupportWorkPage} />
       <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
-      <ProtectedRoute path="/support-work/client-profile/create" component={CreateClientForm} />
+      <ProtectedRoute path="/support-work/client-profile/create" component={CreateClientFormPage} />
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfileDemo} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />
       <ProtectedRoute path="/staff-availability" component={StaffAvailabilityPage} />
