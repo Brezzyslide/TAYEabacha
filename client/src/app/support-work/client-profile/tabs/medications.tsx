@@ -133,13 +133,33 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
   }
 
   const activePlans = medicationPlans.filter((p: MedicationPlan) => p.status === 'active');
-  const todayRecords = medicationRecords.filter((r: MedicationRecord) => {
-    const today = new Date().toISOString().split('T')[0];
-    const recordDate = new Date(r.scheduledTime).toISOString().split('T')[0];
-    return recordDate === today;
+  
+  // Calculate compliance metrics for each medication plan
+  const complianceMetrics = activePlans.map((plan: MedicationPlan) => {
+    const planRecords = medicationRecords.filter((r: MedicationRecord) => (r as any).medicationPlanId === plan.id);
+    const totalRecords = planRecords.length;
+    const administeredCount = planRecords.filter((r: MedicationRecord) => r.result === 'administered').length;
+    const refusedCount = planRecords.filter((r: MedicationRecord) => r.result === 'refused').length;
+    const missedCount = planRecords.filter((r: MedicationRecord) => r.result === 'missed').length;
+    const complianceRate = totalRecords > 0 ? Math.round((administeredCount / totalRecords) * 100) : 0;
+    
+    return {
+      planId: plan.id,
+      medicationName: plan.medicationName,
+      totalRecords,
+      administeredCount,
+      refusedCount,
+      missedCount,
+      complianceRate
+    };
   });
-  const administeredToday = todayRecords.filter((r: MedicationRecord) => r.result === 'administered');
-  const pendingToday = todayRecords.filter((r: MedicationRecord) => r.result === 'pending');
+
+  // Overall compliance metrics
+  const totalRecords = medicationRecords.length;
+  const totalAdministered = medicationRecords.filter((r: MedicationRecord) => r.result === 'administered').length;
+  const totalRefused = medicationRecords.filter((r: MedicationRecord) => r.result === 'refused').length;
+  const totalMissed = medicationRecords.filter((r: MedicationRecord) => r.result === 'missed').length;
+  const overallCompliance = totalRecords > 0 ? Math.round((totalAdministered / totalRecords) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -169,8 +189,8 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                 <div className="flex items-center">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                   <div className="ml-4">
-                    <p className="text-2xl font-bold">{administeredToday.length}</p>
-                    <p className="text-gray-600">Given Today</p>
+                    <p className="text-2xl font-bold">{totalAdministered}</p>
+                    <p className="text-gray-600">Administered</p>
                   </div>
                 </div>
               </CardContent>
@@ -180,8 +200,8 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                 <div className="flex items-center">
                   <Clock className="h-8 w-8 text-orange-600" />
                   <div className="ml-4">
-                    <p className="text-2xl font-bold">{pendingToday.length}</p>
-                    <p className="text-gray-600">Pending Today</p>
+                    <p className="text-2xl font-bold">{totalRefused}</p>
+                    <p className="text-gray-600">Refused</p>
                   </div>
                 </div>
               </CardContent>
@@ -191,8 +211,8 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                 <div className="flex items-center">
                   <Calendar className="h-8 w-8 text-purple-600" />
                   <div className="ml-4">
-                    <p className="text-2xl font-bold">{medicationRecords.length}</p>
-                    <p className="text-gray-600">Total Records</p>
+                    <p className="text-2xl font-bold">{overallCompliance}%</p>
+                    <p className="text-gray-600">Compliance Rate</p>
                   </div>
                 </div>
               </CardContent>
@@ -349,34 +369,57 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                     <div key={record.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <h4 className="font-medium">{record.medicationName}</h4>
-                          <p className="text-sm text-gray-600">
-                            Scheduled: {format(new Date(record.scheduledTime), 'MMM dd, yyyy HH:mm')}
-                          </p>
-                          {record.administeredTime && (
-                            <p className="text-sm text-gray-600">
-                              Administered: {format(new Date(record.administeredTime), 'MMM dd, yyyy HH:mm')}
-                            </p>
-                          )}
-                          {record.administratorName && (
-                            <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                              <User className="h-3 w-3" />
-                              <span>Administered by: {record.administratorName}</span>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{record.medicationName}</h4>
+                            {(record as any).timeOfDay && (
+                              <Badge variant="outline" className="text-xs">
+                                {(record as any).timeOfDay}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div>
+                              <p><strong>Route:</strong> {(record as any).route || 'N/A'}</p>
+                              <p><strong>Date:</strong> {format(new Date((record as any).actualTime || record.scheduledTime), 'MMM dd, yyyy')}</p>
+                              <p><strong>Time:</strong> {format(new Date((record as any).actualTime || record.scheduledTime), 'HH:mm')}</p>
                             </div>
-                          )}
+                            <div>
+                              {record.administratorName && (
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  <span>Administered by: {record.administratorName}</span>
+                                </div>
+                              )}
+                              {(record as any).wasWitnessed && (
+                                <p className="text-green-600 text-xs mt-1">✓ Witnessed</p>
+                              )}
+                            </div>
+                          </div>
                           {record.notes && (
                             <p className="text-sm text-gray-600 mt-2">
                               <strong>Notes:</strong> {record.notes}
                             </p>
                           )}
                         </div>
-                        <Badge variant={
-                          record.result === 'administered' ? 'default' :
-                          record.result === 'refused' ? 'destructive' :
-                          record.result === 'missed' ? 'secondary' : 'outline'
-                        }>
-                          {record.result}
-                        </Badge>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge variant={
+                            record.result === 'administered' ? 'default' :
+                            record.result === 'refused' ? 'destructive' :
+                            record.result === 'missed' ? 'secondary' : 'outline'
+                          }>
+                            {record.result}
+                          </Badge>
+                          {(record.attachmentBeforeUrl || record.attachmentAfterUrl) && (
+                            <div className="flex gap-1">
+                              {record.attachmentBeforeUrl && (
+                                <Badge variant="outline" className="text-xs">Photo Before</Badge>
+                              )}
+                              {record.attachmentAfterUrl && (
+                                <Badge variant="outline" className="text-xs">Photo After</Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
