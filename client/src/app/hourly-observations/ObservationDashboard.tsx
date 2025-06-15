@@ -16,8 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+
 
 type ViewMode = "card" | "list";
 type FilterType = "all" | "behaviour" | "adl";

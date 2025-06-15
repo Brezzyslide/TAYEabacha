@@ -16,8 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+
 import { PermissionGuard, usePermission } from "@/components/auth/PermissionGuard";
 
 const clientFormSchema = insertClientSchema.omit({ tenantId: true, createdBy: true });

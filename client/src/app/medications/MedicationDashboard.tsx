@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Filter, Pill, Clock, CheckCircle, AlertTriangle, Calendar, Camera, User } from "lucide-react";
-import Sidebar from "@/components/layout/sidebar";
-import UniversalHeader from "@/components/layout/universal-header";
+
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import RecordAdministrationModal from "./components/RecordAdministrationModal";
@@ -166,14 +165,8 @@ export default function MedicationDashboard() {
 
   if (plansLoading || recordsLoading) {
     return (
-      <div className="min-h-screen flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <UniversalHeader />
-          <main className="flex-1 p-6">
-            <div className="text-center py-12">Loading medication data...</div>
-          </main>
-        </div>
+      <div className="p-6">
+        <div className="text-center py-12">Loading medication data...</div>
       </div>
     );
   }

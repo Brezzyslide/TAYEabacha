@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Filter, AlertTriangle, Clock, CheckCircle, Eye, Edit, Trash2 } from "lucide-react";
-import Sidebar from "@/components/layout/sidebar";
-import UniversalHeader from "@/components/layout/universal-header";
+
 import { CreateIncidentModal } from "./components/CreateIncidentModal";
 import { ViewIncidentModal } from "./components/ViewIncidentModal";
 import { CloseIncidentModal } from "./components/CloseIncidentModal";
