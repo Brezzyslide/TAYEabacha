@@ -66,7 +66,9 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   const { data: caseNotesData, isLoading } = useQuery({
     queryKey: ["/api/clients", clientId, "case-notes"],
     queryFn: async () => {
-      const response = await fetch(`/api/clients/${clientId}/case-notes`);
+      const response = await fetch(`/api/clients/${clientId}/case-notes`, {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Failed to fetch case notes');
       return response.json();
     },
@@ -75,6 +77,14 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   const caseNotes = caseNotesData?.caseNotes || [];
   const client = caseNotesData?.client;
   const recentShifts = caseNotesData?.recentShifts || [];
+
+  // Fetch users for staff member names
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+    retry: 1,
+  });
+
+  const usersArray = Array.isArray(users) ? users as Array<{ id: number; username: string; email: string }> : [];
 
   // Create case note mutation
   const createMutation = useMutation({
@@ -110,7 +120,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   // Delete case note mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/case-notes/${id}`, "DELETE");
+      const response = await apiRequest("DELETE", `/api/case-notes/${id}`);
       return response;
     },
     onSuccess: () => {
@@ -442,7 +452,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
                     <div className="text-sm text-muted-foreground text-right">
                       <div className="flex items-center gap-1">
                         <User className="w-3 h-3" />
-                        Staff #{note.userId}
+                        {users.find(u => u.id === note.userId)?.username || `Staff #${note.userId}`}
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3" />
