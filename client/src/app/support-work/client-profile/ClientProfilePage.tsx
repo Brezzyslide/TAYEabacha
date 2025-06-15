@@ -25,12 +25,27 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
   const companyId = propCompanyId || "1";
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Debug parameter extraction
+  console.log("ClientProfilePage - Route params:", params);
+  console.log("ClientProfilePage - Extracted clientId:", clientId);
+  console.log("ClientProfilePage - Current URL:", window.location.pathname);
+
 
 
   // Fetch real client data
   const { data: clientData, isLoading: clientLoading, error } = useQuery({
     queryKey: ["/api/clients", clientId],
-    queryFn: () => fetch(`/api/clients/${clientId}`).then(res => res.json()),
+    queryFn: async () => {
+      console.log("Fetching client data for ID:", clientId);
+      const response = await fetch(`/api/clients/${clientId}`);
+      console.log("API Response status:", response.status);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch client: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Client data received:", data);
+      return data;
+    },
     enabled: !!clientId,
   });
 
