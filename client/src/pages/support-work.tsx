@@ -55,7 +55,25 @@ export default function SupportWorkPage() {
                 </Card>
               </Link>
 
-
+              <Link href="/hourly-observations">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                      <Activity className="w-6 h-6 text-green-600" />
+                      Hourly Observations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Track client behaviors and complete hourly observation reports
+                    </p>
+                    <Button variant="outline" className="w-full">
+                      View Observations
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
 
               <Link href="/forms">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
@@ -67,7 +85,7 @@ export default function SupportWorkPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      Complete assessment forms and documentation
+                      Complete forms, case notes, and incident reports
                     </p>
                     <Button variant="outline" className="w-full">
                       View Forms
