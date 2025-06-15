@@ -8,13 +8,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from "@shared/schema";
-import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus } from "lucide-react";
+import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 const createStaffSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
@@ -32,6 +33,11 @@ type CreateStaffFormData = z.infer<typeof createStaffSchema>;
 export default function Staff() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<User | null>(null);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [resetPasswordStaff, setResetPasswordStaff] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: staff, isLoading } = useQuery<User[]>({
@@ -76,6 +82,78 @@ export default function Staff() {
 
   const onSubmit = (data: CreateStaffFormData) => {
     createStaffMutation.mutate(data);
+  };
+
+  // Edit staff mutation
+  const editStaffMutation = useMutation({
+    mutationFn: async (data: { id: number; updates: Partial<User> }) => {
+      return apiRequest("PUT", `/api/staff/${data.id}`, data.updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
+      setIsEditOpen(false);
+      setEditingStaff(null);
+      toast({
+        title: "Success",
+        description: "Staff member updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update staff member",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (data: { id: number; newPassword: string }) => {
+      return apiRequest("POST", `/api/staff/${data.id}/reset-password`, { newPassword: data.newPassword });
+    },
+    onSuccess: () => {
+      setIsResetPasswordOpen(false);
+      setResetPasswordStaff(null);
+      setNewPassword("");
+      toast({
+        title: "Success",
+        description: "Password reset successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handler functions
+  const handleEditStaff = (staff: User) => {
+    setEditingStaff(staff);
+    setIsEditOpen(true);
+  };
+
+  const handleResetPassword = (staff: User) => {
+    setResetPasswordStaff(staff);
+    setIsResetPasswordOpen(true);
+  };
+
+  const handleEditSubmit = (updates: Partial<User>) => {
+    if (editingStaff) {
+      editStaffMutation.mutate({ id: editingStaff.id, updates });
+    }
+  };
+
+  const handlePasswordReset = () => {
+    if (resetPasswordStaff && newPassword.trim()) {
+      resetPasswordMutation.mutate({ 
+        id: resetPasswordStaff.id, 
+        newPassword: newPassword.trim() 
+      });
+    }
   };
 
   // Filter staff based on search term
@@ -337,6 +415,7 @@ export default function Staff() {
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead className="w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -368,6 +447,30 @@ export default function Staff() {
                     </TableCell>
                     <TableCell>
                       {new Date(member.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <PermissionGuard module="staff" action="edit">
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditStaff(member)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <PermissionGuard module="staff" action="reset-password">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResetPassword(member)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                          </PermissionGuard>
+                        </div>
+                      </PermissionGuard>
                     </TableCell>
                   </TableRow>
                 ))}
