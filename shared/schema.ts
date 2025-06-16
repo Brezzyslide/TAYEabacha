@@ -1078,3 +1078,56 @@ export const insertBudgetTransactionSchema = createInsertSchema(budgetTransactio
 
 export type BudgetTransaction = typeof budgetTransactions.$inferSelect;
 export type InsertBudgetTransaction = z.infer<typeof insertBudgetTransactionSchema>;
+
+// Care Support Plans
+export const careSupportPlans = pgTable("care_support_plans", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => clients.id).notNull(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  planTitle: text("plan_title").notNull(),
+  status: text("status").default("draft"), // draft, completed, active
+  
+  // Section Data (JSONB for flexibility)
+  aboutMeData: jsonb("about_me_data"), // { bulletPoints: string[], generatedText: string, aiAttempts: number }
+  goalsData: jsonb("goals_data"), // { ndisGoals: string, generalGoals: string, generatedGoals: string, aiAttempts: number }
+  adlData: jsonb("adl_data"), // { userInput: string, generatedContent: string, aiAttempts: number }
+  structureData: jsonb("structure_data"), // { routines: [{ day, startTime, finishTime, activity, notes }] }
+  communicationData: jsonb("communication_data"), // { expressive: string, receptive: string, generatedStrategy: string, aiAttempts: number }
+  behaviourData: jsonb("behaviour_data"), // { behaviours: [{ behaviour, trigger, proactive, reactive, protective, aiAttempts }] }
+  disasterData: jsonb("disaster_data"), // { scenarios: { [type]: { preparation, evacuation, postEvent, aiAttempts } } }
+  mealtimeData: jsonb("mealtime_data"), // { riskParameters: [], generatedPlan: string, aiAttempts: number }
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdByUserId: integer("created_by_user_id").references(() => users.id).notNull(),
+});
+
+export const careSupportPlansRelations = relations(careSupportPlans, ({ one }) => ({
+  client: one(clients, {
+    fields: [careSupportPlans.clientId],
+    references: [clients.id],
+  }),
+  tenant: one(tenants, {
+    fields: [careSupportPlans.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [careSupportPlans.createdByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const insertCareSupportPlanSchema = createInsertSchema(careSupportPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  tenantId: true,
+  createdByUserId: true,
+}).extend({
+  planTitle: z.string().min(1, "Plan title is required").max(255, "Plan title cannot exceed 255 characters"),
+  status: z.enum(["draft", "completed", "active"]).default("draft"),
+  clientId: z.number().positive("Client ID is required"),
+});
+
+export type InsertCareSupportPlan = z.infer<typeof insertCareSupportPlanSchema>;
+export type CareSupportPlan = typeof careSupportPlans.$inferSelect;

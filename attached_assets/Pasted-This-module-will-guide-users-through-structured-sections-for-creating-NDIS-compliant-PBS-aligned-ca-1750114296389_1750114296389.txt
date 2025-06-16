@@ -1,0 +1,162 @@
+This module will guide users through structured sections for creating NDIS-compliant, PBS-aligned care plans. Each section allows editable user input and AI-assisted generation using locked client data. Plans must be saved and exportable as a downloadable PDF.
+
+---
+
+## ✅ 1. MODULE STRUCTURE
+
+Each section below must be a tab or collapsible section in a scrollable form. Content is saved locally and can be reviewed before PDF generation.
+
+- Layout: responsive, clean, professional
+- Use Tailwind + ShadCN for UI
+- Each section has a "Save" button + AI generation where applicable
+
+---
+
+## ✅ 2. CLIENT LOCK-IN
+
+On form load:
+- Select client from directory
+- Auto-fill and lock:
+  - Client Name
+  - NDIS Number
+  - DOB
+  - Diagnosis (used by AI)
+- This data must be passed as context to all AI generation functions
+
+---
+
+## ✅ 3. ABOUT ME (AI-Enabled)
+
+- User enters bullet points
+- On “Generate About Me”, use ChatGPT to produce a paragraph (max 300 words)
+- Pre-injected prompt includes diagnosis and bullet points
+- Limit: 2 AI generation attempts
+- Must be editable after generation
+- Strip ChatGPT preamble or “as a support worker...” text
+
+---
+
+## ✅ 4. GOALS
+
+- User enters:
+  - NDIS Plan Goals
+  - General client goals
+- On "Generate Support Goals":
+  - Return prioritized plan with 4 AI-generated goals based on diagnosis + NDIS goals
+  - Max 300 words
+  - Limit: 2 AI attempts
+- Editable before saving
+
+---
+
+## ✅ 5. ADL (Activities of Daily Living)
+
+- User enters ADL ability/notes
+- AI expands ADL section using locked diagnosis + input
+- Max 300 words, editable, 2 AI attempts
+
+---
+
+## ✅ 6. STRUCTURE & ROUTINE
+
+- User can add multiple daily routines
+- Fields:
+  - Day
+  - Start time
+  - Finish time
+  - Activity
+  - Notes
+- Button: “Add Another Routine”
+- Allow routines to be updated or deleted
+
+---
+
+## ✅ 7. COMMUNICATION
+
+- Two-column input:
+  - Expressive Communication
+  - Receptive Communication
+- Button: “Generate Communication Strategy”
+  - AI uses entries + diagnosis to generate strategy for both types
+  - Limit: 2 generations
+- Output: Communication Overview (editable, max 300 words)
+
+---
+
+## ✅ 8. BEHAVIOUR SUPPORT PLAN
+
+For each behaviour:
+- User enters:
+  - Behaviour
+  - Trigger
+- Click “Generate Strategies”
+  - AI returns:
+    - Proactive Strategy (max 3 lines)
+    - Reactive Strategy (max 3 lines)
+    - Protective Strategy (max 3 lines)
+  - Based on diagnosis + entry
+- Allow up to 2 AI generations per behaviour
+- Button: “Add Behaviour Entry” (to repeat block)
+
+---
+
+## ✅ 9. DISASTER MANAGEMENT PLAN
+
+Scenarios:
+- Fire, Flood, Bomb Threat, Health Emergency, Earthquake
+
+Each has:
+- Preparation
+- Evacuation
+- Post-Event Care
+
+Click “Generate Plan”:
+- AI uses diagnosis + scenario to generate each column (max 5 lines each)
+- Limit: 2 generations per scenario
+- Editable after generation
+
+---
+
+## ✅ 10. MEALTIME RISK ASSESSMENT
+
+User selects from 18 predefined risk parameters (checkboxes with fields):
+
+Each parameter has:
+- Risk type
+- “Risk to client?” (Yes/No) — required
+- Risk level: High, Medium, N/A
+- Implications for the client
+
+Once selections are made:
+- Click “Generate Mealtime Plan”
+- AI creates plan (max 500 words) based on selected risks + diagnosis
+- Limit: 2 AI attempts
+- Editable before saving
+
+---
+
+## ✅ 11. PERMISSIONS
+
+- Use `hasPermission(user, "carePlans", "create")` and `"edit"`/`"view"`
+- Only allow editing by assigned staff, Team Leaders, and Admins
+- Enforce company-level data isolation (`companyId`)
+
+---
+
+## ✅ 12. PDF EXPORT
+
+- Save each section independently
+- On “Export as PDF”:
+  - Combine all entered content into one PDF
+  - Layout should be sectioned like the app
+  - File title: `CareSupportPlan_[ClientName]_[Date].pdf`
+- Use html-to-pdf tool or `jsPDF`
+
+---
+
+## ✅ 13. ADDITIONAL NOTES
+
+- Use ChatGPT strictly for content generation — no “as an AI language model” or disclaimers should appear
+- Each AI generation attempt should be tracked (max 2 per section)
+- If user exceeds attempt limit, disable button and show a message
+- Make all generated content editable before final save

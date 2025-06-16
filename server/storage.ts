@@ -156,6 +156,14 @@ export interface IStorage {
   updateUserRoleAssignment(id: number, assignment: Partial<InsertUserRoleAssignment>, tenantId: number): Promise<UserRoleAssignment | undefined>;
   deleteUserRoleAssignment(id: number, tenantId: number): Promise<boolean>;
 
+  // Care Support Plans
+  getCareSupportPlans(tenantId: number): Promise<CareSupportPlan[]>;
+  getCareSupportPlan(id: number, tenantId: number): Promise<CareSupportPlan | undefined>;
+  getCareSupportPlansByClient(clientId: number, tenantId: number): Promise<CareSupportPlan[]>;
+  createCareSupportPlan(plan: InsertCareSupportPlan): Promise<CareSupportPlan>;
+  updateCareSupportPlan(id: number, plan: Partial<InsertCareSupportPlan>, tenantId: number): Promise<CareSupportPlan | undefined>;
+  deleteCareSupportPlan(id: number, tenantId: number): Promise<boolean>;
+
   // Session store
   sessionStore: any;
 }
