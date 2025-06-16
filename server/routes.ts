@@ -2315,7 +2315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NDIS Budget endpoints - TeamLeader+ can view, Admin+ can edit
   app.get("/api/ndis-budgets", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const budgets = await storage.getNdisBudgets("5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      const budgets = await storage.getNdisBudgets(req.user.tenantId);
       res.json(budgets);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch NDIS budgets" });
@@ -2325,7 +2325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ndis-budgets/client/:clientId", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
-      const budget = await storage.getNdisBudgetByClient(clientId, "5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      const budget = await storage.getNdisBudgetByClient(clientId, req.user.tenantId);
       res.json(budget);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch client budget" });

@@ -1254,23 +1254,23 @@ export class DatabaseStorage implements IStorage {
     return budget;
   }
 
-  async updateNdisBudget(id: number, updateBudget: any, companyId: string): Promise<NdisBudget | undefined> {
+  async updateNdisBudget(id: number, updateBudget: any, tenantId: number): Promise<NdisBudget | undefined> {
     const [budget] = await db.update(ndisBudgets)
       .set({ ...updateBudget, updatedAt: new Date() })
       .where(and(
         eq(ndisBudgets.id, id),
-        eq(ndisBudgets.companyId, companyId)
+        eq(ndisBudgets.tenantId, tenantId)
       ))
       .returning();
     return budget;
   }
 
-  async deactivateNdisBudget(id: number, companyId: string): Promise<boolean> {
+  async deactivateNdisBudget(id: number, tenantId: number): Promise<boolean> {
     const result = await db.update(ndisBudgets)
       .set({ isActive: false, updatedAt: new Date() })
       .where(and(
         eq(ndisBudgets.id, id),
-        eq(ndisBudgets.companyId, companyId)
+        eq(ndisBudgets.tenantId, tenantId)
       ));
     return result.rowCount! > 0;
   }
@@ -1342,7 +1342,7 @@ export class DatabaseStorage implements IStorage {
         .set({ ...updateField, updatedAt: new Date() })
         .where(and(
           eq(ndisBudgets.id, params.budgetId),
-          eq(ndisBudgets.companyId, params.companyId)
+          eq(ndisBudgets.tenantId, params.tenantId)
         ))
         .returning();
 
