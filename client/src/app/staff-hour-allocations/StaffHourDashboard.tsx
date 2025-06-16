@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Users, Clock, TrendingUp, Calendar, Grid, List, Download, Edit } from "lucide-react";
 import CreateAllocationModal from "./components/CreateAllocationModal";
+import EditAllocationModal from "./components/EditAllocationModal";
 import StaffAllocationCard from "./components/StaffAllocationCard";
 import { HourAllocation, User } from "@shared/schema";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
@@ -373,7 +374,7 @@ export default function StaffHourDashboard() {
               ))}
             </div>
           ) : (
-            /* List View */
+            // List View
             <div className="space-y-2">
               <div className="grid grid-cols-7 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300">
                 <div>Staff Name</div>
@@ -434,6 +435,11 @@ export default function StaffHourDashboard() {
       <CreateAllocationModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+      
+      <EditAllocationModal
+        allocation={editingAllocation}
+        onClose={() => setEditingAllocation(null)}
       />
     </div>
   );
