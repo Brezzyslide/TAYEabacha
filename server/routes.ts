@@ -1571,6 +1571,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username,
         email: user.email,
         fullName: user.fullName,
+        phone: user.phone,
+        address: user.address,
         role: user.role,
         isActive: user.isActive,
         createdAt: user.createdAt
@@ -1585,7 +1587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create staff member (Admin/ConsoleManager only)
   app.post("/api/users", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const { username, email, password, role, firstName, lastName, isActive } = req.body;
+      const { username, email, password, role, fullName, phone, address, isActive } = req.body;
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
@@ -1603,13 +1605,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await hashPassword(password);
       
-      // Create user data using existing User schema
+      // Create user data using updated User schema
       const userData = {
         username,
         email: email || null,
         password: hashedPassword,
         role,
-        fullName: `${firstName} ${lastName}`,
+        fullName,
+        phone: phone || null,
+        address: address || null,
         isActive: isActive !== undefined ? isActive : true,
         tenantId: req.user.tenantId,
         isFirstLogin: true,
