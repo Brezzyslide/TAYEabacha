@@ -24,6 +24,7 @@ export const permissions: Permission[] = [
   { roleName: "SupportWorker", module: "medications", actions: ["view", "create"], scope: "assigned" },
   { roleName: "SupportWorker", module: "care-plans", actions: ["view"], scope: "assigned" },
   { roleName: "SupportWorker", module: "incidents", actions: ["create"], scope: "assigned" },
+  { roleName: "SupportWorker", module: "hour-allocations", actions: ["view"], scope: "assigned" },
 
   // TeamLeader permissions - edit assigned content
   { roleName: "TeamLeader", module: "clients", actions: ["view", "edit"], scope: "assigned" },

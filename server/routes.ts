@@ -1855,10 +1855,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hour Allocations routes
   app.get("/api/hour-allocations", requireAuth, async (req: any, res) => {
     try {
-      // ConsoleManager sees all allocations, others see only their tenant's
-      const allocations = req.user.role === 'ConsoleManager' 
-        ? await storage.getAllHourAllocations()
-        : await storage.getHourAllocations(req.user.tenantId);
+      let allocations;
+      
+      if (req.user.role === 'ConsoleManager') {
+        // ConsoleManager sees all allocations across all tenants
+        allocations = await storage.getAllHourAllocations();
+      } else if (req.user.role === 'SupportWorker') {
+        // Support workers only see their own allocations
+        const allTenantAllocations = await storage.getHourAllocations(req.user.tenantId);
+        allocations = allTenantAllocations.filter(allocation => allocation.staffId === req.user.id);
+      } else {
+        // Admins and TeamLeaders see all allocations within their tenant
+        allocations = await storage.getHourAllocations(req.user.tenantId);
+      }
+      
       res.json(allocations);
     } catch (error) {
       console.error("Error fetching hour allocations:", error);
