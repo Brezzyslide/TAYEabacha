@@ -23,9 +23,9 @@ const createStaffSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"]),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  fullName: z.string().min(1, "Full name is required"),
   phone: z.string().optional(),
+  address: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -36,6 +36,8 @@ const editStaffSchema = z.object({
   email: z.string().optional(),
   role: z.enum(["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"]),
   fullName: z.string().min(1, "Full name is required"),
+  phone: z.string().optional(),
+  address: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -156,9 +158,9 @@ export default function Staff() {
       email: "",
       password: "",
       role: "SupportWorker",
-      firstName: "",
-      lastName: "",
+      fullName: "",
       phone: "",
+      address: "",
       isActive: true,
     },
   });
@@ -317,34 +319,19 @@ export default function Staff() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter first name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter last name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter full name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
@@ -388,27 +375,41 @@ export default function Staff() {
                   )}
                 />
                 
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="SupportWorker">Support Worker</SelectItem>
+                          <SelectItem value="TeamLeader">Team Leader</SelectItem>
+                          <SelectItem value="Coordinator">Coordinator</SelectItem>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="ConsoleManager">Console Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="role"
+                    name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Role</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="SupportWorker">Support Worker</SelectItem>
-                            <SelectItem value="TeamLeader">Team Leader</SelectItem>
-                            <SelectItem value="Coordinator">Coordinator</SelectItem>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                            <SelectItem value="ConsoleManager">Console Manager</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Phone Number (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter phone number" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -416,12 +417,12 @@ export default function Staff() {
                   
                   <FormField
                     control={form.control}
-                    name="phone"
+                    name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone (Optional)</FormLabel>
+                        <FormLabel>Address (Optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter phone number" {...field} />
+                          <Input placeholder="Enter address" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

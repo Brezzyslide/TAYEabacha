@@ -32,6 +32,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email"),
   fullName: text("full_name").notNull(),
+  phone: text("phone"),
+  address: text("address"),
   role: text("role").notNull().default("staff"), // admin, staff, viewer
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   isActive: boolean("is_active").default(true),
