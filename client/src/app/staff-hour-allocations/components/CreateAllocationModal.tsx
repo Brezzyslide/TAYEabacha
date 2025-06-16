@@ -37,9 +37,11 @@ interface CreateAllocationModalProps {
   allocationToEdit?: any;
 }
 
-const formSchema = insertHourAllocationSchema.extend({
+const formSchema = z.object({
   staffId: z.number({ required_error: "Please select a staff member" }),
+  allocationPeriod: z.enum(["weekly", "fortnightly", "monthly"]),
   maxHours: z.number().min(1, "Max hours must be at least 1").max(744, "Max hours cannot exceed 744 hours per month"),
+  isActive: z.boolean().optional().default(true),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -69,7 +71,6 @@ export default function CreateAllocationModal({
       staffId: allocationToEdit.staffId,
       allocationPeriod: allocationToEdit.allocationPeriod,
       maxHours: parseFloat(allocationToEdit.maxHours),
-      tenantId: allocationToEdit.tenantId,
     } : {
       allocationPeriod: "weekly",
       maxHours: 40,
@@ -84,8 +85,11 @@ export default function CreateAllocationModal({
       const method = allocationToEdit ? 'PUT' : 'POST';
       
       const requestPayload = {
-        ...data,
+        staffId: data.staffId,
+        allocationPeriod: data.allocationPeriod,
+        maxHours: data.maxHours,
         remainingHours: data.maxHours, // Set remaining hours equal to max hours initially
+        // tenantId will be set by server from req.user.tenantId
       };
       
       console.log("[CreateAllocationModal] API Request:", { method, url, payload: requestPayload });
