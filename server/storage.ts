@@ -1194,10 +1194,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // NDIS Pricing methods
-  async getNdisPricing(companyId: string): Promise<NdisPricing[]> {
+  async getNdisPricing(tenantId: number): Promise<NdisPricing[]> {
     return await db.select().from(ndisPricing)
       .where(and(
-        eq(ndisPricing.companyId, companyId),
+        eq(ndisPricing.tenantId, tenantId),
         eq(ndisPricing.isActive, true)
       ))
       .orderBy(ndisPricing.shiftType, ndisPricing.ratio);
@@ -1208,23 +1208,23 @@ export class DatabaseStorage implements IStorage {
     return pricing;
   }
 
-  async updateNdisPricing(id: number, updatePricing: any, companyId: string): Promise<NdisPricing | undefined> {
+  async updateNdisPricing(id: number, updatePricing: any, tenantId: number): Promise<NdisPricing | undefined> {
     const [pricing] = await db.update(ndisPricing)
       .set({ ...updatePricing, updatedAt: new Date() })
       .where(and(
         eq(ndisPricing.id, id),
-        eq(ndisPricing.companyId, companyId)
+        eq(ndisPricing.tenantId, tenantId)
       ))
       .returning();
     return pricing;
   }
 
-  async deleteNdisPricing(id: number, companyId: string): Promise<boolean> {
+  async deleteNdisPricing(id: number, tenantId: number): Promise<boolean> {
     const result = await db.update(ndisPricing)
       .set({ isActive: false, updatedAt: new Date() })
       .where(and(
         eq(ndisPricing.id, id),
-        eq(ndisPricing.companyId, companyId)
+        eq(ndisPricing.tenantId, tenantId)
       ));
     return result.rowCount! > 0;
   }

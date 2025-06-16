@@ -938,7 +938,7 @@ export const insertNdisPricingSchema = createInsertSchema(ndisPricing).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  companyId: true,
+  tenantId: true,
 }).extend({
   shiftType: z.enum(["AM", "PM", "ActiveNight", "Sleepover"]),
   ratio: z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"]),

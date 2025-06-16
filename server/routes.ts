@@ -2194,7 +2194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task Board API - TeamLeader+ can manage tasks
   app.get("/api/task-board-tasks", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const tasks = await storage.getTaskBoardTasks("5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      const tasks = await storage.getTaskBoardTasks(req.user.tenantId);
       res.json(tasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch tasks" });
@@ -2213,7 +2213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: req.body.status || "todo",
         dueDateTime: req.body.dueDateTime ? new Date(req.body.dueDateTime) : null,
         assignedToUserId: req.body.assignedToUserId === "unassigned" || !req.body.assignedToUserId ? null : parseInt(req.body.assignedToUserId),
-        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303", // Fixed company ID
+        tenantId: req.user.tenantId,
         createdByUserId: req.user.id,
       };
 
@@ -2291,7 +2291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NDIS Pricing endpoints - Admin+ only
   app.get("/api/ndis-pricing", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const pricing = await storage.getNdisPricing("5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      const pricing = await storage.getNdisPricing(req.user.tenantId);
       res.json(pricing);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch NDIS pricing" });
