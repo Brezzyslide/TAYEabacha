@@ -1121,12 +1121,12 @@ export const insertCareSupportPlanSchema = createInsertSchema(careSupportPlans).
   id: true,
   createdAt: true,
   updatedAt: true,
-  tenantId: true,
-  createdByUserId: true,
 }).extend({
   planTitle: z.string().min(1, "Plan title is required").max(255, "Plan title cannot exceed 255 characters"),
   status: z.enum(["draft", "completed", "active"]).default("draft"),
   clientId: z.number().positive("Client ID is required"),
+  tenantId: z.number().positive("Tenant ID is required"),
+  createdByUserId: z.number().positive("Created by user ID is required"),
 });
 
 export type InsertCareSupportPlan = z.infer<typeof insertCareSupportPlanSchema>;
