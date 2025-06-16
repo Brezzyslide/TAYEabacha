@@ -27,6 +27,7 @@ export function SimplePlanModal({ open, onClose }: SimplePlanModalProps) {
 
   const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
+    enabled: !!user && open, // Only fetch when user is authenticated and modal is open
   });
 
   const createPlanMutation = useMutation({
