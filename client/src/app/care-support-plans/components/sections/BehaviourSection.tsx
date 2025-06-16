@@ -1,355 +1,321 @@
-import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, Shield, Plus, X, Copy, Check } from "lucide-react";
+import { Sparkles, Save, AlertCircle, Plus, Trash2, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-interface BehaviourStrategy {
-  id: string;
-  type: "proactive" | "reactive" | "protective";
-  trigger: string;
-  strategy: string;
-  notes: string;
-}
-
 interface BehaviourSectionProps {
   data: any;
-  onChange: (data: any) => void;
-  selectedClient: any;
-  planData: any;
+  updateData: (section: string, data: any) => void;
 }
 
-export function BehaviourSection({ data, onChange, selectedClient, planData }: BehaviourSectionProps) {
-  const [formData, setFormData] = useState({
-    behaviourSummary: data.behaviourSummary || "",
-    positiveStrategies: data.positiveStrategies || "",
-    communicationFunctions: data.communicationFunctions || "",
-    environmentalFactors: data.environmentalFactors || "",
-    behaviourStrategies: data.behaviourStrategies || [],
-    generatedContent: data.generatedContent || "",
-    behaviourInput: data.behaviourInput || "",
-    ...data
-  });
-  const [copied, setCopied] = useState(false);
+interface BehaviourEntry {
+  id: string;
+  behaviour: string;
+  trigger: string;
+  proactiveStrategy: string;
+  reactiveStrategy: string;
+  protectiveStrategy: string;
+  aiAttempts: number;
+}
+
+export function BehaviourSection({ data, updateData }: BehaviourSectionProps) {
   const { toast } = useToast();
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
 
-  useEffect(() => {
-    onChange(formData);
-  }, [formData, onChange]);
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const generateContentMutation = useMutation({
-    mutationFn: (userInput: string) => apiRequest("POST", "/api/care-support-plans/generate-ai", {
-      section: "behaviour",
-      userInput,
-      clientName: selectedClient?.fullName || "Client",
-      clientDiagnosis: selectedClient?.diagnosis || "Not specified",
-      maxWords: 400
-    }),
-    onSuccess: (response: any) => {
-      setFormData((prev: any) => ({
-        ...prev,
-        generatedContent: response.generatedContent
-      }));
-      toast({
-        title: "PBS Strategies Generated",
-        description: "AI has created evidence-based behaviour support strategies.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate content. Please try again.",
-        variant: "destructive",
-      });
-    },
+  const behaviourData = data.behaviourData || { behaviours: [] };
+  
+  const [newBehaviour, setNewBehaviour] = useState({
+    behaviour: '',
+    trigger: ''
   });
 
-  const handleGenerateContent = () => {
-    if (!formData.behaviourInput.trim()) {
+  const addNewBehaviour = () => {
+    if (!newBehaviour.behaviour.trim() || !newBehaviour.trigger.trim()) {
       toast({
-        title: "Input Required",
-        description: "Please describe behaviours or triggers first.",
+        title: "Missing Information",
+        description: "Please enter both behaviour and trigger before adding.",
         variant: "destructive",
       });
       return;
     }
 
-    generateContentMutation.mutate(formData.behaviourInput);
-  };
-
-  const addStrategy = (type: "proactive" | "reactive" | "protective") => {
-    const newStrategy: BehaviourStrategy = {
+    const behaviourEntry: BehaviourEntry = {
       id: Date.now().toString(),
-      type,
-      trigger: "",
-      strategy: "",
-      notes: ""
+      behaviour: newBehaviour.behaviour,
+      trigger: newBehaviour.trigger,
+      proactiveStrategy: '',
+      reactiveStrategy: '',
+      protectiveStrategy: '',
+      aiAttempts: 0
     };
 
-    setFormData((prev: any) => ({
-      ...prev,
-      behaviourStrategies: [...prev.behaviourStrategies, newStrategy]
-    }));
+    const updatedBehaviours = [...behaviourData.behaviours, behaviourEntry];
+    updateData('behaviourData', { behaviours: updatedBehaviours });
+
+    setNewBehaviour({ behaviour: '', trigger: '' });
+
+    toast({
+      title: "Behaviour Added",
+      description: "New behaviour entry has been added successfully.",
+    });
   };
 
-  const updateStrategy = (strategyId: string, field: string, value: string) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      behaviourStrategies: prev.behaviourStrategies.map((strategy: BehaviourStrategy) => 
-        strategy.id === strategyId ? { ...strategy, [field]: value } : strategy
-      )
-    }));
+  const deleteBehaviour = (behaviourId: string) => {
+    const updatedBehaviours = behaviourData.behaviours.filter((b: BehaviourEntry) => b.id !== behaviourId);
+    updateData('behaviourData', { behaviours: updatedBehaviours });
+    
+    toast({
+      title: "Behaviour Deleted",
+      description: "Behaviour entry has been removed successfully.",
+    });
   };
 
-  const removeStrategy = (strategyId: string) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      behaviourStrategies: prev.behaviourStrategies.filter((strategy: BehaviourStrategy) => strategy.id !== strategyId)
-    }));
+  const updateBehaviourField = (behaviourId: string, field: string, value: string) => {
+    const updatedBehaviours = behaviourData.behaviours.map((b: BehaviourEntry) => 
+      b.id === behaviourId ? { ...b, [field]: value } : b
+    );
+    updateData('behaviourData', { behaviours: updatedBehaviours });
   };
 
-  const handleCopyContent = () => {
-    if (formData.generatedContent) {
-      navigator.clipboard.writeText(formData.generatedContent);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const generateStrategies = async (behaviourId: string) => {
+    const behaviour = behaviourData.behaviours.find((b: BehaviourEntry) => b.id === behaviourId);
+    
+    if (!behaviour) return;
+
+    if (behaviour.aiAttempts >= 2) {
       toast({
-        title: "Content Copied",
-        description: "Generated behaviour strategies have been copied to clipboard.",
+        title: "AI Generation Limit Reached",
+        description: "Maximum 2 AI generation attempts allowed per behaviour.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setGeneratingFor(behaviourId);
+    try {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "behaviour",
+        userInput: `Behaviour: ${behaviour.behaviour}\nTrigger: ${behaviour.trigger}`,
+        clientDiagnosis: data.clientData?.primaryDiagnosis || null,
+        clientName: data.clientData?.fullName || null,
+        maxWords: 150,
+      });
+
+      const { generatedContent } = response;
+      
+      // Parse the AI response to extract the three strategies
+      const strategies = parseStrategiesFromAI(generatedContent);
+      
+      const updatedBehaviours = behaviourData.behaviours.map((b: BehaviourEntry) => 
+        b.id === behaviourId ? { 
+          ...b, 
+          proactiveStrategy: strategies.proactive,
+          reactiveStrategy: strategies.reactive,
+          protectiveStrategy: strategies.protective,
+          aiAttempts: b.aiAttempts + 1 
+        } : b
+      );
+      
+      updateData('behaviourData', { behaviours: updatedBehaviours });
+
+      toast({
+        title: "Strategies Generated",
+        description: "AI has generated behaviour support strategies.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate strategies.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingFor(null);
     }
   };
 
-  const getStrategyTypeColor = (type: string) => {
-    const colors = {
-      "proactive": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      "reactive": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      "protective": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+  const parseStrategiesFromAI = (content: string) => {
+    // Simple parsing - in a real implementation, you'd have more sophisticated parsing
+    const sections = content.split(/(?:Proactive|Reactive|Protective)/i);
+    return {
+      proactive: sections[1]?.trim() || '',
+      reactive: sections[2]?.trim() || '',
+      protective: sections[3]?.trim() || ''
     };
-    return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
   };
 
-  const strategyTypes = [
-    { type: "proactive", label: "Proactive", description: "Prevention strategies" },
-    { type: "reactive", label: "Reactive", description: "Response strategies" },
-    { type: "protective", label: "Protective", description: "Safety strategies" }
-  ];
+  const handleSaveSection = () => {
+    toast({
+      title: "Section Saved",
+      description: "Behaviour Support section has been saved.",
+    });
+  };
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Section Instructions</h4>
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          Document challenging behaviours and their triggers. AI will generate three types of support strategies: 
+          Proactive (prevention), Reactive (response), and Protective (safety) for each behaviour.
+        </p>
+      </div>
+
+      {/* Add New Behaviour Form */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-500" />
-            AI PBS Strategy Generator
+            <Plus className="h-5 w-5 text-primary" />
+            Add New Behaviour
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="behaviourInput">Behaviour Description & Triggers</Label>
-            <Textarea
-              id="behaviourInput"
-              value={formData.behaviourInput}
-              onChange={(e) => handleInputChange("behaviourInput", e.target.value)}
-              placeholder="Describe specific behaviours of concern, their triggers, functions, and current strategies. Include frequency, intensity, and environmental factors."
-              rows={4}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="newBehaviour">Behaviour *</Label>
+              <Input
+                id="newBehaviour"
+                value={newBehaviour.behaviour}
+                onChange={(e) => setNewBehaviour({...newBehaviour, behaviour: e.target.value})}
+                placeholder="e.g., Aggressive outbursts, Self-harm, Withdrawal"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="newTrigger">Trigger *</Label>
+              <Input
+                id="newTrigger"
+                value={newBehaviour.trigger}
+                onChange={(e) => setNewBehaviour({...newBehaviour, trigger: e.target.value})}
+                placeholder="e.g., Loud noises, Changes in routine, Frustration"
+                className="mt-1"
+              />
+            </div>
           </div>
 
-          <Button 
-            onClick={handleGenerateContent}
-            disabled={generateContentMutation.isPending || !formData.behaviourInput.trim()}
-            className="w-full"
-          >
-            {generateContentMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating PBS Strategies...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Behaviour Support Plan
-              </>
-            )}
+          <Button onClick={addNewBehaviour} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Behaviour
           </Button>
+        </CardContent>
+      </Card>
 
-          {formData.generatedContent && (
-            <div className="space-y-3">
-              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">AI Generated PBS Strategies:</h4>
-                <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                  {formData.generatedContent}
+      {/* Existing Behaviours */}
+      {behaviourData.behaviours.length > 0 && (
+        <div className="space-y-4">
+          {behaviourData.behaviours.map((behaviour: BehaviourEntry) => (
+            <Card key={behaviour.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    {behaviour.behaviour}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={behaviour.aiAttempts >= 2 ? "destructive" : "secondary"}>
+                      {behaviour.aiAttempts}/2 AI Attempts
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteBehaviour(behaviour.id)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleCopyContent}>
-                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                {copied ? "Copied!" : "Copy Strategies"}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <CardDescription>
+                  <strong>Trigger:</strong> {behaviour.trigger}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    Generate AI-powered strategies for this behaviour
+                  </p>
+                  <Button
+                    onClick={() => generateStrategies(behaviour.id)}
+                    disabled={generatingFor === behaviour.id || behaviour.aiAttempts >= 2}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {generatingFor === behaviour.id ? "Generating..." : "Generate Strategies"}
+                  </Button>
+                </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Positive Behaviour Support Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="behaviourSummary">Behaviour Summary</Label>
-            <Textarea
-              id="behaviourSummary"
-              value={formData.behaviourSummary}
-              onChange={(e) => handleInputChange("behaviourSummary", e.target.value)}
-              placeholder="Overall summary of behaviours, their impact, and support needs"
-              rows={3}
-            />
-          </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor={`proactive-${behaviour.id}`}>Proactive Strategy</Label>
+                    <Textarea
+                      id={`proactive-${behaviour.id}`}
+                      value={behaviour.proactiveStrategy}
+                      onChange={(e) => updateBehaviourField(behaviour.id, 'proactiveStrategy', e.target.value)}
+                      placeholder="Prevention strategies..."
+                      rows={4}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">How to prevent the behaviour</p>
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="communicationFunctions">Communication Functions of Behaviour</Label>
-            <Textarea
-              id="communicationFunctions"
-              value={formData.communicationFunctions}
-              onChange={(e) => handleInputChange("communicationFunctions", e.target.value)}
-              placeholder="What is the client trying to communicate through their behaviour? (e.g., seeking attention, avoiding tasks, expressing needs)"
-              rows={3}
-            />
-          </div>
+                  <div>
+                    <Label htmlFor={`reactive-${behaviour.id}`}>Reactive Strategy</Label>
+                    <Textarea
+                      id={`reactive-${behaviour.id}`}
+                      value={behaviour.reactiveStrategy}
+                      onChange={(e) => updateBehaviourField(behaviour.id, 'reactiveStrategy', e.target.value)}
+                      placeholder="Response strategies..."
+                      rows={4}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">How to respond when it occurs</p>
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="positiveStrategies">Positive Reinforcement Strategies</Label>
-            <Textarea
-              id="positiveStrategies"
-              value={formData.positiveStrategies}
-              onChange={(e) => handleInputChange("positiveStrategies", e.target.value)}
-              placeholder="Strategies to reinforce positive behaviours and promote skill development"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="environmentalFactors">Environmental Factors & Modifications</Label>
-            <Textarea
-              id="environmentalFactors"
-              value={formData.environmentalFactors}
-              onChange={(e) => handleInputChange("environmentalFactors", e.target.value)}
-              placeholder="Environmental changes, sensory considerations, or structural modifications that support positive behaviour"
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Behaviour Support Strategies ({formData.behaviourStrategies.length})
-            </CardTitle>
-            <div className="flex gap-2">
-              {strategyTypes.map(({ type, label }) => (
-                <Button
-                  key={type}
-                  onClick={() => addStrategy(type as "proactive" | "reactive" | "protective")}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {formData.behaviourStrategies.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No behaviour strategies added yet. Click above to add proactive, reactive, or protective strategies.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {formData.behaviourStrategies.map((strategy: BehaviourStrategy) => (
-                <Card key={strategy.id} className="relative">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <Badge className={getStrategyTypeColor(strategy.type)}>
-                        {strategy.type} strategy
-                      </Badge>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => removeStrategy(strategy.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Trigger or Situation</Label>
-                      <Input
-                        value={strategy.trigger}
-                        onChange={(e) => updateStrategy(strategy.id, "trigger", e.target.value)}
-                        placeholder="When does this strategy apply? What triggers it?"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Strategy Description</Label>
-                      <Textarea
-                        value={strategy.strategy}
-                        onChange={(e) => updateStrategy(strategy.id, "strategy", e.target.value)}
-                        placeholder="Detailed description of the strategy and how to implement it"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Additional Notes</Label>
-                      <Textarea
-                        value={strategy.notes}
-                        onChange={(e) => updateStrategy(strategy.id, "notes", e.target.value)}
-                        placeholder="Important considerations, precautions, or tips for success"
-                        rows={2}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {selectedClient && (
-        <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
-          <p className="text-sm text-orange-800 dark:text-orange-200">
-            <strong>Positive Behaviour Support (PBS):</strong> Evidence-based approach focusing on understanding the function 
-            of behaviour and teaching alternative skills for {selectedClient.fullName}. All strategies should be dignified, 
-            person-centered, and promote quality of life.
-          </p>
+                  <div>
+                    <Label htmlFor={`protective-${behaviour.id}`}>Protective Strategy</Label>
+                    <Textarea
+                      id={`protective-${behaviour.id}`}
+                      value={behaviour.protectiveStrategy}
+                      onChange={(e) => updateBehaviourField(behaviour.id, 'protectiveStrategy', e.target.value)}
+                      placeholder="Safety strategies..."
+                      rows={4}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">How to ensure safety</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
+
+      {behaviourData.behaviours.length === 0 && (
+        <Card className="border-dashed border-2 border-muted-foreground/25">
+          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+            <Shield className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <h3 className="font-semibold text-lg mb-2">No Behaviours Added</h3>
+            <p className="text-muted-foreground max-w-md">
+              Add challenging behaviours and their triggers to generate comprehensive support strategies. 
+              Start by filling out the form above.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-end">
+        <Button onClick={handleSaveSection} className="flex items-center gap-2">
+          <Save className="h-4 w-4" />
+          Save Section
+        </Button>
+      </div>
     </div>
   );
 }
