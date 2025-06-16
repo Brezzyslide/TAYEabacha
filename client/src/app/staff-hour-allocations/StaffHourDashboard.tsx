@@ -23,6 +23,8 @@ interface DashboardStats {
 
 export default function StaffHourDashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  console.log("[StaffHourDashboard] Modal state:", isCreateModalOpen);
 
   // Fetch allocations
   const { data: allocations = [], isLoading: allocationsLoading } = useQuery<HourAllocation[]>({
@@ -70,8 +72,12 @@ export default function StaffHourDashboard() {
         </div>
         <PermissionGuard module="hour-allocations" action="create">
           <Button onClick={() => {
-            console.log("[StaffHourDashboard] New Allocation button clicked");
+            console.log("[StaffHourDashboard] New Allocation button clicked - setting modal to true");
             setIsCreateModalOpen(true);
+            // Force a re-render to ensure state change is applied
+            setTimeout(() => {
+              console.log("[StaffHourDashboard] Modal state after timeout:", isCreateModalOpen);
+            }, 100);
           }}>
             <Plus className="h-4 w-4 mr-2" />
             New Allocation

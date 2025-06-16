@@ -53,11 +53,15 @@ export default function CreateAllocationModal({
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  console.log("[CreateAllocationModal] Props received:", { isOpen, allocationToEdit });
+
   // Fetch staff members
-  const { data: staffMembers = [] } = useQuery<User[]>({
+  const { data: staffMembers = [], isLoading: staffLoading, error: staffError } = useQuery<User[]>({
     queryKey: ['/api/users'],
     enabled: isOpen,
   });
+
+  console.log("[CreateAllocationModal] Staff data:", { staffMembers, staffLoading, staffError });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -137,7 +141,7 @@ export default function CreateAllocationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md z-50">
         <DialogHeader>
           <DialogTitle>
             {allocationToEdit ? "Edit Hour Allocation" : "Create Hour Allocation"}
