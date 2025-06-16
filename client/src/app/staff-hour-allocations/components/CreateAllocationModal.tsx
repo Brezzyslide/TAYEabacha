@@ -39,7 +39,7 @@ interface CreateAllocationModalProps {
 
 const formSchema = insertHourAllocationSchema.extend({
   staffId: z.number({ required_error: "Please select a staff member" }),
-  maxHours: z.number().min(1, "Max hours must be at least 1").max(168, "Max hours cannot exceed 168 hours per week"),
+  maxHours: z.number().min(1, "Max hours must be at least 1").max(744, "Max hours cannot exceed 744 hours per month"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -166,7 +166,9 @@ export default function CreateAllocationModal({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            console.log("[CreateAllocationModal] Form validation failed:", errors);
+          })} className="space-y-4">
             <FormField
               control={form.control}
               name="staffId"
@@ -263,6 +265,7 @@ export default function CreateAllocationModal({
               <Button
                 type="submit"
                 disabled={isSubmitting}
+                onClick={() => console.log("[CreateAllocationModal] Submit button clicked")}
               >
                 {isSubmitting 
                   ? (allocationToEdit ? "Updating..." : "Creating...") 
