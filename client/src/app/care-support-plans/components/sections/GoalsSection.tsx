@@ -63,7 +63,7 @@ export function GoalsSection({ data, onChange, selectedClient, planData }: Goals
     onSuccess: (response) => {
       setFormData(prev => ({
         ...prev,
-        generatedGoals: response.generatedContent
+        generatedGoals: response.generatedContent || ""
       }));
       toast({
         title: "SMART Goals Generated",

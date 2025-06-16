@@ -62,7 +62,7 @@ export function ADLSection({ data, updateData }: ADLSectionProps) {
         maxWords: 300,
       });
 
-      const { generatedContent } = response;
+      const generatedContent = (response as any).generatedContent || (response as any).content || String(response);
       
       updateData('adlData', {
         ...adlData,
