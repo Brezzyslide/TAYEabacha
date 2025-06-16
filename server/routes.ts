@@ -392,7 +392,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/shifts", requireAuth, async (req: any, res) => {
     try {
       const { clientId } = req.query;
+      console.log(`[SHIFTS API] User: ${req.user.username}, TenantId: ${req.user.tenantId}`);
+      
       const shifts = await storage.getActiveShifts(req.user.tenantId);
+      console.log(`[SHIFTS API] Found ${shifts.length} shifts for tenant ${req.user.tenantId}`);
+      console.log(`[SHIFTS API] Shifts tenant IDs:`, shifts.map(s => `ID:${s.id} tenant:${s.tenantId}`));
       
       // Filter by clientId if provided
       const filteredShifts = clientId 
