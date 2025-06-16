@@ -952,7 +952,7 @@ export type InsertNdisPricing = z.infer<typeof insertNdisPricingSchema>;
 export const ndisBudgets = pgTable("ndis_budgets", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull().references(() => clients.id),
-  companyId: text("company_id").notNull().references(() => companies.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   
   // SIL Category
   silTotal: decimal("sil_total", { precision: 12, scale: 2 }).default("0").notNull(),
@@ -982,9 +982,9 @@ export const ndisBudgetsRelations = relations(ndisBudgets, ({ one }) => ({
     fields: [ndisBudgets.clientId],
     references: [clients.id],
   }),
-  company: one(companies, {
-    fields: [ndisBudgets.companyId],
-    references: [companies.id],
+  tenant: one(tenants, {
+    fields: [ndisBudgets.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -992,7 +992,7 @@ export const insertNdisBudgetSchema = createInsertSchema(ndisBudgets).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  companyId: true,
+  tenantId: true,
 }).extend({
   clientId: z.number().positive("Client ID is required"),
   silTotal: z.number().min(0, "SIL total must be non-negative"),

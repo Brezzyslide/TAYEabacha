@@ -1230,20 +1230,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // NDIS Budget methods
-  async getNdisBudgets(companyId: string): Promise<NdisBudget[]> {
+  async getNdisBudgets(tenantId: number): Promise<NdisBudget[]> {
     return await db.select().from(ndisBudgets)
       .where(and(
-        eq(ndisBudgets.companyId, companyId),
+        eq(ndisBudgets.tenantId, tenantId),
         eq(ndisBudgets.isActive, true)
       ))
       .orderBy(desc(ndisBudgets.createdAt));
   }
 
-  async getNdisBudgetByClient(clientId: number, companyId: string): Promise<NdisBudget | undefined> {
+  async getNdisBudgetByClient(clientId: number, tenantId: number): Promise<NdisBudget | undefined> {
     const [budget] = await db.select().from(ndisBudgets)
       .where(and(
         eq(ndisBudgets.clientId, clientId),
-        eq(ndisBudgets.companyId, companyId),
+        eq(ndisBudgets.tenantId, tenantId),
         eq(ndisBudgets.isActive, true)
       ));
     return budget;
