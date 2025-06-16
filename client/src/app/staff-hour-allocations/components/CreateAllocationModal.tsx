@@ -79,7 +79,7 @@ export default function CreateAllocationModal({
         : '/api/hour-allocations';
       const method = allocationToEdit ? 'PUT' : 'POST';
       
-      return apiRequest(url, method, {
+      return apiRequest(method, url, {
         ...data,
         remainingHours: data.maxHours, // Set remaining hours equal to max hours initially
       });
@@ -111,10 +111,12 @@ export default function CreateAllocationModal({
   };
 
   const onSubmit = async (data: FormData) => {
+    console.log("[CreateAllocationModal] Form submitted with data:", data);
     setIsSubmitting(true);
     try {
       await createMutation.mutateAsync(data);
     } catch (error) {
+      console.error("[CreateAllocationModal] Form submission error:", error);
       setIsSubmitting(false);
     }
   };

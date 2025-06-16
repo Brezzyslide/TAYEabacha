@@ -69,7 +69,10 @@ export default function StaffHourDashboard() {
           </p>
         </div>
         <PermissionGuard module="hour-allocations" action="create">
-          <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Button onClick={() => {
+            console.log("[StaffHourDashboard] New Allocation button clicked");
+            setIsCreateModalOpen(true);
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             New Allocation
           </Button>

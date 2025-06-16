@@ -36,6 +36,7 @@ export const permissions: Permission[] = [
   { roleName: "TeamLeader", module: "care-plans", actions: ["view", "edit"], scope: "assigned" },
   { roleName: "TeamLeader", module: "incidents", actions: ["view", "create", "edit"], scope: "assigned" },
   { roleName: "TeamLeader", module: "staff", actions: ["view"], scope: "company" },
+  { roleName: "TeamLeader", module: "hour-allocations", actions: ["view", "create", "edit", "delete"], scope: "company" },
 
   // Coordinator permissions - full company access for shifts & staff
   { roleName: "Coordinator", module: "clients", actions: ["view", "create", "edit"], scope: "company" },
