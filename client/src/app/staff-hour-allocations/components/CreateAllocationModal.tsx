@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -139,6 +140,12 @@ export default function CreateAllocationModal({
           <DialogTitle>
             {allocationToEdit ? "Edit Hour Allocation" : "Create Hour Allocation"}
           </DialogTitle>
+          <DialogDescription>
+            {allocationToEdit 
+              ? "Update the staff member's working hour allocation and period settings."
+              : "Set working hour limits for a staff member to prevent overscheduling and manage workload."
+            }
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -187,6 +194,7 @@ export default function CreateAllocationModal({
                     <SelectContent>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -204,7 +212,7 @@ export default function CreateAllocationModal({
                     <Input
                       type="number"
                       min="1"
-                      max="168"
+                      max={form.watch("allocationPeriod") === "monthly" ? "744" : form.watch("allocationPeriod") === "fortnightly" ? "336" : "168"}
                       step="0.5"
                       placeholder="e.g., 40"
                       {...field}
@@ -215,7 +223,11 @@ export default function CreateAllocationModal({
                   <p className="text-xs text-gray-500">
                     {form.watch("allocationPeriod") === "weekly" 
                       ? "Maximum hours per week (1-168)"
-                      : "Maximum hours per fortnight (1-336)"
+                      : form.watch("allocationPeriod") === "fortnightly"
+                      ? "Maximum hours per fortnight (1-336)"
+                      : form.watch("allocationPeriod") === "monthly"
+                      ? "Maximum hours per month (1-744)"
+                      : "Select allocation period first"
                     }
                   </p>
                 </FormItem>

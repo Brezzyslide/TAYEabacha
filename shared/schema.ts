@@ -776,8 +776,8 @@ export const insertHourAllocationSchema = createInsertSchema(hourAllocations).om
   createdAt: true,
   updatedAt: true,
 }).extend({
-  maxHours: z.number().min(1, "Max hours must be at least 1").max(168, "Max hours cannot exceed 168 hours per week"),
-  allocationPeriod: z.enum(["weekly", "fortnightly"], { required_error: "Allocation period is required" }),
+  maxHours: z.number().min(1, "Max hours must be at least 1").max(744, "Max hours cannot exceed 744 hours per month"),
+  allocationPeriod: z.enum(["weekly", "fortnightly", "monthly"], { required_error: "Allocation period is required" }),
 });
 
 export const insertCustomRoleSchema = createInsertSchema(customRoles).omit({
