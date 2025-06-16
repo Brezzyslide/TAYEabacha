@@ -1540,25 +1540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get users for messaging (filtered by tenant)
-  app.get("/api/users", requireAuth, async (req: any, res) => {
-    try {
-      const users = await storage.getUsersByTenant(req.user.tenantId);
-      
-      // Return user info without sensitive data
-      const safeUsers = users.map(user => ({
-        id: user.id,
-        username: user.username,
-        fullName: user.fullName,
-        role: user.role,
-        isActive: user.isActive
-      }));
-      
-      res.json(safeUsers);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
+
 
   // Get staff directory (filtered by tenant)
   app.get("/api/staff", requireAuth, async (req: any, res) => {
