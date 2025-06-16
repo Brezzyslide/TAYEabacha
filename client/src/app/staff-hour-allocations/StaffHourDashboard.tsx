@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Users, Clock, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Users, Clock, TrendingUp, Calendar, Grid, List, Download, Edit } from "lucide-react";
 import CreateAllocationModal from "./components/CreateAllocationModal";
 import StaffAllocationCard from "./components/StaffAllocationCard";
-import { HourAllocation } from "@shared/schema";
+import { HourAllocation, User } from "@shared/schema";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 interface DashboardStats {
@@ -23,6 +23,8 @@ interface DashboardStats {
 
 export default function StaffHourDashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+  const [editingAllocation, setEditingAllocation] = useState<HourAllocation | null>(null);
   
   console.log("[StaffHourDashboard] Modal state:", isCreateModalOpen);
 
@@ -30,6 +32,44 @@ export default function StaffHourDashboard() {
   const { data: allocations = [], isLoading: allocationsLoading } = useQuery<HourAllocation[]>({
     queryKey: ['/api/hour-allocations'],
   });
+
+  // Fetch staff members to map staff IDs to names
+  const { data: staffMembers = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+  });
+
+  // Helper function to get staff name by ID
+  const getStaffName = (staffId: number) => {
+    const staff = staffMembers.find(s => s.id === staffId);
+    return staff ? staff.fullName || staff.username : `Staff ${staffId}`;
+  };
+
+  // Excel export function
+  const exportToExcel = () => {
+    const csvData = allocations.map(allocation => ({
+      'Staff Name': getStaffName(allocation.staffId),
+      'Allocation Period': allocation.allocationPeriod,
+      'Max Hours': allocation.maxHours,
+      'Hours Used': allocation.hoursUsed,
+      'Remaining Hours': allocation.remainingHours,
+      'Utilization %': Math.round((parseFloat(allocation.hoursUsed) / parseFloat(allocation.maxHours)) * 100),
+      'Status': allocation.isActive ? 'Active' : 'Inactive',
+      'Created Date': new Date(allocation.createdAt).toLocaleDateString()
+    }));
+
+    const csvContent = [
+      Object.keys(csvData[0] || {}).join(','),
+      ...csvData.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `staff-hour-allocations-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   // Fetch dashboard stats
   const { data: stats = {
@@ -61,7 +101,7 @@ export default function StaffHourDashboard() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Staff Hour Allocations
@@ -70,19 +110,49 @@ export default function StaffHourDashboard() {
             Manage staff working hour caps and prevent overscheduling
           </p>
         </div>
-        <PermissionGuard module="hour-allocations" action="create">
-          <Button onClick={() => {
-            console.log("[StaffHourDashboard] New Allocation button clicked - setting modal to true");
-            setIsCreateModalOpen(true);
-            // Force a re-render to ensure state change is applied
-            setTimeout(() => {
-              console.log("[StaffHourDashboard] Modal state after timeout:", isCreateModalOpen);
-            }, 100);
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Allocation
-          </Button>
-        </PermissionGuard>
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border rounded-md">
+            <Button
+              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('card')}
+              className="rounded-r-none"
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="rounded-l-none"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Export Button */}
+          {allocations.length > 0 && (
+            <Button variant="outline" onClick={exportToExcel}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          )}
+
+          {/* Create Button */}
+          <PermissionGuard module="hour-allocations" action="create">
+            <Button onClick={() => {
+              console.log("[StaffHourDashboard] New Allocation button clicked - setting modal to true");
+              setIsCreateModalOpen(true);
+              setTimeout(() => {
+                console.log("[StaffHourDashboard] Modal state after timeout:", isCreateModalOpen);
+              }, 100);
+            }}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Allocation
+            </Button>
+          </PermissionGuard>
+        </div>
       </div>
 
       {/* Header Cards */}
@@ -238,14 +308,14 @@ export default function StaffHourDashboard() {
                 </Button>
               </PermissionGuard>
             </div>
-          ) : (
+          ) : viewMode === 'card' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {allocations.map((allocation) => (
                 <Card key={allocation.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Users className="h-4 w-4" />
-                      Staff ID: {allocation.staffId}
+                      {getStaffName(allocation.staffId)}
                     </CardTitle>
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar className="h-3 w-3" />
@@ -287,9 +357,75 @@ export default function StaffHourDashboard() {
                         className="h-2" 
                       />
                     </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setEditingAllocation(allocation)}
+                        className="flex-1"
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          ) : (
+            /* List View */
+            <div className="space-y-2">
+              <div className="grid grid-cols-7 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div>Staff Name</div>
+                <div>Period</div>
+                <div>Max Hours</div>
+                <div>Used Hours</div>
+                <div>Remaining</div>
+                <div>Utilization</div>
+                <div>Actions</div>
+              </div>
+              {allocations.map((allocation) => {
+                const usedHours = parseFloat(allocation.hoursUsed);
+                const maxHours = parseFloat(allocation.maxHours);
+                const utilization = Math.round((usedHours / maxHours) * 100);
+                
+                return (
+                  <div key={allocation.id} className="grid grid-cols-7 gap-4 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 items-center">
+                    <div className="font-medium">{getStaffName(allocation.staffId)}</div>
+                    <div>
+                      <Badge variant="outline" className="text-xs">
+                        {allocation.allocationPeriod === "weekly" ? "Weekly" : "Fortnightly"}
+                      </Badge>
+                    </div>
+                    <div>{maxHours.toFixed(1)}h</div>
+                    <div>{usedHours.toFixed(1)}h</div>
+                    <div className="text-green-600 dark:text-green-400">
+                      {parseFloat(allocation.remainingHours).toFixed(1)}h
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm ${utilization > 90 ? 'text-red-600' : utilization > 70 ? 'text-amber-600' : 'text-green-600'}`}>
+                        {utilization}%
+                      </span>
+                      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all ${utilization > 90 ? 'bg-red-500' : utilization > 70 ? 'bg-amber-500' : 'bg-green-500'}`}
+                          style={{ width: `${Math.min(utilization, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setEditingAllocation(allocation)}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
