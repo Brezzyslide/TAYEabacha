@@ -1380,7 +1380,7 @@ export class DatabaseStorage implements IStorage {
   async createCareSupportPlan(insertPlan: InsertCareSupportPlan): Promise<CareSupportPlan> {
     const [plan] = await db
       .insert(careSupportPlans)
-      .values(insertPlan)
+      .values([insertPlan])
       .returning();
     return plan;
   }

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { CareSupportPlanWizard } from "./components/CareSupportPlanWizard";
+import { SimplePlanModal } from "./components/SimplePlanModal";
 import { hasPermission } from "@/lib/auth/permissions";
 import { useAuth } from "@/hooks/use-auth";
 import type { CareSupportPlan } from "@shared/schema";
@@ -25,8 +25,13 @@ export function CareSupportPlans() {
     queryKey: ["/api/clients"],
   });
 
-  const canCreatePlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "ConsoleManager");
-  const canEditPlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "ConsoleManager");
+  console.log("User object:", user);
+  console.log("User role:", user?.role);
+  
+  const canCreatePlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "admin" || user.role === "ConsoleManager");
+  const canEditPlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "admin" || user.role === "ConsoleManager");
+  
+  console.log("Can create plans:", canCreatePlans);
 
   const filteredPlans = carePlans.filter((plan: CareSupportPlan) => {
     const client = clients.find((c: any) => c.id === plan.clientId);
