@@ -83,10 +83,18 @@ export default function CreateAllocationModal({
         : '/api/hour-allocations';
       const method = allocationToEdit ? 'PUT' : 'POST';
       
-      return apiRequest(method, url, {
+      const requestPayload = {
         ...data,
         remainingHours: data.maxHours, // Set remaining hours equal to max hours initially
-      });
+      };
+      
+      console.log("[CreateAllocationModal] API Request:", { method, url, payload: requestPayload });
+      
+      const response = await apiRequest(method, url, requestPayload);
+      const result = await response.json();
+      
+      console.log("[CreateAllocationModal] API Response:", result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hour-allocations'] });
@@ -116,9 +124,12 @@ export default function CreateAllocationModal({
 
   const onSubmit = async (data: FormData) => {
     console.log("[CreateAllocationModal] Form submitted with data:", data);
+    console.log("[CreateAllocationModal] Form validation errors:", form.formState.errors);
     setIsSubmitting(true);
     try {
-      await createMutation.mutateAsync(data);
+      console.log("[CreateAllocationModal] Calling API mutation...");
+      const result = await createMutation.mutateAsync(data);
+      console.log("[CreateAllocationModal] API mutation successful:", result);
     } catch (error) {
       console.error("[CreateAllocationModal] Form submission error:", error);
       setIsSubmitting(false);
