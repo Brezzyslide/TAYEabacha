@@ -873,7 +873,7 @@ export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSc
 // Task Board Tasks table
 export const taskBoardTasks = pgTable("task_board_tasks", {
   id: serial("id").primaryKey(),
-  companyId: text("company_id").notNull().references(() => companies.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   title: text("title").notNull(),
   description: text("description"),
   status: text("status").notNull().default("todo"), // "todo" | "in-progress" | "done"
@@ -885,9 +885,9 @@ export const taskBoardTasks = pgTable("task_board_tasks", {
 });
 
 export const taskBoardTasksRelations = relations(taskBoardTasks, ({ one }) => ({
-  company: one(companies, {
-    fields: [taskBoardTasks.companyId],
-    references: [companies.id],
+  tenant: one(tenants, {
+    fields: [taskBoardTasks.tenantId],
+    references: [tenants.id],
   }),
   assignedTo: one(users, {
     fields: [taskBoardTasks.assignedToUserId],
@@ -903,7 +903,7 @@ export const insertTaskBoardTaskSchema = createInsertSchema(taskBoardTasks).omit
   id: true,
   createdAt: true,
   updatedAt: true,
-  companyId: true,
+  tenantId: true,
   createdByUserId: true,
 }).extend({
   title: z.string().min(1, "Title is required").max(200, "Title cannot exceed 200 characters"),
@@ -918,7 +918,7 @@ export type InsertTaskBoardTask = z.infer<typeof insertTaskBoardTaskSchema>;
 // NDIS Pricing table
 export const ndisPricing = pgTable("ndis_pricing", {
   id: serial("id").primaryKey(),
-  companyId: text("company_id").notNull().references(() => companies.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   shiftType: text("shift_type").notNull(), // "AM", "PM", "ActiveNight", "Sleepover"
   ratio: text("ratio").notNull(), // "1:1", "1:2", "1:3", "1:4", "2:1"
   rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
@@ -928,9 +928,9 @@ export const ndisPricing = pgTable("ndis_pricing", {
 });
 
 export const ndisPricingRelations = relations(ndisPricing, ({ one }) => ({
-  company: one(companies, {
-    fields: [ndisPricing.companyId],
-    references: [companies.id],
+  tenant: one(tenants, {
+    fields: [ndisPricing.tenantId],
+    references: [tenants.id],
   }),
 }));
 

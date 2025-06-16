@@ -1151,17 +1151,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Task Board Tasks methods
-  async getTaskBoardTasks(companyId: string): Promise<TaskBoardTask[]> {
+  async getTaskBoardTasks(tenantId: number): Promise<TaskBoardTask[]> {
     return await db.select().from(taskBoardTasks)
-      .where(eq(taskBoardTasks.companyId, companyId))
+      .where(eq(taskBoardTasks.tenantId, tenantId))
       .orderBy(desc(taskBoardTasks.createdAt));
   }
 
-  async getTaskBoardTask(id: number, companyId: string): Promise<TaskBoardTask | undefined> {
+  async getTaskBoardTask(id: number, tenantId: number): Promise<TaskBoardTask | undefined> {
     const [task] = await db.select().from(taskBoardTasks)
       .where(and(
         eq(taskBoardTasks.id, id),
-        eq(taskBoardTasks.companyId, companyId)
+        eq(taskBoardTasks.tenantId, tenantId)
       ));
     return task;
   }
@@ -1173,22 +1173,22 @@ export class DatabaseStorage implements IStorage {
     return task;
   }
 
-  async updateTaskBoardTask(id: number, updateTask: any, companyId: string): Promise<TaskBoardTask | undefined> {
+  async updateTaskBoardTask(id: number, updateTask: any, tenantId: number): Promise<TaskBoardTask | undefined> {
     const [task] = await db.update(taskBoardTasks)
       .set({ ...updateTask, updatedAt: new Date() })
       .where(and(
         eq(taskBoardTasks.id, id),
-        eq(taskBoardTasks.companyId, companyId)
+        eq(taskBoardTasks.tenantId, tenantId)
       ))
       .returning();
     return task;
   }
 
-  async deleteTaskBoardTask(id: number, companyId: string): Promise<boolean> {
+  async deleteTaskBoardTask(id: number, tenantId: number): Promise<boolean> {
     const result = await db.delete(taskBoardTasks)
       .where(and(
         eq(taskBoardTasks.id, id),
-        eq(taskBoardTasks.companyId, companyId)
+        eq(taskBoardTasks.tenantId, tenantId)
       ));
     return result.rowCount! > 0;
   }
