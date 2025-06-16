@@ -128,6 +128,7 @@ export interface IStorage {
 
   // Hour Allocations
   getHourAllocations(tenantId: number): Promise<HourAllocation[]>;
+  getAllHourAllocations(): Promise<HourAllocation[]>;
   getHourAllocation(id: number, tenantId: number): Promise<HourAllocation | undefined>;
   createHourAllocation(allocation: InsertHourAllocation): Promise<HourAllocation>;
   updateHourAllocation(id: number, allocation: Partial<InsertHourAllocation>, tenantId: number): Promise<HourAllocation | undefined>;
@@ -913,6 +914,12 @@ export class DatabaseStorage implements IStorage {
         eq(hourAllocations.tenantId, tenantId),
         eq(hourAllocations.isActive, true)
       ))
+      .orderBy(desc(hourAllocations.createdAt));
+  }
+
+  async getAllHourAllocations(): Promise<HourAllocation[]> {
+    return await db.select().from(hourAllocations)
+      .where(eq(hourAllocations.isActive, true))
       .orderBy(desc(hourAllocations.createdAt));
   }
 
