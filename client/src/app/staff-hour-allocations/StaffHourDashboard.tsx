@@ -29,10 +29,20 @@ export default function StaffHourDashboard() {
   
   console.log("[StaffHourDashboard] Modal state:", isCreateModalOpen);
 
+  // Fetch current user
+  const { data: user } = useQuery<User>({
+    queryKey: ['/api/user'],
+  });
+
   // Fetch allocations
-  const { data: allocations = [], isLoading: allocationsLoading } = useQuery<HourAllocation[]>({
+  const { data: allAllocations = [], isLoading: allocationsLoading } = useQuery<HourAllocation[]>({
     queryKey: ['/api/hour-allocations'],
   });
+
+  // Filter allocations based on user role
+  const allocations = user?.role === 'SupportWorker' 
+    ? allAllocations.filter(allocation => allocation.staffId === user.id)
+    : allAllocations;
 
   // Fetch staff members to map staff IDs to names
   const { data: staffMembers = [] } = useQuery<User[]>({
@@ -72,21 +82,38 @@ export default function StaffHourDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Fetch dashboard stats
-  const { data: stats = {
-    totalAllocations: 0,
-    weeklyAllocations: 0,
-    fortnightlyAllocations: 0,
-    totalShifts: 0,
-    totalShiftHours: 0,
-    allocatedHours: 0,
-    unallocatedHours: 0,
-    allocationRate: 0,
-  }, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ['/api/hour-allocations/stats'],
-  });
+  // Calculate role-based stats from filtered allocations
+  const stats = {
+    totalAllocations: allocations.length,
+    weeklyAllocations: allocations.filter(a => a.allocationPeriod === 'weekly').length,
+    fortnightlyAllocations: allocations.filter(a => a.allocationPeriod === 'fortnightly').length,
+    totalShifts: 0, // Would need shift data integration
+    totalShiftHours: allocations.reduce((sum, a) => sum + parseFloat(a.hoursUsed), 0),
+    allocatedHours: allocations.reduce((sum, a) => sum + parseFloat(a.maxHours), 0),
+    unallocatedHours: allocations.reduce((sum, a) => sum + parseFloat(a.remainingHours), 0),
+    allocationRate: allocations.length > 0 
+      ? Math.round((allocations.reduce((sum, a) => sum + parseFloat(a.hoursUsed), 0) / 
+         allocations.reduce((sum, a) => sum + parseFloat(a.maxHours), 0)) * 100)
+      : 0,
+  };
 
-  if (allocationsLoading || statsLoading) {
+  // Get appropriate page title based on user role
+  const getPageTitle = () => {
+    if (user?.role === 'SupportWorker') {
+      return "My Hour Allocation";
+    }
+    return "Staff Hour Allocations";
+  };
+
+  // Get appropriate description based on user role
+  const getPageDescription = () => {
+    if (user?.role === 'SupportWorker') {
+      return "View your personal working hour allocation and usage";
+    }
+    return "Manage staff working hour caps and prevent overscheduling";
+  };
+
+  if (allocationsLoading) {
     return (
       <div className="p-6 space-y-6 animate-pulse">
         <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64"></div>
