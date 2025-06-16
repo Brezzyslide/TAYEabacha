@@ -49,6 +49,7 @@ export const permissions: Permission[] = [
   { roleName: "Coordinator", module: "care-plans", actions: ["view", "edit"], scope: "company" },
   { roleName: "Coordinator", module: "incidents", actions: ["view", "create", "edit"], scope: "company" },
   { roleName: "Coordinator", module: "dashboard", actions: ["view"], scope: "company" },
+  { roleName: "Coordinator", module: "hour-allocations", actions: ["view", "create", "edit", "delete"], scope: "company" },
 
   // Admin permissions - full company access
   { roleName: "Admin", module: "*", actions: ["*"], scope: "company" },

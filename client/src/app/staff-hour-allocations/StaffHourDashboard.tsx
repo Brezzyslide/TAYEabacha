@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Users, Clock, TrendingUp, Calendar } from "lucide-react";
-// import CreateAllocationModal from "./components/CreateAllocationModal";
-// import StaffAllocationCard from "./components/StaffAllocationCard";
+import CreateAllocationModal from "./components/CreateAllocationModal";
+import StaffAllocationCard from "./components/StaffAllocationCard";
 import { HourAllocation } from "@shared/schema";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 
 interface DashboardStats {
   totalAllocations: number;
@@ -21,6 +22,7 @@ interface DashboardStats {
 }
 
 export default function StaffHourDashboard() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Fetch allocations
   const { data: allocations = [], isLoading: allocationsLoading } = useQuery<HourAllocation[]>({
@@ -66,10 +68,12 @@ export default function StaffHourDashboard() {
             Manage staff working hour caps and prevent overscheduling
           </p>
         </div>
-        <Button disabled>
-          <Plus className="h-4 w-4 mr-2" />
-          New Allocation
-        </Button>
+        <PermissionGuard module="hour-allocations" action="create">
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Allocation
+          </Button>
+        </PermissionGuard>
       </div>
 
       {/* Header Cards */}
@@ -218,10 +222,12 @@ export default function StaffHourDashboard() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Create your first staff hour allocation to start managing working hours.
               </p>
-              <Button disabled>
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Allocation
-              </Button>
+              <PermissionGuard module="hour-allocations" action="create">
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create First Allocation
+                </Button>
+              </PermissionGuard>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -279,6 +285,11 @@ export default function StaffHourDashboard() {
           )}
         </CardContent>
       </Card>
+      
+      <CreateAllocationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }
