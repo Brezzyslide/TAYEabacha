@@ -1,7 +1,7 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
-  customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions,
+  customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -13,7 +13,7 @@ import {
   type CustomRole, type InsertCustomRole, type CustomPermission, type InsertCustomPermission,
   type UserRoleAssignment, type InsertUserRoleAssignment, type TaskBoardTask, type InsertTaskBoardTask,
   type NdisPricing, type InsertNdisPricing, type NdisBudget, type InsertNdisBudget,
-  type BudgetTransaction, type InsertBudgetTransaction
+  type BudgetTransaction, type InsertBudgetTransaction, type CareSupportPlan, type InsertCareSupportPlan
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -1356,6 +1356,49 @@ export class DatabaseStorage implements IStorage {
 
       return { transaction, updatedBudget };
     });
+  }
+
+  // Care Support Plans
+  async getCareSupportPlans(tenantId: number): Promise<CareSupportPlan[]> {
+    return await db.select().from(careSupportPlans)
+      .where(eq(careSupportPlans.tenantId, tenantId))
+      .orderBy(desc(careSupportPlans.updatedAt));
+  }
+
+  async getCareSupportPlan(id: number, tenantId: number): Promise<CareSupportPlan | undefined> {
+    const [plan] = await db.select().from(careSupportPlans)
+      .where(and(eq(careSupportPlans.id, id), eq(careSupportPlans.tenantId, tenantId)));
+    return plan || undefined;
+  }
+
+  async getCareSupportPlansByClient(clientId: number, tenantId: number): Promise<CareSupportPlan[]> {
+    return await db.select().from(careSupportPlans)
+      .where(and(eq(careSupportPlans.clientId, clientId), eq(careSupportPlans.tenantId, tenantId)))
+      .orderBy(desc(careSupportPlans.updatedAt));
+  }
+
+  async createCareSupportPlan(insertPlan: InsertCareSupportPlan): Promise<CareSupportPlan> {
+    const [plan] = await db
+      .insert(careSupportPlans)
+      .values(insertPlan)
+      .returning();
+    return plan;
+  }
+
+  async updateCareSupportPlan(id: number, updatePlan: Partial<InsertCareSupportPlan>, tenantId: number): Promise<CareSupportPlan | undefined> {
+    const [plan] = await db
+      .update(careSupportPlans)
+      .set({ ...updatePlan, updatedAt: new Date() })
+      .where(and(eq(careSupportPlans.id, id), eq(careSupportPlans.tenantId, tenantId)))
+      .returning();
+    return plan || undefined;
+  }
+
+  async deleteCareSupportPlan(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(careSupportPlans)
+      .where(and(eq(careSupportPlans.id, id), eq(careSupportPlans.tenantId, tenantId)));
+    return (result.rowCount || 0) > 0;
   }
 }
 

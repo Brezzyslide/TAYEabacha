@@ -2699,6 +2699,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Care Support Plans API
+  app.get("/api/care-support-plans", requireAuth, async (req: any, res) => {
+    try {
+      const { clientId } = req.query;
+      let plans;
+      
+      if (clientId) {
+        plans = await storage.getCareSupportPlansByClient(parseInt(clientId), req.user.tenantId);
+      } else {
+        plans = await storage.getCareSupportPlans(req.user.tenantId);
+      }
+      
+      res.json(plans);
+    } catch (error) {
+      console.error("Care support plans API error:", error);
+      res.status(500).json({ message: "Failed to fetch care support plans" });
+    }
+  });
+
+  app.get("/api/care-support-plans/:id", requireAuth, async (req: any, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const plan = await storage.getCareSupportPlan(planId, req.user.tenantId);
+      
+      if (!plan) {
+        return res.status(404).json({ message: "Care support plan not found" });
+      }
+      
+      res.json(plan);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch care support plan" });
+    }
+  });
+
+  app.post("/api/care-support-plans", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { insertCareSupportPlanSchema } = await import("@shared/schema");
+      const planData = insertCareSupportPlanSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+        createdByUserId: req.user.id,
+      });
+
+      const plan = await storage.createCareSupportPlan(planData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_care_support_plan",
+        resourceType: "care_support_plan",
+        resourceId: plan.id,
+        description: `Created care support plan: ${plan.planTitle}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(201).json(plan);
+    } catch (error: any) {
+      console.error("Create care support plan error:", error);
+      res.status(500).json({ message: "Failed to create care support plan", error: error.message });
+    }
+  });
+
+  app.put("/api/care-support-plans/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const plan = await storage.updateCareSupportPlan(planId, req.body, req.user.tenantId);
+      
+      if (!plan) {
+        return res.status(404).json({ message: "Care support plan not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_care_support_plan",
+        resourceType: "care_support_plan",
+        resourceId: planId,
+        description: `Updated care support plan: ${plan.planTitle}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(plan);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update care support plan" });
+    }
+  });
+
+  app.delete("/api/care-support-plans/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const success = await storage.deleteCareSupportPlan(planId, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Care support plan not found" });
+      }
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "delete_care_support_plan",
+        resourceType: "care_support_plan",
+        resourceId: planId,
+        description: `Deleted care support plan ${planId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Care support plan deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete care support plan" });
+    }
+  });
+
+  // AI Generation API for Care Support Plans
+  app.post("/api/care-support-plans/generate-ai", requireAuth, async (req: any, res) => {
+    try {
+      const { section, userInput, clientDiagnosis, clientName, maxWords = 300 } = req.body;
+      
+      if (!section || !userInput) {
+        return res.status(400).json({ message: "Section and user input are required" });
+      }
+
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      let systemPrompt = "";
+      let userPrompt = "";
+
+      switch (section) {
+        case "aboutMe":
+          systemPrompt = `Generate a professional "About Me" section for a care support plan. Use the provided bullet points to create a comprehensive paragraph (max ${maxWords} words). Include the client's diagnosis context. Write in third person, professional tone. Do not include preambles or disclaimers.`;
+          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nKey points: ${userInput}`;
+          break;
+        
+        case "goals":
+          systemPrompt = `Generate 4 prioritized SMART goals for a care support plan based on NDIS goals and client diagnosis. Each goal should be specific, measurable, achievable, relevant, and time-bound. Max ${maxWords} words total. Professional tone, no preambles.`;
+          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nNDIS Goals: ${userInput}`;
+          break;
+        
+        case "adl":
+          systemPrompt = `Expand the ADL (Activities of Daily Living) section based on user input and client diagnosis. Provide comprehensive support strategies. Max ${maxWords} words. Professional care plan language.`;
+          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nADL Notes: ${userInput}`;
+          break;
+        
+        case "communication":
+          systemPrompt = `Generate a communication strategy covering both expressive and receptive communication based on client input and diagnosis. Max ${maxWords} words. Focus on practical support strategies.`;
+          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nCommunication Input: ${userInput}`;
+          break;
+        
+        case "behaviour":
+          systemPrompt = `Generate behavior support strategies with proactive, reactive, and protective approaches. Each strategy should be max 3 lines. Focus on evidence-based PBS approaches.`;
+          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nBehaviour/Trigger: ${userInput}`;
+          break;
+        
+        case "disaster":
+          systemPrompt = `Generate disaster management procedures for the specified scenario. Provide preparation, evacuation, and post-event care strategies. Max 5 lines each section.`;
+          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nScenario: ${userInput}`;
+          break;
+        
+        case "mealtime":
+          systemPrompt = `Generate a comprehensive mealtime risk management plan based on selected risk parameters and client diagnosis. Max ${maxWords} words. Focus on safety and support strategies.`;
+          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nRisk Parameters: ${userInput}`;
+          break;
+        
+        default:
+          return res.status(400).json({ message: "Invalid section specified" });
+      }
+
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: Math.min(maxWords * 2, 1000),
+      });
+
+      const generatedContent = response.choices[0].message.content;
+      
+      res.json({ 
+        section,
+        generatedContent,
+        userInput,
+        clientName,
+        clientDiagnosis
+      });
+    } catch (error: any) {
+      console.error("AI generation error:", error);
+      res.status(500).json({ message: "Failed to generate AI content", error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
