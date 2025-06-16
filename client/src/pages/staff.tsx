@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from "@shared/schema";
-import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key } from "lucide-react";
+import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,6 +58,8 @@ function EditStaffForm({
     email: staff.email || "",
     role: staff.role,
     fullName: staff.fullName || "",
+    phone: staff.phone || "",
+    address: staff.address || "",
     isActive: staff.isActive || false,
   });
 
@@ -113,6 +115,30 @@ function EditStaffForm({
             <SelectItem value="ConsoleManager">Console Manager</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="phone">Phone Number</Label>
+          <Input
+            id="phone"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            className="mt-1"
+            placeholder="Enter phone number"
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="address">Address</Label>
+          <Input
+            id="address"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="mt-1"
+            placeholder="Enter address"
+          />
+        </div>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -518,6 +544,8 @@ export default function Staff() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Address</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
@@ -539,6 +567,18 @@ export default function Staff() {
                       <div className="flex items-center space-x-2">
                         <Mail className="h-4 w-4 text-gray-400" />
                         <span>{member.email || "No email"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        <span>{member.phone || "No phone"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <span>{member.address || "No address"}</span>
                       </div>
                     </TableCell>
                     <TableCell>
