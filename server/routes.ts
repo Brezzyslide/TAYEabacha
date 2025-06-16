@@ -1857,27 +1857,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let allocations;
       
-      console.log(`[HOUR ALLOCATIONS] User: ${req.user.username}, Role: ${req.user.role}, TenantID: ${req.user.tenantId}`);
-      
       if (req.user.role === 'ConsoleManager') {
         // ConsoleManager sees all allocations across all tenants
         allocations = await storage.getAllHourAllocations();
-        console.log(`[HOUR ALLOCATIONS] ConsoleManager - fetched ${allocations.length} global allocations`);
       } else if (req.user.role === 'SupportWorker') {
         // Support workers only see their own allocations
         const allTenantAllocations = await storage.getHourAllocations(req.user.tenantId);
         allocations = allTenantAllocations.filter(allocation => allocation.staffId === req.user.id);
-        console.log(`[HOUR ALLOCATIONS] SupportWorker - filtered to ${allocations.length} own allocations from ${allTenantAllocations.length} tenant allocations`);
       } else {
         // Admins and TeamLeaders see all allocations within their tenant ONLY
         allocations = await storage.getHourAllocations(req.user.tenantId);
-        console.log(`[HOUR ALLOCATIONS] Admin/TeamLeader - fetched ${allocations.length} allocations for tenant ${req.user.tenantId}`);
       }
-      
-      // Log allocation details for debugging
-      allocations.forEach(allocation => {
-        console.log(`[HOUR ALLOCATIONS] Allocation ID: ${allocation.id}, StaffID: ${allocation.staffId}, TenantID: ${allocation.tenantId}`);
-      });
       
       res.json(allocations);
     } catch (error) {

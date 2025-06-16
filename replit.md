@@ -163,6 +163,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 - June 15, 2025. Fixed React hooks error in authentication flow - resolved "Rendered fewer hooks than expected" error by ensuring all hooks are called before any conditional returns in AuthPage component, eliminating login flow crashes
 - June 15, 2025. Simplified authentication page by removing user registration functionality - removed registration form, tabs, and related code since user creation is handled through internal system, creating cleaner login-only interface
 - June 15, 2025. CRITICAL FIX: Resolved multi-tenant permission inconsistency - fixed hasPermission logic where Admin users were incorrectly blocked from staff editing/password reset features across different companies, implemented comprehensive Multi-Tenant Development Protocol with mandatory testing checklist to prevent future tenant-boundary permission issues, ensuring all features work consistently across ALL tenants while maintaining proper data isolation
+- June 16, 2025. Enhanced Staff Hour Allocations with comprehensive role-based access control - Support workers see personalized "My Hour Allocation" page with only their own data and analytics, Admins see full company dashboard with all staff allocations, implemented proper tenant isolation ensuring users only see data from their own company, added staff name display instead of IDs, Excel export functionality, card/list view toggle, and full edit capabilities with update/delete operations
 
 ## Multi-Tenant Development Protocol
 

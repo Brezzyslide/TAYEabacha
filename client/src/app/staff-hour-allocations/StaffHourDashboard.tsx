@@ -52,8 +52,6 @@ export default function StaffHourDashboard() {
   // Helper function to get staff name by ID
   const getStaffName = (staffId: number) => {
     const staff = staffMembers.find(s => s.id === staffId);
-    console.log(`[STAFF NAME DEBUG] Looking for staffId: ${staffId}, found:`, staff);
-    console.log(`[STAFF NAME DEBUG] All staff members:`, staffMembers);
     return staff ? staff.fullName || staff.username : `Staff ${staffId}`;
   };
 
