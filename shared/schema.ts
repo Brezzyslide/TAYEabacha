@@ -1097,9 +1097,9 @@ export const careSupportPlans = pgTable("care_support_plans", {
   disasterData: jsonb("disaster_data"), // { scenarios: { [type]: { preparation, evacuation, postEvent, aiAttempts } } }
   mealtimeData: jsonb("mealtime_data"), // { riskParameters: [], generatedPlan: string, aiAttempts: number }
   
+  createdByUserId: integer("created_by_user_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  createdByUserId: integer("created_by_user_id").references(() => users.id).notNull(),
 });
 
 export const careSupportPlansRelations = relations(careSupportPlans, ({ one }) => ({

@@ -13,7 +13,7 @@ import type { CareSupportPlan } from "@shared/schema";
 
 export function CareSupportPlans() {
   const { user } = useAuth();
-  const [showWizard, setShowWizard] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<CareSupportPlan | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -25,13 +25,8 @@ export function CareSupportPlans() {
     queryKey: ["/api/clients"],
   });
 
-  console.log("User object:", user);
-  console.log("User role:", user?.role);
-  
   const canCreatePlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "admin" || user.role === "ConsoleManager");
   const canEditPlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "admin" || user.role === "ConsoleManager");
-  
-  console.log("Can create plans:", canCreatePlans);
 
   const filteredPlans = carePlans.filter((plan: CareSupportPlan) => {
     const client = clients.find((c: any) => c.id === plan.clientId);
@@ -52,28 +47,18 @@ export function CareSupportPlans() {
   };
 
   const handleCreatePlan = () => {
-    setSelectedPlan(null);
-    setShowWizard(true);
+    setShowCreateModal(true);
   };
 
   const handleEditPlan = (plan: CareSupportPlan) => {
     setSelectedPlan(plan);
-    setShowWizard(true);
+    setShowCreateModal(true);
   };
 
-  const handleCloseWizard = () => {
-    setShowWizard(false);
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
     setSelectedPlan(null);
   };
-
-  if (showWizard) {
-    return (
-      <CareSupportPlanWizard
-        existingPlan={selectedPlan}
-        onClose={handleCloseWizard}
-      />
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -264,6 +249,11 @@ function CareSupportPlansList({ plans, clients, isLoading, canEditPlans, onEditP
           </Card>
         );
       })}
+      
+      <SimplePlanModal 
+        open={showCreateModal} 
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }
