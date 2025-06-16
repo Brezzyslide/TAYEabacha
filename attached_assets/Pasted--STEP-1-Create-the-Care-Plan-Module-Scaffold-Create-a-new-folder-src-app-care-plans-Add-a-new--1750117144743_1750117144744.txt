@@ -1,0 +1,205 @@
+🔹 STEP 1: Create the Care Plan Module Scaffold
+Create a new folder: src/app/care-plans/
+
+Add a new route/page: new.tsx or create.tsx
+
+This will be the starting point for generating a new plan
+
+Each section of the plan will be its own component or collapsible section.
+
+🔹 STEP 2: Lock in Client Details
+Add a client selector at the top
+
+Once selected, auto-fetch and display:
+
+Full Name
+
+NDIS Number
+
+DOB
+
+Primary Diagnosis (if available)
+
+These should be locked-in and read-only
+
+Diagnosis will be passed to all AI generation prompts
+
+🔹 STEP 3: About Me Section (AI-Powered)
+Textarea for staff to add bullet points or key traits about the client
+
+Button: “Generate About Me”
+
+On click:
+
+Send client bullet points + locked-in diagnosis to ChatGPT
+
+Return a 200–300 word paragraph (editable)
+
+Limit: 2 generations allowed (then disable button)
+
+🔹 STEP 4: NDIS Goals Section
+Two input groups:
+
+NDIS Plan Goals (staff enters)
+
+General Client Goals
+
+Button: “Generate Smart Goals”
+
+AI returns:
+
+Prioritized plan, focused on NDIS outcomes
+
+4 additional goals AI suggests based on diagnosis
+
+Editable before saving
+
+Limit: 2 generations
+
+🔹 STEP 5: ADL (Activities of Daily Living)
+Textarea: staff enters info about client's abilities
+
+Button: “Expand via AI”
+
+Uses entry + diagnosis to generate 300-word section
+
+Result is editable
+
+2 AI attempts max
+
+🔹 STEP 6: Structure & Routine
+Display table/grid interface with:
+
+Day of the week
+
+Start Time
+
+Finish Time
+
+Activity description
+
+Notes
+
+Allow adding multiple routines per day
+
+Allow update/delete for each entry
+
+No AI here — manual only
+
+🔹 STEP 7: Communication
+Two text columns:
+
+Expressive communication ability
+
+Receptive communication ability
+
+Button: “Generate Communication Strategy”
+
+AI returns:
+
+2–3 paragraphs summarizing communication strengths and recommended strategies
+
+Editable and saved as one section
+
+Limit: 2 generation attempts
+
+🔹 STEP 8: Behaviour Support Strategies
+Repeating entry form:
+
+Behaviour
+
+Trigger
+
+Click “Generate Strategies”
+
+AI returns:
+
+Proactive Strategy
+
+Reactive Strategy
+
+Protective Strategy
+
+Each strategy = 2–3 lines max
+
+Allow up to 2 generations per behaviour
+
+Allow “Add New Behaviour” to create multiple entries
+
+🔹 STEP 9: Disaster Management Plans
+For each scenario:
+
+Fire, Flood, Bomb Threat, Medical Emergency, Earthquake
+
+For each, AI must generate 3 sections:
+
+Preparation
+
+Evacuation
+
+Post-Event Care
+
+Use locked diagnosis in prompt
+
+Limit: 2 generations per scenario
+
+Editable text boxes
+
+🔹 STEP 10: Mealtime Risk Assessment
+Display 18 risk options (checkboxes)
+
+For each selected:
+
+Ask:
+
+Is there a risk? (Yes/No)
+
+Risk Level: High, Medium, N/A
+
+Implications (free text)
+
+Button: “Generate Mealtime Plan”
+
+AI generates up to 500 words covering risks and strategies
+
+Based on diagnosis + selections
+
+Limit: 2 generations
+
+Editable result
+
+🔹 STEP 11: Save Functionality
+Each section should:
+
+Be editable
+
+Have its own Save button
+
+Save to a local object (or server if persistent)
+
+Allow saving section-by-section (not only at the end)
+
+🔹 STEP 12: Export to PDF
+Add button: “Export Full Plan as PDF”
+
+Compile all sections into one document:
+
+Title: Care Support Plan for [Client Name]
+
+Each section clearly headed
+
+Include date and staff name (optional)
+
+Use jsPDF or html-to-pdf solution
+
+Allow downloading or emailing
+
+🔹 STEP 13: Permissions & Role Control
+Only allow:
+
+Admins, Coordinators, and Team Leaders to create/edit plans
+
+SupportWorkers: view-only or restricted edit
+
+Use hasPermission(user, "carePlans", "create") or similar checks
+

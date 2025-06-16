@@ -1,319 +1,221 @@
-import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, Home, User, Copy, Check } from "lucide-react";
+import { Sparkles, Save, AlertCircle, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-interface ADLArea {
-  id: string;
-  category: string;
-  supportLevel: string;
-  description: string;
-  strategies: string;
-  equipment: string;
-}
-
 interface ADLSectionProps {
   data: any;
-  onChange: (data: any) => void;
-  selectedClient: any;
-  planData: any;
+  updateData: (section: string, data: any) => void;
 }
 
-export function ADLSection({ data, onChange, selectedClient, planData }: ADLSectionProps) {
-  const [formData, setFormData] = useState({
-    overallSummary: data.overallSummary || "",
-    adlAreas: data.adlAreas || [],
-    generatedContent: data.generatedContent || "",
-    adlInput: data.adlInput || "",
-    ...data
-  });
-  const [copied, setCopied] = useState(false);
+export function ADLSection({ data, updateData }: ADLSectionProps) {
   const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const adlCategories = [
-    "Personal Care & Hygiene",
-    "Dressing & Grooming",
-    "Eating & Nutrition",
-    "Mobility & Transfers",
-    "Toileting & Continence",
-    "Medication Management",
-    "Home Management",
-    "Shopping & Errands",
-    "Financial Management",
-    "Communication",
-    "Transportation",
-    "Safety & Risk Management"
-  ];
+  const adlData = data.adlData || { userInput: '', generatedContent: '', aiAttempts: 0 };
 
-  useEffect(() => {
-    // Initialize ADL areas if empty
-    if (formData.adlAreas.length === 0) {
-      const initialAreas = adlCategories.map((category, index) => ({
-        id: `adl-${index}`,
-        category,
-        supportLevel: "independent",
-        description: "",
-        strategies: "",
-        equipment: ""
-      }));
-      setFormData(prev => ({
-        ...prev,
-        adlAreas: initialAreas
-      }));
-    }
-  }, []);
-
-  useEffect(() => {
-    onChange(formData);
-  }, [formData, onChange]);
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleUserInputChange = (value: string) => {
+    updateData('adlData', {
+      ...adlData,
+      userInput: value,
+    });
   };
 
-  const updateADLArea = (areaId: string, field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      adlAreas: prev.adlAreas.map((area: ADLArea) => 
-        area.id === areaId ? { ...area, [field]: value } : area
-      )
-    }));
+  const handleGeneratedContentChange = (value: string) => {
+    updateData('adlData', {
+      ...adlData,
+      generatedContent: value,
+    });
   };
 
-  const generateContentMutation = useMutation({
-    mutationFn: (userInput: string) => apiRequest("POST", "/api/care-support-plans/generate-ai", {
-      section: "adl",
-      userInput,
-      clientName: selectedClient?.fullName || "Client",
-      clientDiagnosis: selectedClient?.diagnosis || "Not specified",
-      maxWords: 400
-    }),
-    onSuccess: (response) => {
-      setFormData(prev => ({
-        ...prev,
-        generatedContent: response.generatedContent
-      }));
+  const handleExpandViaAI = async () => {
+    if (adlData.aiAttempts >= 2) {
       toast({
-        title: "ADL Support Strategies Generated",
-        description: "AI has created comprehensive ADL support strategies based on your input.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate content. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleGenerateContent = () => {
-    if (!formData.adlInput.trim()) {
-      toast({
-        title: "Input Required",
-        description: "Please describe the client's ADL needs first.",
+        title: "AI Generation Limit Reached",
+        description: "Maximum 2 AI generation attempts allowed per section.",
         variant: "destructive",
       });
       return;
     }
 
-    generateContentMutation.mutate(formData.adlInput);
-  };
-
-  const handleCopyContent = () => {
-    if (formData.generatedContent) {
-      navigator.clipboard.writeText(formData.generatedContent);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    if (!adlData.userInput.trim()) {
       toast({
-        title: "Content Copied",
-        description: "Generated ADL strategies have been copied to clipboard.",
+        title: "Input Required",
+        description: "Please enter information about the client's ADL abilities before generating.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "adl",
+        userInput: adlData.userInput,
+        clientDiagnosis: data.clientData?.primaryDiagnosis || null,
+        clientName: data.clientData?.fullName || null,
+        maxWords: 300,
+      });
+
+      const { generatedContent } = response;
+      
+      updateData('adlData', {
+        ...adlData,
+        generatedContent: generatedContent,
+        aiAttempts: adlData.aiAttempts + 1,
+      });
+
+      toast({
+        title: "ADL Content Generated",
+        description: "AI has expanded your input into a comprehensive ADL assessment.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate ADL content.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const getSupportLevelColor = (level: string) => {
-    const colors = {
-      "independent": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      "minimal": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      "moderate": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      "substantial": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-      "high": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-    };
-    return colors[level as keyof typeof colors] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+  const handleSaveSection = () => {
+    toast({
+      title: "Section Saved",
+      description: "ADL Assessment section has been saved.",
+    });
   };
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Section Instructions</h4>
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          Document the client's abilities in Activities of Daily Living (ADL). Include information about their 
+          independence levels, support needs, and any specific considerations for personal care, mobility, and daily tasks.
+        </p>
+      </div>
+
+      {/* User Input */}
+      <div>
+        <Label htmlFor="adlInput">Client's ADL Abilities *</Label>
+        <Textarea
+          id="adlInput"
+          value={adlData.userInput}
+          onChange={(e) => handleUserInputChange(e.target.value)}
+          placeholder="Describe the client's abilities in:&#10;• Personal hygiene and grooming&#10;• Mobility and transfers&#10;• Eating and nutrition&#10;• Toileting and continence&#10;• Dressing and clothing choices&#10;• Communication and social skills&#10;• Any support requirements or adaptations needed"
+          rows={8}
+          className="mt-1"
+        />
+        <p className="text-sm text-muted-foreground mt-1">
+          Enter detailed information about the client's current abilities and support needs
+        </p>
+      </div>
+
+      {/* AI Generation */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-500" />
-            AI ADL Support Generator
+            <Activity className="h-5 w-5 text-primary" />
+            AI-Enhanced ADL Assessment
           </CardTitle>
+          <CardDescription>
+            Expand your input into a comprehensive 300-word ADL assessment
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="adlInput">ADL Assessment Notes</Label>
-            <Textarea
-              id="adlInput"
-              value={formData.adlInput}
-              onChange={(e) => handleInputChange("adlInput", e.target.value)}
-              placeholder="Describe the client's current abilities, challenges, and support needs across different activities of daily living. Include any equipment used or strategies that work well."
-              rows={4}
-            />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant={adlData.aiAttempts >= 2 ? "destructive" : "secondary"}>
+                {adlData.aiAttempts}/2 AI Attempts Used
+              </Badge>
+              {data.clientData?.primaryDiagnosis && (
+                <Badge variant="outline">
+                  Using: {data.clientData.primaryDiagnosis}
+                </Badge>
+              )}
+            </div>
+            <Button
+              onClick={handleExpandViaAI}
+              disabled={isGenerating || adlData.aiAttempts >= 2 || !adlData.userInput.trim()}
+              className="flex items-center gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              {isGenerating ? "Expanding..." : "Expand via AI"}
+            </Button>
           </div>
 
-          <Button 
-            onClick={handleGenerateContent}
-            disabled={generateContentMutation.isPending || !formData.adlInput.trim()}
-            className="w-full"
-          >
-            {generateContentMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating ADL Strategies...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate ADL Support Strategies
-              </>
-            )}
-          </Button>
-
-          {formData.generatedContent && (
-            <div className="space-y-3">
-              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">AI Generated ADL Strategies:</h4>
-                <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                  {formData.generatedContent}
-                </div>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleCopyContent}>
-                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                {copied ? "Copied!" : "Copy Strategies"}
-              </Button>
+          {adlData.aiAttempts >= 2 && (
+            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                Maximum AI generation attempts reached. You can still edit the content manually.
+              </p>
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5" />
-            Overall ADL Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="overallSummary">Overall Assessment Summary</Label>
+          <div>
+            <Label htmlFor="generatedContent">Enhanced ADL Assessment (Editable)</Label>
             <Textarea
-              id="overallSummary"
-              value={formData.overallSummary}
-              onChange={(e) => handleInputChange("overallSummary", e.target.value)}
-              placeholder="Provide an overall summary of the client's ADL abilities, progress, and support requirements."
-              rows={4}
+              id="generatedContent"
+              value={adlData.generatedContent}
+              onChange={(e) => handleGeneratedContentChange(e.target.value)}
+              placeholder="AI-enhanced ADL assessment will appear here and can be edited..."
+              rows={12}
+              className="mt-1"
             />
+            <p className="text-sm text-muted-foreground mt-1">
+              Edit the enhanced assessment as needed before saving
+            </p>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
+      {/* ADL Categories Reference */}
+      <Card className="bg-muted/30">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            ADL Assessment by Category
-          </CardTitle>
+          <CardTitle className="text-sm">ADL Assessment Areas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {formData.adlAreas.map((area: ADLArea) => (
-              <Card key={area.id} className="border-l-4 border-l-blue-500">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{area.category}</h4>
-                    <Badge className={getSupportLevelColor(area.supportLevel)}>
-                      {area.supportLevel} support
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Support Level Required</Label>
-                    <Select 
-                      value={area.supportLevel} 
-                      onValueChange={(value) => updateADLArea(area.id, "supportLevel", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="independent">Independent</SelectItem>
-                        <SelectItem value="minimal">Minimal Support</SelectItem>
-                        <SelectItem value="moderate">Moderate Support</SelectItem>
-                        <SelectItem value="substantial">Substantial Support</SelectItem>
-                        <SelectItem value="high">High Support</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Current Abilities & Challenges</Label>
-                    <Textarea
-                      value={area.description}
-                      onChange={(e) => updateADLArea(area.id, "description", e.target.value)}
-                      placeholder={`Describe the client's current abilities and challenges with ${area.category.toLowerCase()}`}
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Support Strategies</Label>
-                    <Textarea
-                      value={area.strategies}
-                      onChange={(e) => updateADLArea(area.id, "strategies", e.target.value)}
-                      placeholder="Specific strategies, techniques, or approaches used to support this area"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Equipment & Aids</Label>
-                    <Textarea
-                      value={area.equipment}
-                      onChange={(e) => updateADLArea(area.id, "equipment", e.target.value)}
-                      placeholder="Any equipment, aids, or modifications used for this area"
-                      rows={2}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <h5 className="font-medium mb-2">Basic ADL</h5>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• Personal hygiene</li>
+                <li>• Bathing/showering</li>
+                <li>• Dressing</li>
+                <li>• Eating/feeding</li>
+                <li>• Mobility/transfers</li>
+                <li>• Toileting</li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="font-medium mb-2">Instrumental ADL</h5>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• Meal preparation</li>
+                <li>• Housekeeping</li>
+                <li>• Transportation</li>
+                <li>• Medication management</li>
+                <li>• Communication</li>
+                <li>• Financial management</li>
+              </ul>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {selectedClient && (
-        <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-          <p className="text-sm text-purple-800 dark:text-purple-200">
-            <strong>ADL Assessment:</strong> Activities of Daily Living assessment helps identify specific support needs 
-            and strategies to promote {selectedClient.fullName}'s independence and quality of life. Use the AI generator 
-            to create comprehensive support strategies based on assessment findings.
-          </p>
-        </div>
-      )}
+      <div className="flex justify-end">
+        <Button onClick={handleSaveSection} className="flex items-center gap-2">
+          <Save className="h-4 w-4" />
+          Save Section
+        </Button>
+      </div>
     </div>
   );
 }

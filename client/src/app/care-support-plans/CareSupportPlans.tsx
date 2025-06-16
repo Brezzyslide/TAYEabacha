@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { CareSupportPlanWizard } from "./components/CareSupportPlanWizard";
+import { SimplePlanModal } from "./components/SimplePlanModal";
 import { useAuth } from "@/hooks/use-auth";
 import type { CareSupportPlan } from "@shared/schema";
 import { format } from "date-fns";
