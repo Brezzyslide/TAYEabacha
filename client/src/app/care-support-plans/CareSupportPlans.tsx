@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { CareSupportPlanWizard } from "./components/CareSupportPlanWizard";
 import { hasPermission } from "@/lib/auth/permissions";
-import { useAuth } from "@/lib/auth/authContext";
+import { useAuth } from "@/hooks/use-auth";
 import type { CareSupportPlan } from "@shared/schema";
 
 export function CareSupportPlans() {
@@ -17,16 +17,16 @@ export function CareSupportPlans() {
   const [selectedPlan, setSelectedPlan] = useState<CareSupportPlan | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: carePlans = [], isLoading } = useQuery({
+  const { data: carePlans = [], isLoading } = useQuery<CareSupportPlan[]>({
     queryKey: ["/api/care-support-plans"],
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
   });
 
-  const canCreatePlans = hasPermission(user, "TeamLeader", "Coordinator", "Admin", "ConsoleManager");
-  const canEditPlans = hasPermission(user, "TeamLeader", "Coordinator", "Admin", "ConsoleManager");
+  const canCreatePlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "ConsoleManager");
+  const canEditPlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "ConsoleManager");
 
   const filteredPlans = carePlans.filter((plan: CareSupportPlan) => {
     const client = clients.find((c: any) => c.id === plan.clientId);
