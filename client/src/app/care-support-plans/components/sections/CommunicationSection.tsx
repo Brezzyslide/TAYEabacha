@@ -137,8 +137,8 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
   };
 
   const handleCopyContent = () => {
-    if (formData.generatedContent) {
-      navigator.clipboard.writeText(formData.generatedContent);
+    if (data.generatedContent) {
+      navigator.clipboard.writeText(data.generatedContent);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast({
@@ -162,7 +162,7 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
             <Label htmlFor="communicationInput">Communication Assessment Notes</Label>
             <Textarea
               id="communicationInput"
-              value={formData.communicationInput}
+              value={data.communicationInput || ""}
               onChange={(e) => handleInputChange("communicationInput", e.target.value)}
               placeholder="Describe the client's communication abilities, challenges, preferences, and any specific needs for both expressing themselves and understanding others."
               rows={4}
@@ -171,7 +171,7 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
 
           <Button 
             onClick={handleGenerateContent}
-            disabled={generateContentMutation.isPending || !formData.communicationInput.trim()}
+            disabled={generateContentMutation.isPending || !data.communicationInput?.trim()}
             className="w-full"
           >
             {generateContentMutation.isPending ? (
@@ -187,12 +187,12 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
             )}
           </Button>
 
-          {formData.generatedContent && (
+          {data.generatedContent && (
             <div className="space-y-3">
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">AI Generated Communication Strategies:</h4>
                 <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                  {formData.generatedContent}
+                  {data.generatedContent}
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={handleCopyContent}>
