@@ -26,11 +26,11 @@ export function AboutMeSectionRefactored() {
       const existingContent = {
         personalHistory: aboutMeData.personalHistory || "",
         interests: aboutMeData.interests || "",
-        hobbies: aboutMeData.hobbies || "",
-        culturalBackground: aboutMeData.culturalBackground || "",
-        communicationStyle: aboutMeData.communicationStyle || "",
-        socialPreferences: aboutMeData.socialPreferences || "",
-        lifestyleFactors: aboutMeData.lifestyleFactors || ""
+        preferences: aboutMeData.preferences || "",
+        strengths: aboutMeData.strengths || "",
+        challenges: aboutMeData.challenges || "",
+        familyBackground: aboutMeData.familyBackground || "",
+        culturalConsiderations: aboutMeData.culturalConsiderations || ""
       };
 
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
@@ -53,14 +53,14 @@ export function AboutMeSectionRefactored() {
       // Refresh GPT limit after each content application
       refreshGPTLimit();
       
-      const fieldLabels = {
+      const fieldLabels: { [key: string]: string } = {
         personalHistory: "Personal History",
         interests: "Interests",
-        hobbies: "Hobbies",
-        culturalBackground: "Cultural Background", 
-        communicationStyle: "Communication Style",
-        socialPreferences: "Social Preferences",
-        lifestyleFactors: "Lifestyle Factors"
+        preferences: "Preferences",
+        strengths: "Strengths",
+        challenges: "Challenges",
+        familyBackground: "Family Background",
+        culturalConsiderations: "Cultural Considerations"
       };
       
       toast({
@@ -81,7 +81,7 @@ export function AboutMeSectionRefactored() {
     updateField('aboutMeData', field, value);
   };
 
-  const handleGenerateContent = () => {
+  const handleGenerateTargetedContent = (targetField: string) => {
     if (!aboutMeData.bulletPoints?.trim()) {
       toast({
         title: "Input Required",
@@ -91,7 +91,10 @@ export function AboutMeSectionRefactored() {
       return;
     }
 
-    generateContentMutation.mutate(aboutMeData.bulletPoints);
+    generateTargetedContentMutation.mutate({ 
+      userInput: aboutMeData.bulletPoints, 
+      targetField 
+    });
   };
 
   return (
@@ -115,12 +118,13 @@ export function AboutMeSectionRefactored() {
             />
           </div>
 
+          {/* Legacy Generate Button - keeping for backwards compatibility */}
           <Button 
-            onClick={handleGenerateContent}
-            disabled={generateContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+            onClick={() => handleGenerateTargetedContent('personalHistory')}
+            disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
             className="w-full"
           >
-            {generateContentMutation.isPending ? (
+            {generateTargetedContentMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Generating Content...

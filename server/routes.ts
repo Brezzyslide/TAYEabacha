@@ -2930,7 +2930,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         case "adl":
           systemPrompt = `Generate comprehensive ADL (Activities of Daily Living) support strategies. If specific input is limited, provide evidence-based recommendations typical for the given diagnosis. Focus on practical support approaches. Max ${maxWords} words. Professional care plan language.`;
-          userPrompt = `${contextualInfo}\nADL assessment notes: ${userInput}`;
+          userPrompt = `${contextualInfo}${existingContext}\nADL assessment notes: ${userInput}`;
           break;
         
         case "communication":
@@ -2949,18 +2949,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         
         case "behaviour":
-          systemPrompt = `Generate behavior support strategies with proactive, reactive, and protective approaches. If specific behaviors aren't detailed, provide evidence-based strategies typical for the given diagnosis. Each strategy should be max 3 lines. Focus on PBS approaches.`;
-          userPrompt = `${contextualInfo}\nBehavior observations: ${userInput}`;
+          systemPrompt = `Generate behavior support strategies with proactive, reactive, and protective approaches. If specific behaviors aren't detailed, provide evidence-based strategies typical for the given diagnosis. Each strategy should be max 3 lines. Focus on PBS approaches. Consider information from other sections to avoid duplication.`;
+          userPrompt = `${contextualInfo}${existingContext}\nBehavior observations: ${userInput}`;
           break;
         
         case "disaster":
-          systemPrompt = `Generate disaster management procedures for the specified scenario. If scenario details are limited, provide comprehensive strategies based on diagnosis considerations. Provide preparation, evacuation, and post-event care strategies. Max 5 lines each section.`;
-          userPrompt = `${contextualInfo}\nDisaster scenario: ${userInput}`;
+          systemPrompt = `Generate disaster management procedures for the specified scenario. If scenario details are limited, provide comprehensive strategies based on diagnosis considerations. Provide preparation, evacuation, and post-event care strategies. Max 5 lines each section. Consider client's abilities and support needs from other sections.`;
+          userPrompt = `${contextualInfo}${existingContext}\nDisaster scenario: ${userInput}`;
           break;
         
         case "mealtime":
-          systemPrompt = `Generate a comprehensive mealtime risk management plan. If specific risks aren't identified, provide evidence-based recommendations typical for the given diagnosis. Max ${maxWords} words. Focus on safety and support strategies.`;
-          userPrompt = `${contextualInfo}\nMealtime considerations: ${userInput}`;
+          systemPrompt = `Generate a comprehensive mealtime risk management plan. If specific risks aren't identified, provide evidence-based recommendations typical for the given diagnosis. Max ${maxWords} words. Focus on safety and support strategies. Consider client's abilities and preferences from other sections.`;
+          userPrompt = `${contextualInfo}${existingContext}\nMealtime considerations: ${userInput}`;
           break;
         
         default:

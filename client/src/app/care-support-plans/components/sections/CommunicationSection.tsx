@@ -94,15 +94,32 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
     console.log("GPT limit refreshed for next communication generation");
   };
 
-  const generateContentMutation = useMutation({
-    mutationFn: async (userInput: string) => {
+  const generateTargetedContentMutation = useMutation({
+    mutationFn: async ({ userInput, targetField }: { userInput: string; targetField: string }) => {
+      // Build existing content context for smart AI awareness
+      const existingContent = {
+        expressive: data.expressive || "",
+        receptive: data.receptive || "",
+        supportStrategies: data.supportStrategies || "",
+        generalStrategies: data.generatedContent || ""
+      };
+
+      // Include progress from other sections
+      const progressContext = {
+        aboutMe: planData.aboutMeData?.personalHistory || planData.aboutMeData?.generatedContent || "",
+        goals: planData.goalsData?.ndisGoals || planData.goalsData?.generatedContent || "",
+        adl: planData.adlData?.userInput || planData.adlData?.generatedContent || "",
+        behaviour: planData.behaviourData?.proactiveStrategies || ""
+      };
+
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "communication",
         userInput,
         clientName: selectedClient?.fullName || "Client",
         clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
         maxWords: 200,
-        previousSections: planData
+        targetField,
+        existingContent: { ...existingContent, ...progressContext }
       });
       return await response.json();
     },
