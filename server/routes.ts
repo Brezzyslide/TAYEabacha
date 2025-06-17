@@ -2887,38 +2887,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       switch (section) {
         case "aboutMe":
-          systemPrompt = `Generate a professional "About Me" section for a care support plan. Use the provided bullet points to create a comprehensive paragraph (max ${maxWords} words). Include the client's diagnosis context. Write in third person, professional tone. Do not include preambles or disclaimers.`;
-          userPrompt = `${contextualInfo}\nKey points: ${userInput}`;
+          systemPrompt = `Generate a professional "About Me" section for a care support plan. If specific information is limited, provide evidence-based recommendations and considerations typical for the given diagnosis. Use provided details to create a comprehensive paragraph (max ${maxWords} words). Write in third person, professional tone. Do not include preambles or disclaimers.`;
+          userPrompt = `${contextualInfo}\nProvided information: ${userInput}`;
           break;
         
         case "goals":
-          systemPrompt = `Generate 4 prioritized SMART goals for a care support plan based on NDIS goals and client diagnosis. Each goal should be specific, measurable, achievable, relevant, and time-bound. Max ${maxWords} words total. Professional tone, no preambles.`;
-          userPrompt = `${contextualInfo}\nNDIS Goals: ${userInput}`;
+          systemPrompt = `Generate 4 prioritized SMART goals for a care support plan. If specific NDIS goals are limited, create evidence-based goals typical for the given diagnosis. Each goal should be specific, measurable, achievable, relevant, and time-bound. Max ${maxWords} words total. Professional tone, no preambles.`;
+          userPrompt = `${contextualInfo}\nProvided goals/objectives: ${userInput}`;
           break;
         
         case "adl":
-          systemPrompt = `Expand the ADL (Activities of Daily Living) section based on user input and client diagnosis. Provide comprehensive support strategies. Max ${maxWords} words. Professional care plan language.`;
-          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nADL Notes: ${userInput}`;
+          systemPrompt = `Generate comprehensive ADL (Activities of Daily Living) support strategies. If specific input is limited, provide evidence-based recommendations typical for the given diagnosis. Focus on practical support approaches. Max ${maxWords} words. Professional care plan language.`;
+          userPrompt = `${contextualInfo}\nADL assessment notes: ${userInput}`;
           break;
         
         case "communication":
-          systemPrompt = `Generate a communication strategy covering both expressive and receptive communication based on client input and diagnosis. Max ${maxWords} words. Focus on practical support strategies.`;
-          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nCommunication Input: ${userInput}`;
+          systemPrompt = `Generate comprehensive communication strategies for both RECEPTIVE and EXPRESSIVE communication. If specific client information is limited, provide evidence-based recommendations for the given diagnosis. Return JSON format: {"generatedContent": "overall strategy", "receptiveStrategies": "receptive specific strategies", "expressiveStrategies": "expressive specific strategies"}. Max ${maxWords} words total.`;
+          userPrompt = `${contextualInfo}\nCommunication Assessment: ${userInput}`;
           break;
         
         case "behaviour":
-          systemPrompt = `Generate behavior support strategies with proactive, reactive, and protective approaches. Each strategy should be max 3 lines. Focus on evidence-based PBS approaches.`;
-          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nBehaviour/Trigger: ${userInput}`;
+          systemPrompt = `Generate behavior support strategies with proactive, reactive, and protective approaches. If specific behaviors aren't detailed, provide evidence-based strategies typical for the given diagnosis. Each strategy should be max 3 lines. Focus on PBS approaches.`;
+          userPrompt = `${contextualInfo}\nBehavior observations: ${userInput}`;
           break;
         
         case "disaster":
-          systemPrompt = `Generate disaster management procedures for the specified scenario. Provide preparation, evacuation, and post-event care strategies. Max 5 lines each section.`;
-          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nScenario: ${userInput}`;
+          systemPrompt = `Generate disaster management procedures for the specified scenario. If scenario details are limited, provide comprehensive strategies based on diagnosis considerations. Provide preparation, evacuation, and post-event care strategies. Max 5 lines each section.`;
+          userPrompt = `${contextualInfo}\nDisaster scenario: ${userInput}`;
           break;
         
         case "mealtime":
-          systemPrompt = `Generate a comprehensive mealtime risk management plan based on selected risk parameters and client diagnosis. Max ${maxWords} words. Focus on safety and support strategies.`;
-          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nRisk Parameters: ${userInput}`;
+          systemPrompt = `Generate a comprehensive mealtime risk management plan. If specific risks aren't identified, provide evidence-based recommendations typical for the given diagnosis. Max ${maxWords} words. Focus on safety and support strategies.`;
+          userPrompt = `${contextualInfo}\nMealtime considerations: ${userInput}`;
           break;
         
         default:
@@ -2938,13 +2938,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const generatedContent = response.choices[0].message.content;
       
-      res.json({ 
-        section,
-        generatedContent,
-        userInput,
-        clientName,
-        clientDiagnosis
-      });
+      // Handle special parsing for communication section
+      if (section === "communication") {
+        try {
+          const parsedContent = JSON.parse(generatedContent);
+          res.json({ 
+            section,
+            generatedContent: parsedContent.generatedContent,
+            receptiveStrategies: parsedContent.receptiveStrategies,
+            expressiveStrategies: parsedContent.expressiveStrategies,
+            userInput,
+            clientName,
+            clientDiagnosis
+          });
+        } catch (error) {
+          // Fallback if JSON parsing fails
+          res.json({ 
+            section,
+            generatedContent,
+            receptiveStrategies: "",
+            expressiveStrategies: "",
+            userInput,
+            clientName,
+            clientDiagnosis
+          });
+        }
+      } else {
+        res.json({ 
+          section,
+          generatedContent,
+          userInput,
+          clientName,
+          clientDiagnosis
+        });
+      }
     } catch (error: any) {
       console.error("AI generation error:", error);
       res.status(500).json({ message: "Failed to generate AI content", error: error.message });
