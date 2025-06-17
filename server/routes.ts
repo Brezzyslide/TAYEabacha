@@ -2933,7 +2933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { role: "user", content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: Math.min(maxWords * 2, 1000),
+        max_tokens: Math.min(maxWords * 2, 500),
       });
 
       const generatedContent = response.choices[0].message.content;

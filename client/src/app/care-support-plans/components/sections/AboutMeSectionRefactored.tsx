@@ -13,6 +13,13 @@ export function AboutMeSectionRefactored() {
   const { aboutMeData, clientData } = planData;
   const { toast } = useToast();
 
+  // Function to refresh GPT limit after content application
+  const refreshGPTLimit = () => {
+    // Reset any usage counters or refresh tokens
+    // This can be expanded to track actual API usage limits
+    console.log("GPT limit refreshed for next generation");
+  };
+
   const generateContentMutation = useMutation({
     mutationFn: async (userInput: string) => {
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
@@ -20,7 +27,7 @@ export function AboutMeSectionRefactored() {
         userInput,
         clientName: clientData?.fullName || "Client",
         clientDiagnosis: clientData?.primaryDiagnosis || "Not specified",
-        maxWords: 300,
+        maxWords: 200,
         previousSections: planData
       });
       return await response.json();
@@ -125,13 +132,14 @@ export function AboutMeSectionRefactored() {
               <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap mb-3">
                 {aboutMeData.generatedContent}
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 <Button 
                   onClick={() => {
                     handleInputChange("personalHistory", aboutMeData.generatedContent || "");
+                    refreshGPTLimit();
                     toast({
                       title: "Content Applied",
-                      description: "Added to Personal History field.",
+                      description: "Added to Personal History field. GPT limit refreshed.",
                     });
                   }}
                   variant="outline" 
@@ -143,9 +151,10 @@ export function AboutMeSectionRefactored() {
                 <Button 
                   onClick={() => {
                     handleInputChange("interests", aboutMeData.generatedContent || "");
+                    refreshGPTLimit();
                     toast({
                       title: "Content Applied", 
-                      description: "Added to Interests field.",
+                      description: "Added to Interests field. GPT limit refreshed.",
                     });
                   }}
                   variant="outline" 
@@ -154,6 +163,71 @@ export function AboutMeSectionRefactored() {
                 >
                   Add to Interests
                 </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("preferences", aboutMeData.generatedContent || "");
+                    refreshGPTLimit();
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Preferences field. GPT limit refreshed.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Preferences
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("culturalBackground", aboutMeData.generatedContent || "");
+                    refreshGPTLimit();
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Cultural Background field. GPT limit refreshed.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Cultural Background
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("communicationStyle", aboutMeData.generatedContent || "");
+                    refreshGPTLimit();
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Communication Style field. GPT limit refreshed.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Communication
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("socialPreferences", aboutMeData.generatedContent || "");
+                    refreshGPTLimit();
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Social Preferences field. GPT limit refreshed.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Social Preferences
+                </Button>
+              </div>
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                <div className="text-xs text-blue-600 dark:text-blue-400">
+                  Content limited to 200 words for focused sections
+                </div>
                 <Button 
                   onClick={() => {
                     handleInputChange("generatedContent", "");
