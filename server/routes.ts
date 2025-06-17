@@ -2811,7 +2811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Generation API for Care Support Plans
   app.post("/api/care-support-plans/generate-ai", requireAuth, async (req: any, res) => {
     try {
-      const { section, userInput, clientDiagnosis, clientName, maxWords = 300 } = req.body;
+      const { section, userInput, clientDiagnosis, clientName, maxWords = 300, previousSections = {} } = req.body;
       
       if (!section || !userInput) {
         return res.status(400).json({ message: "Section and user input are required" });
@@ -2820,13 +2820,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+      // Build contextual information from previous sections
+      let contextualInfo = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\n`;
+      
+      if (previousSections.aboutMeData?.generatedContent) {
+        contextualInfo += `About Me: ${previousSections.aboutMeData.generatedContent.substring(0, 200)}...\n`;
+      }
+      
+      if (previousSections.goalsData?.generatedContent) {
+        contextualInfo += `Goals: ${previousSections.goalsData.generatedContent.substring(0, 200)}...\n`;
+      }
+      
+      if (previousSections.adlData?.generatedContent && section !== "adl") {
+        contextualInfo += `ADL Assessment: ${previousSections.adlData.generatedContent.substring(0, 200)}...\n`;
+      }
+      
+      if (previousSections.structureData?.generatedContent) {
+        contextualInfo += `Structure/Routine: ${previousSections.structureData.generatedContent.substring(0, 200)}...\n`;
+      }
+      
+      if (previousSections.communicationData?.generatedContent && section !== "communication") {
+        contextualInfo += `Communication: ${previousSections.communicationData.generatedContent.substring(0, 200)}...\n`;
+      }
+
       let systemPrompt = "";
       let userPrompt = "";
 
       switch (section) {
         case "aboutMe":
           systemPrompt = `Generate a professional "About Me" section for a care support plan. Use the provided bullet points to create a comprehensive paragraph (max ${maxWords} words). Include the client's diagnosis context. Write in third person, professional tone. Do not include preambles or disclaimers.`;
-          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nKey points: ${userInput}`;
+          userPrompt = `${contextualInfo}\nKey points: ${userInput}`;
           break;
         
         case "goals":

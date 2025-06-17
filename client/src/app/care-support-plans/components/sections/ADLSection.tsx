@@ -62,9 +62,8 @@ export function ADLSection({ data, updateData }: ADLSectionProps) {
         maxWords: 300,
       });
 
-      const generatedContent = typeof response === 'object' && response !== null 
-        ? (response as any).generatedContent || (response as any).content
-        : String(response);
+      const responseData = await response.json();
+      const generatedContent = responseData.generatedContent;
       
       updateData('adlData', {
         ...adlData,

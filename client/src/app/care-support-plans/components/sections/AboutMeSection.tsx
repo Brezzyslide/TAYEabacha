@@ -53,7 +53,7 @@ export function AboutMeSection({ data, onChange, selectedClient, planData }: Abo
     onSuccess: (response) => {
       setFormData(prev => ({
         ...prev,
-        generatedContent: (response as any).generatedContent || (response as any).content || String(response)
+        generatedContent: response.generatedContent
       }));
       toast({
         title: "AI Content Generated",
