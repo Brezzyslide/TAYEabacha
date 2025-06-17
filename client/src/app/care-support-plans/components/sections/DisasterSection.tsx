@@ -60,7 +60,7 @@ export function DisasterSection({ data, updateData }: DisasterSectionProps) {
         userInput: `Disaster Scenario: ${scenarioName}`,
         clientDiagnosis: data.clientData?.primaryDiagnosis || null,
         clientName: data.clientData?.fullName || null,
-        maxWords: 400,
+        maxWords: 200,
       });
 
       const generatedContent = (response as any).generatedContent;

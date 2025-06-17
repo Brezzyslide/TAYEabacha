@@ -107,7 +107,7 @@ export function MealtimeSection({ data, updateData }: MealtimeSectionProps) {
         userInput: risksDescription,
         clientDiagnosis: data.clientData?.primaryDiagnosis || null,
         clientName: data.clientData?.fullName || null,
-        maxWords: 500,
+        maxWords: 200,
       });
 
       const generatedContent = (response as any).generatedContent;
