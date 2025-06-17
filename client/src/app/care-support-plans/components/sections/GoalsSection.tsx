@@ -44,8 +44,15 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    updateData('goalsData', formData);
-  }, [formData, updateData]);
+    // Only update if there are actual changes to avoid overwriting existing data
+    const hasChanges = Object.keys(formData).some(key => 
+      formData[key as keyof typeof formData] !== goalsData[key]
+    );
+    
+    if (hasChanges) {
+      updateData('goalsData', formData);
+    }
+  }, [formData]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({

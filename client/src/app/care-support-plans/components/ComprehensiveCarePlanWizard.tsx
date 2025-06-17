@@ -289,7 +289,10 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
   const updatePlanData = (section: string, data: any) => {
     setPlanData(prev => ({
       ...prev,
-      [section]: data,
+      [section]: {
+        ...prev[section as keyof CarePlanData],
+        ...data,
+      },
     }));
   };
 
