@@ -47,26 +47,35 @@ export function AboutMeSectionRefactored() {
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";
       
-      // Update the specific targeted field
-      updateField('aboutMeData', targetField, generatedText);
-      
-      // Refresh GPT limit after each content application
-      refreshGPTLimit();
-      
-      const fieldLabels: { [key: string]: string } = {
-        personalHistory: "Personal History",
-        interests: "Interests",
-        preferences: "Preferences",
-        strengths: "Strengths",
-        challenges: "Challenges",
-        familyBackground: "Family Background",
-        culturalConsiderations: "Cultural Considerations"
-      };
-      
-      toast({
-        title: "AI Content Generated",
-        description: `${fieldLabels[targetField] || targetField} has been populated with targeted content (200 words).`,
-      });
+      if (targetField === 'preview') {
+        // Store content for preview and field selection
+        updateField('aboutMeData', 'generatedContent', generatedText);
+        toast({
+          title: "Content Generated",
+          description: "Review the AI-generated content and choose which field to populate.",
+        });
+      } else {
+        // Update the specific targeted field directly
+        updateField('aboutMeData', targetField, generatedText);
+        
+        // Refresh GPT limit after each content application
+        refreshGPTLimit();
+        
+        const fieldLabels: { [key: string]: string } = {
+          personalHistory: "Personal History",
+          interests: "Interests",
+          preferences: "Preferences",
+          strengths: "Strengths",
+          challenges: "Challenges",
+          familyBackground: "Family Background",
+          culturalConsiderations: "Cultural Considerations"
+        };
+        
+        toast({
+          title: "AI Content Generated",
+          description: `${fieldLabels[targetField] || targetField} has been populated with targeted content (200 words).`,
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -79,6 +88,23 @@ export function AboutMeSectionRefactored() {
 
   const handleInputChange = (field: string, value: string) => {
     updateField('aboutMeData', field, value);
+  };
+
+  const handleGenerateInitialContent = () => {
+    if (!aboutMeData.bulletPoints?.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please enter key information about the client first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Use existing mutation but trigger content preview mode
+    generateTargetedContentMutation.mutate({ 
+      targetField: 'preview',
+      userInput: aboutMeData.bulletPoints 
+    });
   };
 
   const handleGenerateTargetedContent = (targetField: string) => {
@@ -120,7 +146,7 @@ export function AboutMeSectionRefactored() {
 
           {/* Primary AI Generation Button */}
           <Button 
-            onClick={() => handleGenerateTargetedContent('personalHistory')}
+            onClick={handleGenerateInitialContent}
             disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
             className="w-full mb-4"
           >
@@ -241,6 +267,7 @@ export function AboutMeSectionRefactored() {
                 <Button 
                   onClick={() => {
                     handleInputChange("personalHistory", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
                     refreshGPTLimit();
                     toast({
                       title: "Content Applied",
