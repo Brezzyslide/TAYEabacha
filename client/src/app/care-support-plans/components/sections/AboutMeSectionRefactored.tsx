@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Loader2, User, Heart } from "lucide-react";
+import { Sparkles, Loader2, User, Heart, CheckCircle2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useCarePlan } from "../../contexts/CarePlanContext";
@@ -104,9 +104,71 @@ export function AboutMeSectionRefactored() {
 
           {aboutMeData.generatedContent && (
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">AI Generated Content:</h4>
-              <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content:</h4>
+                <Button 
+                  onClick={() => {
+                    // Auto-populate the Personal History field with the generated content
+                    handleInputChange("personalHistory", aboutMeData.generatedContent || "");
+                    toast({
+                      title: "Content Applied",
+                      description: "AI-generated content has been added to Personal History & Background field.",
+                    });
+                  }}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                  Use This Content
+                </Button>
+              </div>
+              <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap mb-3">
                 {aboutMeData.generatedContent}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    handleInputChange("personalHistory", aboutMeData.generatedContent || "");
+                    toast({
+                      title: "Content Applied",
+                      description: "Added to Personal History field.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Personal History
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("interests", aboutMeData.generatedContent || "");
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Interests field.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Interests
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("generatedContent", "");
+                    toast({
+                      title: "Content Dismissed",
+                      description: "AI-generated content cleared.",
+                    });
+                  }}
+                  variant="ghost" 
+                  size="sm"
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Dismiss
+                </Button>
               </div>
             </div>
           )}
