@@ -118,24 +118,82 @@ export function AboutMeSectionRefactored() {
             />
           </div>
 
-          {/* Legacy Generate Button - keeping for backwards compatibility */}
-          <Button 
-            onClick={() => handleGenerateTargetedContent('personalHistory')}
-            disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
-            className="w-full"
-          >
-            {generateTargetedContentMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating Content...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate About Me Section
-              </>
-            )}
-          </Button>
+          {/* Targeted "Add to [Section]" Buttons with Context Awareness */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">Smart AI Generation - Context Aware</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Each button generates 200-word targeted content for specific fields, avoiding duplication from other populated areas.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('personalHistory')}
+                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Personal History
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('interests')}
+                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Interests
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('preferences')}
+                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Preferences
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('strengths')}
+                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Strengths
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('challenges')}
+                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Challenges
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('familyBackground')}
+                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Family Background
+              </Button>
+            </div>
+          </div>
+
+          {generateTargetedContentMutation.isPending && (
+            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+              <span className="text-sm text-blue-700 dark:text-blue-300">Generating targeted content with progress awareness from other sections...</span>
+            </div>
+          )}
 
           {aboutMeData.generatedContent && (
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
