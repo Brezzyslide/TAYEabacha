@@ -145,7 +145,10 @@ export function GoalsSectionRefactored() {
             <Textarea
               id="personalGoals"
               value={goalsData.personalGoals || goalsData.overallObjective || ''}
-              onChange={(e) => handleInputChange('personalGoals', e.target.value)}
+              onChange={(e) => {
+                handleInputChange('personalGoals', e.target.value);
+                handleInputChange('overallObjective', e.target.value);
+              }}
               placeholder="What are the person's personal dreams, aspirations, and life goals?"
               className="min-h-[120px] resize-none"
             />
@@ -172,7 +175,7 @@ export function GoalsSectionRefactored() {
             <Label htmlFor="shortTermGoals" className="text-base font-medium">Short-Term Goals (3-6 months)</Label>
             <Textarea
               id="shortTermGoals"
-              value={goalsData.shortTermGoals || ''}
+              value={goalsData.shortTermGoals || goalsData.goalInput || ''}
               onChange={(e) => handleInputChange('shortTermGoals', e.target.value)}
               placeholder="Specific, measurable goals achievable in the next 3-6 months..."
               className="min-h-[100px] resize-none"
@@ -183,7 +186,7 @@ export function GoalsSectionRefactored() {
             <Label htmlFor="longTermGoals" className="text-base font-medium">Long-Term Goals (6+ months)</Label>
             <Textarea
               id="longTermGoals"
-              value={goalsData.longTermGoals || ''}
+              value={goalsData.longTermGoals || goalsData.generatedGoals || ''}
               onChange={(e) => handleInputChange('longTermGoals', e.target.value)}
               placeholder="Broader aspirations and goals for the next 6-12 months and beyond..."
               className="min-h-[100px] resize-none"
