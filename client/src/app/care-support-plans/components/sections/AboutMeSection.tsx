@@ -43,17 +43,21 @@ export function AboutMeSection({ data, onChange, selectedClient, planData }: Abo
   };
 
   const generateContentMutation = useMutation({
-    mutationFn: (userInput: string) => apiRequest("POST", "/api/care-support-plans/generate-ai", {
-      section: "aboutMe",
-      userInput,
-      clientName: selectedClient?.fullName || "Client",
-      clientDiagnosis: selectedClient?.diagnosis || "Not specified",
-      maxWords: 300
-    }),
-    onSuccess: (response) => {
+    mutationFn: async (userInput: string) => {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "aboutMe",
+        userInput,
+        clientName: selectedClient?.fullName || "Client",
+        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
+        maxWords: 300,
+        previousSections: planData
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
       setFormData(prev => ({
         ...prev,
-        generatedContent: response.generatedContent
+        generatedContent: responseData.generatedContent
       }));
       toast({
         title: "AI Content Generated",

@@ -60,6 +60,7 @@ export function ADLSection({ data, updateData }: ADLSectionProps) {
         clientDiagnosis: data.clientData?.primaryDiagnosis || null,
         clientName: data.clientData?.fullName || null,
         maxWords: 300,
+        previousSections: data,
       });
 
       const responseData = await response.json();
