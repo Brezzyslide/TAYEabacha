@@ -2850,7 +2850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Generation API for Care Support Plans
   app.post("/api/care-support-plans/generate-ai", requireAuth, async (req: any, res) => {
     try {
-      const { section, userInput, clientDiagnosis, clientName, maxWords = 300, previousSections = {} } = req.body;
+      const { section, userInput, clientDiagnosis, clientName, maxWords = 300, previousSections = {}, targetField = null, existingContent = {} } = req.body;
       
       if (!section || !userInput) {
         return res.status(400).json({ message: "Section and user input are required" });
@@ -2859,41 +2859,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Build contextual information from previous sections
-      let contextualInfo = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\n`;
+      // Build contextual information with existing content awareness
+      const contextualInfo = `Client: ${clientName || 'Client'}, Diagnosis: ${clientDiagnosis || 'Not specified'}`;
       
-      if (previousSections.aboutMeData?.generatedContent) {
-        contextualInfo += `About Me: ${previousSections.aboutMeData.generatedContent.substring(0, 200)}...\n`;
-      }
+      // Create context-aware content summary
+      const buildExistingContentContext = (existingContent: any, targetField: string | null) => {
+        const populated = [];
+        const empty = [];
+        
+        for (const [field, content] of Object.entries(existingContent)) {
+          if (content && content.toString().trim()) {
+            populated.push(`${field}: ${content.toString().slice(0, 100)}${content.toString().length > 100 ? '...' : ''}`);
+          } else {
+            empty.push(field);
+          }
+        }
+        
+        let context = "";
+        if (populated.length > 0) {
+          context += `\nAlready populated fields: ${populated.join('; ')}`;
+        }
+        if (targetField) {
+          context += `\nTarget field to populate: ${targetField}`;
+          context += `\nFocus specifically on ${targetField} content, avoid repeating information already covered in other fields.`;
+        }
+        
+        return context;
+      };
       
-      if (previousSections.goalsData?.generatedContent) {
-        contextualInfo += `Goals: ${previousSections.goalsData.generatedContent.substring(0, 200)}...\n`;
-      }
-      
-      if (previousSections.adlData?.generatedContent && section !== "adl") {
-        contextualInfo += `ADL Assessment: ${previousSections.adlData.generatedContent.substring(0, 200)}...\n`;
-      }
-      
-      if (previousSections.structureData?.generatedContent) {
-        contextualInfo += `Structure/Routine: ${previousSections.structureData.generatedContent.substring(0, 200)}...\n`;
-      }
-      
-      if (previousSections.communicationData?.generatedContent && section !== "communication") {
-        contextualInfo += `Communication: ${previousSections.communicationData.generatedContent.substring(0, 200)}...\n`;
-      }
+      const existingContext = buildExistingContentContext(existingContent, targetField);
 
       let systemPrompt = "";
       let userPrompt = "";
 
       switch (section) {
         case "aboutMe":
-          systemPrompt = `Generate a professional "About Me" section for a care support plan. If specific information is limited, provide evidence-based recommendations and considerations typical for the given diagnosis. Use provided details to create a comprehensive paragraph (max ${maxWords} words). Write in third person, professional tone. Do not include preambles or disclaimers.`;
-          userPrompt = `${contextualInfo}\nProvided information: ${userInput}`;
+          if (targetField) {
+            // Field-specific prompts for About Me section
+            const fieldPrompts: { [key: string]: string } = {
+              "personalHistory": `Generate focused personal history content for this client. Consider their diagnosis and background. Avoid repeating information from other populated fields. Max ${maxWords} words, professional tone.`,
+              "interests": `Generate specific interests and activities suitable for this client based on their diagnosis and abilities. Focus on realistic, engaging activities that support their care goals. Avoid duplicating content from other fields. Max ${maxWords} words.`,
+              "hobbies": `Generate specific hobby recommendations tailored to this client's diagnosis and capabilities. Focus on accessible, therapeutic hobbies that promote wellbeing and social engagement. Consider their physical and cognitive abilities. Avoid repeating interests already listed. Max ${maxWords} words.`,
+              "culturalBackground": `Generate cultural considerations and background relevant to care delivery for this client. Be respectful and consider how cultural factors impact care preferences and communication styles. Max ${maxWords} words.`,
+              "communicationStyle": `Generate communication style preferences and approaches specific to this client's needs and diagnosis. Focus on how they best receive and express information. Avoid repeating communication strategies from other sections. Max ${maxWords} words.`,
+              "socialPreferences": `Generate social interaction preferences and considerations for this client based on their diagnosis and needs. Focus on group vs individual preferences, comfort levels, and social support strategies. Max ${maxWords} words.`,
+              "lifestyleFactors": `Generate lifestyle factors and daily living preferences relevant to this client's care. Consider routines, preferences, and environmental needs based on their diagnosis. Max ${maxWords} words.`
+            };
+            systemPrompt = fieldPrompts[targetField] || `Generate focused ${targetField} content for this client's care plan. Avoid repeating information from other populated fields. Max ${maxWords} words, professional tone.`;
+          } else {
+            systemPrompt = `Generate a professional "About Me" section for a care support plan. If specific information is limited, provide evidence-based recommendations and considerations typical for the given diagnosis. Use provided details to create a comprehensive paragraph (max ${maxWords} words). Write in third person, professional tone. Do not include preambles or disclaimers.`;
+          }
+          userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
           break;
         
         case "goals":
-          systemPrompt = `Generate 4 prioritized SMART goals for a care support plan. If specific NDIS goals are limited, create evidence-based goals typical for the given diagnosis. Each goal should be specific, measurable, achievable, relevant, and time-bound. Max ${maxWords} words total. Professional tone, no preambles.`;
-          userPrompt = `${contextualInfo}\nProvided goals/objectives: ${userInput}`;
+          if (targetField) {
+            // Field-specific prompts for Goals section
+            const goalFieldPrompts: { [key: string]: string } = {
+              "ndisGoals": `Generate NDIS-aligned goals for this client based on their diagnosis and support needs. Focus on independence, community participation, and skill development. Each goal should be specific, measurable, and relevant to NDIS outcomes. Max ${maxWords} words.`,
+              "personalGoals": `Generate personal aspirations and life goals for this client considering their abilities and interests. Focus on meaningful personal achievements, relationships, and lifestyle preferences. Avoid duplicating NDIS goals. Max ${maxWords} words.`,
+              "shortTermGoals": `Generate achievable short-term goals (3-6 months) for this client. Focus on immediate skill building and support needs based on their diagnosis. Each goal should be specific and measurable. Max ${maxWords} words.`,
+              "longTermGoals": `Generate long-term goals (12+ months) for this client focusing on independence and quality of life improvements. Consider their diagnosis and potential for growth. Each goal should be aspirational yet realistic. Max ${maxWords} words.`
+            };
+            systemPrompt = goalFieldPrompts[targetField] || `Generate focused ${targetField} for this client's care plan. Ensure goals are SMART and avoid repeating content from other goal fields. Max ${maxWords} words.`;
+          } else {
+            systemPrompt = `Generate 4 prioritized SMART goals for a care support plan. If specific NDIS goals are limited, create evidence-based goals typical for the given diagnosis. Each goal should be specific, measurable, achievable, relevant, and time-bound. Max ${maxWords} words total. Professional tone, no preambles.`;
+          }
+          userPrompt = `${contextualInfo}${existingContext}\nProvided goals/objectives: ${userInput}`;
           break;
         
         case "adl":
@@ -2902,8 +2934,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         
         case "communication":
-          systemPrompt = `Generate comprehensive communication strategies for both RECEPTIVE and EXPRESSIVE communication. If specific client information is limited, provide evidence-based recommendations for the given diagnosis. Return JSON format: {"generatedContent": "overall strategy", "receptiveStrategies": "receptive specific strategies", "expressiveStrategies": "expressive specific strategies"}. Max ${maxWords} words total.`;
-          userPrompt = `${contextualInfo}\nCommunication Assessment: ${userInput}`;
+          if (targetField) {
+            // Field-specific prompts for Communication section
+            const commFieldPrompts: { [key: string]: string } = {
+              "expressive": `Generate expressive communication strategies for this client based on their diagnosis and abilities. Focus on how they communicate needs, wants, and feelings. Include verbal and non-verbal methods. Avoid duplicating receptive strategies. Max ${maxWords} words.`,
+              "receptive": `Generate receptive communication strategies for this client based on their diagnosis and abilities. Focus on how they best understand and process information from others. Include visual, auditory, and tactile approaches. Avoid duplicating expressive strategies. Max ${maxWords} words.`,
+              "supportStrategies": `Generate communication support strategies and tools for this client. Focus on assistive technologies, environmental modifications, and staff communication approaches. Consider their specific diagnosis needs. Max ${maxWords} words.`
+            };
+            systemPrompt = commFieldPrompts[targetField] || `Generate focused ${targetField} communication content for this client. Avoid repeating information from other communication fields. Max ${maxWords} words.`;
+          } else {
+            systemPrompt = `Generate comprehensive communication strategies for both RECEPTIVE and EXPRESSIVE communication. If specific client information is limited, provide evidence-based recommendations for the given diagnosis. Return JSON format: {"generatedContent": "overall strategy", "receptiveStrategies": "receptive specific strategies", "expressiveStrategies": "expressive specific strategies"}. Max ${maxWords} words total.`;
+          }
+          userPrompt = `${contextualInfo}${existingContext}\nCommunication Assessment: ${userInput}`;
           break;
         
         case "behaviour":

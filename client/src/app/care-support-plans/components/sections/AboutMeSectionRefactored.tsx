@@ -20,28 +20,52 @@ export function AboutMeSectionRefactored() {
     console.log("GPT limit refreshed for next generation");
   };
 
-  const generateContentMutation = useMutation({
-    mutationFn: async (userInput: string) => {
+  const generateTargetedContentMutation = useMutation({
+    mutationFn: async ({ userInput, targetField }: { userInput: string; targetField: string }) => {
+      // Build existing content context for smart AI awareness
+      const existingContent = {
+        personalHistory: aboutMeData.personalHistory || "",
+        interests: aboutMeData.interests || "",
+        hobbies: aboutMeData.hobbies || "",
+        culturalBackground: aboutMeData.culturalBackground || "",
+        communicationStyle: aboutMeData.communicationStyle || "",
+        socialPreferences: aboutMeData.socialPreferences || "",
+        lifestyleFactors: aboutMeData.lifestyleFactors || ""
+      };
+
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "aboutMe",
         userInput,
         clientName: clientData?.fullName || "Client",
         clientDiagnosis: clientData?.primaryDiagnosis || "Not specified",
         maxWords: 200,
-        previousSections: planData
+        targetField,
+        existingContent
       });
       return await response.json();
     },
-    onSuccess: (responseData) => {
+    onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";
       
-      // Update multiple fields with the generated content
-      updateField('aboutMeData', 'generatedContent', generatedText);
-      updateField('aboutMeData', 'personalHistory', generatedText);
+      // Update the specific targeted field
+      updateField('aboutMeData', targetField, generatedText);
+      
+      // Refresh GPT limit after each content application
+      refreshGPTLimit();
+      
+      const fieldLabels = {
+        personalHistory: "Personal History",
+        interests: "Interests",
+        hobbies: "Hobbies",
+        culturalBackground: "Cultural Background", 
+        communicationStyle: "Communication Style",
+        socialPreferences: "Social Preferences",
+        lifestyleFactors: "Lifestyle Factors"
+      };
       
       toast({
         title: "AI Content Generated",
-        description: "Professional About Me section has been created and populated in the Personal History field.",
+        description: `${fieldLabels[targetField] || targetField} has been populated with targeted content (200 words).`,
       });
     },
     onError: (error: any) => {
