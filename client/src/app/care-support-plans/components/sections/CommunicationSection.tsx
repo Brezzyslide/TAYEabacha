@@ -18,7 +18,7 @@ interface CommunicationSectionProps {
 }
 
 export function CommunicationSection({ data, onChange, selectedClient, planData }: CommunicationSectionProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     expressiveCommunication: data.expressiveCommunication || "",
     receptiveCommunication: data.receptiveCommunication || "",
     communicationMethods: data.communicationMethods || [],
@@ -29,7 +29,23 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
     generatedContent: data.generatedContent || "",
     communicationInput: data.communicationInput || "",
     ...data
-  });
+  }));
+
+  // Update form data when section data changes (when loading existing plan)
+  useEffect(() => {
+    setFormData({
+      expressiveCommunication: data.expressiveCommunication || "",
+      receptiveCommunication: data.receptiveCommunication || "",
+      communicationMethods: data.communicationMethods || [],
+      assistiveTechnology: data.assistiveTechnology || "",
+      languagePreferences: data.languagePreferences || "",
+      communicationGoals: data.communicationGoals || "",
+      supportStrategies: data.supportStrategies || "",
+      generatedContent: data.generatedContent || "",
+      communicationInput: data.communicationInput || "",
+      ...data
+    });
+  }, [data]);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
