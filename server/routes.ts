@@ -2980,9 +2980,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           break;
 
+        case "structure":
+          if (targetField) {
+            // Field-specific prompts for Structure section
+            const fieldPrompts: { [key: string]: string } = {
+              "dailyStructure": `Staff need to understand: Client's daily structure needs, preferred timing, essential routines. Include specific scheduling requirements and flexibility levels. Example: 'Client requires consistent meal times', 'Needs 2-hour break between activities'. Max ${maxWords} words.`,
+              "weeklyPattern": `Staff need to know: Client's weekly patterns, recurring commitments, schedule variations. Include weekly structure preferences and consistency needs. Example: 'Mondays require quiet activities', 'Weekend routine can be more flexible'. Max ${maxWords} words.`,
+              "transitions": `Staff must understand: Client's transition support needs, change management strategies, adaptation time requirements. Include specific transition techniques. Example: 'Client needs 10-minute warning before transitions', 'Visual countdown helps with changes'. Max ${maxWords} words.`,
+              "flexibility": `Staff should recognize: Client's flexibility tolerance, adaptation abilities, change management needs. Include specific flexibility strategies. Example: 'Client can handle minor schedule changes with notice', 'Major changes require day-before preparation'. Max ${maxWords} words.`,
+              "environmental": `Staff need to know: Client's environmental structure needs, space requirements, setting preferences. Include specific environmental considerations. Example: 'Client works best in quiet spaces', 'Requires consistent seating arrangement'. Max ${maxWords} words.`,
+              "staffGuidance": `Staff guidance: Specific structure implementation strategies, routine maintenance, schedule management approaches. Include practical implementation instructions. Max ${maxWords} words.`
+            };
+            
+            systemPrompt = fieldPrompts[targetField] || `Generate practical structure and routine guidance for staff. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
+          } else {
+            systemPrompt = `Generate comprehensive structure and routine content focusing on practical staff guidance. Include daily structure, routine management, transition support, and environmental considerations. Avoid generic care plan language - provide actionable information for support workers. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nStructure and routine information: ${userInput}`;
+          }
+          break;
+
+        case "communication":
+          if (targetField) {
+            // Field-specific prompts for Communication section
+            const fieldPrompts: { [key: string]: string } = {
+              "receptiveStrategies": `Staff need to understand: How client receives and processes information, comprehension support methods, information delivery techniques. Include specific receptive communication strategies. Example: 'Client understands simple instructions best', 'Use visual aids with verbal instructions'. Max ${maxWords} words.`,
+              "expressiveStrategies": `Staff need to know: How client expresses needs and thoughts, output methods, expression support techniques. Include specific expressive communication strategies. Example: 'Client uses gestures when verbal difficult', 'Picture cards help express complex needs'. Max ${maxWords} words.`,
+              "augmentativeTools": `Staff must understand: AAC devices, picture systems, alternative communication methods needed. Include specific tools and usage instructions. Example: 'Client uses iPad communication app', 'PECS system for meal choices'. Max ${maxWords} words.`,
+              "socialInteraction": `Staff should recognize: Client's social communication abilities, interaction preferences, peer communication approaches. Include specific social strategies. Example: 'Client prefers one-on-one conversations', 'Group activities overwhelm communication'. Max ${maxWords} words.`,
+              "staffApproaches": `Staff guidance: Specific communication approaches, language level, timing, interaction strategies staff should use. Include practical communication instructions. Max ${maxWords} words.`,
+              "assistiveTechnology": `Staff need to know: Communication technology, devices, apps, and technical supports required. Include setup and usage instructions. Example: 'Speech generating device requires daily charging', 'Backup communication cards always available'. Max ${maxWords} words.`
+            };
+            
+            systemPrompt = fieldPrompts[targetField] || `Generate practical communication support guidance for staff. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
+          } else {
+            systemPrompt = `Generate comprehensive communication support content focusing on practical staff guidance. Include receptive and expressive strategies, AAC tools, and staff communication approaches. Avoid generic care plan language - provide actionable information for support workers. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nCommunication assessment information: ${userInput}`;
+          }
+          break;
+
+        case "behaviour":
+          if (targetField) {
+            // Field-specific prompts for Behaviour section
+            const fieldPrompts: { [key: string]: string } = {
+              "overallApproach": `Staff need to understand: Overall behaviour support philosophy, PBS principles, general approach to challenging behaviours. Include consistent approach strategies. Example: 'Focus on positive reinforcement over restriction', 'Understand behaviour as communication'. Max ${maxWords} words.`,
+              "preventativeStrategies": `Staff must know: Proactive strategies to prevent challenging behaviours, environmental modifications, early intervention techniques. Include specific prevention methods. Example: 'Provide 10-minute activity warnings', 'Ensure regular sensory breaks'. Max ${maxWords} words.`,
+              "deEscalationTechniques": `Staff need to know: Active de-escalation methods, calming techniques, immediate response strategies during escalation. Include step-by-step de-escalation approaches. Example: 'Lower voice tone and slow movements', 'Provide space while maintaining safety'. Max ${maxWords} words.`,
+              "positiveBehaviourSupport": `Staff should understand: PBS strategies, reinforcement approaches, positive behavior promotion techniques. Include specific PBS implementation. Example: 'Acknowledge appropriate behaviours immediately', 'Use client's preferred activities as reinforcement'. Max ${maxWords} words.`,
+              "staffGuidance": `Staff guidance: Specific behaviour support implementation, team consistency, response protocols staff must follow. Include practical implementation instructions. Max ${maxWords} words.`,
+              "riskAssessment": `Staff must be aware: Safety considerations, risk factors, protective measures, emergency procedures for high-risk situations. Include specific safety protocols. Example: 'Monitor for escalation triggers', 'Clear exit strategies during incidents'. Max ${maxWords} words.`
+            };
+            
+            systemPrompt = fieldPrompts[targetField] || `Generate practical behaviour support guidance for staff. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
+          } else {
+            systemPrompt = `Generate comprehensive behaviour support content focusing on practical staff guidance. Include PBS approaches, de-escalation techniques, prevention strategies, and safety considerations. Avoid generic care plan language - provide actionable information for support workers. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nBehaviour assessment information: ${userInput}`;
+          }
+          break;
+
+        case "disaster":
+          if (targetField) {
+            // Field-specific prompts for Disaster section
+            const fieldPrompts: { [key: string]: string } = {
+              "generalPreparedness": `Staff need to understand: Overall disaster preparedness strategies, supplies needed, readiness measures for various emergency scenarios. Include specific preparation requirements. Example: 'Emergency kit must include client medications', 'Backup communication devices charged weekly'. Max ${maxWords} words.`,
+              "evacuationProcedures": `Staff must know: General evacuation procedures, mobility considerations, route planning, assistance requirements during evacuations. Include step-by-step evacuation guidance. Example: 'Client requires wheelchair during evacuation', 'Use elevator alternative route B'. Max ${maxWords} words.`,
+              "communicationPlan": `Staff need to know: Emergency communication methods, contact procedures, backup communication systems, family notification protocols. Include specific communication steps. Example: 'Contact family via emergency phone tree', 'Use radio if mobile networks fail'. Max ${maxWords} words.`,
+              "medicationManagement": `Staff must understand: Emergency medication protocols, supply maintenance, access procedures, storage requirements during disasters. Include medication-specific guidance. Example: 'Insulin requires cool storage during power outages', 'Emergency medication kit location'. Max ${maxWords} words.`,
+              "shelterArrangements": `Staff should know: Emergency accommodation requirements, accessibility needs, special equipment for shelter situations. Include shelter-specific considerations. Example: 'Client requires quiet shelter area', 'Wheelchair accessible bathroom essential'. Max ${maxWords} words.`,
+              "postDisasterSupport": `Staff guidance: Post-disaster support requirements, recovery procedures, ongoing care considerations after emergency events. Include recovery support strategies. Max ${maxWords} words.`
+            };
+            
+            systemPrompt = fieldPrompts[targetField] || `Generate practical disaster management guidance for staff. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
+          } else {
+            systemPrompt = `Generate comprehensive disaster management content focusing on practical staff guidance. Include preparedness, evacuation, communication, and recovery procedures specific to client needs. Avoid generic care plan language - provide actionable emergency information for support workers. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nDisaster management information: ${userInput}`;
+          }
+          break;
+
         case "mealtime":
-          systemPrompt = `Generate a comprehensive mealtime risk management plan. If specific risks aren't identified, provide evidence-based recommendations typical for the given diagnosis. Max ${maxWords} words. Focus on safety and support strategies. Consider client's abilities and preferences from other sections.`;
-          userPrompt = `${contextualInfo}${existingContext}\nMealtime considerations: ${userInput}`;
+          if (targetField) {
+            // Field-specific prompts for Mealtime section
+            const fieldPrompts: { [key: string]: string } = {
+              "dietaryRequirements": `Staff need to understand: Specific dietary needs, restrictions, allergies, cultural requirements, medical dietary considerations. Include clear dietary guidelines. Example: 'Client requires gluten-free diet', 'No dairy due to lactose intolerance'. Max ${maxWords} words.`,
+              "textureModifications": `Staff must know: Food texture requirements, fluid consistency needs, preparation methods, safety considerations for modified textures. Include specific texture instructions. Example: 'All foods minced to 5mm pieces', 'Fluids thickened to Level 2 consistency'. Max ${maxWords} words.`,
+              "assistanceLevel": `Staff need to know: Required mealtime assistance, positioning needs, cueing requirements, independence promotion strategies. Include specific assistance techniques. Example: 'Client needs setup but feeds independently', 'Verbal prompts for pacing required'. Max ${maxWords} words.`,
+              "emergencyProcedures": `Staff must understand: Emergency response for choking, aspiration, allergic reactions, medical incidents during meals. Include step-by-step emergency protocols. Example: 'Call 000 immediately for severe choking', 'EpiPen location and usage steps'. Max ${maxWords} words.`,
+              "staffGuidance": `Staff guidance: Specific mealtime support implementation, safety protocols, monitoring requirements staff must follow. Include practical mealtime instructions. Max ${maxWords} words.`,
+              "monitoringRequirements": `Staff must monitor: Specific indicators, warning signs, assessment requirements, documentation needs during mealtimes. Include monitoring protocols. Example: 'Watch for signs of fatigue during eating', 'Document fluid intake hourly'. Max ${maxWords} words.`
+            };
+            
+            systemPrompt = fieldPrompts[targetField] || `Generate practical mealtime support guidance for staff. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
+          } else {
+            systemPrompt = `Generate comprehensive mealtime risk management content focusing on practical staff guidance. Include dietary requirements, texture modifications, assistance needs, and safety protocols. Avoid generic care plan language - provide actionable mealtime information for support workers. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nMealtime assessment information: ${userInput}`;
+          }
           break;
         
         default:

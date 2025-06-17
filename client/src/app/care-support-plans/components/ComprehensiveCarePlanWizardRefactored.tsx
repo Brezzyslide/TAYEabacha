@@ -140,6 +140,8 @@ function WizardContent({ onClose }: { onClose: () => void }) {
         return <AboutMeSectionRefactored />;
       case 'goals':
         return <GoalsSectionRefactored />;
+      case 'adl':
+        return <ADLSectionRefactored />;
       default:
         // For components that haven't been refactored yet, show placeholder
         return (
