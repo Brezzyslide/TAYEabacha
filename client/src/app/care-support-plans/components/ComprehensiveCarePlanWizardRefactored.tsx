@@ -109,6 +109,29 @@ function WizardContent({ onClose }: { onClose: () => void }) {
       );
     }
 
+    // Check if current section is locked
+    const currentSectionStatus = getSectionStatus(currentStepData.id);
+    const isCurrentSectionLocked = currentSectionStatus === 'locked';
+
+    // If section is locked, show locked state
+    if (isCurrentSectionLocked) {
+      return (
+        <Card className="opacity-50">
+          <CardContent className="p-8 text-center">
+            <div className="text-6xl mb-4">🔒</div>
+            <h3 className="text-xl font-semibold mb-2 text-gray-500">Section Locked</h3>
+            <p className="text-muted-foreground mb-4">
+              Complete the previous sections to unlock {currentStepData.title}
+            </p>
+            <div className="text-sm text-gray-500">
+              <p>Required: Complete previous sections in order</p>
+              <p>This ensures proper context building for AI generation</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     // Render the appropriate component based on step
     switch(currentStepData.id) {
       case 'client':
@@ -151,19 +174,38 @@ function WizardContent({ onClose }: { onClose: () => void }) {
         
         <Progress value={progress} className="mb-3 h-1.5" />
         
-        {/* Step navigation - horizontal scroll */}
+        {/* Step navigation - horizontal scroll with progressive unlocking */}
         <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
-          {WIZARD_STEPS.map((step, index) => (
-            <Button
-              key={step.id}
-              variant={index === currentStep ? "default" : completedSteps.has(index) ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => handleStepClick(index)}
-              className="whitespace-nowrap text-xs px-3 py-1.5 h-auto"
-            >
-              {index + 1}. {step.title}
-            </Button>
-          ))}
+          {WIZARD_STEPS.map((step, index) => {
+            const sectionStatus = getSectionStatus(step.id);
+            const isLocked = sectionStatus === 'locked';
+            const isCompleted = sectionStatus === 'completed';
+            const isCurrentActive = index === currentStep;
+            
+            return (
+              <Button
+                key={step.id}
+                variant={
+                  isCurrentActive ? "default" : 
+                  isCompleted ? "secondary" : 
+                  isLocked ? "ghost" : "outline"
+                }
+                size="sm"
+                onClick={() => !isLocked && handleStepClick(index)}
+                disabled={isLocked}
+                className={`whitespace-nowrap text-xs px-3 py-1.5 h-auto ${
+                  isLocked ? 'opacity-50 cursor-not-allowed text-gray-400' : ''
+                } ${
+                  isCompleted ? 'bg-green-100 text-green-800 border-green-200' : ''
+                }`}
+                title={isLocked ? 'Complete previous sections to unlock' : step.description}
+              >
+                {isLocked && '🔒 '}
+                {isCompleted && '✓ '}
+                {index + 1}. {step.title}
+              </Button>
+            );
+          })}
         </div>
       </div>
 
