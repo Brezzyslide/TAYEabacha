@@ -367,10 +367,24 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
             <CardContent className="overflow-y-auto max-h-[55vh]">
               {CurrentStepComponent ? (
                 (() => {
+                  // Special handling for ClientLockSection (first step)
+                  if (currentStep === 0) {
+                    return <CurrentStepComponent
+                      data={planData}
+                      updateData={(field: string, value: any) => {
+                        setPlanData(prev => ({
+                          ...prev,
+                          [field]: value
+                        }));
+                      }}
+                      clients={clients}
+                    />;
+                  }
+                  
+                  // Handle other sections normally
                   const sectionDataKey = currentStepInfo.id + 'Data';
                   const sectionData = planData[sectionDataKey as keyof CarePlanData] || {};
                   
-                  // Handle different component interfaces
                   const commonProps = {
                     data: sectionData,
                     onChange: (data: any) => updatePlanData(sectionDataKey, data),

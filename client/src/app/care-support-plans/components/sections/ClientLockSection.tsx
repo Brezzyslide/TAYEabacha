@@ -9,29 +9,51 @@ import { format } from "date-fns";
 
 interface ClientLockSectionProps {
   data: any;
-  updateData: (section: string, data: any) => void;
+  updateData?: (section: string, data: any) => void;
+  onChange?: (data: any) => void;
   clients: any[];
+  planData?: any;
 }
 
-export function ClientLockSection({ data, updateData, clients }: ClientLockSectionProps) {
-  const [planTitle, setPlanTitle] = useState(data.planTitle || '');
+export function ClientLockSection({ data, updateData, onChange, clients, planData }: ClientLockSectionProps) {
+  const [planTitle, setPlanTitle] = useState(data.planTitle || planData?.planTitle || '');
 
   const handleClientSelect = (clientId: string) => {
     const selectedClient = clients.find(c => c.id === parseInt(clientId));
-    updateData('clientId', parseInt(clientId));
-    updateData('clientData', selectedClient);
     
-    // Auto-generate plan title if not already set
-    if (!planTitle && selectedClient) {
-      const newTitle = `Care Support Plan - ${selectedClient.fullName}`;
+    if (updateData) {
+      updateData('clientId', parseInt(clientId));
+      updateData('clientData', selectedClient);
+      
+      // Auto-generate plan title if not already set
+      if (!planTitle && selectedClient) {
+        const newTitle = `Care Support Plan - ${selectedClient.fullName}`;
+        setPlanTitle(newTitle);
+        updateData('planTitle', newTitle);
+      }
+    } else if (onChange) {
+      const newTitle = !planTitle && selectedClient ? `Care Support Plan - ${selectedClient.fullName}` : planTitle;
       setPlanTitle(newTitle);
-      updateData('planTitle', newTitle);
+      
+      // Update the wizard's main data instead of just section data
+      onChange({
+        clientId: parseInt(clientId),
+        clientData: selectedClient,
+        planTitle: newTitle
+      });
     }
   };
 
   const handleTitleChange = (value: string) => {
     setPlanTitle(value);
-    updateData('planTitle', value);
+    if (updateData) {
+      updateData('planTitle', value);
+    } else if (onChange) {
+      onChange({
+        ...data,
+        planTitle: value
+      });
+    }
   };
 
   return (
