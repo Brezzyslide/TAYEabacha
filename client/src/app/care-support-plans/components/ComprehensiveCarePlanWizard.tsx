@@ -82,20 +82,23 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
   });
 
   // Auto-save mutation for drafts
+  const [currentPlanId, setCurrentPlanId] = useState<number | null>(existingPlan?.id || null);
+  
   const autoSaveMutation = useMutation({
     mutationFn: async (data: CarePlanData) => {
       const response = await apiRequest('POST', `/api/care-support-plans/auto-save`, {
         ...data,
+        id: currentPlanId, // Include existing plan ID to update instead of create
         status: 'draft',
         planTitle: data.planTitle || `Draft - ${new Date().toLocaleDateString()}`,
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (savedPlan) => {
       setLastSaveTime(new Date());
-      // Silently update the plan ID if this is a new plan
-      if (!existingPlan && savedPlan.id) {
-        // Update URL or plan reference if needed
+      // Update plan ID for future auto-saves if this was a new plan
+      if (!currentPlanId && savedPlan.id) {
+        setCurrentPlanId(savedPlan.id);
       }
     },
     onError: () => {
@@ -144,6 +147,7 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
   // Load existing plan data if editing
   useEffect(() => {
     if (existingPlan && open) {
+      setCurrentPlanId(existingPlan.id);
       setPlanData({
         planTitle: existingPlan.planTitle || '',
         clientId: existingPlan.clientId || null,

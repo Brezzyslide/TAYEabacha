@@ -10,27 +10,42 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface ADLSectionProps {
   data: any;
-  updateData: (section: string, data: any) => void;
+  updateData?: (section: string, data: any) => void;
+  onChange?: (data: any) => void;
+  selectedClient?: any;
+  planData?: any;
 }
 
-export function ADLSection({ data, updateData }: ADLSectionProps) {
+export function ADLSection({ data, updateData, onChange, selectedClient, planData }: ADLSectionProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const adlData = data.adlData || { userInput: '', generatedContent: '', aiAttempts: 0 };
+  const adlData = data || { userInput: '', generatedContent: '', aiAttempts: 0 };
 
   const handleUserInputChange = (value: string) => {
-    updateData('adlData', {
+    const newData = {
       ...adlData,
       userInput: value,
-    });
+    };
+    
+    if (updateData) {
+      updateData('adlData', newData);
+    } else if (onChange) {
+      onChange(newData);
+    }
   };
 
   const handleGeneratedContentChange = (value: string) => {
-    updateData('adlData', {
+    const newData = {
       ...adlData,
       generatedContent: value,
-    });
+    };
+    
+    if (updateData) {
+      updateData('adlData', newData);
+    } else if (onChange) {
+      onChange(newData);
+    }
   };
 
   const handleExpandViaAI = async () => {
@@ -57,20 +72,25 @@ export function ADLSection({ data, updateData }: ADLSectionProps) {
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "adl",
         userInput: adlData.userInput,
-        clientDiagnosis: data.clientData?.primaryDiagnosis || null,
-        clientName: data.clientData?.fullName || null,
+        clientDiagnosis: selectedClient?.primaryDiagnosis || null,
+        clientName: selectedClient?.fullName || null,
         maxWords: 300,
-        previousSections: data,
+        previousSections: planData,
       });
 
-      const responseData = await response.json();
-      const generatedContent = responseData.generatedContent;
+      const generatedContent = (response as any).generatedContent;
       
-      updateData('adlData', {
+      const newData = {
         ...adlData,
         generatedContent: generatedContent,
         aiAttempts: adlData.aiAttempts + 1,
-      });
+      };
+      
+      if (updateData) {
+        updateData('adlData', newData);
+      } else if (onChange) {
+        onChange(newData);
+      }
 
       toast({
         title: "ADL Content Generated",
