@@ -248,9 +248,11 @@ export function AboutMeSectionRefactored() {
                   onClick={() => {
                     // Auto-populate the Personal History field with the generated content
                     handleInputChange("personalHistory", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
+                    refreshGPTLimit();
                     toast({
                       title: "Content Applied",
-                      description: "AI-generated content has been added to Personal History & Background field.",
+                      description: "AI-generated content has been added to Personal History & Background field. GPT limit refreshed.",
                     });
                   }}
                   size="sm"
