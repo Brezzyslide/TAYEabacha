@@ -77,7 +77,7 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
     onSuccess: (response) => {
       setFormData(prev => ({
         ...prev,
-        generatedContent: response.generatedContent
+        generatedContent: (response as any).generatedContent
       }));
       toast({
         title: "Communication Strategies Generated",

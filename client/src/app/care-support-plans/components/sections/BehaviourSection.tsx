@@ -107,7 +107,7 @@ export function BehaviourSection({ data, updateData }: BehaviourSectionProps) {
         maxWords: 150,
       });
 
-      const { generatedContent } = response;
+      const generatedContent = (response as any).generatedContent;
       
       // Parse the AI response to extract the three strategies
       const strategies = parseStrategiesFromAI(generatedContent);

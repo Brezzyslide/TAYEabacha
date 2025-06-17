@@ -110,7 +110,7 @@ export function MealtimeSection({ data, updateData }: MealtimeSectionProps) {
         maxWords: 500,
       });
 
-      const { generatedContent } = response;
+      const generatedContent = (response as any).generatedContent;
       
       updateData('mealtimeData', {
         ...mealtimeData,

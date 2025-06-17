@@ -63,7 +63,7 @@ export function DisasterSection({ data, updateData }: DisasterSectionProps) {
         maxWords: 400,
       });
 
-      const { generatedContent } = response;
+      const generatedContent = (response as any).generatedContent;
       
       // Parse the AI response to extract the three sections
       const sections = parseDisasterPlanFromAI(generatedContent);
