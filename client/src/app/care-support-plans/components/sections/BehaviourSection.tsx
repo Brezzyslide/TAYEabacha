@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -104,7 +105,7 @@ export function BehaviourSection({ data, updateData }: BehaviourSectionProps) {
         userInput: `Behaviour: ${behaviour.behaviour}\nTrigger: ${behaviour.trigger}`,
         clientDiagnosis: data.clientData?.primaryDiagnosis || null,
         clientName: data.clientData?.fullName || null,
-        maxWords: 150,
+        maxWords: 200,
       });
 
       const generatedContent = (response as any).generatedContent;
