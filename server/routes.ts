@@ -2760,6 +2760,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-save endpoint for drafts
+  app.post("/api/care-support-plans/auto-save", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const planData = {
+        ...req.body,
+        tenantId: req.user.tenantId,
+        createdByUserId: req.user.id,
+        status: 'draft',
+        updatedAt: new Date(),
+      };
+      
+      let plan;
+      if (req.body.id) {
+        // Update existing draft
+        plan = await storage.updateCareSupportPlan(req.body.id, planData, req.user.tenantId);
+      } else {
+        // Create new draft with auto-generated title if none provided
+        if (!planData.planTitle) {
+          planData.planTitle = `Draft - ${new Date().toLocaleDateString()}`;
+        }
+        plan = await storage.createCareSupportPlan(planData);
+      }
+      
+      res.json(plan);
+    } catch (error: any) {
+      console.error("Error auto-saving care support plan:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.put("/api/care-support-plans/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const planId = parseInt(req.params.id);
