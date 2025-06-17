@@ -12,7 +12,7 @@ import { CarePlanProvider, useCarePlan } from "../contexts/CarePlanContext";
 import { SaveStatusIndicator } from "./SaveStatusIndicator";
 import { ClientLockSectionRefactored } from "./sections/ClientLockSectionRefactored";
 import { AboutMeSectionRefactored } from "./sections/AboutMeSectionRefactored";
-import { GoalsSection } from "./sections/GoalsSection";
+import { GoalsSectionRefactored } from "./sections/GoalsSectionRefactored";
 import { ADLSection } from "./sections/ADLSection";
 import { StructureSection } from "./sections/StructureSection";
 import { CommunicationSection } from "./sections/CommunicationSection";
@@ -29,7 +29,7 @@ interface ComprehensiveCarePlanWizardRefactoredProps {
 const WIZARD_STEPS = [
   { id: 'client', title: 'Client Selection', component: ClientLockSectionRefactored, description: 'Select and lock client information' },
   { id: 'aboutMe', title: 'About Me', component: AboutMeSectionRefactored, description: 'Personal background and preferences' },
-  { id: 'goals', title: 'Goals & Outcomes', component: GoalsSection, description: 'NDIS goals and personal objectives' },
+  { id: 'goals', title: 'Goals & Outcomes', component: GoalsSectionRefactored, description: 'NDIS goals and personal objectives' },
   { id: 'adl', title: 'ADL Support', component: ADLSection, description: 'Activities of Daily Living assessment' },
   { id: 'structure', title: 'Structure & Routine', component: StructureSection, description: 'Daily schedules and routines' },
   { id: 'communication', title: 'Communication', component: CommunicationSection, description: 'Communication strategies and support' },
@@ -115,6 +115,8 @@ function WizardContent({ onClose }: { onClose: () => void }) {
         return <ClientLockSectionRefactored />;
       case 'aboutMe':
         return <AboutMeSectionRefactored />;
+      case 'goals':
+        return <GoalsSectionRefactored />;
       default:
         // For components that haven't been refactored yet, show placeholder
         return (
@@ -134,30 +136,30 @@ function WizardContent({ onClose }: { onClose: () => void }) {
   const isLastStep = currentStep === WIZARD_STEPS.length - 1;
 
   return (
-    <div className="flex flex-col h-full max-h-[90vh]">
-      {/* Header with progress */}
-      <div className="border-b p-6 pb-4">
-        <div className="flex justify-between items-center mb-4">
+    <div className="flex flex-col h-full max-h-[95vh]">
+      {/* Header with progress - more compact */}
+      <div className="border-b bg-white dark:bg-gray-900 px-6 py-4">
+        <div className="flex justify-between items-center mb-3">
           <div>
-            <h2 className="text-2xl font-bold">Care Support Plan</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl font-bold">Care Support Plan</h2>
+            <p className="text-sm text-muted-foreground">
               Step {currentStep + 1} of {WIZARD_STEPS.length}: {WIZARD_STEPS[currentStep].title}
             </p>
           </div>
           <SaveStatusIndicator />
         </div>
         
-        <Progress value={progress} className="mb-4" />
+        <Progress value={progress} className="mb-3 h-1.5" />
         
-        {/* Step navigation */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        {/* Step navigation - horizontal scroll */}
+        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
           {WIZARD_STEPS.map((step, index) => (
             <Button
               key={step.id}
               variant={index === currentStep ? "default" : completedSteps.has(index) ? "secondary" : "outline"}
               size="sm"
               onClick={() => handleStepClick(index)}
-              className="whitespace-nowrap"
+              className="whitespace-nowrap text-xs px-3 py-1.5 h-auto"
             >
               {index + 1}. {step.title}
             </Button>
@@ -165,43 +167,52 @@ function WizardContent({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Content area */}
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">{WIZARD_STEPS[currentStep].title}</h3>
-            <p className="text-muted-foreground">{WIZARD_STEPS[currentStep].description}</p>
+      {/* Content area with centered cards */}
+      <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-950">
+        <div className="max-w-6xl mx-auto p-6">
+          {/* Section header centered */}
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold mb-2">{WIZARD_STEPS[currentStep].title}</h3>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              {WIZARD_STEPS[currentStep].description}
+            </p>
           </div>
           
-          {renderStepContent()}
+          {/* Content with proper padding */}
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border">
+            <div className="p-8">
+              {renderStepContent()}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Footer navigation */}
-      <div className="border-t p-6 pt-4">
-        <div className="flex justify-between items-center max-w-4xl mx-auto">
+      {/* Footer navigation - cleaner design */}
+      <div className="border-t bg-white dark:bg-gray-900 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
           <Button 
             variant="outline" 
             onClick={handlePrevious} 
             disabled={isFirstStep}
+            size="sm"
           >
-            <ChevronLeft className="h-4 w-4 mr-2" />
+            <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>
           
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs text-muted-foreground bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
             {currentStep + 1} of {WIZARD_STEPS.length}
           </div>
           
           {isLastStep ? (
-            <Button onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Plan
+            <Button onClick={handleSave} size="sm">
+              <Save className="h-4 w-4 mr-1" />
+              Complete Plan
             </Button>
           ) : (
-            <Button onClick={handleNext}>
+            <Button onClick={handleNext} size="sm">
               Next
-              <ChevronRight className="h-4 w-4 ml-2" />
+              <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           )}
         </div>
