@@ -47,7 +47,9 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
   ];
 
   useEffect(() => {
-    onChange(formData);
+    if (onChange && typeof onChange === 'function') {
+      onChange(formData);
+    }
   }, [formData, onChange]);
 
   const handleInputChange = (field: string, value: any) => {

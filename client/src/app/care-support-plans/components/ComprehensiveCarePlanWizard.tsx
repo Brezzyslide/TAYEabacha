@@ -366,11 +366,22 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
             </CardHeader>
             <CardContent className="overflow-y-auto max-h-[55vh]">
               {CurrentStepComponent ? (
-                <CurrentStepComponent
-                  data={planData}
-                  updateData={updatePlanData}
-                  clients={clients}
-                />
+                (() => {
+                  const sectionDataKey = currentStepInfo.id + 'Data';
+                  const sectionData = planData[sectionDataKey as keyof CarePlanData] || {};
+                  
+                  // Handle different component interfaces
+                  const commonProps = {
+                    data: sectionData,
+                    onChange: (data: any) => updatePlanData(sectionDataKey, data),
+                    selectedClient: planData.clientData,
+                    planData: planData,
+                    clients: clients,
+                    updateData: updatePlanData
+                  };
+
+                  return <CurrentStepComponent {...commonProps} />;
+                })()
               ) : (
                 // Review Step
                 <div className="space-y-6">
