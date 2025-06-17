@@ -71,7 +71,9 @@ type CarePlanAction =
   | { type: 'RESET_PLAN' };
 
 interface CarePlanContextType {
+  state: CarePlanData;
   planData: CarePlanData;
+  clientData: any;
   updateSection: (section: string, data: any) => void;
   updateField: (section: string, field: string, value: any) => void;
   updateBasicInfo: (field: string, value: any) => void;
@@ -111,7 +113,14 @@ const initialPlanData: CarePlanData = {
   adlData: {
     userInput: '',
     generatedContent: '',
-    aiAttempts: 0
+    personalCare: '',
+    mobility: '',
+    household: '',
+    community: '',
+    safety: '',
+    independence: '',
+    assistiveTechnology: '',
+    recommendations: ''
   },
   structureData: {
     routines: []
@@ -409,7 +418,14 @@ export function CarePlanProvider({
       
       case 'adl':
         return !!(planData.adlData.userInput?.trim() || 
-                 planData.adlData.generatedContent?.trim());
+                 planData.adlData.personalCare?.trim() ||
+                 planData.adlData.mobility?.trim() ||
+                 planData.adlData.household?.trim() ||
+                 planData.adlData.community?.trim() ||
+                 planData.adlData.safety?.trim() ||
+                 planData.adlData.independence?.trim() ||
+                 planData.adlData.assistiveTechnology?.trim() ||
+                 planData.adlData.recommendations?.trim());
       
       case 'structure':
         return !!(planData.structureData.routines && planData.structureData.routines.length > 0);
@@ -444,7 +460,9 @@ export function CarePlanProvider({
   }, []);
 
   const contextValue: CarePlanContextType = {
+    state: planData,
     planData,
+    clientData: planData.clientData,
     updateSection,
     updateField,
     updateBasicInfo,
