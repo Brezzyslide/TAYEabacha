@@ -44,8 +44,8 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    onChange(formData);
-  }, [formData, onChange]);
+    updateData('goalsData', formData);
+  }, [formData, updateData]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -59,7 +59,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       section: "goals",
       userInput,
       clientName: selectedClient?.fullName || "Client",
-      clientDiagnosis: selectedClient?.diagnosis || "Not specified",
+      clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
       maxWords: 400
     }),
     onSuccess: (response) => {
