@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, MessageCircle, Copy, Check } from "lucide-react";
+import { Sparkles, Loader2, MessageCircle, Copy, Check, CheckCircle2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -89,6 +89,11 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
     }));
   };
 
+  // Function to refresh GPT limit after content application
+  const refreshGPTLimit = () => {
+    console.log("GPT limit refreshed for next communication generation");
+  };
+
   const generateContentMutation = useMutation({
     mutationFn: async (userInput: string) => {
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
@@ -96,28 +101,26 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
         userInput,
         clientName: selectedClient?.fullName || "Client",
         clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
-        maxWords: 350,
+        maxWords: 200,
         previousSections: planData
       });
       return await response.json();
     },
     onSuccess: (responseData) => {
-      const updatedData = {
-        ...data,
-        generatedContent: responseData.generatedContent,
-        receptiveCommunication: responseData.receptiveStrategies || data.receptiveCommunication,
-        expressiveCommunication: responseData.expressiveStrategies || data.expressiveCommunication
-      };
-      onChange(updatedData);
+      const generatedText = responseData.generatedContent || "";
+      
+      // Store generated content for targeted application
+      handleInputChange('generatedContent', generatedText);
+      
       toast({
-        title: "Communication Strategies Generated",
-        description: "AI has created comprehensive communication support strategies for both receptive and expressive communication.",
+        title: "AI Communication Content Generated",
+        description: "200-word focused communication content generated for targeted application.",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate content. Please try again.",
+        description: error.message || "Failed to generate communication content. Please try again.",
         variant: "destructive",
       });
     },

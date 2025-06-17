@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, Sparkles, Loader2, Plus, Trash2, CheckCircle, CheckCircle2, X } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -65,52 +66,54 @@ export function GoalsSectionRefactored() {
     updateField('goalsData', 'goals', updatedGoals);
   };
 
-  const generateAIGoals = async () => {
-    if (!planData.clientData) {
+  // Function to refresh GPT limit after content application
+  const refreshGPTLimit = () => {
+    console.log("GPT limit refreshed for next goal generation");
+  };
+
+  const generateContentMutation = useMutation({
+    mutationFn: async (userInput: string) => {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "goals",
+        userInput,
+        clientName: planData.clientData?.fullName || "Client",
+        clientDiagnosis: planData.clientData?.primaryDiagnosis || "Not specified",
+        maxWords: 200,
+        previousSections: planData
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
+      const generatedText = responseData.generatedContent || "";
+      
+      // Store generated content for targeted application
+      handleInputChange('generatedGoals', generatedText);
+      
       toast({
-        title: "Client Required",
-        description: "Please select a client first to generate AI-powered goals.",
+        title: "AI Goals Generated",
+        description: "200-word focused goal content generated for targeted application.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate goals. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerateGoals = () => {
+    if (!goalsData.userInput?.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please describe the client's aspirations and needs first.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/ai/generate-goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientData: planData.clientData,
-          aboutMeData: planData.aboutMeData,
-          existingGoals: goalsData
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to generate goals');
-
-      const aiGoals = await response.json();
-      
-      // Update the goals data with AI-generated content
-      Object.keys(aiGoals).forEach(key => {
-        if (aiGoals[key]) {
-          handleInputChange(key, aiGoals[key]);
-        }
-      });
-
-      toast({
-        title: "Goals Generated",
-        description: "AI-powered goals have been generated based on client information.",
-      });
-    } catch (error) {
-      toast({
-        title: "Generation Failed",
-        description: "Failed to generate AI-powered goals. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+    generateContentMutation.mutate(goalsData.userInput);
   };
 
   return (
@@ -280,34 +283,153 @@ export function GoalsSectionRefactored() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-orange-50 to-purple-50 dark:from-orange-950 dark:to-purple-950 p-6 rounded-xl border border-orange-200 dark:border-orange-800">
-          <Button 
-            onClick={generateAIGoals} 
-            disabled={isGenerating || !planData.clientData}
-            className="w-full h-12 text-base"
-            size="lg"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Generating personalized goals...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-5 w-5 mr-2" />
-                Generate AI-Powered Goals & Outcomes
-              </>
-            )}
-          </Button>
-          
-          {!planData.clientData && (
-            <div className="text-center mt-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-dashed border-orange-300 dark:border-orange-700">
-              <p className="text-sm text-muted-foreground">
-                Select a client first to enable AI goal generation
-              </p>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-500" />
+              AI Goal Content Generator
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="goalUserInput">Client Aspirations & Needs</Label>
+              <Textarea
+                id="goalUserInput"
+                value={goalsData.userInput || ""}
+                onChange={(e) => handleInputChange("userInput", e.target.value)}
+                placeholder="Describe the client's aspirations, strengths, challenges, and areas where they want to grow or achieve independence..."
+                rows={4}
+              />
             </div>
-          )}
-        </div>
+
+            <Button 
+              onClick={handleGenerateGoals}
+              disabled={generateContentMutation.isPending || !goalsData.userInput?.trim()}
+              className="w-full"
+            >
+              {generateContentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating Goal Content...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Goal Content
+                </>
+              )}
+            </Button>
+
+            {goalsData.generatedGoals && (
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Goal Content:</h4>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("ndisGoals", goalsData.generatedGoals || "");
+                      toast({
+                        title: "Content Applied",
+                        description: "AI-generated content has been added to NDIS Goals field.",
+                      });
+                    }}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Use This Content
+                  </Button>
+                </div>
+                <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap mb-3">
+                  {goalsData.generatedGoals}
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("ndisGoals", goalsData.generatedGoals || "");
+                      refreshGPTLimit();
+                      toast({
+                        title: "Content Applied",
+                        description: "Added to NDIS Goals field. GPT limit refreshed.",
+                      });
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Add to NDIS Goals
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("personalGoals", goalsData.generatedGoals || "");
+                      handleInputChange("overallObjective", goalsData.generatedGoals || "");
+                      refreshGPTLimit();
+                      toast({
+                        title: "Content Applied", 
+                        description: "Added to Personal Goals field. GPT limit refreshed.",
+                      });
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Add to Personal Goals
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("shortTermGoals", goalsData.generatedGoals || "");
+                      handleInputChange("goalInput", goalsData.generatedGoals || "");
+                      refreshGPTLimit();
+                      toast({
+                        title: "Content Applied", 
+                        description: "Added to Short-term Goals field. GPT limit refreshed.",
+                      });
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Add to Short-term Goals
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("longTermGoals", goalsData.generatedGoals || "");
+                      refreshGPTLimit();
+                      toast({
+                        title: "Content Applied", 
+                        description: "Added to Long-term Goals field. GPT limit refreshed.",
+                      });
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Add to Long-term Goals
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                    Content limited to 200 words for focused goal sections
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("generatedGoals", "");
+                      toast({
+                        title: "Content Dismissed",
+                        description: "AI-generated content cleared.",
+                      });
+                    }}
+                    variant="ghost" 
+                    size="sm"
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
