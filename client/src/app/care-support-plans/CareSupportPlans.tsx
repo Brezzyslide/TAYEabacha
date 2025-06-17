@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { SimplifiedCarePlanWizard } from "./components/SimplifiedCarePlanWizard";
+import { ComprehensiveCarePlanWizard } from "./components/ComprehensiveCarePlanWizard";
 import { useAuth } from "@/hooks/use-auth";
 import type { CareSupportPlan } from "@shared/schema";
 import { format } from "date-fns";
@@ -193,7 +193,7 @@ export function CareSupportPlans() {
         </TabsContent>
       </Tabs>
       
-      <SimplifiedCarePlanWizard 
+      <ComprehensiveCarePlanWizard 
         open={showCreateModal} 
         onClose={handleCloseModal}
       />
