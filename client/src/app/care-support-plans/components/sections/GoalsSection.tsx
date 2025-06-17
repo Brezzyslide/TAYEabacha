@@ -87,10 +87,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
     },
     onSuccess: (responseData) => {
       console.log("Goals AI Response:", responseData);
-      setFormData(prev => ({
-        ...prev,
-        generatedGoals: responseData.generatedContent || ""
-      }));
+      handleInputChange("generatedGoals", responseData.generatedContent || "");
       toast({
         title: "SMART Goals Generated",
         description: "AI has created prioritized SMART goals based on your NDIS goals input.",
@@ -106,7 +103,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   });
 
   const handleGenerateGoals = () => {
-    if (!formData.goalInput.trim()) {
+    if (!data.goalInput?.trim()) {
       toast({
         title: "Input Required",
         description: "Please enter NDIS goals or objectives first.",
@@ -115,7 +112,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       return;
     }
 
-    generateGoalsMutation.mutate(formData.goalInput);
+    generateGoalsMutation.mutate(data.goalInput);
   };
 
   const addNewGoal = () => {

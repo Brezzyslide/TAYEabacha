@@ -90,21 +90,27 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
   };
 
   const generateContentMutation = useMutation({
-    mutationFn: (userInput: string) => apiRequest("POST", "/api/care-support-plans/generate-ai", {
-      section: "communication",
-      userInput,
-      clientName: selectedClient?.fullName || "Client",
-      clientDiagnosis: selectedClient?.diagnosis || "Not specified",
-      maxWords: 350
-    }),
-    onSuccess: (response) => {
+    mutationFn: async (userInput: string) => {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "communication",
+        userInput,
+        clientName: selectedClient?.fullName || "Client",
+        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
+        maxWords: 350,
+        previousSections: planData
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
       setFormData(prev => ({
         ...prev,
-        generatedContent: (response as any).generatedContent
+        generatedContent: responseData.generatedContent,
+        receptiveCommunication: responseData.receptiveStrategies || prev.receptiveCommunication,
+        expressiveCommunication: responseData.expressiveStrategies || prev.expressiveCommunication
       }));
       toast({
         title: "Communication Strategies Generated",
-        description: "AI has created comprehensive communication support strategies.",
+        description: "AI has created comprehensive communication support strategies for both receptive and expressive communication.",
       });
     },
     onError: (error: any) => {
