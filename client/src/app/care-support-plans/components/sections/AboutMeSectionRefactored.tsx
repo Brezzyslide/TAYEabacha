@@ -132,7 +132,7 @@ export function AboutMeSectionRefactored() {
                 disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
                 className="flex items-center gap-2"
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-4 w-4" />
                 Add to Personal History
               </Button>
               <Button 
@@ -142,7 +142,7 @@ export function AboutMeSectionRefactored() {
                 disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
                 className="flex items-center gap-2"
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-4 w-4" />
                 Add to Interests
               </Button>
               <Button 
@@ -152,7 +152,7 @@ export function AboutMeSectionRefactored() {
                 disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
                 className="flex items-center gap-2"
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-4 w-4" />
                 Add to Preferences
               </Button>
               <Button 
@@ -162,7 +162,7 @@ export function AboutMeSectionRefactored() {
                 disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
                 className="flex items-center gap-2"
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-4 w-4" />
                 Add to Strengths
               </Button>
               <Button 
@@ -172,7 +172,7 @@ export function AboutMeSectionRefactored() {
                 disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
                 className="flex items-center gap-2"
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-4 w-4" />
                 Add to Challenges
               </Button>
               <Button 
@@ -182,7 +182,7 @@ export function AboutMeSectionRefactored() {
                 disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
                 className="flex items-center gap-2"
               >
-                <Sparkles className="h-3 w-3" />
+                <Sparkles className="h-4 w-4" />
                 Add to Family Background
               </Button>
             </div>
