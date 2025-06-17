@@ -86,8 +86,11 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
   
   const autoSaveMutation = useMutation({
     mutationFn: async (data: CarePlanData) => {
+      // Remove clientData object before saving (it's not part of the schema)
+      const { clientData, ...saveData } = data;
+      
       const response = await apiRequest('POST', `/api/care-support-plans/auto-save`, {
-        ...data,
+        ...saveData,
         id: currentPlanId, // Include existing plan ID to update instead of create
         status: 'draft',
         planTitle: data.planTitle || `Draft - ${new Date().toLocaleDateString()}`,
@@ -211,6 +214,31 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
     }
   };
 
+  const resetWizard = () => {
+    setCurrentStep(0);
+    setCompletedSteps(new Set());
+    setCurrentPlanId(null);
+    setLastSaveTime(null);
+    setPlanData({
+      planTitle: '',
+      clientId: null,
+      clientData: null,
+      aboutMeData: { bulletPoints: '', generatedText: '', aiAttempts: 0 },
+      goalsData: { ndisGoals: '', generalGoals: '', generatedGoals: '', aiAttempts: 0 },
+      adlData: { userInput: '', generatedContent: '', aiAttempts: 0 },
+      structureData: { routines: [] },
+      communicationData: { expressive: '', receptive: '', generatedStrategy: '', aiAttempts: 0 },
+      behaviourData: { behaviours: [] },
+      disasterData: { scenarios: {} },
+      mealtimeData: { riskParameters: [], generatedPlan: '', aiAttempts: 0 },
+    });
+  };
+
+  const handleCancel = () => {
+    resetWizard();
+    onClose();
+  };
+
   const handleSave = () => {
     if (!planData.clientId) {
       toast({
@@ -221,14 +249,14 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
       return;
     }
 
-    const saveData = {
+    const { clientData, ...saveData } = planData;
+    const finalSaveData = {
+      ...saveData,
       planTitle: planData.planTitle || `Care Plan for ${planData.clientData?.fullName || 'Client'}`,
-      clientId: planData.clientId,
       status: "draft",
-      ...planData,
     };
 
-    savePlanMutation.mutate(saveData);
+    savePlanMutation.mutate(finalSaveData);
   };
 
   const handleFinalize = () => {
@@ -461,7 +489,7 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
               Previous
             </Button>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
               {currentStep < WIZARD_STEPS.length - 1 ? (

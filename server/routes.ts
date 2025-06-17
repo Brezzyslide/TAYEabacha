@@ -2763,24 +2763,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auto-save endpoint for drafts
   app.post("/api/care-support-plans/auto-save", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
+      const { id, ...restData } = req.body;
+      
       const planData = {
-        ...req.body,
+        ...restData,
         tenantId: req.user.tenantId,
         createdByUserId: req.user.id,
         status: 'draft',
         updatedAt: new Date(),
       };
       
+      // Ensure no id field is passed to storage operations
+      delete planData.id;
+      
       let plan;
-      if (req.body.id) {
+      if (id && typeof id === 'number') {
         // Update existing draft
-        plan = await storage.updateCareSupportPlan(req.body.id, planData, req.user.tenantId);
+        plan = await storage.updateCareSupportPlan(id, planData, req.user.tenantId);
       } else {
         // Create new draft with auto-generated title if none provided
         if (!planData.planTitle) {
           planData.planTitle = `Draft - ${new Date().toLocaleDateString()}`;
         }
-        plan = await storage.createCareSupportPlan(planData);
+        
+        // Use the insertCareSupportPlanSchema to validate data
+        const { insertCareSupportPlanSchema } = await import("@shared/schema");
+        const validatedData = insertCareSupportPlanSchema.parse(planData);
+        plan = await storage.createCareSupportPlan(validatedData);
       }
       
       res.json(plan);
