@@ -1,0 +1,219 @@
+import { useMutation } from "@tanstack/react-query";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, Loader2, User, Heart } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useCarePlan } from "../../contexts/CarePlanContext";
+
+export function AboutMeSectionRefactored() {
+  const { planData, updateField } = useCarePlan();
+  const { aboutMeData, clientData } = planData;
+  const { toast } = useToast();
+
+  const generateContentMutation = useMutation({
+    mutationFn: async (userInput: string) => {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "aboutMe",
+        userInput,
+        clientName: clientData?.fullName || "Client",
+        clientDiagnosis: clientData?.primaryDiagnosis || "Not specified",
+        maxWords: 300,
+        previousSections: planData
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
+      const generatedText = responseData.generatedContent || "";
+      
+      // Update multiple fields with the generated content
+      updateField('aboutMeData', 'generatedContent', generatedText);
+      updateField('aboutMeData', 'personalHistory', generatedText);
+      
+      toast({
+        title: "AI Content Generated",
+        description: "Professional About Me section has been created and populated in the Personal History field.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    updateField('aboutMeData', field, value);
+  };
+
+  const handleGenerateContent = () => {
+    if (!aboutMeData.bulletPoints?.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please enter some bullet points about the client first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    generateContentMutation.mutate(aboutMeData.bulletPoints);
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-blue-500" />
+            AI Content Generator
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="bulletPoints">Key Information About Client</Label>
+            <Textarea
+              id="bulletPoints"
+              value={aboutMeData.bulletPoints || ""}
+              onChange={(e) => handleInputChange("bulletPoints", e.target.value)}
+              placeholder="Enter key points about the client (interests, background, preferences, etc.). The AI will expand this into a professional About Me section."
+              rows={4}
+            />
+          </div>
+
+          <Button 
+            onClick={handleGenerateContent}
+            disabled={generateContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+            className="w-full"
+          >
+            {generateContentMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating Content...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate About Me Section
+              </>
+            )}
+          </Button>
+
+          {aboutMeData.generatedContent && (
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">AI Generated Content:</h4>
+              <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
+                {aboutMeData.generatedContent}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Personal Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="personalHistory">Personal History & Background</Label>
+                <Textarea
+                  id="personalHistory"
+                  value={aboutMeData.personalHistory || ""}
+                  onChange={(e) => handleInputChange("personalHistory", e.target.value)}
+                  placeholder="Describe the client's personal history, background, and life experiences..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="interests">Interests & Hobbies</Label>
+                <Textarea
+                  id="interests"
+                  value={aboutMeData.interests || ""}
+                  onChange={(e) => handleInputChange("interests", e.target.value)}
+                  placeholder="What activities, hobbies, or interests does the client enjoy?"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="preferences">Preferences & Choices</Label>
+                <Textarea
+                  id="preferences"
+                  value={aboutMeData.preferences || ""}
+                  onChange={(e) => handleInputChange("preferences", e.target.value)}
+                  placeholder="Client's preferences for daily activities, support styles, environments..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="strengths">Strengths & Abilities</Label>
+                <Textarea
+                  id="strengths"
+                  value={aboutMeData.strengths || ""}
+                  onChange={(e) => handleInputChange("strengths", e.target.value)}
+                  placeholder="What are the client's key strengths, skills, and abilities?"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="challenges">Challenges & Support Needs</Label>
+                <Textarea
+                  id="challenges"
+                  value={aboutMeData.challenges || ""}
+                  onChange={(e) => handleInputChange("challenges", e.target.value)}
+                  placeholder="Areas where the client may need additional support or face challenges..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="familyBackground">Family & Support Network</Label>
+                <Textarea
+                  id="familyBackground"
+                  value={aboutMeData.familyBackground || ""}
+                  onChange={(e) => handleInputChange("familyBackground", e.target.value)}
+                  placeholder="Information about family members, carers, and support networks..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="culturalConsiderations">Cultural & Religious Considerations</Label>
+            <Textarea
+              id="culturalConsiderations"
+              value={aboutMeData.culturalConsiderations || ""}
+              onChange={(e) => handleInputChange("culturalConsiderations", e.target.value)}
+              placeholder="Any cultural, religious, or spiritual considerations important to the client..."
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {clientData && (
+        <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
+          <p className="text-sm text-green-800 dark:text-green-200">
+            <strong>Note:</strong> This section helps support workers understand {clientData.fullName} as a person beyond their support needs. 
+            Include information that will help build rapport and provide person-centered support.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
