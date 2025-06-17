@@ -60,6 +60,8 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
   
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [planData, setPlanData] = useState<CarePlanData>({
     planTitle: '',
     clientId: null,
@@ -78,6 +80,66 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
     queryKey: ["/api/clients"],
     enabled: !!user && open,
   });
+
+  // Auto-save mutation for drafts
+  const autoSaveMutation = useMutation({
+    mutationFn: async (data: CarePlanData) => {
+      const response = await apiRequest('POST', `/api/care-support-plans/auto-save`, {
+        ...data,
+        status: 'draft',
+        planTitle: data.planTitle || `Draft - ${new Date().toLocaleDateString()}`,
+      });
+      return await response.json();
+    },
+    onSuccess: (savedPlan) => {
+      setLastSaveTime(new Date());
+      // Silently update the plan ID if this is a new plan
+      if (!existingPlan && savedPlan.id) {
+        // Update URL or plan reference if needed
+      }
+    },
+    onError: () => {
+      // Silent fail for auto-save
+    }
+  });
+
+  // Auto-save effect - saves every 10 seconds if there's content
+  useEffect(() => {
+    if (!autoSaveEnabled || !planData.clientId) return;
+    
+    const autoSaveInterval = setInterval(() => {
+      const hasContent = planData.planTitle || 
+                        planData.aboutMeData.bulletPoints || 
+                        planData.goalsData.ndisGoals ||
+                        planData.adlData.userInput ||
+                        planData.communicationData.expressive;
+      
+      if (hasContent && !autoSaveMutation.isPending) {
+        autoSaveMutation.mutate(planData);
+      }
+    }, 10000); // Auto-save every 10 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [planData, autoSaveEnabled, autoSaveMutation]);
+
+  // Save on data change with debounce
+  useEffect(() => {
+    if (!planData.clientId) return;
+    
+    const saveTimeout = setTimeout(() => {
+      const hasContent = planData.planTitle || 
+                        planData.aboutMeData.bulletPoints || 
+                        planData.goalsData.ndisGoals ||
+                        planData.adlData.userInput ||
+                        planData.communicationData.expressive;
+      
+      if (hasContent && autoSaveEnabled && !autoSaveMutation.isPending) {
+        autoSaveMutation.mutate(planData);
+      }
+    }, 3000); // Save 3 seconds after changes
+
+    return () => clearTimeout(saveTimeout);
+  }, [planData]);
 
   // Load existing plan data if editing
   useEffect(() => {
@@ -211,10 +273,24 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
       <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>
-              {existingPlan ? 'Edit' : 'Create'} NDIS Care Support Plan
-              {planData.clientData && ` - ${planData.clientData.fullName}`}
-            </span>
+            <div>
+              <span>
+                {existingPlan ? 'Edit' : 'Create'} NDIS Care Support Plan
+                {planData.clientData && ` - ${planData.clientData.fullName}`}
+              </span>
+              {lastSaveTime && (
+                <div className="mt-1 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Auto-saved at {lastSaveTime.toLocaleTimeString()}
+                </div>
+              )}
+              {autoSaveMutation.isPending && (
+                <div className="mt-1 text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  Saving draft...
+                </div>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleSave} disabled={savePlanMutation.isPending}>
                 <Save className="h-4 w-4 mr-1" />

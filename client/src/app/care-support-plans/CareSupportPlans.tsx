@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, FileText, Calendar, User, Download, Edit } from "lucide-react";
+import { Plus, FileText, Calendar, User, Download, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -292,7 +292,7 @@ function CareSupportPlansList({ plans, clients, isLoading, canEditPlans, onEditP
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onEditPlan(plan)}
+                      onClick={() => handleEditPlan(plan)}
                       className="flex items-center gap-1"
                     >
                       <Edit className="h-3 w-3" />
@@ -307,6 +307,17 @@ function CareSupportPlansList({ plans, clients, isLoading, canEditPlans, onEditP
                     <Download className="h-3 w-3" />
                     PDF
                   </Button>
+                  {canEditPlans && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeletePlan(plan)}
+                      className="flex items-center gap-1"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
