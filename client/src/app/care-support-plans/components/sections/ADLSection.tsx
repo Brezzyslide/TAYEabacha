@@ -78,7 +78,8 @@ export function ADLSection({ data, updateData, onChange, selectedClient, planDat
         previousSections: planData,
       });
 
-      const generatedContent = (response as any).generatedContent;
+      const responseData = await response.json();
+      const generatedContent = responseData.generatedContent;
       
       const newData = {
         ...adlData,

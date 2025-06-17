@@ -150,8 +150,8 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   };
 
   const handleCopyGoals = () => {
-    if (formData.generatedGoals) {
-      navigator.clipboard.writeText(formData.generatedGoals);
+    if (data.generatedGoals) {
+      navigator.clipboard.writeText(data.generatedGoals);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast({
@@ -196,7 +196,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
             <Label htmlFor="goalInput">NDIS Goals & Objectives</Label>
             <Textarea
               id="goalInput"
-              value={formData.goalInput}
+              value={data.goalInput || ""}
               onChange={(e) => handleInputChange("goalInput", e.target.value)}
               placeholder="Enter the client's NDIS plan goals, objectives, or desired outcomes. The AI will convert these into specific, measurable, achievable, relevant, and time-bound (SMART) goals."
               rows={4}
@@ -205,7 +205,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
 
           <Button 
             onClick={handleGenerateGoals}
-            disabled={generateGoalsMutation.isPending || !formData.goalInput.trim()}
+            disabled={generateGoalsMutation.isPending || !data.goalInput?.trim()}
             className="w-full"
           >
             {generateGoalsMutation.isPending ? (
@@ -221,12 +221,12 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
             )}
           </Button>
 
-          {formData.generatedGoals && (
+          {data.generatedGoals && (
             <div className="space-y-3">
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">AI Generated SMART Goals:</h4>
                 <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                  {formData.generatedGoals}
+                  {data.generatedGoals}
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={handleCopyGoals}>

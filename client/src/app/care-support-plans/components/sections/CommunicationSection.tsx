@@ -102,12 +102,13 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
       return await response.json();
     },
     onSuccess: (responseData) => {
-      setFormData(prev => ({
-        ...prev,
+      const updatedData = {
+        ...data,
         generatedContent: responseData.generatedContent,
-        receptiveCommunication: responseData.receptiveStrategies || prev.receptiveCommunication,
-        expressiveCommunication: responseData.expressiveStrategies || prev.expressiveCommunication
-      }));
+        receptiveCommunication: responseData.receptiveStrategies || data.receptiveCommunication,
+        expressiveCommunication: responseData.expressiveStrategies || data.expressiveCommunication
+      };
+      onChange(updatedData);
       toast({
         title: "Communication Strategies Generated",
         description: "AI has created comprehensive communication support strategies for both receptive and expressive communication.",
@@ -123,7 +124,7 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
   });
 
   const handleGenerateContent = () => {
-    if (!formData.communicationInput.trim()) {
+    if (!data.communicationInput?.trim()) {
       toast({
         title: "Input Required",
         description: "Please describe the client's communication needs first.",
@@ -132,7 +133,7 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
       return;
     }
 
-    generateContentMutation.mutate(formData.communicationInput);
+    generateContentMutation.mutate(data.communicationInput);
   };
 
   const handleCopyContent = () => {
