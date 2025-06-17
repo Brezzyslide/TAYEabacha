@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Target, Sparkles, Loader2, Plus, Trash2, CheckCircle } from "lucide-react";
+import { Target, Sparkles, Loader2, Plus, Trash2, CheckCircle, CheckCircle2, X } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { useCarePlan } from "../../contexts/CarePlanContext";
 
 interface Goal {
