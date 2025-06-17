@@ -95,12 +95,15 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
         status: 'draft',
         planTitle: data.planTitle || `Draft - ${new Date().toLocaleDateString()}`,
       });
-      return response;
+      
+      // Parse the response to get the actual data
+      const responseData = await response.json();
+      return responseData;
     },
     onSuccess: (savedPlan) => {
       setLastSaveTime(new Date());
       // Update plan ID for future auto-saves if this was a new plan
-      if (!currentPlanId && savedPlan.id) {
+      if (!currentPlanId && savedPlan && typeof savedPlan === 'object' && savedPlan.id) {
         setCurrentPlanId(savedPlan.id);
       }
     },

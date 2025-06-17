@@ -49,13 +49,13 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
   useEffect(() => {
     // Only update if there are actual changes to avoid overwriting existing data
     const hasChanges = Object.keys(formData).some(key => 
-      formData[key as keyof typeof formData] !== communicationData[key]
+      formData[key as keyof typeof formData] !== data.communicationData?.[key]
     );
     
     if (hasChanges && onChange && typeof onChange === 'function') {
       onChange(formData);
     }
-  }, [formData]);
+  }, [formData, onChange]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({

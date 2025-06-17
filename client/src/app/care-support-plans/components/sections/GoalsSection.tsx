@@ -32,14 +32,26 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   const goalsData = data.goalsData || {};
   const selectedClient = data.clientData;
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     ndisGoals: goalsData.ndisGoals || "",
     overallObjective: goalsData.overallObjective || "",
     goals: goalsData.goals || [],
     generatedGoals: goalsData.generatedGoals || "",
     goalInput: goalsData.goalInput || "",
     userInput: goalsData.userInput || ""
-  });
+  }));
+
+  // Update form data when section data changes (when loading existing plan)
+  useEffect(() => {
+    setFormData({
+      ndisGoals: goalsData.ndisGoals || "",
+      overallObjective: goalsData.overallObjective || "",
+      goals: goalsData.goals || [],
+      generatedGoals: goalsData.generatedGoals || "",
+      goalInput: goalsData.goalInput || "",
+      userInput: goalsData.userInput || ""
+    });
+  }, [data.goalsData]);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 

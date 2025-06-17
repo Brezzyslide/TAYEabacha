@@ -18,7 +18,7 @@ export function AboutMeSection({ data, updateData, clients }: AboutMeSectionProp
   const aboutMeData = data.aboutMeData || {};
   const selectedClient = data.clientData;
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     personalHistory: aboutMeData.personalHistory || "",
     interests: aboutMeData.interests || "",
     preferences: aboutMeData.preferences || "",
@@ -29,7 +29,23 @@ export function AboutMeSection({ data, updateData, clients }: AboutMeSectionProp
     generatedContent: aboutMeData.generatedContent || "",
     bulletPoints: aboutMeData.bulletPoints || "",
     userInput: aboutMeData.userInput || ""
-  });
+  }));
+
+  // Update form data when section data changes (when loading existing plan)
+  useEffect(() => {
+    setFormData({
+      personalHistory: aboutMeData.personalHistory || "",
+      interests: aboutMeData.interests || "",
+      preferences: aboutMeData.preferences || "",
+      strengths: aboutMeData.strengths || "",
+      challenges: aboutMeData.challenges || "",
+      familyBackground: aboutMeData.familyBackground || "",
+      culturalConsiderations: aboutMeData.culturalConsiderations || "",
+      generatedContent: aboutMeData.generatedContent || "",
+      bulletPoints: aboutMeData.bulletPoints || "",
+      userInput: aboutMeData.userInput || ""
+    });
+  }, [data.aboutMeData]);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
