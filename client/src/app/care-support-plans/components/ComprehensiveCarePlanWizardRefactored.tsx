@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, Save, FileDown, CheckCircle } from "lucide-r
 // Import context and components
 import { CarePlanProvider, useCarePlan } from "../contexts/CarePlanContext";
 import { SaveStatusIndicator } from "./SaveStatusIndicator";
-import { ClientLockSection } from "./sections/ClientLockSection";
+import { ClientLockSectionRefactored } from "./sections/ClientLockSectionRefactored";
 import { AboutMeSectionRefactored } from "./sections/AboutMeSectionRefactored";
 import { GoalsSection } from "./sections/GoalsSection";
 import { ADLSection } from "./sections/ADLSection";
@@ -27,7 +27,7 @@ interface ComprehensiveCarePlanWizardRefactoredProps {
 }
 
 const WIZARD_STEPS = [
-  { id: 'client', title: 'Client Selection', component: ClientLockSection, description: 'Select and lock client information' },
+  { id: 'client', title: 'Client Selection', component: ClientLockSectionRefactored, description: 'Select and lock client information' },
   { id: 'aboutMe', title: 'About Me', component: AboutMeSectionRefactored, description: 'Personal background and preferences' },
   { id: 'goals', title: 'Goals & Outcomes', component: GoalsSection, description: 'NDIS goals and personal objectives' },
   { id: 'adl', title: 'ADL Support', component: ADLSection, description: 'Activities of Daily Living assessment' },
@@ -109,10 +109,24 @@ function WizardContent({ onClose }: { onClose: () => void }) {
       );
     }
 
-    const Component = currentStepData.component;
-    if (!Component) return null;
-
-    return <Component />;
+    // Render the appropriate component based on step
+    switch(currentStepData.id) {
+      case 'client':
+        return <ClientLockSectionRefactored />;
+      case 'aboutMe':
+        return <AboutMeSectionRefactored />;
+      default:
+        // For components that haven't been refactored yet, show placeholder
+        return (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">
+                {currentStepData.title} section - Context refactoring in progress
+              </p>
+            </CardContent>
+          </Card>
+        );
+    }
   };
 
   const progress = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
