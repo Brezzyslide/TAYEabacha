@@ -55,17 +55,22 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   };
 
   const generateGoalsMutation = useMutation({
-    mutationFn: (userInput: string) => apiRequest("POST", "/api/care-support-plans/generate-ai", {
-      section: "goals",
-      userInput,
-      clientName: selectedClient?.fullName || "Client",
-      clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
-      maxWords: 400
-    }),
-    onSuccess: (response) => {
+    mutationFn: async (userInput: string) => {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "goals",
+        userInput,
+        clientName: selectedClient?.fullName || "Client",
+        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
+        maxWords: 400,
+        previousSections: data
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
+      console.log("Goals AI Response:", responseData);
       setFormData(prev => ({
         ...prev,
-        generatedGoals: (response as any).generatedContent || ""
+        generatedGoals: responseData.generatedContent || ""
       }));
       toast({
         title: "SMART Goals Generated",

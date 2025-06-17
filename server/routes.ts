@@ -2854,7 +2854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         case "goals":
           systemPrompt = `Generate 4 prioritized SMART goals for a care support plan based on NDIS goals and client diagnosis. Each goal should be specific, measurable, achievable, relevant, and time-bound. Max ${maxWords} words total. Professional tone, no preambles.`;
-          userPrompt = `Client: ${clientName}\nDiagnosis: ${clientDiagnosis}\nNDIS Goals: ${userInput}`;
+          userPrompt = `${contextualInfo}\nNDIS Goals: ${userInput}`;
           break;
         
         case "adl":
