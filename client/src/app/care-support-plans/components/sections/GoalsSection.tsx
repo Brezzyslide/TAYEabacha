@@ -24,19 +24,21 @@ interface Goal {
 
 interface GoalsSectionProps {
   data: any;
-  onChange: (data: any) => void;
-  selectedClient: any;
-  planData: any;
+  updateData: (section: string, data: any) => void;
+  clients: any[];
 }
 
-export function GoalsSection({ data, onChange, selectedClient, planData }: GoalsSectionProps) {
+export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
+  const goalsData = data.goalsData || {};
+  const selectedClient = data.clientData;
+  
   const [formData, setFormData] = useState({
-    ndisGoals: data.ndisGoals || "",
-    overallObjective: data.overallObjective || "",
-    goals: data.goals || [],
-    generatedGoals: data.generatedGoals || "",
-    goalInput: data.goalInput || "",
-    ...data
+    ndisGoals: goalsData.ndisGoals || "",
+    overallObjective: goalsData.overallObjective || "",
+    goals: goalsData.goals || [],
+    generatedGoals: goalsData.generatedGoals || "",
+    goalInput: goalsData.goalInput || "",
+    userInput: goalsData.userInput || ""
   });
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();

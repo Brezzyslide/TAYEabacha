@@ -10,30 +10,32 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface AboutMeSectionProps {
   data: any;
-  onChange: (data: any) => void;
-  selectedClient: any;
-  planData: any;
+  updateData: (section: string, data: any) => void;
+  clients: any[];
 }
 
-export function AboutMeSection({ data, onChange, selectedClient, planData }: AboutMeSectionProps) {
+export function AboutMeSection({ data, updateData, clients }: AboutMeSectionProps) {
+  const aboutMeData = data.aboutMeData || {};
+  const selectedClient = data.clientData;
+  
   const [formData, setFormData] = useState({
-    personalHistory: data.personalHistory || "",
-    interests: data.interests || "",
-    preferences: data.preferences || "",
-    strengths: data.strengths || "",
-    challenges: data.challenges || "",
-    familyBackground: data.familyBackground || "",
-    culturalConsiderations: data.culturalConsiderations || "",
-    generatedContent: data.generatedContent || "",
-    bulletPoints: data.bulletPoints || "",
-    ...data
+    personalHistory: aboutMeData.personalHistory || "",
+    interests: aboutMeData.interests || "",
+    preferences: aboutMeData.preferences || "",
+    strengths: aboutMeData.strengths || "",
+    challenges: aboutMeData.challenges || "",
+    familyBackground: aboutMeData.familyBackground || "",
+    culturalConsiderations: aboutMeData.culturalConsiderations || "",
+    generatedContent: aboutMeData.generatedContent || "",
+    bulletPoints: aboutMeData.bulletPoints || "",
+    userInput: aboutMeData.userInput || ""
   });
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    onChange(formData);
-  }, [formData, onChange]);
+    updateData('aboutMeData', formData);
+  }, [formData, updateData]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -50,7 +52,7 @@ export function AboutMeSection({ data, onChange, selectedClient, planData }: Abo
         clientName: selectedClient?.fullName || "Client",
         clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
         maxWords: 300,
-        previousSections: planData
+        previousSections: data
       });
       return await response.json();
     },
@@ -276,7 +278,7 @@ export function AboutMeSection({ data, onChange, selectedClient, planData }: Abo
         <div className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
             <strong>Tip:</strong> Use the AI generator to create a professional About Me section based on key points, 
-            then review and customize the content to ensure accuracy and completeness for {selectedClient.fullName}.
+            then review and customize the content to ensure accuracy and completeness for {selectedClient?.fullName || 'the client'}.
           </p>
         </div>
       )}
