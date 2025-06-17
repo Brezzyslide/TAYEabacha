@@ -87,10 +87,13 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
     },
     onSuccess: (responseData) => {
       console.log("Goals AI Response:", responseData);
+      // Populate the actual text fields instead of just storing generated content
       handleInputChange("generatedGoals", responseData.generatedContent || "");
+      handleInputChange("overallObjective", responseData.generatedContent || "");
+      handleInputChange("ndisGoals", formData.goalInput || ""); // Move input to NDIS goals field
       toast({
         title: "SMART Goals Generated",
-        description: "AI has created prioritized SMART goals based on your NDIS goals input.",
+        description: "AI has created prioritized SMART goals and populated the form fields.",
       });
     },
     onError: (error: any) => {

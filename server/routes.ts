@@ -2941,12 +2941,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle special parsing for communication section
       if (section === "communication") {
         try {
-          const parsedContent = JSON.parse(generatedContent);
+          const parsedContent = JSON.parse(generatedContent || "{}");
           res.json({ 
             section,
-            generatedContent: parsedContent.generatedContent,
-            receptiveStrategies: parsedContent.receptiveStrategies,
-            expressiveStrategies: parsedContent.expressiveStrategies,
+            generatedContent: parsedContent.generatedContent || generatedContent || "",
+            receptiveStrategies: parsedContent.receptiveStrategies || "",
+            expressiveStrategies: parsedContent.expressiveStrategies || "",
             userInput,
             clientName,
             clientDiagnosis
@@ -2955,7 +2955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Fallback if JSON parsing fails
           res.json({ 
             section,
-            generatedContent,
+            generatedContent: generatedContent || "",
             receptiveStrategies: "",
             expressiveStrategies: "",
             userInput,
@@ -2966,7 +2966,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.json({ 
           section,
-          generatedContent,
+          generatedContent: generatedContent || "",
           userInput,
           clientName,
           clientDiagnosis

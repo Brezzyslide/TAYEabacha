@@ -14,6 +14,26 @@ interface AboutMeSectionProps {
   clients: any[];
 }
 
+// Helper function to extract specific sections from generated content
+const extractSection = (text: string, keyword: string): string => {
+  const lines = text.split('\n');
+  const keywordRegex = new RegExp(`\\b${keyword}\\b`, 'i');
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (keywordRegex.test(lines[i])) {
+      // Found keyword, extract surrounding content
+      const extractedLines = [];
+      let j = i;
+      while (j < lines.length && j < i + 3) {
+        if (lines[j].trim()) extractedLines.push(lines[j].trim());
+        j++;
+      }
+      return extractedLines.join(' ').replace(/^\W+/, '');
+    }
+  }
+  return "";
+};
+
 export function AboutMeSection({ data, updateData, clients }: AboutMeSectionProps) {
   const aboutMeData = data.aboutMeData || {};
   const selectedClient = data.clientData;
@@ -80,13 +100,21 @@ export function AboutMeSection({ data, updateData, clients }: AboutMeSectionProp
       return await response.json();
     },
     onSuccess: (responseData) => {
+      const generatedText = responseData.generatedContent || "";
+      
+      // Parse the generated content and populate relevant fields
       setFormData(prev => ({
         ...prev,
-        generatedContent: responseData.generatedContent
+        generatedContent: generatedText,
+        personalHistory: generatedText, // Main content goes to personal history
+        interests: prev.interests || "",
+        preferences: prev.preferences || "",
+        strengths: prev.strengths || "",
+        challenges: prev.challenges || ""
       }));
       toast({
         title: "AI Content Generated",
-        description: "Professional About Me section has been created based on your input.",
+        description: "Professional About Me section has been created and populated in the Personal History field.",
       });
     },
     onError: (error: any) => {
