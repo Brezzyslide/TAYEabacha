@@ -118,11 +118,30 @@ export function AboutMeSectionRefactored() {
             />
           </div>
 
+          {/* Primary AI Generation Button */}
+          <Button 
+            onClick={() => handleGenerateTargetedContent('personalHistory')}
+            disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+            className="w-full mb-4"
+          >
+            {generateTargetedContentMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating Initial Content...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate About Me Content
+              </>
+            )}
+          </Button>
+
           {/* Targeted "Add to [Section]" Buttons with Context Awareness */}
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900 dark:text-gray-100">Smart AI Generation - Context Aware</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">Refine Specific Fields</h4>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Each button generates 200-word targeted content for specific fields, avoiding duplication from other populated areas.
+              After initial generation, use these buttons to add targeted content to specific fields, avoiding duplication from other populated areas.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <Button 
