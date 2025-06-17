@@ -72,6 +72,8 @@ interface CarePlanContextType {
   lastSaveTime: Date | null;
   savePlan: () => void;
   resetPlan: () => void;
+  getSectionStatus: (sectionName: string) => 'locked' | 'available' | 'completed';
+  isNextSectionUnlocked: (currentSection: string) => boolean;
 }
 
 const initialPlanData: CarePlanData = {
@@ -348,6 +350,85 @@ export function CarePlanProvider({
     savePlanMutation.mutate(planData);
   }, [planData, savePlanMutation]);
 
+  // Progressive form logic - sections unlock as previous ones are completed
+  const getSectionStatus = useCallback((sectionName: string): 'locked' | 'available' | 'completed' => {
+    const sectionOrder = [
+      'aboutMe',
+      'goals', 
+      'adl',
+      'structure',
+      'communication',
+      'behaviour',
+      'disaster',
+      'mealtime'
+    ];
+
+    const currentIndex = sectionOrder.indexOf(sectionName);
+    if (currentIndex === -1) return 'available'; // Unknown sections are always available
+    
+    // First section (About Me) is always available
+    if (currentIndex === 0) {
+      const aboutMeComplete = planData.aboutMeData.bulletPoints?.trim() || 
+                             planData.aboutMeData.personalHistory?.trim() ||
+                             planData.aboutMeData.interests?.trim();
+      return aboutMeComplete ? 'completed' : 'available';
+    }
+
+    // Check if previous sections are completed
+    for (let i = 0; i < currentIndex; i++) {
+      const prevSection = sectionOrder[i];
+      const prevStatus = getSectionCompletionStatus(prevSection);
+      if (!prevStatus) {
+        return 'locked'; // Previous section not completed
+      }
+    }
+
+    // Current section is unlocked, check if completed
+    const isCompleted = getSectionCompletionStatus(sectionName);
+    return isCompleted ? 'completed' : 'available';
+  }, [planData]);
+
+  const getSectionCompletionStatus = useCallback((sectionName: string): boolean => {
+    switch (sectionName) {
+      case 'aboutMe':
+        return !!(planData.aboutMeData.bulletPoints?.trim() || 
+                 planData.aboutMeData.personalHistory?.trim() ||
+                 planData.aboutMeData.interests?.trim());
+      
+      case 'goals':
+        return !!(planData.goalsData.ndisGoals?.trim() || 
+                 planData.goalsData.userInput?.trim() ||
+                 (planData.goalsData.goals && planData.goalsData.goals.length > 0));
+      
+      case 'adl':
+        return !!(planData.adlData.userInput?.trim() || 
+                 planData.adlData.generatedContent?.trim());
+      
+      case 'structure':
+        return !!(planData.structureData.routines && planData.structureData.routines.length > 0);
+      
+      case 'communication':
+        return !!(planData.communicationData.expressive?.trim() || 
+                 planData.communicationData.receptive?.trim());
+      
+      case 'behaviour':
+        return !!(planData.behaviourData.behaviours && planData.behaviourData.behaviours.length > 0);
+      
+      case 'disaster':
+        return !!(planData.disasterData.scenarios && Object.keys(planData.disasterData.scenarios).length > 0);
+      
+      case 'mealtime':
+        return !!(planData.mealtimeData.riskParameters && planData.mealtimeData.riskParameters.length > 0);
+      
+      default:
+        return false;
+    }
+  }, [planData]);
+
+  const isNextSectionUnlocked = useCallback((currentSection: string): boolean => {
+    return getSectionStatus(currentSection) !== 'locked';
+  }, [getSectionStatus]);
+
   const resetPlan = useCallback(() => {
     dispatch({ type: 'RESET_PLAN' });
     setCurrentPlanId(null);
@@ -363,7 +444,9 @@ export function CarePlanProvider({
     saveStatus,
     lastSaveTime,
     savePlan,
-    resetPlan
+    resetPlan,
+    getSectionStatus,
+    isNextSectionUnlocked
   };
 
   return (

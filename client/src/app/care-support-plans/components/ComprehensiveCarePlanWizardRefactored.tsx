@@ -41,7 +41,7 @@ const WIZARD_STEPS = [
 
 function WizardContent({ onClose }: { onClose: () => void }) {
   const { user } = useAuth();
-  const { planData, savePlan } = useCarePlan();
+  const { planData, savePlan, getSectionStatus, isNextSectionUnlocked } = useCarePlan();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
