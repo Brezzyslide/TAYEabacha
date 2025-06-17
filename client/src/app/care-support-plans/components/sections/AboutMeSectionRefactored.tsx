@@ -285,6 +285,7 @@ export function AboutMeSectionRefactored() {
                 <Button 
                   onClick={() => {
                     handleInputChange("interests", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
                     refreshGPTLimit();
                     toast({
                       title: "Content Applied", 
@@ -300,6 +301,7 @@ export function AboutMeSectionRefactored() {
                 <Button 
                   onClick={() => {
                     handleInputChange("preferences", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
                     refreshGPTLimit();
                     toast({
                       title: "Content Applied", 
@@ -314,48 +316,67 @@ export function AboutMeSectionRefactored() {
                 </Button>
                 <Button 
                   onClick={() => {
-                    handleInputChange("culturalBackground", aboutMeData.generatedContent || "");
+                    handleInputChange("strengths", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
                     refreshGPTLimit();
                     toast({
                       title: "Content Applied", 
-                      description: "Added to Cultural Background field. GPT limit refreshed.",
+                      description: "Added to Strengths field. GPT limit refreshed.",
                     });
                   }}
                   variant="outline" 
                   size="sm"
                   className="text-blue-700 border-blue-300 hover:bg-blue-100"
                 >
-                  Add to Cultural Background
+                  Add to Strengths
                 </Button>
                 <Button 
                   onClick={() => {
-                    handleInputChange("communicationStyle", aboutMeData.generatedContent || "");
+                    handleInputChange("challenges", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
                     refreshGPTLimit();
                     toast({
                       title: "Content Applied", 
-                      description: "Added to Communication Style field. GPT limit refreshed.",
+                      description: "Added to Challenges field. GPT limit refreshed.",
                     });
                   }}
                   variant="outline" 
                   size="sm"
                   className="text-blue-700 border-blue-300 hover:bg-blue-100"
                 >
-                  Add to Communication
+                  Add to Challenges
                 </Button>
                 <Button 
                   onClick={() => {
-                    handleInputChange("socialPreferences", aboutMeData.generatedContent || "");
+                    handleInputChange("familyBackground", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
                     refreshGPTLimit();
                     toast({
                       title: "Content Applied", 
-                      description: "Added to Social Preferences field. GPT limit refreshed.",
+                      description: "Added to Family Background field. GPT limit refreshed.",
                     });
                   }}
                   variant="outline" 
                   size="sm"
                   className="text-blue-700 border-blue-300 hover:bg-blue-100"
                 >
-                  Add to Social Preferences
+                  Add to Family Background
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("culturalConsiderations", aboutMeData.generatedContent || "");
+                    updateField('aboutMeData', 'generatedContent', ''); // Clear preview
+                    refreshGPTLimit();
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Cultural Considerations field. GPT limit refreshed.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Cultural Considerations
                 </Button>
               </div>
               <div className="flex justify-between items-center mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">

@@ -2897,13 +2897,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (targetField) {
             // Field-specific prompts for About Me section
             const fieldPrompts: { [key: string]: string } = {
-              "personalHistory": `Generate focused personal history content for this client. Consider their diagnosis and background. Avoid repeating information from other populated fields. Max ${maxWords} words, professional tone.`,
-              "interests": `Generate specific interests and activities suitable for this client based on their diagnosis and abilities. Focus on realistic, engaging activities that support their care goals. Avoid duplicating content from other fields. Max ${maxWords} words.`,
-              "hobbies": `Generate specific hobby recommendations tailored to this client's diagnosis and capabilities. Focus on accessible, therapeutic hobbies that promote wellbeing and social engagement. Consider their physical and cognitive abilities. Avoid repeating interests already listed. Max ${maxWords} words.`,
-              "culturalBackground": `Generate cultural considerations and background relevant to care delivery for this client. Be respectful and consider how cultural factors impact care preferences and communication styles. Max ${maxWords} words.`,
-              "communicationStyle": `Generate communication style preferences and approaches specific to this client's needs and diagnosis. Focus on how they best receive and express information. Avoid repeating communication strategies from other sections. Max ${maxWords} words.`,
-              "socialPreferences": `Generate social interaction preferences and considerations for this client based on their diagnosis and needs. Focus on group vs individual preferences, comfort levels, and social support strategies. Max ${maxWords} words.`,
-              "lifestyleFactors": `Generate lifestyle factors and daily living preferences relevant to this client's care. Consider routines, preferences, and environmental needs based on their diagnosis. Max ${maxWords} words.`
+              "personalHistory": `Staff need to understand: Client's background, living situation, significant life events. Include specific details about diagnosis impact on daily life. State practical facts staff should know. Max ${maxWords} words.`,
+              "interests": `Staff need to know: What activities client enjoys, preferred entertainment, hobbies they can participate in. Include specific examples: "Client enjoys music therapy sessions", "Responds well to art activities". Max ${maxWords} words.`,
+              "preferences": `Staff must understand: Daily preferences, routines client prefers, dislikes to avoid. Example: "Client prefers morning showers", "Dislikes loud environments", "Needs 30 minutes between activities". Max ${maxWords} words.`,
+              "strengths": `Staff should recognize: Client's abilities, skills they can use, positive behaviors to encourage. Example: "Client has excellent memory for faces", "Communicates well through gestures". Max ${maxWords} words.`,
+              "challenges": `Staff must be aware: Specific difficulties client faces, behaviors that may occur, triggers to avoid. Example: "Client becomes anxious in crowded spaces", "Requires prompting for hygiene tasks". Max ${maxWords} words.`,
+              "familyBackground": `Staff need to know: Family involvement, cultural background affecting care, important family dynamics. Include contact preferences and family support role. Max ${maxWords} words.`,
+              "culturalConsiderations": `Staff must understand: Religious practices, cultural needs, dietary requirements, communication customs. Example: "Client observes halal diet", "Family involvement expected in decisions". Max ${maxWords} words.`
             };
             systemPrompt = fieldPrompts[targetField] || `Generate focused ${targetField} content for this client's care plan. Avoid repeating information from other populated fields. Max ${maxWords} words, professional tone.`;
           } else {
