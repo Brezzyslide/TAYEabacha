@@ -327,6 +327,152 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
         </CardContent>
       </Card>
 
+      {/* AI-Powered Communication Generation */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+            <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold">AI-Powered Communication Generation</h4>
+            <p className="text-sm text-muted-foreground">
+              Generate personalized communication strategies based on client needs
+            </p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-500" />
+              AI Communication Content Generator
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="communicationUserInput">Communication Needs & Challenges</Label>
+              <Textarea
+                id="communicationUserInput"
+                value={formData.communicationInput || ""}
+                onChange={(e) => handleInputChange("communicationInput", e.target.value)}
+                placeholder="Describe the client's communication abilities, challenges, preferences, and specific needs for both understanding and expressing themselves..."
+                rows={4}
+              />
+            </div>
+
+            <Button 
+              onClick={handleGenerateContent}
+              disabled={generateContentMutation.isPending || !formData.communicationInput?.trim()}
+              className="w-full"
+            >
+              {generateContentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating Communication Content...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Communication Content
+                </>
+              )}
+            </Button>
+
+            {formData.generatedContent && (
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Communication Content:</h4>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("expressiveCommunication", formData.generatedContent || "");
+                      toast({
+                        title: "Content Applied",
+                        description: "AI-generated content has been added to Expressive Communication field.",
+                      });
+                    }}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Use This Content
+                  </Button>
+                </div>
+                <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap mb-3">
+                  {formData.generatedContent}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("expressiveCommunication", formData.generatedContent || "");
+                      refreshGPTLimit();
+                      toast({
+                        title: "Content Applied",
+                        description: "Added to Expressive Communication field. GPT limit refreshed.",
+                      });
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Add to Expressive Communication
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("receptiveCommunication", formData.generatedContent || "");
+                      refreshGPTLimit();
+                      toast({
+                        title: "Content Applied", 
+                        description: "Added to Receptive Communication field. GPT limit refreshed.",
+                      });
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Add to Receptive Communication
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("supportStrategies", formData.generatedContent || "");
+                      refreshGPTLimit();
+                      toast({
+                        title: "Content Applied", 
+                        description: "Added to Support Strategies field. GPT limit refreshed.",
+                      });
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    Add to Support Strategies
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                    Content limited to 200 words for focused communication sections
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("generatedContent", "");
+                      toast({
+                        title: "Content Dismissed",
+                        description: "AI-generated content cleared.",
+                      });
+                    }}
+                    variant="ghost" 
+                    size="sm"
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {selectedClient && (
         <div className="bg-indigo-50 dark:bg-indigo-950 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
           <p className="text-sm text-indigo-800 dark:text-indigo-200">

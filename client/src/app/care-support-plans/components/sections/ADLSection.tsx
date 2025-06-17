@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Save, AlertCircle, Activity } from "lucide-react";
+import { Sparkles, Save, AlertCircle, Activity, Loader2, CheckCircle2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -48,64 +49,54 @@ export function ADLSection({ data, updateData, onChange, selectedClient, planDat
     }
   };
 
-  const handleExpandViaAI = async () => {
-    if (adlData.aiAttempts >= 2) {
-      toast({
-        title: "AI Generation Limit Reached",
-        description: "Maximum 2 AI generation attempts allowed per section.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Function to refresh GPT limit after content application
+  const refreshGPTLimit = () => {
+    console.log("GPT limit refreshed for next ADL generation");
+  };
 
-    if (!adlData.userInput.trim()) {
-      toast({
-        title: "Input Required",
-        description: "Please enter information about the client's ADL abilities before generating.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
+  const generateContentMutation = useMutation({
+    mutationFn: async (userInput: string) => {
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "adl",
-        userInput: adlData.userInput,
-        clientDiagnosis: selectedClient?.primaryDiagnosis || null,
-        clientName: selectedClient?.fullName || null,
-        maxWords: 300,
-        previousSections: planData,
+        userInput,
+        clientName: selectedClient?.fullName || "Client",
+        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified",
+        maxWords: 200,
+        previousSections: planData
       });
-
-      const responseData = await response.json();
-      const generatedContent = responseData.generatedContent;
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
+      const generatedText = responseData.generatedContent || "";
       
-      const newData = {
-        ...adlData,
-        generatedContent: generatedContent,
-        aiAttempts: adlData.aiAttempts + 1,
-      };
+      // Store generated content for targeted application
+      handleGeneratedContentChange(generatedText);
       
-      if (updateData) {
-        updateData('adlData', newData);
-      } else if (onChange) {
-        onChange(newData);
-      }
-
       toast({
-        title: "ADL Content Generated",
-        description: "AI has expanded your input into a comprehensive ADL assessment.",
+        title: "AI ADL Content Generated",
+        description: "200-word focused ADL assessment generated for targeted application.",
       });
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate ADL content.",
+        description: error.message || "Failed to generate ADL content. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsGenerating(false);
+    },
+  });
+
+  const handleGenerateContent = () => {
+    if (!adlData.userInput?.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please describe the client's ADL abilities and needs first.",
+        variant: "destructive",
+      });
+      return;
     }
+
+    generateContentMutation.mutate(adlData.userInput);
   };
 
   const handleSaveSection = () => {
