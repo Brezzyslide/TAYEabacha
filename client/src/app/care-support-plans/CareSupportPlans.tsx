@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { ComprehensiveCarePlanWizard } from "./components/ComprehensiveCarePlanWizard";
+import { ComprehensiveCarePlanWizardRefactored } from "./components/ComprehensiveCarePlanWizardRefactored";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -259,7 +259,7 @@ export function CareSupportPlans() {
         </TabsContent>
       </Tabs>
 
-      <ComprehensiveCarePlanWizard 
+      <ComprehensiveCarePlanWizardRefactored 
         open={showCreateModal || showEditModal} 
         onClose={handleCloseModal}
         existingPlan={selectedPlan}
