@@ -32,7 +32,14 @@ interface CarePlanData {
   adlData: {
     userInput: string;
     generatedContent: string;
-    aiAttempts: number;
+    personalCare: string;
+    mobility: string;
+    household: string;
+    community: string;
+    safety: string;
+    independence: string;
+    assistiveTechnology: string;
+    recommendations: string;
   };
   structureData: {
     routines: any[];

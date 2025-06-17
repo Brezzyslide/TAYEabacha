@@ -13,7 +13,7 @@ import { SaveStatusIndicator } from "./SaveStatusIndicator";
 import { ClientLockSectionRefactored } from "./sections/ClientLockSectionRefactored";
 import { AboutMeSectionRefactored } from "./sections/AboutMeSectionRefactored";
 import { GoalsSectionRefactored } from "./sections/GoalsSectionRefactored";
-import { ADLSection } from "./sections/ADLSection";
+import { ADLSectionRefactored } from "./sections/ADLSectionRefactored";
 import { StructureSection } from "./sections/StructureSection";
 import { CommunicationSection } from "./sections/CommunicationSection";
 import { BehaviourSection } from "./sections/BehaviourSection";
@@ -30,7 +30,7 @@ const WIZARD_STEPS = [
   { id: 'client', title: 'Client Selection', component: ClientLockSectionRefactored, description: 'Select and lock client information' },
   { id: 'aboutMe', title: 'About Me', component: AboutMeSectionRefactored, description: 'Personal background and preferences' },
   { id: 'goals', title: 'Goals & Outcomes', component: GoalsSectionRefactored, description: 'NDIS goals and personal objectives' },
-  { id: 'adl', title: 'ADL Support', component: ADLSection, description: 'Activities of Daily Living assessment' },
+  { id: 'adl', title: 'ADL Support', component: ADLSectionRefactored, description: 'Activities of Daily Living assessment' },
   { id: 'structure', title: 'Structure & Routine', component: StructureSection, description: 'Daily schedules and routines' },
   { id: 'communication', title: 'Communication', component: CommunicationSection, description: 'Communication strategies and support' },
   { id: 'behaviour', title: 'Behaviour Support', component: BehaviourSection, description: 'Positive behaviour support strategies' },

@@ -2958,6 +2958,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userPrompt = `${contextualInfo}${existingContext}\nDisaster scenario: ${userInput}`;
           break;
         
+        case "adl":
+          if (targetField) {
+            // Field-specific prompts for ADL section
+            const fieldPrompts: { [key: string]: string } = {
+              "personalCare": `Staff need to understand: Client's personal care abilities, hygiene support needs, prompting requirements. Include specific assistance levels and independence skills. Example: 'Client requires verbal prompts for teeth brushing', 'Independent with showering but needs temperature check'. Max ${maxWords} words.`,
+              "mobility": `Staff need to know: Client's mobility abilities, transfer requirements, safety considerations. Include specific techniques and equipment needs. Example: 'Client uses walking frame for distances over 10 meters', 'Requires two-person assist for bed transfers'. Max ${maxWords} words.`,
+              "household": `Staff must understand: Client's household task abilities, supervision needs, safety considerations. Include specific support strategies. Example: 'Client can prepare simple meals with supervision', 'Requires assistance with cleaning products due to chemical sensitivity'. Max ${maxWords} words.`,
+              "community": `Staff need to know: Client's community access abilities, transport needs, social support requirements. Include specific strategies for community participation. Example: 'Client travels independently on familiar bus routes', 'Requires support worker for new environments'. Max ${maxWords} words.`,
+              "safety": `Staff must be aware: Client's safety awareness, risk recognition abilities, emergency response capabilities. Include specific safety considerations and intervention strategies. Example: 'Client has limited road safety awareness', 'Understands basic fire safety procedures'. Max ${maxWords} words.`,
+              "independence": `Staff should recognize: Client's independent living skills, decision-making abilities, self-advocacy strengths. Include specific areas for skill development. Example: 'Client advocates well for preferred activities', 'Developing budgeting skills with support'. Max ${maxWords} words.`,
+              "assistiveTechnology": `Staff need to know: Client's assistive technology needs, current equipment, training requirements. Include specific technology support strategies. Example: 'Client uses communication app on tablet', 'Requires support with hearing aid maintenance'. Max ${maxWords} words.`,
+              "recommendations": `Staff guidance: Specific ADL support strategies, environmental modifications, skill development goals. Include practical recommendations for daily support. Example: 'Use visual schedules for morning routine', 'Encourage independence while ensuring safety'. Max ${maxWords} words.`
+            };
+            
+            systemPrompt = fieldPrompts[targetField] || `Generate practical ADL support guidance for staff. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
+          } else {
+            systemPrompt = `Generate comprehensive ADL (Activities of Daily Living) assessment content focusing on practical staff guidance. Include specific abilities, support needs, and intervention strategies. Avoid generic care plan language - provide actionable information for support workers. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nADL assessment information: ${userInput}`;
+          }
+          break;
+
         case "mealtime":
           systemPrompt = `Generate a comprehensive mealtime risk management plan. If specific risks aren't identified, provide evidence-based recommendations typical for the given diagnosis. Max ${maxWords} words. Focus on safety and support strategies. Consider client's abilities and preferences from other sections.`;
           userPrompt = `${contextualInfo}${existingContext}\nMealtime considerations: ${userInput}`;
