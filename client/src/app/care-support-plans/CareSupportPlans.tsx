@@ -167,6 +167,15 @@ export function CareSupportPlans() {
                   </div>
                   
                   <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleEditPlan(plan)}
+                      className="flex items-center gap-1"
+                    >
+                      <FileText className="h-3 w-3" />
+                      View Care Plan
+                    </Button>
                     {canEditPlans && (
                       <Button
                         variant="outline"
