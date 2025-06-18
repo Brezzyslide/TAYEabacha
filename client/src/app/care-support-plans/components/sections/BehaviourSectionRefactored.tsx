@@ -92,10 +92,10 @@ PROTECTIVE STRATEGIES (after the behaviour):
 Format as clear, actionable staff instructions. Keep each strategy section under 200 words.`
       });
 
-      return response.content;
+      return await response.json();
     },
-    onSuccess: (content) => {
-      setBehaviourAIContent(content);
+    onSuccess: (responseData) => {
+      setBehaviourAIContent(responseData.generatedContent || responseData.content || "");
       setIsGeneratingBehaviour(false);
       toast({
         title: "AI Content Generated",
@@ -141,10 +141,10 @@ Format as clear, actionable staff instructions. Keep each strategy section under
 Focus on techniques that work across multiple behaviours and provide clear step-by-step guidance for staff. Keep under 200 words total.`
       });
 
-      return response.content;
+      return await response.json();
     },
-    onSuccess: (content) => {
-      updateField('behaviourData', 'deEscalationTechniques', content);
+    onSuccess: (responseData) => {
+      updateField('behaviourData', 'deEscalationTechniques', responseData.generatedContent || "");
       setIsGeneratingDeescalation(false);
       toast({
         title: "De-escalation Techniques Generated",
@@ -190,10 +190,10 @@ Focus on techniques that work across multiple behaviours and provide clear step-
 Focus on evidence-based PBS principles that support the person's dignity and autonomy while reducing challenging behaviours. Keep under 200 words total.`
       });
 
-      return response.content;
+      return await response.json();
     },
-    onSuccess: (content) => {
-      updateField('behaviourData', 'positiveBehaviourSupport', content);
+    onSuccess: (responseData) => {
+      updateField('behaviourData', 'positiveBehaviourSupport', responseData.generatedContent || "");
       setIsGeneratingPBS(false);
       toast({
         title: "PBS Tips Generated",
