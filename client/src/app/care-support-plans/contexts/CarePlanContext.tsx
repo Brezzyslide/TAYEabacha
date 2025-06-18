@@ -423,7 +423,7 @@ export function CarePlanProvider({
                       planData.aboutMeData.bulletPoints || 
                       planData.goalsData.ndisGoals ||
                       planData.adlData.userInput ||
-                      planData.communicationData.expressive;
+                      planData.communicationData.userInput;
     
     if (!hasContent) return;
 
@@ -445,7 +445,7 @@ export function CarePlanProvider({
                         planData.aboutMeData.bulletPoints || 
                         planData.goalsData.ndisGoals ||
                         planData.adlData.userInput ||
-                        planData.communicationData.expressive;
+                        planData.communicationData.userInput;
       
       if (hasContent && !autoSaveMutation.isPending) {
         autoSaveMutation.mutate(planData);
@@ -547,7 +547,18 @@ export function CarePlanProvider({
         return !!(planData.behaviourData.behaviours && planData.behaviourData.behaviours.length > 0);
       
       case 'disaster':
-        return !!(planData.disasterData.scenarios && Object.keys(planData.disasterData.scenarios).length > 0);
+        return !!(planData.disasterData.userInput?.trim() || 
+                 planData.disasterData.generalPreparedness?.trim() ||
+                 planData.disasterData.emergencyContacts?.trim() ||
+                 planData.disasterData.evacuationProcedures?.trim() ||
+                 planData.disasterData.communicationPlan?.trim() ||
+                 planData.disasterData.specialEquipment?.trim() ||
+                 planData.disasterData.medicationManagement?.trim() ||
+                 planData.disasterData.shelterArrangements?.trim() ||
+                 planData.disasterData.postDisasterSupport?.trim() ||
+                 planData.disasterData.evacuationPlanAudit?.trim() ||
+                 (planData.disasterData.scenarios && planData.disasterData.scenarios.length > 0) ||
+                 (planData.disasterData.disasterPlans && planData.disasterData.disasterPlans.length > 0));
       
       case 'mealtime':
         return !!(planData.mealtimeData.riskParameters && planData.mealtimeData.riskParameters.length > 0);
