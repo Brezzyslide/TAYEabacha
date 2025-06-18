@@ -40,7 +40,7 @@ const COMMUNICATION_STRENGTHS = [
 ];
 
 export function CommunicationSectionRefactored() {
-  const { planData, dispatch } = useCarePlan();
+  const { planData, updateField } = useCarePlan();
   const { toast } = useToast();
   
   const communicationData = planData?.communicationData || {
@@ -66,14 +66,7 @@ export function CommunicationSectionRefactored() {
 
   const handleInputChange = (field: string, value: string) => {
     console.log('Communication handleInputChange:', field, value?.substring(0, 50) + '...');
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'communicationData',
-      data: {
-        ...communicationData,
-        [field]: value
-      }
-    });
+    updateField('communicationData', field, value);
   };
 
   const toggleArrayItem = (field: string, item: string) => {
@@ -82,25 +75,13 @@ export function CommunicationSectionRefactored() {
       ? currentArray.filter(i => i !== item)
       : [...currentArray, item];
     
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'communicationData',
-      data: {
-        ...communicationData,
-        [field]: updatedArray
-      }
-    });
+    updateField('communicationData', field, updatedArray);
   };
 
   // AI Content Generation Mutation
   const generateContentMutation = useMutation({
-    mutationFn: async ({ targetField }: { targetField: string }) => {
-      if (!communicationData.userInput?.trim()) {
-        throw new Error("Please enter communication assessment information first.");
-      }
-
+    mutationFn: async ({ targetField, userInput }: { targetField: string; userInput: string }) => {
       setIsGenerating(true);
-      const userInput = communicationData.userInput;
 
       const existingContent = {
         receptiveStrategies: communicationData.receptiveStrategies || "",
@@ -185,7 +166,10 @@ export function CommunicationSectionRefactored() {
       return;
     }
 
-    generateContentMutation.mutate({ targetField: 'preview' });
+    generateContentMutation.mutate({ 
+      targetField: 'preview',
+      userInput: communicationData.userInput 
+    });
   };
 
   const handleGenerateTargetedContent = (targetField: string) => {
@@ -199,7 +183,10 @@ export function CommunicationSectionRefactored() {
     }
 
     console.log('Generating targeted content for field:', targetField);
-    generateContentMutation.mutate({ targetField });
+    generateContentMutation.mutate({ 
+      targetField,
+      userInput: communicationData.userInput 
+    });
   };
 
   return (
