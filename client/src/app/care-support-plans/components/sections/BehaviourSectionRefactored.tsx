@@ -338,6 +338,19 @@ Focus on evidence-based PBS principles that support the person's dignity and aut
     generateDeescalationMutation.mutate();
   };
 
+  const handleGeneratePBS = () => {
+    if (!behaviourData.behaviours || behaviourData.behaviours.length === 0) {
+      toast({
+        title: "No Behaviours Found",
+        description: "Please add behaviours first before generating PBS tips.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    generatePBSMutation.mutate();
+  };
+
   return (
     <div className="space-y-6">
       {/* Individual Behaviour Builder */}
@@ -501,7 +514,8 @@ Focus on evidence-based PBS principles that support the person's dignity and aut
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Behaviour</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Triggers</TableHead>
                   <TableHead>Strategies</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
@@ -510,6 +524,11 @@ Focus on evidence-based PBS principles that support the person's dignity and aut
               <TableBody>
                 {behaviourData.behaviours.map((behaviour: any) => (
                   <TableRow key={behaviour.id}>
+                    <TableCell className="max-w-[150px]">
+                      <div className="truncate font-medium" title={behaviour.name}>
+                        {behaviour.name || 'Unnamed Behaviour'}
+                      </div>
+                    </TableCell>
                     <TableCell className="max-w-[200px]">
                       <div className="truncate" title={behaviour.description}>
                         {behaviour.description}
@@ -544,15 +563,15 @@ Focus on evidence-based PBS principles that support the person's dignity and aut
         </Card>
       )}
 
-      {/* Global De-escalation AI Centre */}
+      {/* Global AI Centre - De-escalation & PBS Tips */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-orange-600" />
-            De-escalation Techniques Centre
+            Global AI Centre - De-escalation & PBS Tips
           </CardTitle>
           <CardDescription>
-            Generate universal de-escalation techniques based on all behaviours above
+            Generate universal techniques and PBS tips based on all behaviours above
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -562,39 +581,75 @@ Focus on evidence-based PBS principles that support the person's dignity and aut
               <span className="font-medium text-amber-800 dark:text-amber-200">Requirements</span>
             </div>
             <p className="text-sm text-amber-700 dark:text-amber-300">
-              Add behaviours above first, then generate comprehensive de-escalation techniques that work across all behaviours.
+              Add behaviours above first, then generate comprehensive techniques and PBS tips that work across all behaviours.
             </p>
           </div>
 
-          <Button 
-            onClick={handleGenerateDeescalation}
-            disabled={isGeneratingDeescalation || !behaviourData.behaviours || behaviourData.behaviours.length === 0}
-            className="w-full"
-          >
-            {isGeneratingDeescalation ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating De-escalation Techniques...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate De-escalation Techniques
-              </>
-            )}
-          </Button>
+          {/* AI Generation Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button 
+              onClick={handleGenerateDeescalation}
+              disabled={isGeneratingDeescalation || !behaviourData.behaviours || behaviourData.behaviours.length === 0}
+              className="w-full"
+            >
+              {isGeneratingDeescalation ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating De-escalation...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate De-escalation Techniques
+                </>
+              )}
+            </Button>
 
-          {/* De-escalation Techniques Field */}
-          <div>
-            <Label htmlFor="deescalation-techniques">De-escalation Techniques</Label>
-            <Textarea
-              id="deescalation-techniques"
-              placeholder="Universal de-escalation techniques will appear here after generation..."
-              value={behaviourData.deEscalationTechniques || ""}
-              onChange={(e) => updateField('behaviourData', 'deEscalationTechniques', e.target.value)}
-              rows={6}
-              className="mt-2"
-            />
+            <Button 
+              onClick={handleGeneratePBS}
+              disabled={isGeneratingPBS || !behaviourData.behaviours || behaviourData.behaviours.length === 0}
+              className="w-full"
+              variant="secondary"
+            >
+              {isGeneratingPBS ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating PBS Tips...
+                </>
+              ) : (
+                <>
+                  <Heart className="h-4 w-4 mr-2" />
+                  Generate PBS Tips
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Output Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="deescalation-techniques">De-escalation Techniques</Label>
+              <Textarea
+                id="deescalation-techniques"
+                placeholder="Universal de-escalation techniques will appear here after generation..."
+                value={behaviourData.deEscalationTechniques || ""}
+                onChange={(e) => updateField('behaviourData', 'deEscalationTechniques', e.target.value)}
+                rows={6}
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="pbs-tips">PBS Tips</Label>
+              <Textarea
+                id="pbs-tips"
+                placeholder="Positive Behaviour Support tips will appear here after generation..."
+                value={behaviourData.positiveBehaviourSupport || ""}
+                onChange={(e) => updateField('behaviourData', 'positiveBehaviourSupport', e.target.value)}
+                rows={6}
+                className="mt-2"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
