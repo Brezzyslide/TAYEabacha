@@ -14,6 +14,11 @@ import { ClientLockSectionRefactored } from "./sections/ClientLockSectionRefacto
 import { AboutMeSectionRefactored } from "./sections/AboutMeSectionRefactored";
 import { GoalsSectionRefactored } from "./sections/GoalsSectionRefactored";
 import { ADLSectionRefactored } from "./sections/ADLSectionRefactored";
+import { StructureSectionComplete } from "./sections/StructureSectionComplete";
+import { CommunicationSectionComplete } from "./sections/CommunicationSectionComplete";
+import { BehaviourSectionComplete } from "./sections/BehaviourSectionComplete";
+import { DisasterSectionComplete } from "./sections/DisasterSectionComplete";
+import { MealtimeSectionComplete } from "./sections/MealtimeSectionComplete";
 import { StructureSection } from "./sections/StructureSection";
 import { CommunicationSection } from "./sections/CommunicationSection";
 import { BehaviourSection } from "./sections/BehaviourSection";
@@ -142,13 +147,47 @@ function WizardContent({ onClose }: { onClose: () => void }) {
         return <GoalsSectionRefactored />;
       case 'adl':
         return <ADLSectionRefactored />;
+      case 'structure':
+        return <StructureSectionComplete 
+          data={data}
+          updateData={updateData}
+          selectedClient={selectedClient}
+          planData={data}
+        />;
+      case 'communication':
+        return <CommunicationSectionComplete 
+          data={data}
+          updateData={updateData}
+          selectedClient={selectedClient}
+          planData={data}
+        />;
+      case 'behaviour':
+        return <BehaviourSectionComplete 
+          data={data}
+          updateData={updateData}
+          selectedClient={selectedClient}
+          planData={data}
+        />;
+      case 'disaster':
+        return <DisasterSectionComplete 
+          data={data}
+          updateData={updateData}
+          selectedClient={selectedClient}
+          planData={data}
+        />;
+      case 'mealtime':
+        return <MealtimeSectionComplete 
+          data={data}
+          updateData={updateData}
+          selectedClient={selectedClient}
+          planData={data}
+        />;
       default:
-        // For components that haven't been refactored yet, show placeholder
         return (
           <Card>
             <CardContent className="p-8 text-center">
               <p className="text-muted-foreground">
-                {currentStepData.title} section - Context refactoring in progress
+                Section not implemented yet
               </p>
             </CardContent>
           </Card>
