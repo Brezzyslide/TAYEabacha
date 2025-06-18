@@ -149,11 +149,16 @@ export function DisasterSectionRefactored() {
         ? `Existing disaster plans: ${existingPlans.map((p: any) => DISASTER_TYPES.find(d => d.value === p.type)?.label).join(', ')}`
         : "No existing disaster plans";
 
+      const clientDiagnosis = planData?.clientData?.primaryDiagnosis || "Not specified";
+      const diagnosisGuidance = clientDiagnosis !== "Not specified" 
+        ? `\n\nIMPORTANT: Factor in the client's diagnosis (${clientDiagnosis}) when generating recommendations. Consider specific needs, vulnerabilities, medications, mobility requirements, communication challenges, and safety considerations related to this condition during ${disasterLabel.toLowerCase()} scenarios.`
+        : "";
+
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "disaster",
-        userInput: `Client Info: ${userInput}\n\nDisaster Type: ${disasterLabel}\nTarget Field: ${targetField}\n\n${existingPlanContext}`,
+        userInput: `Client Info: ${userInput}\n\nDisaster Type: ${disasterLabel}\nTarget Field: ${targetField}\n\n${existingPlanContext}${diagnosisGuidance}`,
         clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
+        clientDiagnosis: clientDiagnosis,
         maxWords: 200,
         targetField: `${disasterType}_${targetField}`,
         existingContent: {}
@@ -162,19 +167,28 @@ export function DisasterSectionRefactored() {
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";
-      handleDisasterInputChange(targetField, generatedText);
       
-      const fieldLabels: { [key: string]: string } = {
-        preparation: "Preparation Phase",
-        evacuation: "Evacuation Procedure", 
-        postEvent: "Post-Event Action",
-        clientNeeds: "Specific Client Needs"
-      };
-      
-      toast({
-        title: "AI Content Generated",
-        description: `${fieldLabels[targetField]} content has been generated.`,
-      });
+      if (targetField === 'preview') {
+        handleInputChange('generatedContent', generatedText);
+        toast({
+          title: "Content Generated",
+          description: "Review the AI-generated content and choose which field to populate.",
+        });
+      } else {
+        handleDisasterInputChange(targetField, generatedText);
+        
+        const fieldLabels: { [key: string]: string } = {
+          preparation: "Preparation Phase",
+          evacuation: "Evacuation Procedure", 
+          postEvent: "Post-Event Action",
+          clientNeeds: "Specific Client Needs"
+        };
+        
+        toast({
+          title: "AI Content Generated",
+          description: `${fieldLabels[targetField]} content has been generated.`,
+        });
+      }
       
       setIsGenerating(false);
       setGeneratingField('');
@@ -206,11 +220,16 @@ export function DisasterSectionRefactored() {
         ? `Current disaster plans: ${existingPlans.map((p: any) => `${DISASTER_TYPES.find(d => d.value === p.type)?.label} - ${p.preparation?.substring(0, 50)}...`).join('; ')}`
         : "No disaster plans created yet";
 
+      const clientDiagnosis = planData?.clientData?.primaryDiagnosis || "Not specified";
+      const diagnosisContext = clientDiagnosis !== "Not specified" 
+        ? `\n\nDIAGNOSIS CONSIDERATIONS: Client has ${clientDiagnosis}. Generate recommendations that specifically address how this condition affects disaster management needs, including medication requirements, mobility limitations, communication challenges, sensory sensitivities, cognitive considerations, and specialized equipment or support staff requirements during emergencies.`
+        : "";
+
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "disaster",
-        userInput: `${userInput}\n\n${planContext}`,
+        userInput: `${userInput}\n\n${planContext}${diagnosisContext}`,
         clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
+        clientDiagnosis: clientDiagnosis,
         maxWords: 200,
         targetField: `global_${targetField}`,
         existingContent: {}
@@ -314,6 +333,83 @@ export function DisasterSectionRefactored() {
                 })}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* AI Preview Section */}
+          {disasterData.generatedContent && (
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content Preview:</h4>
+              </div>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">{disasterData.generatedContent}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    handleDisasterInputChange('preparation', disasterData.generatedContent || '');
+                    handleInputChange('generatedContent', '');
+                    toast({ title: "Content Applied", description: "Content added to Preparation Phase" });
+                  }}
+                >
+                  Add to Preparation
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    handleDisasterInputChange('evacuation', disasterData.generatedContent || '');
+                    handleInputChange('generatedContent', '');
+                    toast({ title: "Content Applied", description: "Content added to Evacuation" });
+                  }}
+                >
+                  Add to Evacuation
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    handleDisasterInputChange('postEvent', disasterData.generatedContent || '');
+                    handleInputChange('generatedContent', '');
+                    toast({ title: "Content Applied", description: "Content added to Post-Event" });
+                  }}
+                >
+                  Add to Post-Event
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    handleDisasterInputChange('clientNeeds', disasterData.generatedContent || '');
+                    handleInputChange('generatedContent', '');
+                    toast({ title: "Content Applied", description: "Content added to Client Needs" });
+                  }}
+                >
+                  Add to Client Needs
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* General AI Generation */}
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => generateDisasterContentMutation.mutate({ disasterType: currentDisaster.type, targetField: 'preview' })}
+              disabled={isGenerating || !disasterData.userInput?.trim()}
+              className="flex-1"
+            >
+              {isGenerating && generatingField === 'preview' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating {DISASTER_TYPES.find(d => d.value === currentDisaster.type)?.label} Content...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate {DISASTER_TYPES.find(d => d.value === currentDisaster.type)?.label} Content
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Disaster-Specific Fields with AI Buttons */}

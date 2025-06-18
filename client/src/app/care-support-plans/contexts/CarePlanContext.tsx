@@ -87,6 +87,7 @@ interface CarePlanData {
     userInput: string;
     generatedContent: string;
     scenarios: any[];
+    disasterPlans: any[];
     generalPreparedness: string;
     emergencyContacts: string;
     evacuationProcedures: string;
@@ -95,6 +96,7 @@ interface CarePlanData {
     medicationManagement: string;
     shelterArrangements: string;
     postDisasterSupport: string;
+    evacuationPlanAudit: string;
   };
   mealtimeData: {
     userInput: string;
@@ -219,6 +221,7 @@ const initialPlanData: CarePlanData = {
     userInput: '',
     generatedContent: '',
     scenarios: [],
+    disasterPlans: [],
     generalPreparedness: '',
     emergencyContacts: '',
     evacuationProcedures: '',
@@ -226,7 +229,8 @@ const initialPlanData: CarePlanData = {
     specialEquipment: '',
     medicationManagement: '',
     shelterArrangements: '',
-    postDisasterSupport: ''
+    postDisasterSupport: '',
+    evacuationPlanAudit: ''
   },
   mealtimeData: {
     userInput: '',
