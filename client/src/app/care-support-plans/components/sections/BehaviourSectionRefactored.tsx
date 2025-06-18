@@ -446,6 +446,7 @@ Write about positive reinforcement strategies, environmental design for success,
                 value={currentBehaviour.proactiveStrategy}
                 onChange={(e) => handleBehaviourInputChange('proactiveStrategy', e.target.value)}
                 rows={3}
+                className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
               />
             </div>
             <div>
@@ -456,6 +457,7 @@ Write about positive reinforcement strategies, environmental design for success,
                 value={currentBehaviour.reactiveStrategy}
                 onChange={(e) => handleBehaviourInputChange('reactiveStrategy', e.target.value)}
                 rows={3}
+                className="bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800"
               />
             </div>
             <div>
@@ -466,6 +468,7 @@ Write about positive reinforcement strategies, environmental design for success,
                 value={currentBehaviour.protectiveStrategy}
                 onChange={(e) => handleBehaviourInputChange('protectiveStrategy', e.target.value)}
                 rows={3}
+                className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
               />
             </div>
           </div>
@@ -558,28 +561,28 @@ Write about positive reinforcement strategies, environmental design for success,
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                   <Label className="text-sm font-medium flex items-center gap-1">
-                                    <Target className="h-4 w-4 text-blue-600" />
+                                    <Target className="h-4 w-4 text-green-600" />
                                     Proactive Strategy
                                   </Label>
-                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 rounded">
                                     {behaviour.proactiveStrategy || 'Not specified'}
                                   </div>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium flex items-center gap-1">
-                                    <Zap className="h-4 w-4 text-orange-600" />
+                                    <Zap className="h-4 w-4 text-yellow-600" />
                                     Reactive Strategy
                                   </Label>
-                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded">
                                     {behaviour.reactiveStrategy || 'Not specified'}
                                   </div>
                                 </div>
                                 <div>
                                   <Label className="text-sm font-medium flex items-center gap-1">
-                                    <Shield className="h-4 w-4 text-green-600" />
+                                    <Shield className="h-4 w-4 text-red-600" />
                                     Protective Strategy
                                   </Label>
-                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded">
                                     {behaviour.protectiveStrategy || 'Not specified'}
                                   </div>
                                 </div>
