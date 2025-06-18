@@ -19,11 +19,7 @@ import { CommunicationSectionRefactored } from "./sections/CommunicationSectionR
 import { BehaviourSectionRefactored } from "./sections/BehaviourSectionRefactored";
 import { DisasterSectionRefactored } from "./sections/DisasterSectionRefactored";
 import { MealtimeSectionRefactored } from "./sections/MealtimeSectionRefactored";
-import { StructureSection } from "./sections/StructureSection";
-import { CommunicationSection } from "./sections/CommunicationSection";
-import { BehaviourSection } from "./sections/BehaviourSection";
-import { DisasterSection } from "./sections/DisasterSection";
-import { MealtimeSection } from "./sections/MealtimeSection";
+import { ReviewSectionRefactored } from "./sections/ReviewSectionRefactored";
 
 interface ComprehensiveCarePlanWizardRefactoredProps {
   open: boolean;
@@ -41,7 +37,7 @@ const WIZARD_STEPS = [
   { id: 'behaviour', title: 'Behaviour Support', component: BehaviourSectionRefactored, description: 'Positive behaviour support strategies' },
   { id: 'disaster', title: 'Disaster Management', component: DisasterSectionRefactored, description: 'Emergency and disaster preparedness' },
   { id: 'mealtime', title: 'Mealtime Management', component: MealtimeSectionRefactored, description: 'Nutrition and mealtime risk assessment' },
-  { id: 'review', title: 'Review & Export', component: null, description: 'Final review and export options' },
+  { id: 'review', title: 'Review & Export', component: ReviewSectionRefactored, description: 'Final review and export options' },
 ];
 
 function WizardContent({ onClose }: { onClose: () => void }) {
@@ -59,7 +55,11 @@ function WizardContent({ onClose }: { onClose: () => void }) {
   };
 
   const handleNext = () => {
-    setCompletedSteps(prev => new Set([...prev, currentStep]));
+    setCompletedSteps(prev => {
+      const newSet = new Set(prev);
+      newSet.add(currentStep);
+      return newSet;
+    });
     if (currentStep < WIZARD_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     }
