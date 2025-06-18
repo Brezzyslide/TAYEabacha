@@ -42,7 +42,15 @@ interface CarePlanData {
     recommendations: string;
   };
   structureData: {
+    userInput: string;
+    generatedContent: string;
     routines: any[];
+    dailyStructure: string;
+    weeklyPattern: string;
+    transitions: string;
+    flexibility: string;
+    environmental: string;
+    staffGuidance: string;
   };
   communicationData: {
     expressive: string;
@@ -74,6 +82,7 @@ interface CarePlanContextType {
   state: CarePlanData;
   planData: CarePlanData;
   clientData: any;
+  dispatch: React.Dispatch<CarePlanAction>;
   updateSection: (section: string, data: any) => void;
   updateField: (section: string, field: string, value: any) => void;
   updateBasicInfo: (field: string, value: any) => void;
@@ -123,7 +132,15 @@ const initialPlanData: CarePlanData = {
     recommendations: ''
   },
   structureData: {
-    routines: []
+    userInput: '',
+    generatedContent: '',
+    routines: [],
+    dailyStructure: '',
+    weeklyPattern: '',
+    transitions: '',
+    flexibility: '',
+    environmental: '',
+    staffGuidance: ''
   },
   communicationData: {
     expressive: '',
@@ -463,6 +480,7 @@ export function CarePlanProvider({
     state: planData,
     planData,
     clientData: planData.clientData,
+    dispatch,
     updateSection,
     updateField,
     updateBasicInfo,
