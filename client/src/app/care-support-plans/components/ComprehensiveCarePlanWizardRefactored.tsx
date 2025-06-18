@@ -15,10 +15,10 @@ import { AboutMeSectionRefactored } from "./sections/AboutMeSectionRefactored";
 import { GoalsSectionRefactored } from "./sections/GoalsSectionRefactored";
 import { ADLSectionRefactored } from "./sections/ADLSectionRefactored";
 import { StructureSectionRefactored } from "./sections/StructureSectionRefactored";
-import { CommunicationSectionComplete } from "./sections/CommunicationSectionComplete";
-import { BehaviourSectionComplete } from "./sections/BehaviourSectionComplete";
-import { DisasterSectionComplete } from "./sections/DisasterSectionComplete";
-import { MealtimeSectionComplete } from "./sections/MealtimeSectionComplete";
+import { CommunicationSectionRefactored } from "./sections/CommunicationSectionRefactored";
+import { BehaviourSectionRefactored } from "./sections/BehaviourSectionRefactored";
+import { DisasterSectionRefactored } from "./sections/DisasterSectionRefactored";
+import { MealtimeSectionRefactored } from "./sections/MealtimeSectionRefactored";
 import { StructureSection } from "./sections/StructureSection";
 import { CommunicationSection } from "./sections/CommunicationSection";
 import { BehaviourSection } from "./sections/BehaviourSection";
@@ -155,26 +155,15 @@ function WizardContent({ onClose }: { onClose: () => void }) {
       case 'adl':
         return <ADLSectionRefactored />;
       case 'structure':
+        return <StructureSectionRefactored />;
       case 'communication':
+        return <CommunicationSectionRefactored />;
       case 'behaviour':
+        return <BehaviourSectionRefactored />;
       case 'disaster':
+        return <DisasterSectionRefactored />;
       case 'mealtime':
-        return (
-          <Card>
-            <CardContent className="p-8 text-center space-y-4">
-              <div className="text-6xl">🚧</div>
-              <h3 className="text-xl font-semibold">{currentStepData.title}</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                This section includes comprehensive {currentStepData.title.toLowerCase()} planning tools with AI-powered content generation, interactive builders, and staff guidance forms.
-              </p>
-              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  Context integration in progress - full functionality available in sections 1-4
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
+        return <MealtimeSectionRefactored />;
       default:
         return (
           <Card>

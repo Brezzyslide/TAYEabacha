@@ -53,21 +53,63 @@ interface CarePlanData {
     staffGuidance: string;
   };
   communicationData: {
-    expressive: string;
-    receptive: string;
-    generatedStrategy: string;
-    aiAttempts: number;
+    userInput: string;
+    generatedContent: string;
+    receptiveStrategies: string;
+    expressiveStrategies: string;
+    augmentativeTools: string;
+    environmentalSupports: string;
+    socialInteraction: string;
+    staffApproaches: string;
+    communicationGoals: string;
+    assistiveTechnology: string;
+    primaryMethods: string[];
+    comprehensionLevel: string;
+    expressionAbilities: string;
+    preferredFormats: string[];
+    challenges: string[];
+    strengths: string[];
   };
   behaviourData: {
+    userInput: string;
+    generatedContent: string;
     behaviours: any[];
+    overallApproach: string;
+    environmentalFactors: string;
+    preventativeStrategies: string;
+    deEscalationTechniques: string;
+    positiveBehaviourSupport: string;
+    staffGuidance: string;
+    riskAssessment: string;
+    communicationStrategies: string;
   };
   disasterData: {
-    scenarios: Record<string, any>;
+    userInput: string;
+    generatedContent: string;
+    scenarios: any[];
+    generalPreparedness: string;
+    emergencyContacts: string;
+    evacuationProcedures: string;
+    communicationPlan: string;
+    specialEquipment: string;
+    medicationManagement: string;
+    shelterArrangements: string;
+    postDisasterSupport: string;
   };
   mealtimeData: {
+    userInput: string;
+    generatedContent: string;
     riskParameters: any[];
-    generatedPlan: string;
-    aiAttempts: number;
+    dietaryRequirements: string;
+    textureModifications: string;
+    assistanceLevel: string;
+    mealtimeEnvironment: string;
+    socialAspects: string;
+    nutritionalConsiderations: string;
+    emergencyProcedures: string;
+    staffGuidance: string;
+    monitoringRequirements: string;
+    equipmentNeeds: string;
   };
 }
 
@@ -143,21 +185,63 @@ const initialPlanData: CarePlanData = {
     staffGuidance: ''
   },
   communicationData: {
-    expressive: '',
-    receptive: '',
-    generatedStrategy: '',
-    aiAttempts: 0
+    userInput: '',
+    generatedContent: '',
+    receptiveStrategies: '',
+    expressiveStrategies: '',
+    augmentativeTools: '',
+    environmentalSupports: '',
+    socialInteraction: '',
+    staffApproaches: '',
+    communicationGoals: '',
+    assistiveTechnology: '',
+    primaryMethods: [],
+    comprehensionLevel: '',
+    expressionAbilities: '',
+    preferredFormats: [],
+    challenges: [],
+    strengths: []
   },
   behaviourData: {
-    behaviours: []
+    userInput: '',
+    generatedContent: '',
+    behaviours: [],
+    overallApproach: '',
+    environmentalFactors: '',
+    preventativeStrategies: '',
+    deEscalationTechniques: '',
+    positiveBehaviourSupport: '',
+    staffGuidance: '',
+    riskAssessment: '',
+    communicationStrategies: ''
   },
   disasterData: {
-    scenarios: {}
+    userInput: '',
+    generatedContent: '',
+    scenarios: [],
+    generalPreparedness: '',
+    emergencyContacts: '',
+    evacuationProcedures: '',
+    communicationPlan: '',
+    specialEquipment: '',
+    medicationManagement: '',
+    shelterArrangements: '',
+    postDisasterSupport: ''
   },
   mealtimeData: {
+    userInput: '',
+    generatedContent: '',
     riskParameters: [],
-    generatedPlan: '',
-    aiAttempts: 0
+    dietaryRequirements: '',
+    textureModifications: '',
+    assistanceLevel: '',
+    mealtimeEnvironment: '',
+    socialAspects: '',
+    nutritionalConsiderations: '',
+    emergencyProcedures: '',
+    staffGuidance: '',
+    monitoringRequirements: '',
+    equipmentNeeds: ''
   }
 };
 
