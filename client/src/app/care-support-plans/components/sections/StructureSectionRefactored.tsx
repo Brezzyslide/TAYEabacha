@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Sparkles, Loader2, CheckCircle2, Calendar, Clock, Settings } from "lucide-react";
+import { Plus, Trash2, Calendar, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { useCarePlan } from "../../contexts/CarePlanContext";
 
 interface Routine {
@@ -42,15 +40,7 @@ export function StructureSectionRefactored() {
   const { toast } = useToast();
   
   const structureData = planData?.structureData || {
-    userInput: '',
-    generatedContent: '',
-    routines: [],
-    dailyStructure: '',
-    weeklyPattern: '',
-    transitions: '',
-    flexibility: '',
-    environmental: '',
-    staffGuidance: ''
+    routines: []
   };
 
   const [newRoutine, setNewRoutine] = useState<Routine>({
@@ -62,19 +52,6 @@ export function StructureSectionRefactored() {
     category: '',
     priority: 'medium'
   });
-
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleInputChange = (field: string, value: string) => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'structureData',
-      data: {
-        ...structureData,
-        [field]: value
-      }
-    });
-  };
 
   const handleRoutineChange = (field: string, value: string) => {
     setNewRoutine(prev => ({
@@ -143,219 +120,37 @@ export function StructureSectionRefactored() {
     });
   };
 
-  // AI Content Generation Mutation
-  const generateContentMutation = useMutation({
-    mutationFn: async ({ targetField }: { targetField: string }) => {
-      if (!structureData.userInput?.trim()) {
-        throw new Error("Please enter structure assessment information first.");
-      }
-
-      setIsGenerating(true);
-      const userInput = structureData.userInput;
-
-      const existingContent = {
-        dailyStructure: structureData.dailyStructure || "",
-        weeklyPattern: structureData.weeklyPattern || "",
-        transitions: structureData.transitions || "",
-        flexibility: structureData.flexibility || "",
-        environmental: structureData.environmental || "",
-        staffGuidance: structureData.staffGuidance || ""
-      };
-
-      const routineContext = structureData.routines.length > 0 
-        ? `Current routines: ${structureData.routines.map((r: any) => `${r.day} ${r.startTime}-${r.endTime}: ${r.description}`).join('; ')}`
-        : "No specific routines documented yet";
-
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
-        section: "structure",
-        userInput: `${userInput}\n\n${routineContext}`,
-        clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
-        maxWords: 200,
-        targetField,
-        existingContent
-      });
-      return await response.json();
-    },
-    onSuccess: (responseData, { targetField }) => {
-      const generatedText = responseData.generatedContent || "";
-      
-      if (targetField === 'preview') {
-        handleInputChange('generatedContent', generatedText);
-        toast({
-          title: "Content Generated",
-          description: "Review the AI-generated content and choose which field to populate.",
-        });
-      } else {
-        handleInputChange(targetField, generatedText);
-        handleInputChange('generatedContent', '');
-        
-        const fieldLabels: { [key: string]: string } = {
-          dailyStructure: "Daily Structure",
-          weeklyPattern: "Weekly Pattern",
-          transitions: "Transitions",
-          flexibility: "Flexibility",
-          environmental: "Environmental",
-          staffGuidance: "Staff Guidance"
-        };
-        
-        toast({
-          title: "AI Content Generated",
-          description: `${fieldLabels[targetField] || targetField} has been populated with targeted content.`,
-        });
-      }
-      setIsGenerating(false);
-    },
-    onError: (error: any) => {
-      setIsGenerating(false);
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate content. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleGenerateInitialContent = () => {
-    if (!structureData.userInput?.trim()) {
-      toast({
-        title: "Input Required",
-        description: "Please enter structure assessment information first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    generateContentMutation.mutate({ targetField: 'preview' });
-  };
-
-  const handleGenerateTargetedContent = (targetField: string) => {
-    if (!structureData.userInput?.trim()) {
-      toast({
-        title: "Input Required",
-        description: "Please enter structure assessment information first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    generateContentMutation.mutate({ targetField });
-  };
-
   const getPriorityBadge = (priority: string) => {
     const option = PRIORITY_LEVELS.find(p => p.value === priority);
     return <Badge className={option?.color}>{option?.label}</Badge>;
   };
 
+  const getCategoryBadge = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'Personal Care': 'bg-purple-100 text-purple-800',
+      'Meals': 'bg-orange-100 text-orange-800',
+      'Activities': 'bg-green-100 text-green-800',
+      'Therapy': 'bg-blue-100 text-blue-800',
+      'Social': 'bg-pink-100 text-pink-800',
+      'Exercise': 'bg-red-100 text-red-800',
+      'Rest': 'bg-gray-100 text-gray-800',
+      'Community': 'bg-yellow-100 text-yellow-800',
+      'Work': 'bg-indigo-100 text-indigo-800',
+      'Other': 'bg-slate-100 text-slate-800'
+    };
+    return <Badge className={colors[category] || 'bg-gray-100 text-gray-800'}>{category}</Badge>;
+  };
+
+  // Sort routines by day and time for display
+  const sortedRoutines = structureData.routines.sort((a: any, b: any) => {
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayDiff = dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
+    if (dayDiff !== 0) return dayDiff;
+    return a.startTime.localeCompare(b.startTime);
+  });
+
   return (
     <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-600" />
-            Structure & Routine Assessment Input
-          </CardTitle>
-          <CardDescription>
-            Describe the client's structure and routine needs, preferences, and support requirements
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="structureInput">Structure & Routine Information</Label>
-            <Textarea
-              id="structureInput"
-              placeholder="Enter details about the client's routine needs, schedule preferences, transition support, flexibility requirements, etc..."
-              value={structureData.userInput || ""}
-              onChange={(e) => handleInputChange("userInput", e.target.value)}
-              rows={4}
-            />
-          </div>
-
-          <Button 
-            onClick={handleGenerateInitialContent}
-            disabled={isGenerating || !structureData.userInput?.trim()}
-            className="w-full"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating Structure Content...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Structure Content
-              </>
-            )}
-          </Button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('dailyStructure')}
-              disabled={isGenerating || !structureData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Daily Structure
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('transitions')}
-              disabled={isGenerating || !structureData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Transitions
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('flexibility')}
-              disabled={isGenerating || !structureData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Flexibility
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('staffGuidance')}
-              disabled={isGenerating || !structureData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Staff Guidance
-            </Button>
-          </div>
-
-          {structureData.generatedContent && (
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content:</h4>
-                <Button 
-                  onClick={() => {
-                    handleInputChange("dailyStructure", structureData.generatedContent || "");
-                    handleInputChange('generatedContent', '');
-                    toast({
-                      title: "Content Applied",
-                      description: "AI-generated content has been added to Daily Structure field.",
-                    });
-                  }}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                  Use This Content
-                </Button>
-              </div>
-              <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                {structureData.generatedContent}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Weekly Schedule Builder */}
       <Card>
         <CardHeader>
@@ -461,20 +256,30 @@ export function StructureSectionRefactored() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {structureData.routines.map((routine: any) => (
+                  {sortedRoutines.map((routine: any) => (
                     <TableRow key={routine.id}>
-                      <TableCell className="font-medium">{routine.day}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{routine.day}</div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4 text-gray-500" />
-                          {routine.startTime} - {routine.endTime}
+                          <span className="text-sm">
+                            {routine.startTime} - {routine.endTime}
+                          </span>
                         </div>
                       </TableCell>
-                      <TableCell>{routine.description}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{routine.category}</Badge>
+                        <div className="max-w-xs">
+                          <div className="font-medium truncate">{routine.description}</div>
+                        </div>
                       </TableCell>
-                      <TableCell>{getPriorityBadge(routine.priority)}</TableCell>
+                      <TableCell>
+                        {routine.category && getCategoryBadge(routine.category)}
+                      </TableCell>
+                      <TableCell>
+                        {getPriorityBadge(routine.priority)}
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
@@ -491,104 +296,15 @@ export function StructureSectionRefactored() {
               </Table>
             </div>
           )}
+
+          {structureData.routines.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No activities scheduled yet. Add activities to build the weekly schedule.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Structure Support Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Daily Structure</CardTitle>
-            <CardDescription>Daily routine framework and timing</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document daily structure needs, timing preferences, and routine frameworks..."
-              value={structureData.dailyStructure || ""}
-              onChange={(e) => handleInputChange("dailyStructure", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Weekly Pattern</CardTitle>
-            <CardDescription>Weekly structure and recurring activities</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document weekly patterns, recurring commitments, and schedule variations..."
-              value={structureData.weeklyPattern || ""}
-              onChange={(e) => handleInputChange("weeklyPattern", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-orange-600" />
-              Transitions
-            </CardTitle>
-            <CardDescription>Transition support and change management</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document transition support needs, change management strategies, and adaptation techniques..."
-              value={structureData.transitions || ""}
-              onChange={(e) => handleInputChange("transitions", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Flexibility</CardTitle>
-            <CardDescription>Flexibility tolerance and adaptation strategies</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document flexibility levels, adaptation abilities, and schedule modification strategies..."
-              value={structureData.flexibility || ""}
-              onChange={(e) => handleInputChange("flexibility", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Environmental Structure</CardTitle>
-            <CardDescription>Environmental setup and space requirements</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document environmental structure needs, space requirements, and setting preferences..."
-              value={structureData.environmental || ""}
-              onChange={(e) => handleInputChange("environmental", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Staff Guidance</CardTitle>
-            <CardDescription>Instructions for support workers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document specific staff guidance for structure implementation and routine maintenance..."
-              value={structureData.staffGuidance || ""}
-              onChange={(e) => handleInputChange("staffGuidance", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
