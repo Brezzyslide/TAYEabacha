@@ -164,6 +164,8 @@ function WizardContent({ onClose }: { onClose: () => void }) {
         return <DisasterSectionRefactored />;
       case 'mealtime':
         return <MealtimeSectionRefactored />;
+      case 'review':
+        return <ReviewSectionRefactored />;
       default:
         return (
           <Card>
