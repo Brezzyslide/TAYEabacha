@@ -532,8 +532,12 @@ export function CarePlanProvider({
         return !!(planData.structureData.routines && planData.structureData.routines.length > 0);
       
       case 'communication':
-        return !!(planData.communicationData.expressive?.trim() || 
-                 planData.communicationData.receptive?.trim());
+        return !!(planData.communicationData.userInput?.trim() || 
+                 planData.communicationData.expressionAbilities?.trim() ||
+                 planData.communicationData.receptiveStrategies?.trim() ||
+                 planData.communicationData.expressiveStrategies?.trim() ||
+                 planData.communicationData.staffApproaches?.trim() ||
+                 planData.communicationData.assistiveTechnology?.trim());
       
       case 'behaviour':
         return !!(planData.behaviourData.behaviours && planData.behaviourData.behaviours.length > 0);
