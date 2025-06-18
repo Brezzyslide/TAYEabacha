@@ -140,10 +140,22 @@ export function MealtimeSectionRefactored() {
   const addContentToField = (riskType: string, field: string) => {
     if (mealtimeData.generatedContent) {
       handleRiskDataChange(riskType, field, mealtimeData.generatedContent);
-      handleInputChange('generatedContent', '');
+      // Don't clear generated content so it persists for multiple uses
       toast({
         title: "Content Applied",
         description: `AI content added to ${RISK_TYPES.find(r => r.id === riskType)?.name} ${field}`,
+      });
+    }
+  };
+
+  // Add content to global fields
+  const addContentToGlobalField = (fieldName: string) => {
+    if (mealtimeData.generatedContent) {
+      handleInputChange(fieldName, mealtimeData.generatedContent);
+      // Don't clear generated content so it persists for multiple uses
+      toast({
+        title: "Content Applied",
+        description: `AI content added to ${fieldName}`,
       });
     }
   };
@@ -368,11 +380,27 @@ export function MealtimeSectionRefactored() {
             />
           </div>
 
+          <div className="flex justify-center">
+            <Button
+              onClick={() => handleGenerateGlobalContent('generalAssessment')}
+              disabled={isGenerating || !mealtimeData.userInput?.trim()}
+              className="bg-blue-600 hover:bg-blue-700"
+              size="lg"
+            >
+              {isGenerating && generatingField === 'generalAssessment' ? (
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-5 w-5 mr-2" />
+              )}
+              Generate AI Content
+            </Button>
+          </div>
+
           {mealtimeData.generatedContent && (
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content:</h4>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     onClick={() => addContentToField(selectedRisk, 'preventionStrategy')}
                     size="sm"
@@ -408,6 +436,33 @@ export function MealtimeSectionRefactored() {
                   >
                     <CheckCircle2 className="h-4 w-4 mr-1" />
                     Add to Training
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToGlobalField('dietaryRequirements')}
+                    size="sm"
+                    variant="outline"
+                    className="text-emerald-700 border-emerald-200 bg-emerald-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Dietary
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToGlobalField('emergencyProcedures')}
+                    size="sm"
+                    variant="outline"
+                    className="text-red-700 border-red-200 bg-red-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Emergency
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToGlobalField('staffGuidance')}
+                    size="sm"
+                    variant="outline"
+                    className="text-indigo-700 border-indigo-200 bg-indigo-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Staff Guidance
                   </Button>
                 </div>
               </div>
