@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { useCarePlan } from '../../contexts/CarePlanContext';
+import { useAuth } from '@/hooks/use-auth';
 import { 
   CheckCircle, 
   Circle, 
@@ -48,10 +49,15 @@ export function ReviewSectionRefactored() {
   const handleExport = async (format: 'pdf' | 'word' | 'print') => {
     setIsExporting(true);
     try {
-      // TODO: Implement export functionality
-      console.log(`Exporting plan as ${format}...`);
-      // Simulate export delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (format === 'pdf') {
+        const { exportCarePlanToPDF } = await import('@/lib/pdf-export');
+        const { user } = useAuth();
+        await exportCarePlanToPDF(planData, clientData, user);
+      } else if (format === 'print') {
+        window.print();
+      } else {
+        console.log(`${format} export not yet implemented`);
+      }
     } catch (error) {
       console.error('Export failed:', error);
     } finally {

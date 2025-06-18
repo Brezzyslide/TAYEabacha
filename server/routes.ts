@@ -2847,6 +2847,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PDF Export API for Care Support Plans
+  app.get("/api/care-support-plans/:id/export/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const plan = await storage.getCareSupportPlan(planId, req.user.tenantId);
+      
+      if (!plan) {
+        return res.status(404).json({ message: "Care support plan not found" });
+      }
+
+      // Get client data
+      const client = await storage.getClient(plan.clientId, req.user.tenantId);
+      
+      // Generate PDF content (simplified for now - client will handle PDF generation)
+      const htmlContent = `
+        <h1>NDIS Care Support Plan</h1>
+        <h2>${plan.planTitle}</h2>
+        <p><strong>Client:</strong> ${client ? client.fullName : 'Unknown'}</p>
+        <p><strong>Status:</strong> ${plan.status}</p>
+        <p><strong>Created:</strong> ${plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : 'Unknown'}</p>
+      `;
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "export_pdf",
+        resourceType: "care_support_plan",
+        resourceId: planId,
+        description: `Exported care support plan PDF: ${plan.planTitle}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `attachment; filename="care-plan-${plan.planTitle.replace(/[^a-zA-Z0-9]/g, '-')}.html"`);
+      res.send(htmlContent);
+    } catch (error) {
+      console.error('PDF export error:', error);
+      res.status(500).json({ message: "Failed to export care support plan" });
+    }
+  });
+
   // AI Generation API for Care Support Plans
   app.post("/api/care-support-plans/generate-ai", requireAuth, async (req: any, res) => {
     try {
