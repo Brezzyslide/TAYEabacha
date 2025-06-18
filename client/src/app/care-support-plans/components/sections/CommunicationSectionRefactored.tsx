@@ -104,11 +104,7 @@ export function CommunicationSectionRefactored() {
       const existingContent = {
         receptiveStrategies: communicationData.receptiveStrategies || "",
         expressiveStrategies: communicationData.expressiveStrategies || "",
-        augmentativeTools: communicationData.augmentativeTools || "",
-        environmentalSupports: communicationData.environmentalSupports || "",
-        socialInteraction: communicationData.socialInteraction || "",
         staffApproaches: communicationData.staffApproaches || "",
-        communicationGoals: communicationData.communicationGoals || "",
         assistiveTechnology: communicationData.assistiveTechnology || ""
       };
 
@@ -153,13 +149,9 @@ export function CommunicationSectionRefactored() {
         handleInputChange('generatedContent', '');
         
         const fieldLabels: { [key: string]: string } = {
-          receptiveStrategies: "Receptive Strategies",
-          expressiveStrategies: "Expressive Strategies",
-          augmentativeTools: "Augmentative Tools",
-          environmentalSupports: "Environmental Supports",
-          socialInteraction: "Social Interaction",
-          staffApproaches: "Staff Approaches",
-          communicationGoals: "Communication Goals",
+          receptiveStrategies: "Receptive Communication",
+          expressiveStrategies: "Expressive Communication",
+          staffApproaches: "Staff Instructions & Approaches",
           assistiveTechnology: "Assistive Technology"
         };
         
@@ -270,20 +262,20 @@ export function CommunicationSectionRefactored() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => handleGenerateTargetedContent('augmentativeTools')}
+              onClick={() => handleGenerateTargetedContent('staffApproaches')}
               disabled={isGenerating || !communicationData.userInput?.trim()}
             >
               <Sparkles className="h-4 w-4 mr-1" />
-              Add to AAC Tools
+              Add to Staff Instructions
             </Button>
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => handleGenerateTargetedContent('socialInteraction')}
+              onClick={() => handleGenerateTargetedContent('assistiveTechnology')}
               disabled={isGenerating || !communicationData.userInput?.trim()}
             >
               <Sparkles className="h-4 w-4 mr-1" />
-              Add to Social
+              Add to Assistive Tech
             </Button>
           </div>
 
@@ -297,7 +289,7 @@ export function CommunicationSectionRefactored() {
                     handleInputChange('generatedContent', '');
                     toast({
                       title: "Content Applied",
-                      description: "AI-generated content has been added to Receptive Strategies field.",
+                      description: "AI-generated content has been added to Receptive Communication field.",
                     });
                   }}
                   size="sm"
@@ -429,7 +421,7 @@ export function CommunicationSectionRefactored() {
         </CardContent>
       </Card>
 
-      {/* Communication Strategies */}
+      {/* Communication Strategies - Only Approved AI Target Boxes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -469,52 +461,7 @@ export function CommunicationSectionRefactored() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Augmentative & Alternative Communication</CardTitle>
-            <CardDescription>AAC tools and alternative communication methods</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document AAC devices, picture systems, sign language, and alternative communication tools..."
-              value={communicationData.augmentativeTools || ""}
-              onChange={(e) => handleInputChange("augmentativeTools", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Environmental Supports</CardTitle>
-            <CardDescription>Environmental modifications for communication</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document environmental supports, visual aids, acoustic considerations, and setting modifications..."
-              value={communicationData.environmentalSupports || ""}
-              onChange={(e) => handleInputChange("environmentalSupports", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Social Communication</CardTitle>
-            <CardDescription>Social interaction and communication skills</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document social communication skills, interaction strategies, and peer communication approaches..."
-              value={communicationData.socialInteraction || ""}
-              onChange={(e) => handleInputChange("socialInteraction", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Staff Communication Approaches</CardTitle>
+            <CardTitle className="text-lg">Staff Instructions & Approaches</CardTitle>
             <CardDescription>How staff should communicate with client</CardDescription>
           </CardHeader>
           <CardContent>
@@ -522,24 +469,6 @@ export function CommunicationSectionRefactored() {
               placeholder="Document specific staff communication approaches, language level, timing, and interaction strategies..."
               value={communicationData.staffApproaches || ""}
               onChange={(e) => handleInputChange("staffApproaches", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Communication Areas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Communication Goals</CardTitle>
-            <CardDescription>Specific communication development objectives</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document communication goals, skill development targets, and progress objectives..."
-              value={communicationData.communicationGoals || ""}
-              onChange={(e) => handleInputChange("communicationGoals", e.target.value)}
               rows={4}
             />
           </CardContent>
