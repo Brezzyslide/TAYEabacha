@@ -65,7 +65,6 @@ export function CommunicationSectionRefactored() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
-    console.log('Communication handleInputChange:', field, value?.substring(0, 50) + '...');
     updateField('communicationData', field, value);
   };
 
@@ -119,7 +118,6 @@ export function CommunicationSectionRefactored() {
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";
-      console.log('AI Success - targetField:', targetField, 'generatedText length:', generatedText.length);
       
       if (targetField === 'preview') {
         handleInputChange('generatedContent', generatedText);
@@ -128,7 +126,6 @@ export function CommunicationSectionRefactored() {
           description: "Review the AI-generated content and choose which field to populate.",
         });
       } else {
-        console.log('Calling handleInputChange with:', targetField, generatedText?.substring(0, 50) + '...');
         handleInputChange(targetField, generatedText);
         handleInputChange('generatedContent', '');
         
@@ -182,7 +179,7 @@ export function CommunicationSectionRefactored() {
       return;
     }
 
-    console.log('Generating targeted content for field:', targetField);
+
     generateContentMutation.mutate({ 
       targetField,
       userInput: communicationData.userInput 
