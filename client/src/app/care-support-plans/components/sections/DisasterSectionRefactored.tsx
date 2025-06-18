@@ -1,39 +1,32 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Sparkles, Loader2, CheckCircle2, AlertTriangle, Shield, MapPin, Phone } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Trash2, Sparkles, Loader2, CheckCircle2, AlertTriangle, Flame, Waves, Home, Activity, Sun, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useCarePlan } from "../../contexts/CarePlanContext";
 
-interface DisasterScenario {
+interface DisasterPlan {
   id: string;
-  type: string;
-  riskLevel: 'low' | 'medium' | 'high';
+  type: 'fire' | 'flood' | 'earthquake' | 'medical' | 'heatwave';
   preparation: string;
   evacuation: string;
   postEvent: string;
-  specificNeeds: string;
-  emergencyContacts: string;
+  clientNeeds: string;
 }
 
 const DISASTER_TYPES = [
-  'Bushfire', 'Flood', 'Severe Storm', 'Earthquake', 'Cyclone/Hurricane',
-  'Heatwave', 'Power Outage', 'Medical Emergency', 'Building Emergency',
-  'Transport Disruption', 'Technology Failure', 'Staff Shortage'
-];
-
-const RISK_LEVELS = [
-  { value: 'low', label: 'Low Risk', color: 'bg-green-100 text-green-800' },
-  { value: 'medium', label: 'Medium Risk', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'high', label: 'High Risk', color: 'bg-red-100 text-red-800' }
+  { value: 'fire', label: 'Fire/Bushfire', icon: Flame, color: 'text-red-600' },
+  { value: 'flood', label: 'Flood', icon: Waves, color: 'text-blue-600' },
+  { value: 'earthquake', label: 'Earthquake', icon: Home, color: 'text-orange-600' },
+  { value: 'medical', label: 'Medical Emergency', icon: Activity, color: 'text-green-600' },
+  { value: 'heatwave', label: 'Heatwave', icon: Sun, color: 'text-yellow-600' }
 ];
 
 export function DisasterSectionRefactored() {
@@ -42,30 +35,23 @@ export function DisasterSectionRefactored() {
   
   const disasterData = planData?.disasterData || {
     userInput: '',
-    generatedContent: '',
-    scenarios: [],
-    generalPreparedness: '',
-    emergencyContacts: '',
-    evacuationProcedures: '',
-    communicationPlan: '',
-    specialEquipment: '',
-    medicationManagement: '',
+    disasterPlans: [],
     shelterArrangements: '',
-    postDisasterSupport: ''
+    postDisasterSupport: '',
+    evacuationPlanAudit: ''
   };
 
-  const [newScenario, setNewScenario] = useState<DisasterScenario>({
+  const [currentDisaster, setCurrentDisaster] = useState<DisasterPlan>({
     id: '',
-    type: '',
-    riskLevel: 'medium',
+    type: 'fire',
     preparation: '',
     evacuation: '',
     postEvent: '',
-    specificNeeds: '',
-    emergencyContacts: ''
+    clientNeeds: ''
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingField, setGeneratingField] = useState<string>('');
 
   const handleInputChange = (field: string, value: string) => {
     dispatch({
@@ -78,143 +64,124 @@ export function DisasterSectionRefactored() {
     });
   };
 
-  const handleScenarioChange = (field: string, value: string) => {
-    setNewScenario(prev => ({
+  const handleDisasterInputChange = (field: string, value: string) => {
+    setCurrentDisaster(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const addScenario = () => {
-    if (!newScenario.type || !newScenario.preparation) {
+  const addDisasterPlan = () => {
+    if (!currentDisaster.type || !currentDisaster.preparation) {
       toast({
         title: "Missing Information",
-        description: "Please enter disaster type and preparation details before adding.",
+        description: "Please add some preparation details before saving the disaster plan.",
         variant: "destructive",
       });
       return;
     }
 
-    const scenario: DisasterScenario = {
-      ...newScenario,
+    const newPlan: DisasterPlan = {
+      ...currentDisaster,
       id: Date.now().toString()
     };
 
-    const updatedScenarios = [...disasterData.scenarios, scenario];
+    const updatedPlans = [...(disasterData.disasterPlans || []), newPlan];
     
     dispatch({
       type: 'UPDATE_SECTION',
       section: 'disasterData',
       data: {
         ...disasterData,
-        scenarios: updatedScenarios
+        disasterPlans: updatedPlans
       }
     });
     
-    setNewScenario({
+    setCurrentDisaster({
       id: '',
-      type: '',
-      riskLevel: 'medium',
+      type: 'fire',
       preparation: '',
       evacuation: '',
       postEvent: '',
-      specificNeeds: '',
-      emergencyContacts: ''
+      clientNeeds: ''
     });
 
+    const disasterLabel = DISASTER_TYPES.find(d => d.value === newPlan.type)?.label || newPlan.type;
     toast({
-      title: "Disaster Scenario Added",
-      description: `${newScenario.type} scenario has been added to the plan`,
+      title: "Disaster Plan Added",
+      description: `${disasterLabel} plan has been saved`,
     });
   };
 
-  const removeScenario = (scenarioId: string) => {
-    const updatedScenarios = disasterData.scenarios.filter((s: any) => s.id !== scenarioId);
+  const removeDisasterPlan = (planId: string) => {
+    const updatedPlans = (disasterData.disasterPlans || []).filter((p: any) => p.id !== planId);
     
     dispatch({
       type: 'UPDATE_SECTION',
       section: 'disasterData',
       data: {
         ...disasterData,
-        scenarios: updatedScenarios
+        disasterPlans: updatedPlans
       }
     });
 
     toast({
-      title: "Disaster Scenario Removed",
-      description: "Scenario has been deleted from the plan.",
+      title: "Disaster Plan Removed",
+      description: "Plan has been deleted.",
     });
   };
 
-  // AI Content Generation Mutation
-  const generateContentMutation = useMutation({
-    mutationFn: async ({ targetField }: { targetField: string }) => {
+  // AI Content Generation for Disaster-Specific Fields
+  const generateDisasterContentMutation = useMutation({
+    mutationFn: async ({ disasterType, targetField }: { disasterType: string, targetField: string }) => {
       if (!disasterData.userInput?.trim()) {
         throw new Error("Please enter disaster management information first.");
       }
 
       setIsGenerating(true);
+      setGeneratingField(targetField);
+      
+      const disasterLabel = DISASTER_TYPES.find(d => d.value === disasterType)?.label || disasterType;
       const userInput = disasterData.userInput;
 
-      const existingContent = {
-        generalPreparedness: disasterData.generalPreparedness || "",
-        emergencyContacts: disasterData.emergencyContacts || "",
-        evacuationProcedures: disasterData.evacuationProcedures || "",
-        communicationPlan: disasterData.communicationPlan || "",
-        specialEquipment: disasterData.specialEquipment || "",
-        medicationManagement: disasterData.medicationManagement || "",
-        shelterArrangements: disasterData.shelterArrangements || "",
-        postDisasterSupport: disasterData.postDisasterSupport || ""
-      };
-
-      const scenarioContext = disasterData.scenarios.length > 0 
-        ? `Current disaster scenarios: ${disasterData.scenarios.map((s: any) => `${s.type} (${s.riskLevel} risk)`).join('; ')}`
-        : "No specific disaster scenarios documented yet";
+      const existingPlans = disasterData.disasterPlans || [];
+      const existingPlanContext = existingPlans.length > 0 
+        ? `Existing disaster plans: ${existingPlans.map((p: any) => DISASTER_TYPES.find(d => d.value === p.type)?.label).join(', ')}`
+        : "No existing disaster plans";
 
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "disaster",
-        userInput: `${userInput}\n\n${scenarioContext}`,
+        userInput: `Client Info: ${userInput}\n\nDisaster Type: ${disasterLabel}\nTarget Field: ${targetField}\n\n${existingPlanContext}`,
         clientName: planData?.clientData?.fullName || "Client",
         clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
         maxWords: 200,
-        targetField,
-        existingContent
+        targetField: `${disasterType}_${targetField}`,
+        existingContent: {}
       });
       return await response.json();
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";
+      handleDisasterInputChange(targetField, generatedText);
       
-      if (targetField === 'preview') {
-        handleInputChange('generatedContent', generatedText);
-        toast({
-          title: "Content Generated",
-          description: "Review the AI-generated content and choose which field to populate.",
-        });
-      } else {
-        handleInputChange(targetField, generatedText);
-        handleInputChange('generatedContent', '');
-        
-        const fieldLabels: { [key: string]: string } = {
-          generalPreparedness: "General Preparedness",
-          emergencyContacts: "Emergency Contacts",
-          evacuationProcedures: "Evacuation Procedures",
-          communicationPlan: "Communication Plan",
-          specialEquipment: "Special Equipment",
-          medicationManagement: "Medication Management",
-          shelterArrangements: "Shelter Arrangements",
-          postDisasterSupport: "Post-Disaster Support"
-        };
-        
-        toast({
-          title: "AI Content Generated",
-          description: `${fieldLabels[targetField] || targetField} has been populated with targeted content.`,
-        });
-      }
+      const fieldLabels: { [key: string]: string } = {
+        preparation: "Preparation Phase",
+        evacuation: "Evacuation Procedure", 
+        postEvent: "Post-Event Action",
+        clientNeeds: "Specific Client Needs"
+      };
+      
+      toast({
+        title: "AI Content Generated",
+        description: `${fieldLabels[targetField]} content has been generated.`,
+      });
+      
       setIsGenerating(false);
+      setGeneratingField('');
     },
     onError: (error: any) => {
       setIsGenerating(false);
+      setGeneratingField('');
       toast({
         title: "Generation Failed",
         description: error.message || "Failed to generate content. Please try again.",
@@ -223,408 +190,434 @@ export function DisasterSectionRefactored() {
     },
   });
 
-  const handleGenerateInitialContent = () => {
-    generateContentMutation.mutate({ targetField: 'preview' });
+  // AI Content Generation for Global Centre
+  const generateGlobalContentMutation = useMutation({
+    mutationFn: async ({ targetField }: { targetField: string }) => {
+      if (!disasterData.userInput?.trim()) {
+        throw new Error("Please enter disaster management information first.");
+      }
+
+      setIsGenerating(true);
+      setGeneratingField(targetField);
+      
+      const userInput = disasterData.userInput;
+      const existingPlans = disasterData.disasterPlans || [];
+      const planContext = existingPlans.length > 0 
+        ? `Current disaster plans: ${existingPlans.map((p: any) => `${DISASTER_TYPES.find(d => d.value === p.type)?.label} - ${p.preparation?.substring(0, 50)}...`).join('; ')}`
+        : "No disaster plans created yet";
+
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "disaster",
+        userInput: `${userInput}\n\n${planContext}`,
+        clientName: planData?.clientData?.fullName || "Client",
+        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
+        maxWords: 200,
+        targetField: `global_${targetField}`,
+        existingContent: {}
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData, { targetField }) => {
+      const generatedText = responseData.generatedContent || "";
+      handleInputChange(targetField, generatedText);
+      
+      const fieldLabels: { [key: string]: string } = {
+        shelterArrangements: "Shelter Arrangements",
+        postDisasterSupport: "Post-Disaster Support",
+        evacuationPlanAudit: "Evacuation Plan Audit"
+      };
+      
+      toast({
+        title: "AI Content Generated",
+        description: `${fieldLabels[targetField]} has been populated with global planning content.`,
+      });
+      
+      setIsGenerating(false);
+      setGeneratingField('');
+    },
+    onError: (error: any) => {
+      setIsGenerating(false);
+      setGeneratingField('');
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerateDisasterContent = (disasterType: string, targetField: string) => {
+    generateDisasterContentMutation.mutate({ disasterType, targetField });
   };
 
-  const handleGenerateTargetedContent = (targetField: string) => {
-    generateContentMutation.mutate({ targetField });
-  };
-
-  const getRiskBadge = (riskLevel: string) => {
-    const option = RISK_LEVELS.find(r => r.value === riskLevel);
-    return <Badge className={option?.color}>{option?.label}</Badge>;
+  const handleGenerateGlobalContent = (targetField: string) => {
+    generateGlobalContentMutation.mutate({ targetField });
   };
 
   return (
     <div className="space-y-8">
+      {/* Client Assessment Input */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-600" />
-            Disaster Management Assessment Input
+            Disaster Management Assessment
           </CardTitle>
           <CardDescription>
-            Describe the client's disaster management needs, risk factors, and emergency requirements
+            Describe the client's disaster management needs, mobility, medical requirements, and communication abilities
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="disasterInput">Disaster Management Information</Label>
+            <Label htmlFor="disasterInput">Client Disaster Management Information</Label>
             <Textarea
               id="disasterInput"
-              placeholder="Enter details about the client's disaster risks, mobility needs, medical requirements, communication abilities, etc..."
+              placeholder="Enter details about the client's mobility needs, medical conditions, communication abilities, support requirements during emergencies..."
               value={disasterData.userInput || ""}
               onChange={(e) => handleInputChange("userInput", e.target.value)}
               rows={4}
             />
           </div>
-
-          <Button 
-            onClick={handleGenerateInitialContent}
-            disabled={isGenerating || !disasterData.userInput?.trim()}
-            className="w-full mb-4"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating Disaster Management Content...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Disaster Management Content
-              </>
-            )}
-          </Button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('generalPreparedness')}
-              disabled={isGenerating || !disasterData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Preparedness
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('evacuationProcedures')}
-              disabled={isGenerating || !disasterData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Evacuation
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('communicationPlan')}
-              disabled={isGenerating || !disasterData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Communication
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('medicationManagement')}
-              disabled={isGenerating || !disasterData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Medication
-            </Button>
-          </div>
-
-          {disasterData.generatedContent && (
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content:</h4>
-                <Button 
-                  onClick={() => {
-                    handleInputChange("generalPreparedness", disasterData.generatedContent || "");
-                    handleInputChange('generatedContent', '');
-                    toast({
-                      title: "Content Applied",
-                      description: "AI-generated content has been added to General Preparedness field.",
-                    });
-                  }}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                  Use This Content
-                </Button>
-              </div>
-              <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                {disasterData.generatedContent}
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Disaster Scenario Builder */}
+      {/* Individual Disaster Builder */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            Disaster Scenario Builder
+            <Plus className="h-5 w-5 text-green-600" />
+            Individual Disaster Plan Builder
           </CardTitle>
           <CardDescription>
-            Create specific plans for different disaster types
+            Create specific plans for different disaster types with AI assistance
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Disaster Type Selection */}
+          <div>
+            <Label htmlFor="disaster-type">Select Disaster Type</Label>
+            <Select value={currentDisaster.type} onValueChange={(value: any) => handleDisasterInputChange('type', value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose disaster type" />
+              </SelectTrigger>
+              <SelectContent>
+                {DISASTER_TYPES.map((disaster) => {
+                  const IconComponent = disaster.icon;
+                  return (
+                    <SelectItem key={disaster.value} value={disaster.value}>
+                      <div className="flex items-center gap-2">
+                        <IconComponent className={`h-4 w-4 ${disaster.color}`} />
+                        {disaster.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Disaster-Specific Fields with AI Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Disaster Type</Label>
-              <Select value={newScenario.type} onValueChange={(value) => handleScenarioChange('type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select disaster type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DISASTER_TYPES.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="preparation">Preparation Phase</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'preparation')}
+                  disabled={isGenerating || !disasterData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'preparation' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                id="preparation"
+                placeholder="Preparation steps before disaster occurs..."
+                value={currentDisaster.preparation}
+                onChange={(e) => handleDisasterInputChange('preparation', e.target.value)}
+                rows={4}
+                className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label>Risk Level</Label>
-              <Select value={newScenario.riskLevel} onValueChange={(value) => handleScenarioChange('riskLevel', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select risk level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RISK_LEVELS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="evacuation">Evacuation Procedure</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'evacuation')}
+                  disabled={isGenerating || !disasterData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'evacuation' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                id="evacuation"
+                placeholder="Evacuation steps and procedures..."
+                value={currentDisaster.evacuation}
+                onChange={(e) => handleDisasterInputChange('evacuation', e.target.value)}
+                rows={4}
+                className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="postEvent">Post-Event Action</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'postEvent')}
+                  disabled={isGenerating || !disasterData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'postEvent' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                id="postEvent"
+                placeholder="Actions after the disaster event..."
+                value={currentDisaster.postEvent}
+                onChange={(e) => handleDisasterInputChange('postEvent', e.target.value)}
+                rows={4}
+                className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="clientNeeds">Specific Client Needs</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'clientNeeds')}
+                  disabled={isGenerating || !disasterData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'clientNeeds' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                id="clientNeeds"
+                placeholder="Client-specific needs and considerations..."
+                value={currentDisaster.clientNeeds}
+                onChange={(e) => handleDisasterInputChange('clientNeeds', e.target.value)}
+                rows={4}
+                className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-blue-600" />
-                Preparation Phase
-              </Label>
-              <Textarea
-                placeholder="What to do BEFORE the disaster occurs (preparation steps)..."
-                value={newScenario.preparation}
-                onChange={(e) => handleScenarioChange('preparation', e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-orange-600" />
-                Evacuation Procedures
-              </Label>
-              <Textarea
-                placeholder="What to do DURING evacuation (evacuation steps)..."
-                value={newScenario.evacuation}
-                onChange={(e) => handleScenarioChange('evacuation', e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-green-600" />
-                Post-Event Actions
-              </Label>
-              <Textarea
-                placeholder="What to do AFTER the disaster (recovery and support)..."
-                value={newScenario.postEvent}
-                onChange={(e) => handleScenarioChange('postEvent', e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Specific Client Needs</Label>
-              <Textarea
-                placeholder="Client-specific considerations for this disaster type..."
-                value={newScenario.specificNeeds}
-                onChange={(e) => handleScenarioChange('specificNeeds', e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Emergency Contacts</Label>
-              <Input
-                placeholder="Key contacts for this disaster scenario"
-                value={newScenario.emergencyContacts}
-                onChange={(e) => handleScenarioChange('emergencyContacts', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <Button onClick={addScenario} className="w-full">
+          <Button onClick={addDisasterPlan} className="w-full">
             <Plus className="h-4 w-4 mr-2" />
-            Add Disaster Scenario
+            Add Disaster Plan
           </Button>
+        </CardContent>
+      </Card>
 
-          {disasterData.scenarios.length > 0 && (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Disaster Type</TableHead>
-                    <TableHead>Risk Level</TableHead>
-                    <TableHead>Preparation</TableHead>
-                    <TableHead>Evacuation</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {disasterData.scenarios.map((scenario: any) => (
-                    <TableRow key={scenario.id}>
+      {/* Saved Disaster Plans */}
+      {disasterData.disasterPlans && disasterData.disasterPlans.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Saved Disaster Plans ({disasterData.disasterPlans.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Disaster Type</TableHead>
+                  <TableHead>Preparation</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {disasterData.disasterPlans.map((plan: any) => {
+                  const disasterType = DISASTER_TYPES.find(d => d.value === plan.type);
+                  const IconComponent = disasterType?.icon || AlertTriangle;
+                  return (
+                    <TableRow key={plan.id}>
                       <TableCell>
-                        <div className="font-medium">{scenario.type}</div>
-                      </TableCell>
-                      <TableCell>{getRiskBadge(scenario.riskLevel)}</TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate">
-                          {scenario.preparation}
+                        <div className="flex items-center gap-2">
+                          <IconComponent className={`h-4 w-4 ${disasterType?.color || 'text-gray-600'}`} />
+                          {disasterType?.label || plan.type}
                         </div>
                       </TableCell>
+                      <TableCell className="max-w-xs truncate">{plan.preparation}</TableCell>
                       <TableCell>
-                        <div className="max-w-xs truncate">
-                          {scenario.evacuation}
-                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <IconComponent className={`h-5 w-5 ${disasterType?.color || 'text-gray-600'}`} />
+                                {disasterType?.label || plan.type} Plan
+                              </DialogTitle>
+                              <DialogDescription>
+                                Detailed disaster management plan for {disasterType?.label?.toLowerCase() || plan.type}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                              <div>
+                                <Label className="text-sm font-medium">Preparation Phase</Label>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded">
+                                  {plan.preparation || 'Not specified'}
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Evacuation Procedure</Label>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-orange-50 dark:bg-orange-900 border border-orange-200 dark:border-orange-800 rounded">
+                                  {plan.evacuation || 'Not specified'}
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Post-Event Action</Label>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 rounded">
+                                  {plan.postEvent || 'Not specified'}
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Specific Client Needs</Label>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-purple-50 dark:bg-purple-900 border border-purple-200 dark:border-purple-800 rounded">
+                                  {plan.clientNeeds || 'Not specified'}
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                       <TableCell>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          onClick={() => removeScenario(scenario.id)}
-                          className="text-red-600 hover:text-red-800"
+                          onClick={() => removeDisasterPlan(plan.id)}
+                          className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Global AI Centre */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-purple-600" />
+            Global Disaster Management Centre
+          </CardTitle>
+          <CardDescription>
+            AI-powered global planning tools based on all disaster plans
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Shelter Arrangements</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateGlobalContent('shelterArrangements')}
+                  disabled={isGenerating || !disasterData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'shelterArrangements' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Temporary housing and shelter coordination..."
+                value={disasterData.shelterArrangements || ""}
+                onChange={(e) => handleInputChange("shelterArrangements", e.target.value)}
+                rows={6}
+                className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+              />
             </div>
-          )}
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Post-Disaster Support</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateGlobalContent('postDisasterSupport')}
+                  disabled={isGenerating || !disasterData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'postDisasterSupport' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Recovery support and follow-up care coordination..."
+                value={disasterData.postDisasterSupport || ""}
+                onChange={(e) => handleInputChange("postDisasterSupport", e.target.value)}
+                rows={6}
+                className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Evacuation Plan Audit</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateGlobalContent('evacuationPlanAudit')}
+                  disabled={isGenerating || !disasterData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'evacuationPlanAudit' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Comprehensive evacuation plan review and recommendations..."
+                value={disasterData.evacuationPlanAudit || ""}
+                onChange={(e) => handleInputChange("evacuationPlanAudit", e.target.value)}
+                rows={6}
+                className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800"
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Disaster Management Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">General Preparedness</CardTitle>
-            <CardDescription>Overall disaster preparedness strategies</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document general disaster preparedness, supplies, and readiness measures..."
-              value={disasterData.generalPreparedness || ""}
-              onChange={(e) => handleInputChange("generalPreparedness", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Emergency Contacts</CardTitle>
-            <CardDescription>Key contacts and communication details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document emergency contacts, phone numbers, and communication protocols..."
-              value={disasterData.emergencyContacts || ""}
-              onChange={(e) => handleInputChange("emergencyContacts", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Evacuation Procedures</CardTitle>
-            <CardDescription>General evacuation planning and procedures</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document evacuation routes, procedures, and mobility considerations..."
-              value={disasterData.evacuationProcedures || ""}
-              onChange={(e) => handleInputChange("evacuationProcedures", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Communication Plan</CardTitle>
-            <CardDescription>Emergency communication strategies</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document communication plans, backup methods, and contact procedures..."
-              value={disasterData.communicationPlan || ""}
-              onChange={(e) => handleInputChange("communicationPlan", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Special Equipment</CardTitle>
-            <CardDescription>Essential equipment and supplies</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document special equipment, mobility aids, and essential supplies needed..."
-              value={disasterData.specialEquipment || ""}
-              onChange={(e) => handleInputChange("specialEquipment", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Medication Management</CardTitle>
-            <CardDescription>Emergency medication planning</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document medication supplies, storage, and emergency access procedures..."
-              value={disasterData.medicationManagement || ""}
-              onChange={(e) => handleInputChange("medicationManagement", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Support Areas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Shelter Arrangements</CardTitle>
-            <CardDescription>Emergency accommodation planning</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document shelter arrangements, accommodation needs, and accessibility requirements..."
-              value={disasterData.shelterArrangements || ""}
-              onChange={(e) => handleInputChange("shelterArrangements", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Post-Disaster Support</CardTitle>
-            <CardDescription>Recovery and ongoing support planning</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document post-disaster support needs, recovery planning, and ongoing care requirements..."
-              value={disasterData.postDisasterSupport || ""}
-              onChange={(e) => handleInputChange("postDisasterSupport", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
