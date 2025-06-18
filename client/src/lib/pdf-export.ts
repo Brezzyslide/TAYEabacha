@@ -212,75 +212,134 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'table'
   });
 
-  if (plan.aboutMeData && (plan.aboutMeData.personalHistory || plan.aboutMeData.interests)) {
-    sections.push({
-      title: 'About Me',
-      content: [
-        plan.aboutMeData.personalHistory && `Personal History: ${plan.aboutMeData.personalHistory}`,
-        plan.aboutMeData.interests && `Interests: ${plan.aboutMeData.interests}`,
-        plan.aboutMeData.preferences && `Preferences: ${plan.aboutMeData.preferences}`,
-        plan.aboutMeData.strengths && `Strengths: ${plan.aboutMeData.strengths}`,
-        plan.aboutMeData.challenges && `Challenges: ${plan.aboutMeData.challenges}`
-      ].filter(Boolean),
-      type: 'list'
-    });
-  }
+  // Section 1: About Me
+  sections.push({
+    title: 'About Me',
+    content: [
+      plan.aboutMeData?.personalHistory ? `Personal History: ${plan.aboutMeData.personalHistory}` : 'Personal History: Not provided',
+      plan.aboutMeData?.interests ? `Interests: ${plan.aboutMeData.interests}` : 'Interests: Not provided',
+      plan.aboutMeData?.preferences ? `Preferences: ${plan.aboutMeData.preferences}` : 'Preferences: Not provided',
+      plan.aboutMeData?.strengths ? `Strengths: ${plan.aboutMeData.strengths}` : 'Strengths: Not provided',
+      plan.aboutMeData?.challenges ? `Challenges: ${plan.aboutMeData.challenges}` : 'Challenges: Not provided'
+    ],
+    type: 'list'
+  });
 
-  if (plan.goalsData && plan.goalsData.ndisGoals) {
-    sections.push({
-      title: 'Goals & Outcomes',
-      content: [
-        `NDIS Goals: ${plan.goalsData.ndisGoals}`,
-        plan.goalsData.overallObjective && `Overall Objective: ${plan.goalsData.overallObjective}`
-      ].filter(Boolean),
-      type: 'list'
-    });
-  }
+  // Section 2: Goals & Outcomes
+  sections.push({
+    title: 'Goals & Outcomes',
+    content: [
+      plan.goalsData?.ndisGoals ? `NDIS Goals: ${plan.goalsData.ndisGoals}` : 'NDIS Goals: Not provided',
+      plan.goalsData?.overallObjective ? `Overall Objective: ${plan.goalsData.overallObjective}` : 'Overall Objective: Not provided'
+    ],
+    type: 'list'
+  });
 
-  if (plan.adlData && plan.adlData.personalCare) {
-    sections.push({
-      title: 'Activities of Daily Living Support',
-      content: {
-        'Personal Care': plan.adlData.personalCare || 'Not specified',
-        'Mobility': plan.adlData.mobility || 'Not specified',
-        'Household Tasks': plan.adlData.household || 'Not specified',
-        'Community Access': plan.adlData.community || 'Not specified',
-        'Safety Considerations': plan.adlData.safety || 'Not specified',
-        'Independence Level': plan.adlData.independence || 'Not specified'
-      },
-      type: 'table'
-    });
-  }
+  // Section 3: Activities of Daily Living Support
+  sections.push({
+    title: 'Activities of Daily Living Support',
+    content: {
+      'Personal Care': plan.adlData?.personalCare || 'Not specified',
+      'Mobility': plan.adlData?.mobility || 'Not specified',
+      'Household Tasks': plan.adlData?.household || 'Not specified',
+      'Community Access': plan.adlData?.community || 'Not specified',
+      'Safety Considerations': plan.adlData?.safety || 'Not specified',
+      'Independence Level': plan.adlData?.independence || 'Not specified'
+    },
+    type: 'table'
+  });
 
-  if (plan.communicationData && plan.communicationData.primaryMethods) {
-    sections.push({
-      title: 'Communication Support',
-      content: {
-        'Primary Methods': Array.isArray(plan.communicationData.primaryMethods) 
-          ? plan.communicationData.primaryMethods.join(', ') 
-          : plan.communicationData.primaryMethods || 'Not specified',
-        'Comprehension Level': plan.communicationData.comprehensionLevel || 'Not specified',
-        'Expression Abilities': plan.communicationData.expressionAbilities || 'Not specified',
-        'Receptive Strategies': plan.communicationData.receptiveStrategies || 'Not specified',
-        'Expressive Strategies': plan.communicationData.expressiveStrategies || 'Not specified'
-      },
-      type: 'table'
-    });
-  }
+  // Section 5: Communication Support
+  sections.push({
+    title: 'Communication Support',
+    content: {
+      'Primary Methods': Array.isArray(plan.communicationData?.primaryMethods) 
+        ? plan.communicationData.primaryMethods.join(', ') 
+        : plan.communicationData?.primaryMethods || 'Not specified',
+      'Comprehension Level': plan.communicationData?.comprehensionLevel || 'Not specified',
+      'Expression Abilities': plan.communicationData?.expressionAbilities || 'Not specified',
+      'Receptive Strategies': plan.communicationData?.receptiveStrategies || 'Not specified',
+      'Expressive Strategies': plan.communicationData?.expressiveStrategies || 'Not specified'
+    },
+    type: 'table'
+  });
 
-  if (plan.behaviourData && plan.behaviourData.overallApproach) {
-    sections.push({
-      title: 'Behaviour Support',
-      content: {
-        'Overall Approach': plan.behaviourData.overallApproach || 'Not specified',
-        'Environmental Factors': plan.behaviourData.environmentalFactors || 'Not specified',
-        'Preventative Strategies': plan.behaviourData.preventativeStrategies || 'Not specified',
-        'De-escalation Techniques': plan.behaviourData.deEscalationTechniques || 'Not specified',
-        'PBS Approach': plan.behaviourData.positiveBehaviourSupport || 'Not specified'
-      },
-      type: 'table'
-    });
+  // Section 6: Behaviour Support
+  sections.push({
+    title: 'Behaviour Support',
+    content: {
+      'Overall Approach': plan.behaviourData?.overallApproach || 'Not specified',
+      'Environmental Factors': plan.behaviourData?.environmentalFactors || 'Not specified',
+      'Preventative Strategies': plan.behaviourData?.preventativeStrategies || 'Not specified',
+      'De-escalation Techniques': plan.behaviourData?.deEscalationTechniques || 'Not specified',
+      'PBS Approach': plan.behaviourData?.positiveBehaviourSupport || 'Not specified'
+    },
+    type: 'table'
+  });
+
+  // Section 4: Structure & Routine
+  const scheduleContent: string[] = [];
+  if (plan.structureData?.weeklySchedule) {
+    try {
+      const schedule = typeof plan.structureData.weeklySchedule === 'string' 
+        ? JSON.parse(plan.structureData.weeklySchedule) 
+        : plan.structureData.weeklySchedule;
+      
+      Object.entries(schedule).forEach(([day, activities]: [string, any]) => {
+        if (Array.isArray(activities) && activities.length > 0) {
+          scheduleContent.push(`${day}: ${activities.map((a: any) => `${a.time} - ${a.activity} (${a.category})`).join(', ')}`);
+        }
+      });
+    } catch (error) {
+      scheduleContent.push('Schedule data format error');
+    }
   }
+  
+  sections.push({
+    title: 'Structure & Routine',
+    content: scheduleContent.length > 0 ? scheduleContent : ['No weekly schedule specified'],
+    type: 'list'
+  });
+
+  // Section 7: Disaster Management
+  sections.push({
+    title: 'Disaster Management',
+    content: {
+      'Evacuation Plan': plan.disasterData?.evacuationPlan || 'Not specified',
+      'Emergency Contacts': plan.disasterData?.emergencyContacts || 'Not specified',
+      'Communication Method': plan.disasterData?.communicationMethod || 'Not specified',
+      'Medical Information': plan.disasterData?.medicalInformation || 'Not specified',
+      'Recovery Plan': plan.disasterData?.recoveryPlan || 'Not specified'
+    },
+    type: 'table'
+  });
+
+  // Section 8: Mealtime Management
+  sections.push({
+    title: 'Mealtime Management',
+    content: {
+      'Choking Risk Management': plan.mealtimeData?.chokingRisk || 'Not specified',
+      'Aspiration Risk Management': plan.mealtimeData?.aspirationRisk || 'Not specified',
+      'Swallowing Assessment': plan.mealtimeData?.swallowingRisk || 'Not specified',
+      'Dietary Requirements': plan.mealtimeData?.dietaryRisk || 'Not specified',
+      'Assistance Level': plan.mealtimeData?.assistanceRisk || 'Not specified',
+      'Environmental Setup': plan.mealtimeData?.environmentalRisk || 'Not specified'
+    },
+    type: 'table'
+  });
+
+  // Section 9: Review & Summary
+  sections.push({
+    title: 'Review & Summary',
+    content: [
+      `Plan Created: ${plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : 'Unknown'}`,
+      `Plan Status: ${plan.status || 'Draft'}`,
+      `Last Updated: ${plan.updatedAt ? new Date(plan.updatedAt).toLocaleDateString() : 'Unknown'}`,
+      `Total Sections: 9`,
+      `Completion Status: ${plan.status === 'completed' ? 'All sections completed' : 'In progress'}`
+    ],
+    type: 'list'
+  });
 
   const options: PDFExportOptions = {
     title: 'NDIS Care Support Plan',
