@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { SimplePlanModal } from "./components/SimplePlanModal";
+import { ComprehensiveCarePlanWizardRefactored } from "./components/ComprehensiveCarePlanWizardRefactored";
 import { useAuth } from "@/hooks/use-auth";
 import type { CareSupportPlan } from "@shared/schema";
 import { format } from "date-fns";
@@ -14,6 +15,8 @@ import { format } from "date-fns";
 export function CareSupportPlans() {
   const { user } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<CareSupportPlan | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: carePlans = [], isLoading } = useQuery<CareSupportPlan[]>({
@@ -50,6 +53,16 @@ export function CareSupportPlans() {
 
   const handleCloseModal = () => {
     setShowCreateModal(false);
+  };
+
+  const handleViewPlan = (plan: CareSupportPlan) => {
+    setSelectedPlan(plan);
+    setShowViewModal(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setSelectedPlan(null);
   };
 
   const PlansList = ({ plans }: { plans: CareSupportPlan[] }) => {
@@ -124,6 +137,15 @@ export function CareSupportPlans() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      onClick={() => handleViewPlan(plan)}
+                    >
+                      <FileText className="h-3 w-3" />
+                      View Care Plan
+                    </Button>
                     <Button variant="outline" size="sm" className="flex items-center gap-1">
                       <Edit className="h-3 w-3" />
                       Edit
@@ -196,6 +218,14 @@ export function CareSupportPlans() {
         open={showCreateModal} 
         onClose={handleCloseModal}
       />
+      
+      {selectedPlan && (
+        <ComprehensiveCarePlanWizardRefactored
+          open={showViewModal}
+          onClose={handleCloseViewModal}
+          existingPlan={selectedPlan}
+        />
+      )}
     </div>
   );
 }
