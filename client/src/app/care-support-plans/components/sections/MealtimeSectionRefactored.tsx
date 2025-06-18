@@ -450,6 +450,108 @@ export function MealtimeSectionRefactored() {
         </CardContent>
       </Card>
 
+      {/* AI Review Centre */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-purple-600" />
+            AI Review Centre
+          </CardTitle>
+          <CardDescription>
+            Comprehensive AI analysis and content generation for all mealtime management areas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button
+              onClick={() => handleGenerateGlobalContent('comprehensiveRiskAnalysis')}
+              disabled={isGenerating || !mealtimeData.userInput?.trim()}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {isGenerating && generatingField === 'comprehensiveRiskAnalysis' ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Comprehensive Risk Analysis
+            </Button>
+            <Button
+              onClick={() => handleGenerateGlobalContent('mealtimeProtocols')}
+              disabled={isGenerating || !mealtimeData.userInput?.trim()}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {isGenerating && generatingField === 'mealtimeProtocols' ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Mealtime Protocols Review
+            </Button>
+          </div>
+
+          {mealtimeData.generatedContent && (
+            <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-purple-900 dark:text-purple-100">AI Generated Review Content:</h4>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("dietaryRequirements", mealtimeData.generatedContent || "");
+                      handleInputChange('generatedContent', '');
+                      toast({
+                        title: "Content Applied",
+                        description: "AI content added to Dietary Requirements",
+                      });
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="text-green-700 border-green-200 bg-green-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Dietary
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("emergencyProcedures", mealtimeData.generatedContent || "");
+                      handleInputChange('generatedContent', '');
+                      toast({
+                        title: "Content Applied",
+                        description: "AI content added to Emergency Procedures",
+                      });
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="text-red-700 border-red-200 bg-red-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Emergency
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      handleInputChange("staffGuidance", mealtimeData.generatedContent || "");
+                      handleInputChange('generatedContent', '');
+                      toast({
+                        title: "Content Applied",
+                        description: "AI content added to Staff Guidance",
+                      });
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="text-blue-700 border-blue-200 bg-blue-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Staff Guidance
+                  </Button>
+                </div>
+              </div>
+              <div className="text-sm text-purple-800 dark:text-purple-200 whitespace-pre-wrap">
+                {mealtimeData.generatedContent}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Global Mealtime Management Centre */}
       <Card>
         <CardHeader>
