@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Sparkles, Loader2, CheckCircle2, Brain, Shield, Heart, AlertTriangle, Target, Zap, Users } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2, CheckCircle2, Brain, Shield, Heart, AlertTriangle, Target, Zap, Users, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useCarePlan } from "../../contexts/CarePlanContext";
@@ -55,6 +56,9 @@ export function BehaviourSectionRefactored() {
   const [isGeneratingDeescalation, setIsGeneratingDeescalation] = useState(false);
   const [isGeneratingPBS, setIsGeneratingPBS] = useState(false);
   const [behaviourAIContent, setBehaviourAIContent] = useState('');
+  
+  // View details state
+  const [viewingBehaviour, setViewingBehaviour] = useState<SavedBehaviour | null>(null);
 
   // Individual Behaviour AI Generation
   const generateBehaviourContentMutation = useMutation({
@@ -547,13 +551,76 @@ Focus on evidence-based PBS principles that support the person's dignity and aut
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeBehaviour(behaviour.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="View full strategy details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <Brain className="h-5 w-5" />
+                                {behaviour.name || 'Behaviour'} - Strategy Details
+                              </DialogTitle>
+                              <DialogDescription>
+                                Complete behaviour management strategies (included in exports)
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="text-sm font-medium">Description</Label>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{behaviour.description}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Triggers</Label>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{behaviour.triggers}</p>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    <Target className="h-4 w-4 text-blue-600" />
+                                    Proactive Strategy
+                                  </Label>
+                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    {behaviour.proactiveStrategy || 'Not specified'}
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    <Zap className="h-4 w-4 text-orange-600" />
+                                    Reactive Strategy
+                                  </Label>
+                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    {behaviour.reactiveStrategy || 'Not specified'}
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    <Shield className="h-4 w-4 text-green-600" />
+                                    Protective Strategy
+                                  </Label>
+                                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    {behaviour.protectiveStrategy || 'Not specified'}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeBehaviour(behaviour.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
