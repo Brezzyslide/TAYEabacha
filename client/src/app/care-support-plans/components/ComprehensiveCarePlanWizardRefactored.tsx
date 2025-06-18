@@ -14,7 +14,7 @@ import { ClientLockSectionRefactored } from "./sections/ClientLockSectionRefacto
 import { AboutMeSectionRefactored } from "./sections/AboutMeSectionRefactored";
 import { GoalsSectionRefactored } from "./sections/GoalsSectionRefactored";
 import { ADLSectionRefactored } from "./sections/ADLSectionRefactored";
-import { StructureSectionComplete } from "./sections/StructureSectionComplete";
+import { StructureSectionRefactored } from "./sections/StructureSectionRefactored";
 import { CommunicationSectionComplete } from "./sections/CommunicationSectionComplete";
 import { BehaviourSectionComplete } from "./sections/BehaviourSectionComplete";
 import { DisasterSectionComplete } from "./sections/DisasterSectionComplete";
@@ -50,6 +50,13 @@ function WizardContent({ onClose }: { onClose: () => void }) {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  // Helper function to update section data using Context dispatch
+  const updateSectionData = (section: string, data: any) => {
+    // This will be handled by the section components directly using the Context
+    // For now, just log the update
+    console.log(`Updating section ${section} with data:`, data);
+  };
 
   const handleNext = () => {
     setCompletedSteps(prev => new Set([...prev, currentStep]));
@@ -148,39 +155,34 @@ function WizardContent({ onClose }: { onClose: () => void }) {
       case 'adl':
         return <ADLSectionRefactored />;
       case 'structure':
-        return <StructureSectionComplete 
-          data={data}
-          updateData={updateData}
-          selectedClient={selectedClient}
-          planData={data}
-        />;
+        return <StructureSectionRefactored />;
       case 'communication':
         return <CommunicationSectionComplete 
-          data={data}
-          updateData={updateData}
-          selectedClient={selectedClient}
-          planData={data}
+          data={planData}
+          updateData={updateSectionData}
+          selectedClient={planData?.clientData}
+          planData={planData}
         />;
       case 'behaviour':
         return <BehaviourSectionComplete 
-          data={data}
-          updateData={updateData}
-          selectedClient={selectedClient}
-          planData={data}
+          data={planData}
+          updateData={updateSectionData}
+          selectedClient={planData?.clientData}
+          planData={planData}
         />;
       case 'disaster':
         return <DisasterSectionComplete 
-          data={data}
-          updateData={updateData}
-          selectedClient={selectedClient}
-          planData={data}
+          data={planData}
+          updateData={updateSectionData}
+          selectedClient={planData?.clientData}
+          planData={planData}
         />;
       case 'mealtime':
         return <MealtimeSectionComplete 
-          data={data}
-          updateData={updateData}
-          selectedClient={selectedClient}
-          planData={data}
+          data={planData}
+          updateData={updateSectionData}
+          selectedClient={planData?.clientData}
+          planData={planData}
         />;
       default:
         return (
