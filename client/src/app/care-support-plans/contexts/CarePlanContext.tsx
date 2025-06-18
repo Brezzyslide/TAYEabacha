@@ -481,7 +481,8 @@ export function CarePlanProvider({
       'communication',
       'behaviour',
       'disaster',
-      'mealtime'
+      'mealtime',
+      'review'
     ];
 
     const currentIndex = sectionOrder.indexOf(sectionName);
@@ -561,7 +562,15 @@ export function CarePlanProvider({
                  (planData.disasterData.disasterPlans && planData.disasterData.disasterPlans.length > 0));
       
       case 'mealtime':
-        return !!(planData.mealtimeData.riskParameters && planData.mealtimeData.riskParameters.length > 0);
+        return !!(planData.mealtimeData.userInput?.trim() || 
+                 planData.mealtimeData.dietaryRequirements?.trim() ||
+                 planData.mealtimeData.emergencyProcedures?.trim() ||
+                 planData.mealtimeData.staffGuidance?.trim() ||
+                 (planData.mealtimeData.riskParameters && planData.mealtimeData.riskParameters.length > 0));
+      
+      case 'review':
+        // Review is always considered "completed" once accessible
+        return true;
       
       default:
         return false;

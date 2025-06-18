@@ -36,11 +36,11 @@ const WIZARD_STEPS = [
   { id: 'aboutMe', title: 'About Me', component: AboutMeSectionRefactored, description: 'Personal background and preferences' },
   { id: 'goals', title: 'Goals & Outcomes', component: GoalsSectionRefactored, description: 'NDIS goals and personal objectives' },
   { id: 'adl', title: 'ADL Support', component: ADLSectionRefactored, description: 'Activities of Daily Living assessment' },
-  { id: 'structure', title: 'Structure & Routine', component: StructureSection, description: 'Daily schedules and routines' },
-  { id: 'communication', title: 'Communication', component: CommunicationSection, description: 'Communication strategies and support' },
-  { id: 'behaviour', title: 'Behaviour Support', component: BehaviourSection, description: 'Positive behaviour support strategies' },
-  { id: 'disaster', title: 'Disaster Management', component: DisasterSection, description: 'Emergency and disaster preparedness' },
-  { id: 'mealtime', title: 'Mealtime Management', component: MealtimeSection, description: 'Nutrition and mealtime risk assessment' },
+  { id: 'structure', title: 'Structure & Routine', component: StructureSectionRefactored, description: 'Daily schedules and routines' },
+  { id: 'communication', title: 'Communication', component: CommunicationSectionRefactored, description: 'Communication strategies and support' },
+  { id: 'behaviour', title: 'Behaviour Support', component: BehaviourSectionRefactored, description: 'Positive behaviour support strategies' },
+  { id: 'disaster', title: 'Disaster Management', component: DisasterSectionRefactored, description: 'Emergency and disaster preparedness' },
+  { id: 'mealtime', title: 'Mealtime Management', component: MealtimeSectionRefactored, description: 'Nutrition and mealtime risk assessment' },
   { id: 'review', title: 'Review & Export', component: null, description: 'Final review and export options' },
 ];
 
