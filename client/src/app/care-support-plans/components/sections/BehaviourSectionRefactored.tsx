@@ -73,27 +73,15 @@ export function BehaviourSectionRefactored() {
           description,
           triggers
         },
-        promptOverride: `Generate staff instructions for managing this specific behaviour in three states:
+        promptOverride: `Generate staff instructions for managing this specific behaviour in three states. Provide clean, flowing text without asterisks, bullet points, or section headers.
 
-PROACTIVE STRATEGIES (preventing the behaviour):
-- Early warning signs to watch for
-- Environmental modifications
-- Preventative interventions
-- Routine adjustments
+For PROACTIVE STRATEGIES write a paragraph about preventing the behaviour including early warning signs to watch for, environmental modifications, preventative interventions, and routine adjustments.
 
-REACTIVE STRATEGIES (during the behaviour):
-- Immediate response protocols
-- Safety considerations
-- Communication approaches
-- De-escalation steps
+For REACTIVE STRATEGIES write a paragraph about immediate response during the behaviour including immediate response protocols, safety considerations, communication approaches, and de-escalation steps.
 
-PROTECTIVE STRATEGIES (after the behaviour):
-- Safety assessment procedures
-- Recovery support methods
-- Documentation requirements
-- Follow-up actions
+For PROTECTIVE STRATEGIES write a paragraph about post-behaviour procedures including safety assessment procedures, recovery support methods, documentation requirements, and follow-up actions.
 
-Format as clear, actionable staff instructions. Keep each strategy section under 200 words.`
+Format as three clear paragraphs of flowing text. Keep each paragraph under 200 words. Do not use asterisks, bullet points, or bold headers.`
       });
 
       return await response.json();
@@ -133,16 +121,9 @@ Format as clear, actionable staff instructions. Keep each strategy section under
         existingContent: {
           behaviours: allBehaviours
         },
-        promptOverride: `Based on all the behaviours listed above, generate comprehensive de-escalation techniques that staff can use across all these behaviours:
+        promptOverride: `Based on all the behaviours listed above, generate comprehensive de-escalation techniques that staff can use across all these behaviours. Write as flowing paragraphs without asterisks, bullet points, or headers.
 
-1. UNIVERSAL DE-ESCALATION PRINCIPLES
-2. COMMUNICATION TECHNIQUES
-3. ENVIRONMENTAL MODIFICATIONS
-4. TIMING AND APPROACH STRATEGIES
-5. SAFETY PROTOCOLS
-6. CRISIS INTERVENTION STEPS
-
-Focus on techniques that work across multiple behaviours and provide clear step-by-step guidance for staff. Keep under 200 words total.`
+Write about universal de-escalation principles, communication techniques, environmental modifications, timing and approach strategies, safety protocols, and crisis intervention steps. Focus on techniques that work across multiple behaviours and provide clear guidance for staff. Keep under 200 words total as flowing text without formatting.`
       });
 
       return await response.json();
@@ -182,16 +163,9 @@ Focus on techniques that work across multiple behaviours and provide clear step-
         existingContent: {
           behaviours: allBehaviours
         },
-        promptOverride: `Based on all the behaviours listed above, generate Positive Behaviour Support (PBS) tips that promote positive behaviours and prevent challenging ones:
+        promptOverride: `Based on all the behaviours listed above, generate Positive Behaviour Support (PBS) tips that promote positive behaviours and prevent challenging ones. Write as flowing paragraphs without asterisks, bullet points, or headers.
 
-1. POSITIVE REINFORCEMENT STRATEGIES
-2. ENVIRONMENTAL DESIGN FOR SUCCESS
-3. SKILL BUILDING OPPORTUNITIES
-4. REPLACEMENT BEHAVIOUR TEACHING
-5. PROACTIVE SUPPORT SYSTEMS
-6. QUALITY OF LIFE IMPROVEMENTS
-
-Focus on evidence-based PBS principles that support the person's dignity and autonomy while reducing challenging behaviours. Keep under 200 words total.`
+Write about positive reinforcement strategies, environmental design for success, skill building opportunities, replacement behaviour teaching, proactive support systems, and quality of life improvements. Focus on evidence-based PBS principles that support the person's dignity and autonomy while reducing challenging behaviours. Keep under 200 words total as flowing text without formatting.`
       });
 
       return await response.json();
