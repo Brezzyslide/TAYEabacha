@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,43 +6,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Sparkles, Loader2, CheckCircle2, Utensils, AlertCircle, Heart, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sparkles, Loader2, CheckCircle2, Utensils, AlertCircle, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useCarePlan } from "../../contexts/CarePlanContext";
 
-interface RiskParameter {
-  id: string;
-  risk: string;
-  severity: 'low' | 'medium' | 'high';
-  preventionStrategy: string;
-  responseStrategy: string;
-  monitoringRequired: boolean;
-  equipmentNeeded: string;
-  staffTraining: string;
-}
-
 const RISK_TYPES = [
-  'Choking', 'Aspiration', 'Swallowing difficulties', 'Food allergies', 'Medication interactions',
-  'Behavioural concerns', 'Cultural/religious restrictions', 'Texture intolerance', 
-  'Nutritional deficiency', 'Dehydration', 'Weight management', 'Blood sugar management'
+  { id: 'choking', name: 'Choking', icon: '🚫', description: 'Risk of airway obstruction during eating' },
+  { id: 'aspiration', name: 'Aspiration', icon: '💨', description: 'Risk of food/fluid entering airways' },
+  { id: 'swallowing', name: 'Swallowing Difficulties', icon: '🔄', description: 'Dysphagia and swallowing challenges' },
+  { id: 'allergies', name: 'Food Allergies', icon: '⚠️', description: 'Allergic reactions to specific foods' },
+  { id: 'medications', name: 'Medication Interactions', icon: '💊', description: 'Food-drug interactions' },
+  { id: 'behavioral', name: 'Behavioral Concerns', icon: '🧠', description: 'Mealtime behavioral challenges' },
+  { id: 'cultural', name: 'Cultural/Religious', icon: '🕊️', description: 'Cultural and religious dietary requirements' },
+  { id: 'texture', name: 'Texture Intolerance', icon: '🥄', description: 'Difficulty with specific food textures' }
 ];
 
 const SEVERITY_LEVELS = [
   { value: 'low', label: 'Low Risk', color: 'bg-green-100 text-green-800' },
   { value: 'medium', label: 'Medium Risk', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'high', label: 'High Risk', color: 'bg-red-100 text-red-800' }
-];
-
-const TEXTURE_MODIFICATIONS = [
-  'Regular texture', 'Soft diet', 'Minced and moist', 'Smooth pureed', 'Liquidised',
-  'Thickened fluids - Level 1', 'Thickened fluids - Level 2', 'Thickened fluids - Level 3'
-];
-
-const ASSISTANCE_LEVELS = [
-  'Independent', 'Supervision only', 'Setup assistance', 'Partial physical assistance',
-  'Total assistance', 'Feeding required', 'Specialised positioning'
 ];
 
 export function MealtimeSectionRefactored() {
@@ -66,18 +49,21 @@ export function MealtimeSectionRefactored() {
     equipmentNeeds: ''
   };
 
-  const [newRisk, setNewRisk] = useState<RiskParameter>({
-    id: '',
-    risk: '',
-    severity: 'medium',
-    preventionStrategy: '',
-    responseStrategy: '',
-    monitoringRequired: false,
-    equipmentNeeded: '',
-    staffTraining: ''
-  });
-
+  const [selectedRisk, setSelectedRisk] = useState<string>('choking');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingField, setGeneratingField] = useState<string>('');
+  
+  // Individual risk data state
+  const [riskData, setRiskData] = useState<{[key: string]: any}>({
+    choking: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
+    aspiration: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
+    swallowing: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
+    allergies: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
+    medications: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
+    behavioral: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
+    cultural: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
+    texture: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' }
+  });
 
   const handleInputChange = (field: string, value: string) => {
     dispatch({
@@ -90,268 +76,340 @@ export function MealtimeSectionRefactored() {
     });
   };
 
-  const handleRiskChange = (field: string, value: string | boolean) => {
-    setNewRisk(prev => ({
+  // Handle individual risk data changes
+  const handleRiskDataChange = (riskType: string, field: string, value: string) => {
+    setRiskData(prev => ({
       ...prev,
-      [field]: value
+      [riskType]: {
+        ...prev[riskType],
+        [field]: value
+      }
     }));
   };
 
-  const addRisk = () => {
-    if (!newRisk.risk || !newRisk.preventionStrategy) {
+  // Generate AI content for specific risk and field
+  const generateRiskContent = async (riskType: string, targetField: string) => {
+    if (!mealtimeData.userInput?.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please enter risk type and prevention strategy before adding.",
+        description: "Please enter mealtime assessment information first.",
         variant: "destructive",
       });
       return;
     }
 
-    const risk: RiskParameter = {
-      ...newRisk,
-      id: Date.now().toString()
-    };
+    setIsGenerating(true);
+    setGeneratingField(`${riskType}-${targetField}`);
 
-    const updatedRisks = [...mealtimeData.riskParameters, risk];
-    
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'mealtimeData',
-      data: {
-        ...mealtimeData,
-        riskParameters: updatedRisks
-      }
-    });
-    
-    setNewRisk({
-      id: '',
-      risk: '',
-      severity: 'medium',
-      preventionStrategy: '',
-      responseStrategy: '',
-      monitoringRequired: false,
-      equipmentNeeded: '',
-      staffTraining: ''
-    });
-
-    toast({
-      title: "Risk Parameter Added",
-      description: `${newRisk.risk} risk management has been added`,
-    });
-  };
-
-  const removeRisk = (riskId: string) => {
-    const updatedRisks = mealtimeData.riskParameters.filter((r: any) => r.id !== riskId);
-    
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'mealtimeData',
-      data: {
-        ...mealtimeData,
-        riskParameters: updatedRisks
-      }
-    });
-
-    toast({
-      title: "Risk Parameter Removed",
-      description: "Risk parameter has been deleted from the plan.",
-    });
-  };
-
-  // AI Content Generation Mutation
-  const generateContentMutation = useMutation({
-    mutationFn: async ({ targetField }: { targetField: string }) => {
-      if (!mealtimeData.userInput?.trim()) {
-        throw new Error("Please enter mealtime assessment information first.");
-      }
-
-      setIsGenerating(true);
-      const userInput = mealtimeData.userInput;
-
-      const existingContent = {
-        dietaryRequirements: mealtimeData.dietaryRequirements || "",
-        textureModifications: mealtimeData.textureModifications || "",
-        assistanceLevel: mealtimeData.assistanceLevel || "",
-        mealtimeEnvironment: mealtimeData.mealtimeEnvironment || "",
-        socialAspects: mealtimeData.socialAspects || "",
-        nutritionalConsiderations: mealtimeData.nutritionalConsiderations || "",
-        emergencyProcedures: mealtimeData.emergencyProcedures || "",
-        staffGuidance: mealtimeData.staffGuidance || "",
-        monitoringRequirements: mealtimeData.monitoringRequirements || "",
-        equipmentNeeds: mealtimeData.equipmentNeeds || ""
-      };
-
-      const riskContext = mealtimeData.riskParameters.length > 0 
-        ? `Current risk parameters: ${mealtimeData.riskParameters.map((r: any) => `${r.risk} (${r.severity} severity)`).join('; ')}`
-        : "No specific mealtime risks documented yet";
-
+    try {
+      const riskInfo = RISK_TYPES.find(r => r.id === riskType);
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "mealtime",
-        userInput: `${userInput}\n\n${riskContext}`,
+        userInput: `${mealtimeData.userInput}\n\nFocus on ${riskInfo?.name}: ${riskInfo?.description}`,
         clientName: planData?.clientData?.fullName || "Client",
         clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
         maxWords: 200,
-        targetField,
-        existingContent
+        targetField: `${riskType}_${targetField}`,
+        riskType: riskInfo?.name,
+        fieldType: targetField
       });
-      return await response.json();
-    },
-    onSuccess: (responseData, { targetField }) => {
+
+      const responseData = await response.json();
       const generatedText = responseData.generatedContent || "";
-      
-      if (targetField === 'preview') {
-        handleInputChange('generatedContent', generatedText);
-        toast({
-          title: "Content Generated",
-          description: "Review the AI-generated content and choose which field to populate.",
-        });
-      } else {
-        handleInputChange(targetField, generatedText);
-        handleInputChange('generatedContent', '');
-        
-        const fieldLabels: { [key: string]: string } = {
-          dietaryRequirements: "Dietary Requirements",
-          textureModifications: "Texture Modifications",
-          assistanceLevel: "Assistance Level",
-          mealtimeEnvironment: "Mealtime Environment",
-          socialAspects: "Social Aspects",
-          nutritionalConsiderations: "Nutritional Considerations",
-          emergencyProcedures: "Emergency Procedures",
-          staffGuidance: "Staff Guidance",
-          monitoringRequirements: "Monitoring Requirements",
-          equipmentNeeds: "Equipment Needs"
-        };
-        
-        toast({
-          title: "AI Content Generated",
-          description: `${fieldLabels[targetField] || targetField} has been populated with targeted content.`,
-        });
-      }
-      setIsGenerating(false);
-    },
-    onError: (error: any) => {
-      setIsGenerating(false);
+
+      // Update the generated content in mealtimeData for preview
+      handleInputChange('generatedContent', generatedText);
+
+      toast({
+        title: "AI Content Generated",
+        description: `Content generated for ${riskInfo?.name} ${targetField}`,
+      });
+    } catch (error: any) {
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate content. Please try again.",
+        description: error.message || "Failed to generate AI content",
         variant: "destructive",
       });
-    },
-  });
-
-  const handleGenerateInitialContent = () => {
-    generateContentMutation.mutate({ targetField: 'preview' });
+    } finally {
+      setIsGenerating(false);
+      setGeneratingField('');
+    }
   };
 
-  const handleGenerateTargetedContent = (targetField: string) => {
-    generateContentMutation.mutate({ targetField });
+  // Add generated content to specific field
+  const addContentToField = (riskType: string, field: string) => {
+    if (mealtimeData.generatedContent) {
+      handleRiskDataChange(riskType, field, mealtimeData.generatedContent);
+      handleInputChange('generatedContent', '');
+      toast({
+        title: "Content Applied",
+        description: `AI content added to ${RISK_TYPES.find(r => r.id === riskType)?.name} ${field}`,
+      });
+    }
+  };
+
+  // Generate global mealtime content
+  const handleGenerateGlobalContent = async (targetField: string) => {
+    if (!mealtimeData.userInput?.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter mealtime assessment information first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    setGeneratingField(targetField);
+
+    try {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "mealtime",
+        userInput: mealtimeData.userInput,
+        clientName: planData?.clientData?.fullName || "Client",
+        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
+        maxWords: 200,
+        targetField: `global_${targetField}`,
+        fieldType: targetField
+      });
+
+      const responseData = await response.json();
+      const generatedText = responseData.generatedContent || "";
+
+      // Update the generated content in mealtimeData for preview
+      handleInputChange('generatedContent', generatedText);
+
+      toast({
+        title: "AI Content Generated",
+        description: `Global content generated for ${targetField}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate AI content",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+      setGeneratingField('');
+    }
   };
 
   const getSeverityBadge = (severity: string) => {
-    const option = SEVERITY_LEVELS.find(s => s.value === severity);
-    return <Badge className={option?.color}>{option?.label}</Badge>;
+    const level = SEVERITY_LEVELS.find(s => s.value === severity);
+    return (
+      <Badge className={level?.color || 'bg-gray-100 text-gray-800'}>
+        {level?.label || severity}
+      </Badge>
+    );
+  };
+
+  const renderRiskBuilder = (riskType: typeof RISK_TYPES[0]) => {
+    const data = riskData[riskType.id];
+    
+    return (
+      <Card key={riskType.id} className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-2xl">{riskType.icon}</span>
+            {riskType.name} Management
+          </CardTitle>
+          <CardDescription>{riskType.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Prevention Strategy</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'preventionStrategy')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === `${riskType.id}-preventionStrategy` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="How to prevent this risk..."
+                value={data.preventionStrategy || ""}
+                onChange={(e) => handleRiskDataChange(riskType.id, 'preventionStrategy', e.target.value)}
+                rows={4}
+                className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Response Strategy</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'responseStrategy')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === `${riskType.id}-responseStrategy` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="What to do if this risk occurs..."
+                value={data.responseStrategy || ""}
+                onChange={(e) => handleRiskDataChange(riskType.id, 'responseStrategy', e.target.value)}
+                rows={4}
+                className="bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Equipment Needed</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'equipmentNeeded')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === `${riskType.id}-equipmentNeeded` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Specialized equipment required..."
+                value={data.equipmentNeeded || ""}
+                onChange={(e) => handleRiskDataChange(riskType.id, 'equipmentNeeded', e.target.value)}
+                rows={3}
+                className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Staff Training</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'staffTraining')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === `${riskType.id}-staffTraining` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Specific training staff need..."
+                value={data.staffTraining || ""}
+                onChange={(e) => handleRiskDataChange(riskType.id, 'staffTraining', e.target.value)}
+                rows={3}
+                className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Label className="text-sm font-medium">Severity Level:</Label>
+            <Select 
+              value={data.severity || 'medium'} 
+              onValueChange={(value) => handleRiskDataChange(riskType.id, 'severity', value)}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SEVERITY_LEVELS.map(level => (
+                  <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {getSeverityBadge(data.severity || 'medium')}
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Client Mealtime Assessment */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-600" />
-            Mealtime Assessment Input
+            <Utensils className="h-5 w-5 text-blue-600" />
+            Client Mealtime Assessment
           </CardTitle>
           <CardDescription>
-            Describe the client's mealtime needs, risks, dietary requirements, and support strategies
+            Provide comprehensive mealtime assessment information for AI-powered content generation
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="mealtimeInput">Mealtime Assessment Information</Label>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium mb-2 block">
+              Mealtime Assessment Information
+            </Label>
             <Textarea
-              id="mealtimeInput"
-              placeholder="Enter details about the client's dietary needs, swallowing risks, assistance requirements, cultural considerations, etc..."
+              placeholder="Describe client's mealtime needs, abilities, challenges, current dietary requirements, swallowing assessment results, behavioral patterns during meals, cultural preferences, and any existing risk factors..."
               value={mealtimeData.userInput || ""}
               onChange={(e) => handleInputChange("userInput", e.target.value)}
-              rows={4}
+              rows={6}
+              className="resize-none"
             />
-          </div>
-
-          <Button 
-            onClick={handleGenerateInitialContent}
-            disabled={isGenerating || !mealtimeData.userInput?.trim()}
-            className="w-full mb-4"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating Mealtime Content...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Mealtime Content
-              </>
-            )}
-          </Button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('dietaryRequirements')}
-              disabled={isGenerating || !mealtimeData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Dietary Needs
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('textureModifications')}
-              disabled={isGenerating || !mealtimeData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Texture Mods
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('assistanceLevel')}
-              disabled={isGenerating || !mealtimeData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Assistance
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleGenerateTargetedContent('emergencyProcedures')}
-              disabled={isGenerating || !mealtimeData.userInput?.trim()}
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Add to Emergency
-            </Button>
           </div>
 
           {mealtimeData.generatedContent && (
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content:</h4>
-                <Button 
-                  onClick={() => {
-                    handleInputChange("dietaryRequirements", mealtimeData.generatedContent || "");
-                    handleInputChange('generatedContent', '');
-                    toast({
-                      title: "Content Applied",
-                      description: "AI-generated content has been added to Dietary Requirements field.",
-                    });
-                  }}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                  Use This Content
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => addContentToField(selectedRisk, 'preventionStrategy')}
+                    size="sm"
+                    variant="outline"
+                    className="text-green-700 border-green-200 bg-green-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Prevention
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToField(selectedRisk, 'responseStrategy')}
+                    size="sm"
+                    variant="outline"
+                    className="text-yellow-700 border-yellow-200 bg-yellow-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Response
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToField(selectedRisk, 'equipmentNeeded')}
+                    size="sm"
+                    variant="outline"
+                    className="text-blue-700 border-blue-200 bg-blue-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Equipment
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToField(selectedRisk, 'staffTraining')}
+                    size="sm"
+                    variant="outline"
+                    className="text-purple-700 border-purple-200 bg-purple-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    Add to Training
+                  </Button>
+                </div>
               </div>
               <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
                 {mealtimeData.generatedContent}
@@ -361,356 +419,127 @@ export function MealtimeSectionRefactored() {
         </CardContent>
       </Card>
 
-      {/* Risk Parameter Builder */}
+      {/* Individual Risk Builders */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-600" />
-            Mealtime Risk Management
+            Individual Risk Management
           </CardTitle>
           <CardDescription>
-            Identify and manage specific mealtime risks
+            Build comprehensive management strategies for each mealtime risk
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Risk Type</Label>
-              <Select value={newRisk.risk} onValueChange={(value) => handleRiskChange('risk', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select risk type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RISK_TYPES.map(risk => (
-                    <SelectItem key={risk} value={risk}>{risk}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Severity Level</Label>
-              <Select value={newRisk.severity} onValueChange={(value) => handleRiskChange('severity', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select severity" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SEVERITY_LEVELS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label>Prevention Strategy</Label>
-              <Textarea
-                placeholder="How to prevent this risk from occurring..."
-                value={newRisk.preventionStrategy}
-                onChange={(e) => handleRiskChange('preventionStrategy', e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Response Strategy</Label>
-              <Textarea
-                placeholder="What to do if this risk occurs..."
-                value={newRisk.responseStrategy}
-                onChange={(e) => handleRiskChange('responseStrategy', e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Equipment Needed</Label>
-                <Input
-                  placeholder="Specialized equipment required"
-                  value={newRisk.equipmentNeeded}
-                  onChange={(e) => handleRiskChange('equipmentNeeded', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Staff Training Required</Label>
-                <Input
-                  placeholder="Specific training staff need"
-                  value={newRisk.staffTraining}
-                  onChange={(e) => handleRiskChange('staffTraining', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="monitoring"
-                checked={newRisk.monitoringRequired}
-                onChange={(e) => handleRiskChange('monitoringRequired', e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-              />
-              <Label htmlFor="monitoring">Continuous monitoring required</Label>
-            </div>
-          </div>
-
-          <Button onClick={addRisk} className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Risk Parameter
-          </Button>
-
-          {mealtimeData.riskParameters.length > 0 && (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Risk</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Prevention</TableHead>
-                    <TableHead>Response</TableHead>
-                    <TableHead>Monitoring</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mealtimeData.riskParameters.map((risk: any) => (
-                    <TableRow key={risk.id}>
-                      <TableCell>
-                        <div className="font-medium">{risk.risk}</div>
-                      </TableCell>
-                      <TableCell>{getSeverityBadge(risk.severity)}</TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate">
-                          {risk.preventionStrategy}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate">
-                          {risk.responseStrategy}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {risk.monitoringRequired ? (
-                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Required</Badge>
-                        ) : (
-                          <Badge variant="outline">Not Required</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeRisk(risk.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+        <CardContent>
+          <Tabs value={selectedRisk} onValueChange={setSelectedRisk}>
+            <TabsList className="grid grid-cols-4 lg:grid-cols-8 mb-6">
+              {RISK_TYPES.map((risk) => (
+                <TabsTrigger key={risk.id} value={risk.id} className="text-xs">
+                  <span className="mr-1">{risk.icon}</span>
+                  {risk.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            
+            {RISK_TYPES.map((risk) => (
+              <TabsContent key={risk.id} value={risk.id}>
+                {renderRiskBuilder(risk)}
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
 
-      {/* Mealtime Support Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Utensils className="h-5 w-5 text-green-600" />
-              Dietary Requirements
-            </CardTitle>
-            <CardDescription>Special dietary needs and restrictions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document dietary requirements, allergies, cultural/religious restrictions, preferences..."
-              value={mealtimeData.dietaryRequirements || ""}
-              onChange={(e) => handleInputChange("dietaryRequirements", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Texture Modifications</CardTitle>
-            <CardDescription>Food and fluid texture requirements</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Select 
-                value={mealtimeData.textureModifications} 
-                onValueChange={(value) => handleInputChange('textureModifications', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select texture level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TEXTURE_MODIFICATIONS.map(texture => (
-                    <SelectItem key={texture} value={texture}>{texture}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* Global Mealtime Management Centre */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-orange-600" />
+            Global Mealtime Management Centre
+          </CardTitle>
+          <CardDescription>
+            AI-powered global planning tools for comprehensive mealtime support
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Dietary Requirements</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateGlobalContent('dietaryRequirements')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'dietaryRequirements' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
               <Textarea
-                placeholder="Additional texture modification details and specific instructions..."
-                value={mealtimeData.textureModifications || ""}
-                onChange={(e) => handleInputChange("textureModifications", e.target.value)}
-                rows={3}
+                placeholder="Special dietary needs, allergies, cultural restrictions..."
+                value={mealtimeData.dietaryRequirements || ""}
+                onChange={(e) => handleInputChange("dietaryRequirements", e.target.value)}
+                rows={6}
+                className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
               />
             </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Assistance Level</CardTitle>
-            <CardDescription>Required support during meals</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Select 
-                value={mealtimeData.assistanceLevel} 
-                onValueChange={(value) => handleInputChange('assistanceLevel', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select assistance level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ASSISTANCE_LEVELS.map(level => (
-                    <SelectItem key={level} value={level}>{level}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Emergency Procedures</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateGlobalContent('emergencyProcedures')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'emergencyProcedures' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
               <Textarea
-                placeholder="Additional assistance details and specific support strategies..."
-                value={mealtimeData.assistanceLevel || ""}
-                onChange={(e) => handleInputChange("assistanceLevel", e.target.value)}
-                rows={3}
+                placeholder="Emergency response protocols for mealtime incidents..."
+                value={mealtimeData.emergencyProcedures || ""}
+                onChange={(e) => handleInputChange("emergencyProcedures", e.target.value)}
+                rows={6}
+                className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
               />
             </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Mealtime Environment</CardTitle>
-            <CardDescription>Environmental considerations and setup</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document environmental needs, seating arrangements, noise levels, social setting..."
-              value={mealtimeData.mealtimeEnvironment || ""}
-              onChange={(e) => handleInputChange("mealtimeEnvironment", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-pink-600" />
-              Social Aspects
-            </CardTitle>
-            <CardDescription>Social interaction and mealtime experience</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document social preferences, interaction needs, family involvement, cultural practices..."
-              value={mealtimeData.socialAspects || ""}
-              onChange={(e) => handleInputChange("socialAspects", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Nutritional Considerations</CardTitle>
-            <CardDescription>Nutritional goals and monitoring</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document nutritional goals, weight management, supplementation, hydration needs..."
-              value={mealtimeData.nutritionalConsiderations || ""}
-              onChange={(e) => handleInputChange("nutritionalConsiderations", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Support Areas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Emergency Procedures</CardTitle>
-            <CardDescription>Emergency response protocols</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document emergency procedures for choking, aspiration, allergic reactions, etc..."
-              value={mealtimeData.emergencyProcedures || ""}
-              onChange={(e) => handleInputChange("emergencyProcedures", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Staff Guidance</CardTitle>
-            <CardDescription>Instructions for support workers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document specific staff guidance for mealtime support and safety protocols..."
-              value={mealtimeData.staffGuidance || ""}
-              onChange={(e) => handleInputChange("staffGuidance", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              Monitoring Requirements
-            </CardTitle>
-            <CardDescription>Ongoing monitoring and assessment needs</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document monitoring requirements, frequency, indicators to watch for..."
-              value={mealtimeData.monitoringRequirements || ""}
-              onChange={(e) => handleInputChange("monitoringRequirements", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Equipment Needs</CardTitle>
-            <CardDescription>Specialized equipment and adaptive tools</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Document specialized utensils, plates, cups, positioning equipment, etc..."
-              value={mealtimeData.equipmentNeeds || ""}
-              onChange={(e) => handleInputChange("equipmentNeeds", e.target.value)}
-              rows={4}
-            />
-          </CardContent>
-        </Card>
-      </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Staff Guidance</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateGlobalContent('staffGuidance')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                >
+                  {isGenerating && generatingField === 'staffGuidance' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Comprehensive staff instructions for mealtime support..."
+                value={mealtimeData.staffGuidance || ""}
+                onChange={(e) => handleInputChange("staffGuidance", e.target.value)}
+                rows={6}
+                className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
