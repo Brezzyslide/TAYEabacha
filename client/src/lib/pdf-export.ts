@@ -19,15 +19,15 @@ export interface PDFSection {
 export class PDFExportUtility {
   private pdf: jsPDF;
   private currentY: number = 0;
-  private pageHeight: number = 297; // A4 height in mm
-  private pageWidth: number = 210; // A4 width in mm
+  private pageHeight: number = 210; // A4 landscape height in mm
+  private pageWidth: number = 297; // A4 landscape width in mm
   private margin: number = 20;
   private contentWidth: number;
   private headerHeight: number = 40;
   private footerHeight: number = 15;
 
   constructor() {
-    this.pdf = new jsPDF('p', 'mm', 'a4');
+    this.pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
     this.contentWidth = this.pageWidth - (this.margin * 2);
   }
 
@@ -102,13 +102,13 @@ export class PDFExportUtility {
   }
 
   private addSection(section: PDFSection): void {
-    this.checkPageBreak(20);
+    this.checkPageBreak(25);
 
     this.pdf.setFontSize(14);
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setTextColor(0, 0, 0);
     this.pdf.text(section.title, this.margin, this.currentY);
-    this.currentY += 8;
+    this.currentY += 12;
 
     this.pdf.setFontSize(10);
     this.pdf.setFont('helvetica', 'normal');
@@ -121,49 +121,72 @@ export class PDFExportUtility {
       this.addText(String(section.content));
     }
 
-    this.currentY += 8;
+    this.currentY += 15; // More spacing between sections
   }
 
   private addText(text: string): void {
     const lines = this.pdf.splitTextToSize(text, this.contentWidth - 10);
     
     for (const line of lines) {
-      this.checkPageBreak(6);
+      this.checkPageBreak(7);
       this.pdf.text(line, this.margin + 5, this.currentY);
-      this.currentY += 5;
+      this.currentY += 6;
     }
   }
 
   private addList(items: string[]): void {
     for (const item of items) {
-      this.checkPageBreak(6);
-      this.pdf.text(`• ${item}`, this.margin + 5, this.currentY);
-      this.currentY += 5;
+      this.checkPageBreak(7);
+      const itemLines = this.pdf.splitTextToSize(`• ${item}`, this.contentWidth - 15);
+      for (const line of itemLines) {
+        this.pdf.text(line, this.margin + 5, this.currentY);
+        this.currentY += 6;
+        this.checkPageBreak(7);
+      }
     }
   }
 
   private addTable(tableData: { [key: string]: any }): void {
+    const leftColumnWidth = 80;
+    const rightColumnWidth = this.contentWidth - leftColumnWidth - 10;
+    
     for (const [key, value] of Object.entries(tableData)) {
-      this.checkPageBreak(6);
+      this.checkPageBreak(12);
+      
+      // Add key (bold)
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.text(`${key}:`, this.margin + 5, this.currentY);
+      
+      // Add value (normal, with text wrapping)
       this.pdf.setFont('helvetica', 'normal');
-      this.pdf.text(String(value), this.margin + 50, this.currentY);
-      this.currentY += 5;
+      const valueLines = this.pdf.splitTextToSize(String(value), rightColumnWidth);
+      
+      let valueY = this.currentY;
+      for (let i = 0; i < valueLines.length; i++) {
+        if (i > 0) {
+          this.checkPageBreak(7);
+          valueY = this.currentY;
+        }
+        this.pdf.text(valueLines[i], this.margin + leftColumnWidth + 5, valueY);
+        if (i > 0) this.currentY += 6;
+      }
+      
+      this.currentY += 8; // Extra spacing between table rows
     }
   }
 
   private checkPageBreak(requiredSpace: number): void {
-    if (this.currentY + requiredSpace > this.pageHeight - this.footerHeight - 10) {
+    if (this.currentY + requiredSpace > this.pageHeight - this.footerHeight - 15) {
+      this.addFooter();
       this.pdf.addPage();
       this.addHeader({
-        title: '',
+        title: 'Care Support Plan (Continued)',
         contentHtml: '',
         companyName: 'CareConnect',
         staffName: '',
         submissionDate: ''
       });
-      this.currentY = this.headerHeight + 10;
+      this.currentY = this.headerHeight + 15;
     }
   }
 
