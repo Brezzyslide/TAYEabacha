@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
 import needCareAILogo from "../../../attached_assets/ChatGPT Image Jun 19, 2025, 09_40_28 AM_1750290306428.png";
 
 const floatingMessages = [
@@ -21,6 +22,7 @@ export default function LandingPage() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("about");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [contactForm, setContactForm] = useState({
     name: "",
     email: "",
@@ -82,7 +84,7 @@ export default function LandingPage() {
               />
             </div>
 
-            {/* Navigation Tabs */}
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
               {[
                 { id: "about", label: "About Us" },
@@ -104,16 +106,66 @@ export default function LandingPage() {
               ))}
             </nav>
 
-            {/* Login Button */}
+            {/* Desktop Login Button */}
             <Button
-              onClick={() => setLocation("/auth")}
+              onClick={() => {
+                console.log("Navigating to auth page");
+                setLocation("/auth");
+              }}
               variant="outline"
-              className="border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+              className="hidden md:flex border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
             >
               Login
             </Button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden text-white p-2"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-slate-800 border-t border-slate-700">
+            <div className="px-6 py-4 space-y-4">
+              {[
+                { id: "about", label: "About Us" },
+                { id: "demo", label: "Book a Demo" },
+                { id: "philosophy", label: "Our Philosophy" },
+                { id: "pricing", label: "Pricing" }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`block w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                    activeTab === tab.id
+                      ? "bg-cyan-600 text-white"
+                      : "text-slate-300 hover:text-white hover:bg-slate-700"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+              <Button
+                onClick={() => {
+                  console.log("Navigating to auth page from mobile");
+                  setLocation("/auth");
+                }}
+                variant="outline"
+                className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+              >
+                Login
+              </Button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
