@@ -97,6 +97,24 @@ export function CareSupportPlans() {
     setShowCreateModal(true);
   };
 
+  const handleExportPDF = async (plan: CareSupportPlan) => {
+    try {
+      const { exportCarePlanToPDF } = await import('@/lib/pdf-export');
+      const client = clients.find(c => c.id === plan.clientId);
+      await exportCarePlanToPDF(plan, client, user);
+      toast({
+        title: "PDF exported",
+        description: "Care support plan has been exported successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to export care support plan to PDF",
+        variant: "destructive"
+      });
+    }
+  };
+
   const PlansList = ({ plans }: { plans: CareSupportPlan[] }) => {
     if (isLoading) {
       return (
@@ -190,6 +208,7 @@ export function CareSupportPlans() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleExportPDF(plan)}
                       className="flex items-center gap-1"
                     >
                       <Download className="h-3 w-3" />

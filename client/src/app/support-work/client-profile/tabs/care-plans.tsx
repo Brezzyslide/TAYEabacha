@@ -72,6 +72,15 @@ export default function CarePlansTab({ clientId, companyId }: CarePlansTabProps)
     setSelectedPlan(null);
   };
 
+  const handleExportPDF = async (plan: CareSupportPlan) => {
+    try {
+      const { exportCarePlanToPDF } = await import('@/lib/pdf-export');
+      await exportCarePlanToPDF(plan, client, user);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
   const draftPlans = carePlans.filter(plan => plan.status === "draft");
   const activePlans = carePlans.filter(plan => plan.status === "active");
   const completedPlans = carePlans.filter(plan => plan.status === "completed");
@@ -170,6 +179,7 @@ export default function CarePlansTab({ clientId, companyId }: CarePlansTabProps)
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => handleExportPDF(plan)}
                     className="flex items-center gap-1"
                   >
                     <Download className="h-3 w-3" />

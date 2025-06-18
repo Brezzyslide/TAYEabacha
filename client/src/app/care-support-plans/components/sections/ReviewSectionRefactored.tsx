@@ -37,6 +37,7 @@ const SECTION_INFO = [
 
 export function ReviewSectionRefactored() {
   const { planData, getSectionStatus, clientData } = useCarePlan();
+  const { user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
 
   // Calculate completion statistics
