@@ -222,30 +222,32 @@ export function MealtimeSectionRefactored() {
     return (
       <Card key={riskType.id} className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">{riskType.icon}</span>
-            {riskType.name} Management
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{riskType.icon}</span>
+              {riskType.name} Management
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateRiskContent(riskType.id, 'comprehensive')}
+              disabled={isGenerating || !mealtimeData.userInput?.trim()}
+              className="bg-blue-50 hover:bg-blue-100 border-blue-300"
+            >
+              {isGenerating && generatingField === `${riskType.id}-comprehensive` ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Generate AI Content
+            </Button>
           </CardTitle>
           <CardDescription>{riskType.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Prevention Strategy</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateRiskContent(riskType.id, 'preventionStrategy')}
-                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
-                >
-                  {isGenerating && generatingField === `${riskType.id}-preventionStrategy` ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <Label className="text-sm font-medium mb-2 block">Prevention Strategy</Label>
               <Textarea
                 placeholder="How to prevent this risk..."
                 value={data.preventionStrategy || ""}
@@ -256,21 +258,7 @@ export function MealtimeSectionRefactored() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Response Strategy</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateRiskContent(riskType.id, 'responseStrategy')}
-                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
-                >
-                  {isGenerating && generatingField === `${riskType.id}-responseStrategy` ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <Label className="text-sm font-medium mb-2 block">Response Strategy</Label>
               <Textarea
                 placeholder="What to do if this risk occurs..."
                 value={data.responseStrategy || ""}
@@ -281,21 +269,7 @@ export function MealtimeSectionRefactored() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Equipment Needed</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateRiskContent(riskType.id, 'equipmentNeeded')}
-                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
-                >
-                  {isGenerating && generatingField === `${riskType.id}-equipmentNeeded` ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <Label className="text-sm font-medium mb-2 block">Equipment Needed</Label>
               <Textarea
                 placeholder="Specialized equipment required..."
                 value={data.equipmentNeeded || ""}
@@ -306,21 +280,7 @@ export function MealtimeSectionRefactored() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Staff Training</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateRiskContent(riskType.id, 'staffTraining')}
-                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
-                >
-                  {isGenerating && generatingField === `${riskType.id}-staffTraining` ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <Label className="text-sm font-medium mb-2 block">Staff Training</Label>
               <Textarea
                 placeholder="Specific training staff need..."
                 value={data.staffTraining || ""}
