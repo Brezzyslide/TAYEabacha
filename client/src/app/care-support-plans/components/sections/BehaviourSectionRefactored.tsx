@@ -37,7 +37,7 @@ const INTENSITY_OPTIONS = [
 ];
 
 export function BehaviourSectionRefactored() {
-  const { planData, dispatch } = useCarePlan();
+  const { planData, updateField } = useCarePlan();
   const { toast } = useToast();
   
   const behaviourData = planData?.behaviourData || {
@@ -69,14 +69,7 @@ export function BehaviourSectionRefactored() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'behaviourData',
-      data: {
-        ...behaviourData,
-        [field]: value
-      }
-    });
+    updateField('behaviourData', field, value);
   };
 
   const handleBehaviourChange = (field: string, value: string) => {
@@ -103,14 +96,7 @@ export function BehaviourSectionRefactored() {
 
     const updatedBehaviours = [...behaviourData.behaviours, behaviour];
     
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'behaviourData',
-      data: {
-        ...behaviourData,
-        behaviours: updatedBehaviours
-      }
-    });
+    updateField('behaviourData', 'behaviours', updatedBehaviours);
     
     setNewBehaviour({
       id: '',
@@ -133,14 +119,7 @@ export function BehaviourSectionRefactored() {
   const removeBehaviour = (behaviourId: string) => {
     const updatedBehaviours = behaviourData.behaviours.filter((b: any) => b.id !== behaviourId);
     
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'behaviourData',
-      data: {
-        ...behaviourData,
-        behaviours: updatedBehaviours
-      }
-    });
+    updateField('behaviourData', 'behaviours', updatedBehaviours);
 
     toast({
       title: "Behaviour Strategy Removed",
@@ -150,13 +129,8 @@ export function BehaviourSectionRefactored() {
 
   // AI Content Generation Mutation
   const generateContentMutation = useMutation({
-    mutationFn: async ({ targetField }: { targetField: string }) => {
-      if (!behaviourData.userInput?.trim()) {
-        throw new Error("Please enter behaviour assessment information first.");
-      }
-
+    mutationFn: async ({ targetField, userInput }: { targetField: string; userInput: string }) => {
       setIsGenerating(true);
-      const userInput = behaviourData.userInput;
 
       const existingContent = {
         overallApproach: behaviourData.overallApproach || "",
@@ -226,11 +200,35 @@ export function BehaviourSectionRefactored() {
   });
 
   const handleGenerateInitialContent = () => {
-    generateContentMutation.mutate({ targetField: 'preview' });
+    if (!behaviourData.userInput?.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please enter behaviour assessment information first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    generateContentMutation.mutate({ 
+      targetField: 'preview',
+      userInput: behaviourData.userInput 
+    });
   };
 
   const handleGenerateTargetedContent = (targetField: string) => {
-    generateContentMutation.mutate({ targetField });
+    if (!behaviourData.userInput?.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please enter behaviour assessment information first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    generateContentMutation.mutate({ 
+      targetField,
+      userInput: behaviourData.userInput 
+    });
   };
 
   const getIntensityBadge = (intensity: string) => {
@@ -264,10 +262,10 @@ export function BehaviourSectionRefactored() {
 
           <Button 
             onClick={handleGenerateInitialContent}
-            disabled={isGenerating || !behaviourData.userInput?.trim()}
+            disabled={generateContentMutation.isPending || !behaviourData.userInput?.trim()}
             className="w-full mb-4"
           >
-            {isGenerating ? (
+            {generateContentMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Generating Behaviour Support Content...
@@ -285,7 +283,7 @@ export function BehaviourSectionRefactored() {
               variant="outline" 
               size="sm"
               onClick={() => handleGenerateTargetedContent('overallApproach')}
-              disabled={isGenerating || !behaviourData.userInput?.trim()}
+              disabled={generateContentMutation.isPending || !behaviourData.userInput?.trim()}
             >
               <Sparkles className="h-4 w-4 mr-1" />
               Add to Overall Approach
@@ -294,7 +292,7 @@ export function BehaviourSectionRefactored() {
               variant="outline" 
               size="sm"
               onClick={() => handleGenerateTargetedContent('preventativeStrategies')}
-              disabled={isGenerating || !behaviourData.userInput?.trim()}
+              disabled={generateContentMutation.isPending || !behaviourData.userInput?.trim()}
             >
               <Sparkles className="h-4 w-4 mr-1" />
               Add to Preventative
@@ -303,7 +301,7 @@ export function BehaviourSectionRefactored() {
               variant="outline" 
               size="sm"
               onClick={() => handleGenerateTargetedContent('deEscalationTechniques')}
-              disabled={isGenerating || !behaviourData.userInput?.trim()}
+              disabled={generateContentMutation.isPending || !behaviourData.userInput?.trim()}
             >
               <Sparkles className="h-4 w-4 mr-1" />
               Add to De-escalation
@@ -312,7 +310,7 @@ export function BehaviourSectionRefactored() {
               variant="outline" 
               size="sm"
               onClick={() => handleGenerateTargetedContent('positiveBehaviourSupport')}
-              disabled={isGenerating || !behaviourData.userInput?.trim()}
+              disabled={generateContentMutation.isPending || !behaviourData.userInput?.trim()}
             >
               <Sparkles className="h-4 w-4 mr-1" />
               Add to PBS
