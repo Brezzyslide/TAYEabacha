@@ -38,12 +38,14 @@ import RolesPermissionsDashboard from "@/app/roles-permissions/RolesPermissionsD
 import WorkflowDashboard from "@/app/workflow-dashboard/WorkflowDashboard";
 import BudgetDashboard from "@/app/budget-management/BudgetDashboard";
 import { CareSupportPlans } from "@/app/care-support-plans/CareSupportPlans";
+import LandingPage from "@/pages/LandingPage";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={Dashboard} />
+      <Route path="/" component={LandingPage} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
       <ProtectedRoute path="/clients/create" component={() => <SimpleCreateClientForm />} />
       <ProtectedRoute path="/client/:clientId" component={ClientProfilePage} />
@@ -83,10 +85,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <UniversalHeader />
-            <Router />
-          </div>
+          <Router />
           <Toaster />
         </TooltipProvider>
       </AuthProvider>

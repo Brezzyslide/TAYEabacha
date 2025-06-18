@@ -1,0 +1,89 @@
+✅ Updated Replit Codex Prompt: Branded Landing Page for NeedCareAI+
+Paste this into Replit Codex Agent:
+
+bash
+Copy
+Edit
+# Prompt for Replit Codex Agent
+
+Please design and implement the official landing page for:
+
+📛 Product: NeedCareAI+  
+🏢 Company: Needs Technology PTY LTD
+
+---
+
+## 🖼 Logo
+
+- Place the provided NeedCareAI+ logo at the top left of the header
+- Ensure it's responsive and visually consistent with the app
+
+---
+
+## 💬 Strategic Messaging Bubbles (Floating UI)
+
+Implement the following messages as slow-floating, animated "bubble text" elements across the page background:
+
+- “Built by and for people who do the work — not tech bros.”
+- “PBS in every button — not just every plan.”
+- “Every shift structured. Every life supported.”
+- “NDIS-ready. Compliance isn’t a feature — it’s the foundation.”
+- “Supports NDIS funding applications with evidence-backed care design.”
+- “Made for staff. Trusted by coordinators. Loved by participants.”
+
+Bubbles should:
+- Fade in/out
+- Shift gently across page margins
+- Hide gracefully on mobile if space-constrained
+
+---
+
+## 🧠 Hero Section Strategic Message
+
+Full-width messaging box with the following paragraph:
+
+> _“NeedCareAI+ was built by disability support workers, not tech bros.  
+It aggressively incorporates Positive Behaviour Support principles to help participants stay regulated, live with dignity, and reach their goals.  
+This platform doesn’t just look compliant — it thinks like a practitioner.”_
+
+---
+
+## 🧭 Navigation Tabs (Top Header)
+
+Implement sticky header with 4 tabs:
+
+1. About Us
+2. Book a Demo
+3. Our Philosophy
+4. Pricing  
++ Include a “Login” button that routes to `/login`
+
+---
+
+## 📩 Contact Section (Bottom of Page)
+
+Include a simple contact form with:
+
+- Name  
+- Email  
+- Message  
+- Submit Button: “Contact Support”  
+- Show success toast: _"Your message has been sent. We’ll be in touch shortly."_
+
+---
+
+## 📌 Footer
+
+Below the contact section, add:
+
+```txt
+© Needs Technology Pty LTD – 2025 | Richmond AU
+🎨 Design System
+Match theme of app (dark navy + soft neutral tone)
+
+Use Tailwind + ShadCN for layout
+
+Ensure buttons, cards, and forms follow minimalist, professional visual style
+
+Mobile responsive layout
+
