@@ -149,6 +149,11 @@ export function DisasterSectionRefactored() {
         ? `Existing disaster plans: ${existingPlans.map((p: any) => DISASTER_TYPES.find(d => d.value === p.type)?.label).join(', ')}`
         : "No existing disaster plans";
 
+      // Include current disaster plan content for context
+      const currentPlanContext = currentDisaster.preparation || currentDisaster.evacuation || currentDisaster.postEvent || currentDisaster.clientNeeds
+        ? `\n\nCurrent ${disasterLabel} plan progress:\n${currentDisaster.preparation ? `Preparation: ${currentDisaster.preparation}\n` : ''}${currentDisaster.evacuation ? `Evacuation: ${currentDisaster.evacuation}\n` : ''}${currentDisaster.postEvent ? `Post-Event: ${currentDisaster.postEvent}\n` : ''}${currentDisaster.clientNeeds ? `Client Needs: ${currentDisaster.clientNeeds}\n` : ''}`
+        : "";
+
       const clientDiagnosis = planData?.clientData?.primaryDiagnosis || "Not specified";
       const diagnosisGuidance = clientDiagnosis !== "Not specified" 
         ? `\n\nIMPORTANT: Factor in the client's diagnosis (${clientDiagnosis}) when generating recommendations. Consider specific needs, vulnerabilities, medications, mobility requirements, communication challenges, and safety considerations related to this condition during ${disasterLabel.toLowerCase()} scenarios.`
@@ -156,7 +161,7 @@ export function DisasterSectionRefactored() {
 
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "disaster",
-        userInput: `Client Info: ${userInput}\n\nDisaster Type: ${disasterLabel}\nTarget Field: ${targetField}\n\n${existingPlanContext}${diagnosisGuidance}`,
+        userInput: `Client Info: ${userInput}\n\nDisaster Type: ${disasterLabel}\nTarget Field: ${targetField}\n\n${existingPlanContext}${currentPlanContext}${diagnosisGuidance}`,
         clientName: planData?.clientData?.fullName || "Client",
         clientDiagnosis: clientDiagnosis,
         maxWords: 200,
@@ -340,6 +345,16 @@ export function DisasterSectionRefactored() {
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content Preview:</h4>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => {
+                    handleInputChange('generatedContent', '');
+                    toast({ title: "Preview Cleared", description: "AI content preview has been cleared" });
+                  }}
+                >
+                  Clear Preview
+                </Button>
               </div>
               <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">{disasterData.generatedContent}</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -347,8 +362,8 @@ export function DisasterSectionRefactored() {
                   size="sm" 
                   variant="outline"
                   onClick={() => {
-                    handleDisasterInputChange('preparation', disasterData.generatedContent || '');
-                    handleInputChange('generatedContent', '');
+                    const currentContent = currentDisaster.preparation ? currentDisaster.preparation + '\n\n' : '';
+                    handleDisasterInputChange('preparation', currentContent + (disasterData.generatedContent || ''));
                     toast({ title: "Content Applied", description: "Content added to Preparation Phase" });
                   }}
                 >
@@ -358,8 +373,8 @@ export function DisasterSectionRefactored() {
                   size="sm" 
                   variant="outline"
                   onClick={() => {
-                    handleDisasterInputChange('evacuation', disasterData.generatedContent || '');
-                    handleInputChange('generatedContent', '');
+                    const currentContent = currentDisaster.evacuation ? currentDisaster.evacuation + '\n\n' : '';
+                    handleDisasterInputChange('evacuation', currentContent + (disasterData.generatedContent || ''));
                     toast({ title: "Content Applied", description: "Content added to Evacuation" });
                   }}
                 >
@@ -369,8 +384,8 @@ export function DisasterSectionRefactored() {
                   size="sm" 
                   variant="outline"
                   onClick={() => {
-                    handleDisasterInputChange('postEvent', disasterData.generatedContent || '');
-                    handleInputChange('generatedContent', '');
+                    const currentContent = currentDisaster.postEvent ? currentDisaster.postEvent + '\n\n' : '';
+                    handleDisasterInputChange('postEvent', currentContent + (disasterData.generatedContent || ''));
                     toast({ title: "Content Applied", description: "Content added to Post-Event" });
                   }}
                 >
@@ -380,8 +395,8 @@ export function DisasterSectionRefactored() {
                   size="sm" 
                   variant="outline"
                   onClick={() => {
-                    handleDisasterInputChange('clientNeeds', disasterData.generatedContent || '');
-                    handleInputChange('generatedContent', '');
+                    const currentContent = currentDisaster.clientNeeds ? currentDisaster.clientNeeds + '\n\n' : '';
+                    handleDisasterInputChange('clientNeeds', currentContent + (disasterData.generatedContent || ''));
                     toast({ title: "Content Applied", description: "Content added to Client Needs" });
                   }}
                 >
