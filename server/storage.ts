@@ -429,17 +429,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStaffAvailability(insertAvailability: InsertStaffAvailability): Promise<StaffAvailability> {
-    // Generate unique availability ID
-    const availabilityId = `AV${Date.now()}${Math.random().toString(36).substr(2, 4)}`;
-    
-    const availabilityData = {
-      ...insertAvailability,
-      availabilityId,
-      tenantId: insertAvailability.companyId, // Map companyId to tenantId
-    };
+    try {
+      // Generate unique availability ID
+      const availabilityId = `AV${Date.now()}${Math.random().toString(36).substr(2, 4)}`;
+      
+      const availabilityData = {
+        ...insertAvailability,
+        availabilityId,
+        // Both companyId and tenantId should have the same value for consistency
+        tenantId: insertAvailability.companyId || insertAvailability.tenantId,
+      };
 
-    const [availability] = await db.insert(staffAvailability).values(availabilityData).returning();
-    return availability;
+      const [availability] = await db.insert(staffAvailability).values(availabilityData).returning();
+      return availability;
+    } catch (error) {
+      console.error("Error creating staff availability:", error);
+      throw error;
+    }
   }
 
   async updateStaffAvailability(id: number, updateAvailability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined> {

@@ -1039,7 +1039,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId: req.user.id,
         companyId: req.user.tenantId,
+        tenantId: req.user.tenantId, // Ensure both fields are set
       };
+      
+      console.log("Creating staff availability with data:", availabilityData);
       
       const availability = await storage.createStaffAvailability(availabilityData);
       
@@ -1055,7 +1058,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(availability);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create staff availability" });
+      console.error("Staff availability creation error:", error);
+      res.status(500).json({ message: "Failed to create staff availability", error: error.message });
     }
   });
 
