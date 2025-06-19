@@ -437,10 +437,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(shift);
     } catch (error) {
       console.error("Error creating shift:", error);
+      console.error("Request body:", req.body);
+      console.error("Processed body:", processedBody);
       if (error instanceof z.ZodError) {
+        console.error("Zod validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid shift data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create shift" });
+      res.status(500).json({ message: "Failed to create shift", error: error.message });
     }
   });
 

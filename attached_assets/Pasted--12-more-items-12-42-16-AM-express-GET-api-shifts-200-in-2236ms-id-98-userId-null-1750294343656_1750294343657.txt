@@ -1,0 +1,32 @@
+  ... 12 more items
+]
+12:42:16 AM [express] GET /api/shifts 200 in 2236ms :: [{"id":98,"userId":null,"clientId":4,"title":"…
+[SHIFTS API] User: b@b.com, TenantId: 1
+[SHIFTS API] Found 112 shifts for tenant 1
+[SHIFTS API] Shifts tenant IDs: [
+  'ID:98 tenant:1',  'ID:99 tenant:1',  'ID:96 tenant:1',  'ID:97 tenant:1',
+  'ID:94 tenant:1',  'ID:95 tenant:1',  'ID:92 tenant:1',  'ID:93 tenant:1',
+  'ID:90 tenant:1',  'ID:91 tenant:1',  'ID:88 tenant:1',  'ID:89 tenant:1',
+  'ID:86 tenant:1',  'ID:87 tenant:1',  'ID:84 tenant:1',  'ID:85 tenant:1',
+  'ID:82 tenant:1',  'ID:83 tenant:1',  'ID:80 tenant:1',  'ID:81 tenant:1',
+  'ID:158 tenant:1', 'ID:78 tenant:1',  'ID:79 tenant:1',  'ID:157 tenant:1',
+  'ID:76 tenant:1',  'ID:77 tenant:1',  'ID:113 tenant:1', 'ID:156 tenant:1',
+  'ID:142 tenant:1', 'ID:74 tenant:1',  'ID:141 tenant:1', 'ID:75 tenant:1',
+  'ID:112 tenant:1', 'ID:155 tenant:1', 'ID:139 tenant:1', 'ID:72 tenant:1',
+  'ID:140 tenant:1', 'ID:73 tenant:1',  'ID:111 tenant:1', 'ID:154 tenant:1',
+  'ID:137 tenant:1', 'ID:70 tenant:1',  'ID:138 tenant:1', 'ID:71 tenant:1',
+  'ID:110 tenant:1', 'ID:153 tenant:1', 'ID:136 tenant:1', 'ID:68 tenant:1',
+  'ID:135 tenant:1', 'ID:69 tenant:1',  'ID:109 tenant:1', 'ID:151 tenant:1',
+  'ID:133 tenant:1', 'ID:66 tenant:1',  'ID:134 tenant:1', 'ID:67 tenant:1',
+  'ID:107 tenant:1', 'ID:150 tenant:1', 'ID:131 tenant:1', 'ID:64 tenant:1',
+  'ID:132 tenant:1', 'ID:65 tenant:1',  'ID:108 tenant:1', 'ID:152 tenant:1',
+  'ID:129 tenant:1', 'ID:61 tenant:1',  'ID:128 tenant:1', 'ID:63 tenant:1',
+  'ID:106 tenant:1', 'ID:149 tenant:1', 'ID:130 tenant:1', 'ID:60 tenant:1',
+  'ID:127 tenant:1', 'ID:62 tenant:1',  'ID:105 tenant:1', 'ID:147 tenant:1',
+  'ID:126 tenant:1', 'ID:58 tenant:1',  'ID:125 tenant:1', 'ID:59 tenant:1',
+  'ID:104 tenant:1', 'ID:143 tenant:1', 'ID:121 tenant:1', 'ID:54 tenant:1',
+  'ID:123 tenant:1', 'ID:56 tenant:1',  'ID:102 tenant:1', 'ID:148 tenant:1',
+  'ID:124 tenant:1', 'ID:55 tenant:1',  'ID:122 tenant:1', 'ID:57 tenant:1',
+  'ID:103 tenant:1', 'ID:145 tenant:1', 'ID:119 tenant:1', 'ID:52 tenant:1',
+  'ID:120 tenant:1', 'ID:51 tenant:1',  'ID:101 tenant:1', 'ID:144 tenant:1',
+  ... 12 more items
