@@ -973,11 +973,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.user.tenantId;
       
       let caseNotes = [];
+      
       if (clientId) {
+        // Check if support worker has access to this specific client
+        if (req.user.role === "SupportWorker") {
+          const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+          const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+          
+          if (!assignedClientIds.includes(parseInt(clientId))) {
+            return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+          }
+        }
         caseNotes = await storage.getCaseNotes(parseInt(clientId), tenantId);
       } else {
-        // Get all case notes for the tenant - using storage method
-        const clients = await storage.getClients(tenantId);
+        // Get case notes for all accessible clients
+        let clients;
+        if (req.user.role === "SupportWorker") {
+          // Get only assigned clients for support workers
+          const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+          const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+          const allClients = await storage.getClients(tenantId);
+          clients = allClients.filter(client => assignedClientIds.includes(client.id));
+        } else {
+          // Admin/Coordinator/TeamLeader get all clients
+          clients = await storage.getClients(tenantId);
+        }
+        
         for (const client of clients) {
           const clientNotes = await storage.getCaseNotes(client.id, tenantId);
           caseNotes.push(...clientNotes);
@@ -1149,9 +1170,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let observations;
       if (clientId) {
+        // Check if support worker has access to this specific client
+        if (req.user.role === "SupportWorker") {
+          const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+          const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+          
+          if (!assignedClientIds.includes(parseInt(clientId))) {
+            return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+          }
+        }
         observations = await storage.getObservationsByClient(parseInt(clientId), req.user.tenantId);
       } else {
-        observations = await storage.getObservations(req.user.tenantId);
+        // Get observations for all accessible clients
+        if (req.user.role === "SupportWorker") {
+          // Get only assigned clients for support workers
+          const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+          const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+          
+          if (assignedClientIds.length === 0) {
+            return res.json([]);
+          }
+          
+          // Get observations for all assigned clients
+          let allObservations = [];
+          for (const clientId of assignedClientIds) {
+            const clientObservations = await storage.getObservationsByClient(clientId, req.user.tenantId);
+            allObservations.push(...clientObservations);
+          }
+          observations = allObservations;
+        } else {
+          observations = await storage.getObservations(req.user.tenantId);
+        }
       }
       
       res.json(observations);
@@ -1292,10 +1341,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tenantId = req.user.tenantId;
       
-      // Get all medication plans for the tenant by fetching all clients first
-      const clients = await storage.getClients(tenantId);
-      let allPlans = [];
+      // Get medication plans for accessible clients only
+      let clients;
+      if (req.user.role === "SupportWorker") {
+        // Get only assigned clients for support workers
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+        
+        if (assignedClientIds.length === 0) {
+          return res.json([]);
+        }
+        
+        const allClients = await storage.getClients(tenantId);
+        clients = allClients.filter(client => assignedClientIds.includes(client.id));
+      } else {
+        clients = await storage.getClients(tenantId);
+      }
       
+      let allPlans = [];
       for (const client of clients) {
         const plans = await storage.getMedicationPlans(client.id, tenantId);
         allPlans.push(...plans);
@@ -1479,6 +1542,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .leftJoin(clients, eq(medicationRecords.clientId, clients.id))
       .where(eq(medicationRecords.tenantId, tenantId))
       .orderBy(desc(medicationRecords.createdAt));
+      
+      // Filter records for support workers to only show their assigned clients
+      let filteredRecords = records;
+      if (req.user.role === "SupportWorker") {
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+        
+        filteredRecords = records.filter(record => assignedClientIds.includes(record.clientId));
+      }
       
       res.json(records);
     } catch (error) {
