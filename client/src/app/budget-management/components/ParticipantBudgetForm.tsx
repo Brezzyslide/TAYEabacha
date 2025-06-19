@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,8 +46,6 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPriceOverrides, setShowPriceOverrides] = useState(false);
-  
-  console.log("ParticipantBudgetForm rendering", { budget, showPriceOverrides });
 
   const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
@@ -56,7 +54,7 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
   const form = useForm<BudgetFormData>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
-      clientId: budget?.clientId || 0,
+      clientId: budget?.clientId || (clients.length > 0 ? clients[0].id : undefined),
       silTotal: parseFloat(budget?.silTotal || "0"),
       silRemaining: parseFloat(budget?.silRemaining || "0"),
       silAllowedRatios: budget?.silAllowedRatios || ["1:1"],
@@ -74,7 +72,7 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
     mutationFn: async (data: BudgetFormData) => {
       const url = budget ? `/api/ndis-budgets/${budget.id}` : "/api/ndis-budgets";
       const method = budget ? "PUT" : "POST";
-      return apiRequest(url, method, data);
+      return apiRequest(method, url, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ndis-budgets"] });
@@ -123,6 +121,9 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
           <DialogTitle>
             {budget ? "Edit NDIS Budget" : "Create NDIS Budget"}
           </DialogTitle>
+          <DialogDescription>
+            Set up NDIS funding categories and allowed ratios for this participant.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
