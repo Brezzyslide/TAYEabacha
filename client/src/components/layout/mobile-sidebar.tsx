@@ -148,7 +148,7 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           </div>
 
           {/* Staff Management Section - Only for Admins */}
-          {(user.role === "Admin" || user.role === "ConsoleManager") && (
+          {(user.role.toLowerCase() === "admin" || user.role.toLowerCase() === "consolemanager") && (
             <div>
               <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                 Staff Management

@@ -59,7 +59,7 @@ export default function Sidebar() {
 
   if (!user) return null;
 
-  const isAdmin = user.role === "admin";
+  const isAdmin = user.role.toLowerCase() === "admin" || user.role.toLowerCase() === "consolemanager";
   const canManageCompaniesAccess = canManageCompanies(user);
 
   const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (
@@ -105,8 +105,8 @@ export default function Sidebar() {
           "bg-yellow-200"
         )}
 
-        {/* Staff Management Section */}
-        {renderNavigationSection(
+        {/* Staff Management Section - Only for Admins */}
+        {isAdmin && renderNavigationSection(
           "STAFF MANAGEMENT", 
           staffManagementNavigation, 
           "bg-yellow-200"
