@@ -647,7 +647,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(shift);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update shift" });
+      console.error("Error updating shift:", error);
+      console.error("Update data:", updateData);
+      console.error("User:", req.user.username, "ID:", req.user.id);
+      res.status(500).json({ message: "Failed to update shift", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
