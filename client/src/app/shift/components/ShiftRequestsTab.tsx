@@ -36,7 +36,7 @@ export default function ShiftRequestsTab() {
 
   const acceptMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/${shiftId}/approve`, "POST", {});
+      return apiRequest("POST", `/api/shifts/${shiftId}/approve`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
@@ -56,7 +56,7 @@ export default function ShiftRequestsTab() {
 
   const rejectMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/${shiftId}/reject`, "POST", {});
+      return apiRequest("POST", `/api/shifts/${shiftId}/reject`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
