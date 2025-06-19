@@ -55,21 +55,31 @@ export class PDFExportUtility {
     // Ensure we're on the first page
     this.pdf.setPage(1);
     
-    this.pdf.setFillColor(245, 245, 245);
+    // Professional gradient-style header background
+    this.pdf.setFillColor(37, 99, 235); // Professional blue
     this.pdf.rect(this.margin, 10, this.contentWidth, this.headerHeight, 'F');
-    this.pdf.setDrawColor(200, 200, 200);
-    this.pdf.rect(this.margin, 10, this.contentWidth, this.headerHeight, 'S');
+    
+    // Add subtle accent bar at bottom of header
+    this.pdf.setFillColor(59, 130, 246); // Lighter blue accent
+    this.pdf.rect(this.margin, 10 + this.headerHeight - 5, this.contentWidth, 5, 'F');
 
-    // Company name - unique for each tenant
-    this.pdf.setFontSize(16);
+    // Company name with white text
+    this.pdf.setFontSize(18);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setTextColor(0, 0, 0);
-    this.pdf.text(options.companyName, this.margin + 5, 20);
-
-    this.pdf.setFontSize(10);
+    this.pdf.setTextColor(255, 255, 255);
+    this.pdf.text(options.companyName, this.margin + 8, 23);
+    
+    // Document title
+    this.pdf.setFontSize(11);
     this.pdf.setFont('helvetica', 'normal');
-    this.pdf.text(`Staff: ${options.staffName}`, this.margin + 5, 28);
-    this.pdf.text(`Submission Date: ${options.submissionDate}`, this.margin + 5, 35);
+    this.pdf.setTextColor(219, 234, 254); // Light blue text
+    this.pdf.text(options.title, this.margin + 8, 31);
+    
+    // Staff and dates with lighter text
+    this.pdf.setFontSize(9);
+    this.pdf.setTextColor(191, 219, 254); // Very light blue
+    this.pdf.text(`Staff: ${options.staffName}`, this.margin + 8, 38);
+    this.pdf.text(`Submission Date: ${options.submissionDate}`, this.margin + 8, 43);
 
     const now = new Date();
     const exportTime = now.toLocaleString('en-AU', {
@@ -80,7 +90,7 @@ export class PDFExportUtility {
       minute: '2-digit',
       hour12: false
     });
-    this.pdf.text(`Exported: ${exportTime}`, this.pageWidth - this.margin - 50, 28);
+    this.pdf.text(`Exported: ${exportTime}`, this.pageWidth - this.margin - 55, 38);
     
     this.headerAdded = true;
   }
@@ -110,14 +120,19 @@ export class PDFExportUtility {
   private addSection(section: PDFSection): void {
     this.checkPageBreak(25);
 
+    // Professional section header with background
+    this.pdf.setFillColor(37, 99, 235); // Professional blue
+    this.pdf.rect(this.margin, this.currentY - 4, this.contentWidth, 16, 'F');
+    
     this.pdf.setFontSize(14);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setTextColor(0, 0, 0);
-    this.pdf.text(section.title, this.margin, this.currentY);
-    this.currentY += 12;
+    this.pdf.setTextColor(255, 255, 255); // White text on blue background
+    this.pdf.text(section.title, this.margin + 5, this.currentY + 6);
+    this.currentY += 18;
 
     this.pdf.setFontSize(10);
     this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setTextColor(0, 0, 0); // Reset to black text
 
     if (section.type === 'list' && Array.isArray(section.content)) {
       this.addList(section.content);
@@ -255,44 +270,63 @@ export class PDFExportUtility {
   }
 
   private addColoredStrategyBox(title: string, content: string, color: 'proactive' | 'reactive' | 'protective'): void {
-    const requiredSpace = 20 + (content.length / 100) * 6; // Estimate space needed
+    const contentLines = this.pdf.splitTextToSize(content, this.contentWidth - 25);
+    const requiredSpace = 25 + (contentLines.length * 5);
     this.checkPageBreak(requiredSpace);
     
-    // Set colors based on strategy type
+    // Enhanced colors with better contrast and professional appearance
     let fillColor: [number, number, number] = [245, 245, 245];
-    let textColor: [number, number, number] = [0, 0, 0];
+    let borderColor: [number, number, number] = [200, 200, 200];
+    let titleBgColor: [number, number, number] = [100, 100, 100];
+    let titleTextColor: [number, number, number] = [255, 255, 255];
     
     switch (color) {
       case 'proactive':
-        fillColor = [220, 252, 231]; // Light green
-        textColor = [21, 128, 61]; // Dark green
+        fillColor = [240, 253, 244]; // Very light green background
+        borderColor = [34, 197, 94]; // Green border
+        titleBgColor = [22, 163, 74]; // Dark green title background
+        titleTextColor = [255, 255, 255]; // White title text
         break;
       case 'reactive':
-        fillColor = [254, 242, 242]; // Light red
-        textColor = [153, 27, 27]; // Dark red
+        fillColor = [255, 241, 242]; // Very light red background
+        borderColor = [239, 68, 68]; // Red border
+        titleBgColor = [220, 38, 38]; // Dark red title background
+        titleTextColor = [255, 255, 255]; // White title text
         break;
       case 'protective':
-        fillColor = [239, 246, 255]; // Light blue
-        textColor = [29, 78, 216]; // Dark blue
+        fillColor = [240, 249, 255]; // Very light blue background
+        borderColor = [59, 130, 246]; // Blue border
+        titleBgColor = [37, 99, 235]; // Dark blue title background
+        titleTextColor = [255, 255, 255]; // White title text
         break;
     }
     
-    // Draw colored box
+    const boxHeight = 18 + (contentLines.length * 5);
+    
+    // Draw main colored background box
     this.pdf.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
-    this.pdf.rect(this.margin + 5, this.currentY - 5, this.contentWidth - 10, 15, 'F');
+    this.pdf.rect(this.margin + 5, this.currentY - 2, this.contentWidth - 10, boxHeight, 'F');
     
-    // Add title
-    this.pdf.setFontSize(11);
+    // Draw colored border
+    this.pdf.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+    this.pdf.setLineWidth(0.8);
+    this.pdf.rect(this.margin + 5, this.currentY - 2, this.contentWidth - 10, boxHeight, 'S');
+    
+    // Draw title background bar
+    this.pdf.setFillColor(titleBgColor[0], titleBgColor[1], titleBgColor[2]);
+    this.pdf.rect(this.margin + 5, this.currentY - 2, this.contentWidth - 10, 12, 'F');
+    
+    // Add title with white text
+    this.pdf.setFontSize(10);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setTextColor(textColor[0], textColor[1], textColor[2]);
-    this.pdf.text(title, this.margin + 10, this.currentY + 3);
-    this.currentY += 12;
+    this.pdf.setTextColor(titleTextColor[0], titleTextColor[1], titleTextColor[2]);
+    this.pdf.text(title, this.margin + 10, this.currentY + 6);
+    this.currentY += 15;
     
-    // Add content
+    // Add content with better formatting
     this.pdf.setFontSize(9);
     this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setTextColor(0, 0, 0);
-    const contentLines = this.pdf.splitTextToSize(content, this.contentWidth - 20);
+    this.pdf.setTextColor(60, 60, 60); // Dark gray for better readability
     
     for (const line of contentLines) {
       this.checkPageBreak(6);
@@ -300,7 +334,12 @@ export class PDFExportUtility {
       this.currentY += 5;
     }
     
-    this.currentY += 8; // Extra spacing after strategy box
+    this.currentY += 8; // Extra spacing after box
+    
+    // Reset drawing properties
+    this.pdf.setDrawColor(0, 0, 0);
+    this.pdf.setLineWidth(0.2);
+    this.pdf.setTextColor(0, 0, 0);
   }
 
   private savePDF(filename: string): void {
