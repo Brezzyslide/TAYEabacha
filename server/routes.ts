@@ -1694,6 +1694,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const clientId = parseInt(req.params.clientId);
       const tenantId = req.user.tenantId;
+      
+      // Check if support worker has access to this client
+      if (req.user.role === "SupportWorker") {
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+        
+        if (!assignedClientIds.includes(clientId)) {
+          return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+        }
+      }
+      
       const records = await storage.getMedicationRecords(clientId, tenantId);
       res.json(records);
     } catch (error) {
