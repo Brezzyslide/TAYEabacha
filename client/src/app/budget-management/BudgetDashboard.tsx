@@ -241,10 +241,12 @@ export default function BudgetDashboard() {
         <ParticipantBudgetForm
           budget={selectedBudget}
           onClose={() => {
+            console.log("Closing budget form");
             setShowCreateForm(false);
             setSelectedBudget(null);
           }}
           onSuccess={() => {
+            console.log("Budget form success");
             setShowCreateForm(false);
             setSelectedBudget(null);
           }}

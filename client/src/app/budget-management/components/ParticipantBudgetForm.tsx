@@ -46,6 +46,8 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPriceOverrides, setShowPriceOverrides] = useState(false);
+  
+  console.log("ParticipantBudgetForm rendering", { budget, showPriceOverrides });
 
   const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
