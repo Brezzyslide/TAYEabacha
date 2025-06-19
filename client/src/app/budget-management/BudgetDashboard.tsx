@@ -90,8 +90,9 @@ export default function BudgetDashboard() {
     }, 0);
   };
 
-  const totalBudget = getTotalBudgetValue(budgets);
-  const totalRemaining = getTotalRemainingValue(budgets);
+  // Use filtered budgets for analytics calculations
+  const totalBudget = getTotalBudgetValue(filteredBudgets);
+  const totalRemaining = getTotalRemainingValue(filteredBudgets);
   const totalUsed = totalBudget - totalRemaining;
   const utilizationRate = totalBudget > 0 ? (totalUsed / totalBudget) * 100 : 0;
 
@@ -139,7 +140,10 @@ export default function BudgetDashboard() {
           <CardContent className="pt-1 sm:pt-2">
             <div className="text-lg sm:text-2xl font-bold">${totalBudget.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Across {budgets.length} participants
+              {selectedClient !== "all" ? 
+                `For ${clients.find(c => c.id.toString() === selectedClient)?.fullName || 'selected client'}` :
+                `Across ${filteredBudgets.length} participants`
+              }
             </p>
           </CardContent>
         </Card>
@@ -177,7 +181,7 @@ export default function BudgetDashboard() {
           </CardHeader>
           <CardContent className="pt-1 sm:pt-2">
             <div className="text-lg sm:text-2xl font-bold text-yellow-600">
-              {budgets.filter(b => {
+              {filteredBudgets.filter(b => {
                 const totalRemaining = parseFloat(b.silRemaining || "0") + 
                   parseFloat(b.communityAccessRemaining || "0") + 
                   parseFloat(b.capacityBuildingRemaining || "0");
@@ -188,7 +192,18 @@ export default function BudgetDashboard() {
               }).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Below 20% remaining
+              {selectedClient !== "all" ? 
+                (filteredBudgets.length > 0 && filteredBudgets.some(b => {
+                  const totalRemaining = parseFloat(b.silRemaining || "0") + 
+                    parseFloat(b.communityAccessRemaining || "0") + 
+                    parseFloat(b.capacityBuildingRemaining || "0");
+                  const totalBudget = parseFloat(b.silTotal || "0") + 
+                    parseFloat(b.communityAccessTotal || "0") + 
+                    parseFloat(b.capacityBuildingTotal || "0");
+                  return totalBudget > 0 && (totalRemaining / totalBudget) < 0.2;
+                }) ? "Budget below 20%" : "Budget healthy") :
+                "Below 20% remaining"
+              }
             </p>
           </CardContent>
         </Card>
