@@ -229,7 +229,7 @@ export default function BudgetDashboard() {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Filter className="h-4 w-4 text-gray-400 flex-shrink-0" />
                 <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-48">
                     <SelectValue placeholder="Filter by client" />
                   </SelectTrigger>
                   <SelectContent>

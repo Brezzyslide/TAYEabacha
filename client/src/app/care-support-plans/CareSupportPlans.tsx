@@ -152,80 +152,82 @@ export function CareSupportPlans() {
     }
 
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
           const client = clients.find((c: any) => c.id === plan.clientId);
           return (
             <Card key={plan.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{plan.planTitle}</CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <User className="h-3 w-3" />
-                      {client?.fullName || "Unknown Client"}
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="space-y-1 flex-1">
+                    <CardTitle className="text-base sm:text-lg line-clamp-2">{plan.planTitle}</CardTitle>
+                    <CardDescription className="flex items-center gap-2 text-xs sm:text-sm">
+                      <User className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{client?.fullName || "Unknown Client"}</span>
                     </CardDescription>
                   </div>
-                  <Badge className={getStatusColor(plan.status)}>
+                  <Badge className={`${getStatusColor(plan.status)} text-xs flex-shrink-0`}>
                     {plan.status}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="space-y-3">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-3 w-3" />
-                      Created: {plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : "Unknown"}
+                      <Calendar className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">Created: {plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : "Unknown"}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Calendar className="h-3 w-3" />
-                      Updated: {plan.updatedAt ? new Date(plan.updatedAt).toLocaleDateString() : "Unknown"}
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">Updated: {plan.updatedAt ? new Date(plan.updatedAt).toLocaleDateString() : "Unknown"}</span>
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
                     <Button
                       variant="default"
                       size="sm"
                       onClick={() => handleEditPlan(plan)}
-                      className="flex items-center gap-1"
+                      className="flex items-center justify-center gap-2 w-full"
                     >
-                      <FileText className="h-3 w-3" />
+                      <FileText className="h-4 w-4" />
                       View Care Plan
                     </Button>
-                    {canEditPlans && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {canEditPlans && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditPlan(plan)}
+                          className="flex items-center justify-center gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          <span className="hidden sm:inline">Edit</span>
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleEditPlan(plan)}
-                        className="flex items-center gap-1"
+                        onClick={() => handleExportPDF(plan)}
+                        className="flex items-center justify-center gap-1"
                       >
-                        <Edit className="h-3 w-3" />
-                        Edit
+                        <Download className="h-3 w-3" />
+                        <span className="hidden sm:inline">PDF</span>
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleExportPDF(plan)}
-                      className="flex items-center gap-1"
-                    >
-                      <Download className="h-3 w-3" />
-                      PDF
-                    </Button>
-                    {canEditPlans && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeletePlan(plan)}
-                        className="flex items-center gap-1"
-                        disabled={deletePlanMutation.isPending}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </Button>
-                    )}
+                      {canEditPlans && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeletePlan(plan)}
+                          className="flex items-center justify-center gap-1 col-span-2"
+                          disabled={deletePlanMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -237,16 +239,16 @@ export function CareSupportPlans() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Care Support Plans</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Care Support Plans</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Create and manage NDIS-compliant care support plans for your clients.
           </p>
         </div>
         {canCreatePlans && (
-          <Button onClick={handleCreatePlan}>
+          <Button onClick={handleCreatePlan} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Create Plan
           </Button>
@@ -258,16 +260,24 @@ export function CareSupportPlans() {
           placeholder="Search plans or clients..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All Plans ({filteredPlans.length})</TabsTrigger>
-          <TabsTrigger value="draft">Drafts ({draftPlans.length})</TabsTrigger>
-          <TabsTrigger value="active">Active ({activePlans.length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({completedPlans.length})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="all" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">All Plans </span>({filteredPlans.length})
+          </TabsTrigger>
+          <TabsTrigger value="draft" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Drafts </span>({draftPlans.length})
+          </TabsTrigger>
+          <TabsTrigger value="active" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Active </span>({activePlans.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Completed </span>({completedPlans.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
