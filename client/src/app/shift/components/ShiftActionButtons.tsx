@@ -244,31 +244,39 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         )}
 
         {canEndShift && (
-        <Button
-          onClick={handleEndShift}
-          disabled={endShiftMutation.isPending || isGettingLocation}
-          variant="destructive"
-          size="sm"
-        >
-          {endShiftMutation.isPending || isGettingLocation ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isGettingLocation ? "Getting Location..." : "Ending..."}
-            </>
-          ) : (
-            <>
-              <Square className="mr-2 h-4 w-4" />
-              End Shift
-            </>
-          )}
-        </Button>
-      )}
+          <Button
+            onClick={handleEndShift}
+            disabled={endShiftMutation.isPending || isGettingLocation}
+            variant="destructive"
+            size="sm"
+          >
+            {endShiftMutation.isPending || isGettingLocation ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isGettingLocation ? "Getting Location..." : "Ending..."}
+              </>
+            ) : (
+              <>
+                <Square className="mr-2 h-4 w-4" />
+                End Shift
+              </>
+            )}
+          </Button>
+        )}
 
-      {shift.location && (
-        <Button variant="outline" size="sm" disabled>
-          <MapPin className="mr-2 h-4 w-4" />
-          Located
-        </Button>
+        {shift.location && (
+          <Button variant="outline" size="sm" disabled>
+            <MapPin className="mr-2 h-4 w-4" />
+            Located
+          </Button>
+        )}
+      </div>
+      
+      {/* Timing feedback */}
+      {!shift.isActive && shift.userId && isUserShift && !canStartBasedOnTime() && minutesUntilStart && (
+        <div className="text-xs text-gray-500 mt-1">
+          Shifts can only be started 5 minutes before scheduled time
+        </div>
       )}
     </div>
   );
