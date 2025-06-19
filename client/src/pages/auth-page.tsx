@@ -28,12 +28,16 @@ export default function AuthPage() {
 
   // Redirect if already logged in - after all hooks are called
   if (user) {
-    navigate("/");
+    navigate("/dashboard");
     return null;
   }
 
   const onLogin = (data: LoginData) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate(data, {
+      onSuccess: () => {
+        navigate("/dashboard");
+      }
+    });
   };
 
   return (
