@@ -1353,15 +1353,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompletedShiftsWithoutBudgetTransactions(tenantId: number): Promise<any[]> {
-    return await db.select()
+    const results = await db.select({
+      id: shifts.id,
+      title: shifts.title,
+      userId: shifts.userId,
+      clientId: shifts.clientId,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      staffRatio: shifts.staffRatio,
+      tenantId: shifts.tenantId,
+      isActive: shifts.isActive
+    })
       .from(shifts)
       .leftJoin(budgetTransactions, eq(shifts.id, budgetTransactions.shiftId))
       .where(and(
         eq(shifts.tenantId, tenantId),
         eq(shifts.isActive, false),
-        isNotNull(shifts.endTime),
-        isNull(budgetTransactions.shiftId)
+        sql`${shifts.endTime} IS NOT NULL`,
+        sql`${budgetTransactions.shiftId} IS NULL`
       ));
+    
+    return results;
   }
 
   async processBudgetDeduction(params: {

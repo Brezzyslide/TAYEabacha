@@ -25,8 +25,32 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
   const queryClient = useQueryClient();
 
   const isUserShift = shift.userId === user?.id;
-  const canStartShift = !shift.isActive && shift.userId;
+  
+  // Check if shift can be started (5-minute rule)
+  const canStartBasedOnTime = () => {
+    if (!shift.startTime) return false;
+    const shiftStartTime = new Date(shift.startTime);
+    const now = new Date();
+    const fiveMinutesBeforeStart = new Date(shiftStartTime.getTime() - 5 * 60 * 1000);
+    return now >= fiveMinutesBeforeStart;
+  };
+  
+  const canStartShift = !shift.isActive && shift.userId && isUserShift && canStartBasedOnTime();
   const canEndShift = shift.isActive && isUserShift;
+  
+  // Calculate time until shift can be started
+  const getTimeUntilStartAllowed = () => {
+    if (!shift.startTime) return null;
+    const shiftStartTime = new Date(shift.startTime);
+    const now = new Date();
+    const fiveMinutesBeforeStart = new Date(shiftStartTime.getTime() - 5 * 60 * 1000);
+    
+    if (now >= fiveMinutesBeforeStart) return null;
+    
+    const timeDiff = fiveMinutesBeforeStart.getTime() - now.getTime();
+    const minutes = Math.ceil(timeDiff / (1000 * 60));
+    return minutes;
+  };
 
   // Convert coordinates to readable address
   const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
@@ -181,30 +205,45 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
     return null;
   }
 
-  return (
-    <div className="flex space-x-2">
-      {canStartShift && (
-        <Button
-          onClick={handleStartShift}
-          disabled={startShiftMutation.isPending || isGettingLocation}
-          size="sm"
-          className="bg-green-600 hover:bg-green-700"
-        >
-          {startShiftMutation.isPending || isGettingLocation ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isGettingLocation ? "Getting Location..." : "Starting..."}
-            </>
-          ) : (
-            <>
-              <Play className="mr-2 h-4 w-4" />
-              Start Shift
-            </>
-          )}
-        </Button>
-      )}
+  const minutesUntilStart = getTimeUntilStartAllowed();
 
-      {canEndShift && (
+  return (
+    <div className="flex flex-col space-y-2">
+      <div className="flex space-x-2">
+        {canStartShift && (
+          <Button
+            onClick={handleStartShift}
+            disabled={startShiftMutation.isPending || isGettingLocation}
+            size="sm"
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {startShiftMutation.isPending || isGettingLocation ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isGettingLocation ? "Getting Location..." : "Starting..."}
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Start Shift
+              </>
+            )}
+          </Button>
+        )}
+
+        {!shift.isActive && shift.userId && isUserShift && !canStartBasedOnTime() && minutesUntilStart && (
+          <Button
+            disabled
+            size="sm"
+            variant="outline"
+            className="opacity-50"
+          >
+            <Play className="mr-2 h-4 w-4" />
+            Available in {minutesUntilStart}min
+          </Button>
+        )}
+
+        {canEndShift && (
         <Button
           onClick={handleEndShift}
           disabled={endShiftMutation.isPending || isGettingLocation}
