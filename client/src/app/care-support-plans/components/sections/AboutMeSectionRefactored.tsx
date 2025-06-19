@@ -124,30 +124,33 @@ export function AboutMeSectionRefactored() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-500" />
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
             AI Content Generator
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-0">
           <div className="space-y-2">
-            <Label htmlFor="bulletPoints">Key Information About Client</Label>
+            <Label htmlFor="bulletPoints" className="text-sm sm:text-base">Key Information About Client</Label>
             <Textarea
               id="bulletPoints"
               value={aboutMeData.bulletPoints || ""}
               onChange={(e) => handleInputChange("bulletPoints", e.target.value)}
               placeholder="Enter key points about the client (interests, background, preferences, etc.). The AI will expand this into a professional About Me section."
               rows={4}
+              className="text-base min-h-[100px] resize-none"
             />
           </div>
 
-          {/* Primary AI Generation Button */}
+          {/* Primary AI Generation Button - Mobile Optimized */}
           <Button 
             onClick={handleGenerateInitialContent}
             disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+            className="w-full sm:w-auto"
+            size="sm"
             className="w-full mb-4"
           >
             {generateTargetedContentMutation.isPending ? (

@@ -290,7 +290,7 @@ function WizardContent({ onClose }: { onClose: () => void }) {
                 onClick={handleNext} 
                 size="sm"
                 className="w-full sm:w-auto order-3"
-                disabled={!isNextSectionUnlocked(currentStep + 1)}
+                disabled={!isNextSectionUnlocked(WIZARD_STEPS[currentStep + 1]?.id || '')}
               >
                 Next
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -315,7 +315,7 @@ export function ComprehensiveCarePlanWizardRefactored({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-full h-[90vh] p-0">
+      <DialogContent className="max-w-6xl w-[95vw] sm:w-full h-[95vh] sm:h-[90vh] p-0 overflow-hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>Care Support Plan Wizard</DialogTitle>
           <DialogDescription>

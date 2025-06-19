@@ -36,14 +36,14 @@ export function ClientLockSectionRefactored() {
   const selectedClient = planData.clientData;
 
   return (
-    <div className="space-y-8">
-      {/* Client Selection Section */}
+    <div className="space-y-6 sm:space-y-8">
+      {/* Client Selection Section - Mobile Optimized */}
       <div className="space-y-4">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg w-fit">
             <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
-          <div>
+          <div className="flex-1">
             <h4 className="text-lg font-semibold">Client Selection</h4>
             <p className="text-sm text-muted-foreground">
               Select the client for this care support plan. Once selected, the client cannot be changed.
@@ -82,19 +82,19 @@ export function ClientLockSectionRefactored() {
         </div>
 
         {selectedClient && (
-          <div className="bg-green-50 dark:bg-green-950 p-6 rounded-xl border border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+          <div className="bg-green-50 dark:bg-green-950 p-4 sm:p-6 rounded-xl border border-green-200 dark:border-green-800">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg w-fit">
                 <Lock className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h5 className="font-semibold text-green-800 dark:text-green-200">Client Locked</h5>
                 <p className="text-sm text-green-700 dark:text-green-300">
                   Client information is now secured for this plan
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-green-800 dark:text-green-200">Name:</span>
@@ -138,13 +138,13 @@ export function ClientLockSectionRefactored() {
         )}
       </div>
 
-      {/* Plan Information Section */}
+      {/* Plan Information Section - Mobile Optimized */}
       <div className="space-y-4">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
+          <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg w-fit">
             <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           </div>
-          <div>
+          <div className="flex-1">
             <h4 className="text-lg font-semibold">Plan Information</h4>
             <p className="text-sm text-muted-foreground">
               Configure the basic details for this care support plan
@@ -161,14 +161,14 @@ export function ClientLockSectionRefactored() {
               onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Enter a descriptive title for this care support plan"
               disabled={!selectedClient}
-              className="h-12"
+              className="h-12 text-base"
             />
           </div>
 
           <div className="space-y-3">
             <Label className="text-base font-medium">Plan Status</Label>
-            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              <Badge variant="outline" className="px-3 py-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <Badge variant="outline" className="px-3 py-1 w-fit">
                 {planData.status || 'Draft'}
               </Badge>
               <span className="text-sm text-muted-foreground">
