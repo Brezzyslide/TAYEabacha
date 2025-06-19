@@ -22,7 +22,11 @@ export default function Header() {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // Fetch company information
-  const { data: company } = useQuery({
+  const { data: company } = useQuery<{
+    id: string;
+    name: string;
+    customLogo?: string;
+  }>({
     queryKey: ['/api/company'],
     enabled: !!user,
   });

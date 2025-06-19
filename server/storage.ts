@@ -249,6 +249,30 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(tenants);
   }
 
+  // Companies
+  async getCompanyByTenantId(tenantId: number): Promise<Company | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    if (!tenant || !tenant.companyId) return undefined;
+    
+    const [company] = await db.select().from(companies).where(eq(companies.id, tenant.companyId));
+    return company || undefined;
+  }
+
+  async updateCompanyLogo(tenantId: number, logoUrl: string): Promise<Company | undefined> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    if (!tenant || !tenant.companyId) return undefined;
+    
+    const [company] = await db
+      .update(companies)
+      .set({ 
+        customLogo: logoUrl,
+        logoUploadedAt: new Date()
+      })
+      .where(eq(companies.id, tenant.companyId))
+      .returning();
+    return company || undefined;
+  }
+
   // Clients
   async getClients(tenantId: number): Promise<Client[]> {
     return await db.select().from(clients)

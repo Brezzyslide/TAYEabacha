@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from "@shared/schema";
-import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin } from "lucide-react";
+import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin, Upload, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -42,6 +42,184 @@ const editStaffSchema = z.object({
 });
 
 type EditStaffFormData = z.infer<typeof editStaffSchema>;
+
+// Staff Bulk Upload Component
+function StaffBulkUploadForm() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const downloadTemplate = () => {
+    const csvContent = "username,email,password,role,fullName,phone,address\nexample.user,user@example.com,password123,SupportWorker,John Doe,1234567890,123 Main St";
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'staff_upload_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleFileUpload = async () => {
+    if (!file) {
+      toast({
+        title: "Error",
+        description: "Please select a CSV file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      await apiRequest("POST", "/api/staff/bulk-upload", formData);
+      queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
+      toast({
+        title: "Success",
+        description: "Staff members uploaded successfully",
+      });
+      setFile(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload staff members",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-gray-600">Download the template and fill in your staff data</p>
+        <Button variant="outline" onClick={downloadTemplate}>
+          Download Template
+        </Button>
+      </div>
+      
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+        <input
+          type="file"
+          accept=".csv"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="hidden"
+          id="csv-upload"
+        />
+        <label htmlFor="csv-upload" className="cursor-pointer">
+          <div className="text-center">
+            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-600">
+              {file ? file.name : "Click to select CSV file"}
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <Button 
+        onClick={handleFileUpload} 
+        disabled={!file || isUploading}
+        className="w-full"
+      >
+        {isUploading ? "Uploading..." : "Upload Staff Data"}
+      </Button>
+    </div>
+  );
+}
+
+// Company Logo Upload Component
+function CompanyLogoUploadForm() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      const reader = new FileReader();
+      reader.onload = (e) => setPreview(e.target?.result as string);
+      reader.readAsDataURL(selectedFile);
+    }
+  };
+
+  const handleLogoUpload = async () => {
+    if (!file) {
+      toast({
+        title: "Error",
+        description: "Please select an image file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    try {
+      await apiRequest("POST", "/api/company/logo", formData);
+      queryClient.invalidateQueries({ queryKey: ["/api/company"] });
+      toast({
+        title: "Success",
+        description: "Company logo uploaded successfully",
+      });
+      setFile(null);
+      setPreview(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload logo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-600">Upload a PNG, JPG, or SVG file for your company logo</p>
+      
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+          id="logo-upload"
+        />
+        <label htmlFor="logo-upload" className="cursor-pointer">
+          <div className="text-center">
+            {preview ? (
+              <img src={preview} alt="Logo preview" className="mx-auto h-24 w-24 object-contain" />
+            ) : (
+              <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+            )}
+            <p className="mt-2 text-sm text-gray-600">
+              {file ? file.name : "Click to select logo image"}
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <Button 
+        onClick={handleLogoUpload} 
+        disabled={!file || isUploading}
+        className="w-full"
+      >
+        {isUploading ? "Uploading..." : "Upload Company Logo"}
+      </Button>
+    </div>
+  );
+}
 
 // EditStaffForm component
 function EditStaffForm({ 
@@ -329,13 +507,54 @@ export default function Staff() {
           <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Staff Management</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">View and manage your team members</p>
         </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 w-full sm:w-auto">
+                <UserPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">Create </span>Staff
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Bulk </span>Upload
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Bulk Staff Upload</DialogTitle>
+                <DialogDescription>
+                  Upload a CSV file to create multiple staff members at once. Download the template first.
+                </DialogDescription>
+              </DialogHeader>
+              <StaffBulkUploadForm />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
+                <ImageIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Company </span>Logo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Upload Company Logo</DialogTitle>
+                <DialogDescription>
+                  Upload your company's custom logo for white-labeling. This will replace the default fan blade logo.
+                </DialogDescription>
+              </DialogHeader>
+              <CompanyLogoUploadForm />
+            </DialogContent>
+          </Dialog>
+        </div>
+        
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 w-full sm:w-auto">
-              <UserPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Create </span>Staff
-            </Button>
-          </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Create New Staff Member</DialogTitle>

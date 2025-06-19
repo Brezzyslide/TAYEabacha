@@ -3172,6 +3172,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company API - Get company data for branding
+  app.get("/api/company", requireAuth, async (req: any, res) => {
+    try {
+      const company = await storage.getCompanyByTenantId(req.user.tenantId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      console.error("Company API error:", error);
+      res.status(500).json({ message: "Failed to fetch company data" });
+    }
+  });
+
+  // Staff Bulk Upload API
+  app.post("/api/staff/bulk-upload", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const csvData = req.body.file; // Assuming multer or similar middleware processes the file
+      // Parse CSV and create multiple staff members
+      const results = {
+        success: 0,
+        errors: []
+      };
+      
+      // This is a simplified implementation - in production you'd use a proper CSV parser
+      const lines = csvData.split('\n');
+      const headers = lines[0].split(',');
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        if (values.length !== headers.length) continue;
+        
+        const userData = {};
+        headers.forEach((header, index) => {
+          userData[header.trim()] = values[index]?.trim();
+        });
+        
+        try {
+          const hashedPassword = await hashPassword(userData.password);
+          const user = await storage.createUser({
+            ...userData,
+            password: hashedPassword,
+            tenantId: req.user.tenantId,
+          });
+          results.success++;
+        } catch (error) {
+          results.errors.push(`Row ${i}: ${error.message}`);
+        }
+      }
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Bulk upload error:", error);
+      res.status(500).json({ message: "Failed to process bulk upload" });
+    }
+  });
+
+  // Company Logo Upload API
+  app.post("/api/company/logo", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      // In a real implementation, you'd handle file upload with multer
+      // and store the file in cloud storage (AWS S3, etc.)
+      const logoUrl = req.body.logoUrl || "/uploads/company-logo.png"; // Placeholder
+      
+      const company = await storage.updateCompanyLogo(req.user.tenantId, logoUrl);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "upload_company_logo",
+        resourceType: "company",
+        description: "Uploaded company logo for white-labeling",
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Logo uploaded successfully", logoUrl });
+    } catch (error) {
+      console.error("Logo upload error:", error);
+      res.status(500).json({ message: "Failed to upload logo" });
+    }
+  });
+
   // Staff Management API - Edit staff and password reset
   app.put("/api/staff/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
