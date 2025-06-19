@@ -109,12 +109,17 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
 
   const startShiftMutation = useMutation({
     mutationFn: async () => {
+      // Validate mandatory handover notes
+      if (!handoverNotes.trim()) {
+        throw new Error("Handover notes are required to start your shift");
+      }
+
       const updateData = {
         status: "in-progress",
         startTimestamp: new Date().toISOString(),
         startLocation: location ? `${location.latitude},${location.longitude}` : null,
         handoverReceivedFromStaffId: handoverFromStaffId ? parseInt(handoverFromStaffId) : null,
-        handoverNotesIn: handoverNotes.trim() || null
+        handoverNotesIn: handoverNotes.trim()
       };
 
       // Fixed parameter order: method, url, data
@@ -260,14 +265,20 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="handover-notes">What were you told during handover?</Label>
+              <Label htmlFor="handover-notes">
+                What were you told during handover? <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="handover-notes"
                 value={handoverNotes}
                 onChange={(e) => setHandoverNotes(e.target.value)}
-                placeholder="Enter handover notes..."
+                placeholder="Enter handover notes... (Required)"
                 rows={4}
+                className={!handoverNotes.trim() ? "border-red-300 focus:border-red-500" : ""}
               />
+              {!handoverNotes.trim() && (
+                <p className="text-sm text-red-600">Handover notes are required to start your shift</p>
+              )}
             </div>
           </div>
 

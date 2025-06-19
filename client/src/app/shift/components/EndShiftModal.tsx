@@ -109,6 +109,11 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
 
   const endShiftMutation = useMutation({
     mutationFn: async () => {
+      // Validate mandatory handover notes
+      if (!handoverNotes.trim()) {
+        throw new Error("Handover notes are required to end your shift");
+      }
+
       const updateData = {
         endTime: new Date().toISOString(),
         isActive: false,
@@ -118,7 +123,7 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
           location: location.address,
         }),
         handoverGivenToStaffId: handoverToStaffId ? parseInt(handoverToStaffId) : null,
-        handoverNotesOut: handoverNotes.trim() || null
+        handoverNotesOut: handoverNotes.trim()
       };
 
       return apiRequest("PUT", `/api/shifts/${shift.id}`, updateData);
@@ -244,14 +249,20 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
           {/* Handover Information */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="handover-notes">What did you pass on to the next staff?</Label>
+              <Label htmlFor="handover-notes">
+                What did you pass on to the next staff? <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="handover-notes"
                 value={handoverNotes}
                 onChange={(e) => setHandoverNotes(e.target.value)}
-                placeholder="Enter handover notes for the next staff member..."
+                placeholder="Enter handover notes for the next staff member... (Required)"
                 rows={4}
+                className={!handoverNotes.trim() ? "border-red-300 focus:border-red-500" : ""}
               />
+              {!handoverNotes.trim() && (
+                <p className="text-sm text-red-600">Handover notes are required to end your shift</p>
+              )}
             </div>
 
             <div className="space-y-2">

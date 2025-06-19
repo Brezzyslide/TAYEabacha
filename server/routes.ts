@@ -528,7 +528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Role access verified", role: req.user.role });
   });
 
-  app.put("/api/shifts/:id", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+  app.put("/api/shifts/:id", requireAuth, async (req: any, res) => {
     try {
       const shiftId = parseInt(req.params.id);
       const updateData = req.body;
@@ -536,6 +536,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[SHIFT UPDATE] User ${req.user.id} (${req.user.role}) updating shift ${shiftId}`);
       console.log(`[SHIFT UPDATE] Update data:`, JSON.stringify(updateData, null, 2));
       console.log(`[SHIFT UPDATE] Tenant ID: ${req.user.tenantId}`);
+      
+      // Get the existing shift to check permissions
+      const existingShift = await storage.getShift(shiftId, req.user.tenantId);
+      if (!existingShift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      // Permission check: SupportWorker can only update their own shifts, others need coordinator+ role
+      if (req.user.role === "SupportWorker" && existingShift.userId !== req.user.id) {
+        return res.status(403).json({ message: "You can only update your own assigned shifts" });
+      } else if (req.user.role !== "SupportWorker" && !["Coordinator", "Admin", "ConsoleManager"].includes(req.user.role)) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
       
       // Convert string timestamps to Date objects for Drizzle
       const processedUpdateData = { ...updateData };
