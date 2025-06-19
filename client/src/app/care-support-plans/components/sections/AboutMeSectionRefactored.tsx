@@ -149,9 +149,8 @@ export function AboutMeSectionRefactored() {
           <Button 
             onClick={handleGenerateInitialContent}
             disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto mb-4"
             size="sm"
-            className="w-full mb-4"
           >
             {generateTargetedContentMutation.isPending ? (
               <>
