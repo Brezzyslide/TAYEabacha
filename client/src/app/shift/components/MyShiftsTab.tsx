@@ -30,16 +30,10 @@ export default function MyShiftsTab() {
   // Filter shifts assigned to current user that are approved (not just requested)
   const myShifts = useMemo(() => {
     if (!user) return [];
-    console.log("[MY SHIFTS] User ID:", user.id);
-    console.log("[MY SHIFTS] Total shifts:", shifts.length);
-    const filteredShifts = shifts.filter(shift => {
-      const isAssignedToUser = shift.userId === user.id;
-      const isNotRequested = shift.status !== "requested";
-      console.log(`[MY SHIFTS] Shift ${shift.id}: userId=${shift.userId}, status=${shift.status}, assignedToUser=${isAssignedToUser}, notRequested=${isNotRequested}`);
-      return isAssignedToUser && isNotRequested;
-    });
-    console.log("[MY SHIFTS] Filtered shifts count:", filteredShifts.length);
-    return filteredShifts;
+    return shifts.filter(shift => 
+      shift.userId === user.id && 
+      shift.status !== "requested" // Exclude pending requests
+    );
   }, [shifts, user]);
 
   // Get the next upcoming shift

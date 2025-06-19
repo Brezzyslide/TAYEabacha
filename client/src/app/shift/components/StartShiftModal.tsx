@@ -44,6 +44,34 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
     queryKey: ["/api/clients"],
   });
 
+  // Convert coordinates to readable address
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=YOUR_API_KEY`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          return data.results[0].formatted;
+        }
+      }
+    } catch (error) {
+      console.warn("Geocoding failed:", error);
+    }
+    
+    // Fallback to reverse geocoding using browser API or return coordinates
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      }
+    } catch (error) {
+      console.warn("Nominatim geocoding failed:", error);
+    }
+    
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  };
+
   // Get current location when modal opens
   useEffect(() => {
     if (isOpen && !location) {
@@ -52,12 +80,13 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const { latitude, longitude } = position.coords;
+            const address = await getAddressFromCoordinates(latitude, longitude);
             setLocation({
               latitude,
               longitude,
-              address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+              address
             });
             setIsLoadingLocation(false);
           },

@@ -28,12 +28,9 @@ export default function PendingRequestsTab() {
   // Filter shifts with status "requested" for current user
   const pendingShifts = useMemo(() => {
     if (!user) return [];
-    console.log("[PENDING SHIFTS] User ID:", user.id);
-    const filtered = shifts.filter(shift => 
+    return shifts.filter(shift => 
       shift.userId === user.id && shift.status === "requested"
     );
-    console.log("[PENDING SHIFTS] Found pending shifts:", filtered.length);
-    return filtered;
   }, [shifts, user]);
 
   // Mutation for canceling shift requests

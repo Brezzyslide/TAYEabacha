@@ -672,11 +672,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Shift is not in requested status" });
       }
       
+      if (!shift.userId) {
+        console.log(`[APPROVE SHIFT] ERROR: Shift ${shiftId} has no userId assigned`);
+        return res.status(400).json({ message: "Cannot approve shift with no assigned user" });
+      }
+      
       // Approve the shift by changing status to assigned while preserving userId
-      const updatedShift = await storage.updateShift(shiftId, {
+      const updateData = {
         status: "assigned",
         userId: shift.userId // Explicitly preserve the original requester's userId
-      }, req.user.tenantId);
+      };
+      
+      console.log(`[APPROVE SHIFT] Updating with data:`, updateData);
+      const updatedShift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
       
       console.log(`[APPROVE SHIFT] Updated shift - status: ${updatedShift?.status}, userId: ${updatedShift?.userId}`);
       console.log(`[APPROVE SHIFT] Original userId preserved: ${shift.userId === updatedShift?.userId}`);
