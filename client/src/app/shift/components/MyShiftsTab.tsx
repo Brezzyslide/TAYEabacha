@@ -114,107 +114,189 @@ export default function MyShiftsTab() {
         </p>
       </div>
 
-      {!nextUpcomingShift ? (
+      {myShifts.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No upcoming shifts
+              No shifts assigned
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              You don't have any upcoming shifts assigned. Check the calendar for available shifts to request.
+              You don't have any shifts assigned. Check the calendar for available shifts to request.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <Card 
-          className="hover:shadow-lg transition-all cursor-pointer border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950"
-          onClick={() => handleShiftCardClick(nextUpcomingShift)}
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-xl font-bold text-blue-900 dark:text-blue-100">
-                  {nextUpcomingShift.title}
-                </CardTitle>
-                <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  <Calendar className="h-4 w-4" />
-                  {formatShiftDate(nextUpcomingShift.startTime)}
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <ShiftStatusTag 
-                  status={(nextUpcomingShift as any).status || "assigned"} 
-                  className="text-sm px-3 py-1" 
-                />
-                <Button
-                  variant={((nextUpcomingShift as any).status === "in-progress") ? "destructive" : "default"}
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShiftCardClick(nextUpcomingShift);
-                  }}
-                >
-                  {((nextUpcomingShift as any).status === "in-progress") ? (
-                    <>
-                      <Square className="h-4 w-4" />
-                      End Shift
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4" />
-                      Start Shift
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
-                <Clock className="h-4 w-4" />
-                <span className="font-medium">
-                  {format(new Date(nextUpcomingShift.startTime), "h:mm a")} - {
-                    nextUpcomingShift.endTime ? 
-                    format(new Date(nextUpcomingShift.endTime), "h:mm a") : 
-                    "TBD"
-                  }
-                </span>
-              </div>
-              
-              {nextUpcomingShift.clientId && (
-                <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
-                  <User className="h-4 w-4" />
-                  <span className="font-medium">{getClientName(nextUpcomingShift.clientId)}</span>
-                </div>
-              )}
-            </div>
-
-            {(nextUpcomingShift as any).description && (
-              <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  {(nextUpcomingShift as any).description}
-                </p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-4 border-t border-blue-200 dark:border-blue-800">
-              <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                <MapPin className="h-4 w-4" />
-                <span>Click card to manage shift</span>
-              </div>
-              <Badge 
-                variant="outline" 
-                className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+        <div className="space-y-6">
+          {nextUpcomingShift && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Next Upcoming Shift</h3>
+              <Card 
+                className="hover:shadow-lg transition-all cursor-pointer border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950"
+                onClick={() => handleShiftCardClick(nextUpcomingShift)}
               >
-                Next Up
-              </Badge>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl font-bold text-blue-900 dark:text-blue-100">
+                        {nextUpcomingShift.title}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        <Calendar className="h-4 w-4" />
+                        {nextUpcomingShift.startTime ? formatShiftDate(nextUpcomingShift.startTime) : "Date TBD"}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <ShiftStatusTag 
+                        status={(nextUpcomingShift as any).status || "assigned"} 
+                        className="text-sm px-3 py-1" 
+                      />
+                      <Button
+                        variant={((nextUpcomingShift as any).status === "in-progress") ? "destructive" : "default"}
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShiftCardClick(nextUpcomingShift);
+                        }}
+                      >
+                        {((nextUpcomingShift as any).status === "in-progress") ? (
+                          <>
+                            <Square className="h-4 w-4" />
+                            End Shift
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4" />
+                            Start Shift
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-medium">
+                        {nextUpcomingShift.startTime ? format(new Date(nextUpcomingShift.startTime), "h:mm a") : "Time TBD"} - {
+                          nextUpcomingShift.endTime ? 
+                          format(new Date(nextUpcomingShift.endTime), "h:mm a") : 
+                          "TBD"
+                        }
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                      <User className="h-4 w-4" />
+                      <span className="font-medium">{getClientName(nextUpcomingShift.clientId)}</span>
+                    </div>
+                  </div>
+
+                  {(nextUpcomingShift as any).description && (
+                    <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        {(nextUpcomingShift as any).description}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-center">
+                    <Badge 
+                      variant="outline" 
+                      className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+                    >
+                      Next Up
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+          )}
+
+          <div>
+            <h3 className="text-lg font-semibold mb-4">All My Shifts ({myShifts.length})</h3>
+            <div className="space-y-4">
+              {myShifts
+                .sort((a, b) => {
+                  if (!a.startTime && !b.startTime) return 0;
+                  if (!a.startTime) return 1;
+                  if (!b.startTime) return -1;
+                  return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+                })
+                .map((shift) => (
+                  <Card 
+                    key={shift.id}
+                    className="hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => handleShiftCardClick(shift)}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg font-semibold">
+                            {shift.title}
+                          </CardTitle>
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <Calendar className="h-4 w-4" />
+                            {shift.startTime ? formatShiftDate(shift.startTime) : "Date TBD"}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <ShiftStatusTag 
+                            status={(shift as any).status || "assigned"} 
+                            className="text-sm px-2 py-1" 
+                          />
+                          <Button
+                            variant={((shift as any).status === "in-progress") ? "destructive" : "outline"}
+                            size="sm"
+                            className="flex items-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShiftCardClick(shift);
+                            }}
+                          >
+                            {((shift as any).status === "in-progress") ? (
+                              <>
+                                <Square className="h-4 w-4" />
+                                End
+                              </>
+                            ) : (
+                              <>
+                                <Play className="h-4 w-4" />
+                                Start
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            {shift.startTime ? format(new Date(shift.startTime), "h:mm a") : "Time TBD"} - {
+                              shift.endTime ? 
+                              format(new Date(shift.endTime), "h:mm a") : 
+                              "TBD"
+                            }
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <User className="h-4 w-4" />
+                          <span>{getClientName(shift.clientId)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {selectedShift && (
@@ -226,10 +308,6 @@ export default function MyShiftsTab() {
               setSelectedShift(null);
             }}
             shift={selectedShift}
-            client={selectedShift.clientId ? 
-              (clients as any[]).find(c => c.id === selectedShift.clientId) : 
-              null
-            }
           />
 
           <EndShiftModal
@@ -239,10 +317,6 @@ export default function MyShiftsTab() {
               setSelectedShift(null);
             }}
             shift={selectedShift}
-            client={selectedShift.clientId ? 
-              (clients as any[]).find(c => c.id === selectedShift.clientId) : 
-              null
-            }
           />
         </>
       )}
