@@ -11,6 +11,118 @@ import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchem
 import { z } from "zod";
 
 // Helper function to determine shift type based on start time
+// Budget deduction processing function
+async function processBudgetDeduction(shift: any, userId: number) {
+  console.log(`[BUDGET DEDUCTION] Processing for shift ${shift.id}, client ${shift.clientId}`);
+  
+  if (!shift.startTime || !shift.endTime || !shift.clientId) {
+    console.log(`[BUDGET DEDUCTION] Missing required data: startTime=${!!shift.startTime}, endTime=${!!shift.endTime}, clientId=${!!shift.clientId}`);
+    return;
+  }
+
+  // Calculate shift duration in hours
+  const startTime = new Date(shift.startTime);
+  const endTime = new Date(shift.endTime);
+  const shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+  
+  console.log(`[BUDGET DEDUCTION] Shift duration: ${shiftHours} hours`);
+  
+  if (shiftHours <= 0) {
+    console.log(`[BUDGET DEDUCTION] Invalid shift duration: ${shiftHours}`);
+    return;
+  }
+
+  // Get client's NDIS budget
+  const budget = await storage.getNdisBudgetByClient(shift.clientId, shift.tenantId);
+  console.log(`[BUDGET DEDUCTION] Budget found:`, budget ? `ID ${budget.id}` : 'None');
+  
+  if (!budget) {
+    console.log(`[BUDGET DEDUCTION] No budget found for client ${shift.clientId}`);
+    return;
+  }
+
+  // Determine shift type and get pricing
+  const shiftType = determineShiftType(startTime);
+  const staffRatio = shift.staffRatio || "1:1";
+  
+  console.log(`[BUDGET DEDUCTION] Shift type: ${shiftType}, ratio: ${staffRatio}`);
+
+  // Determine effective rate (priority: budget price overrides → NDIS pricing table)
+  let effectiveRate = 0;
+  
+  const priceOverrides = budget.priceOverrides as any;
+  if (priceOverrides && priceOverrides[shiftType]) {
+    effectiveRate = parseFloat(priceOverrides[shiftType].toString());
+    console.log(`[BUDGET DEDUCTION] Using price override: $${effectiveRate}`);
+  } else {
+    // Fallback to NDIS pricing table
+    const pricing = await storage.getNdisPricingByTypeAndRatio(shiftType, staffRatio, shift.tenantId);
+    if (pricing) {
+      effectiveRate = parseFloat(pricing.rate.toString());
+      console.log(`[BUDGET DEDUCTION] Using NDIS pricing: $${effectiveRate}`);
+    }
+  }
+  
+  if (effectiveRate <= 0) {
+    console.log(`[BUDGET DEDUCTION] No valid rate found for ${shiftType} ${staffRatio}`);
+    return;
+  }
+
+  const shiftCost = effectiveRate * shiftHours;
+  console.log(`[BUDGET DEDUCTION] Calculated cost: $${shiftCost} (${shiftHours}h × $${effectiveRate})`);
+
+  // Determine budget category based on shift type
+  const category = (shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL";
+  
+  // Check if sufficient funds available
+  let currentRemaining = 0;
+  switch (category) {
+    case "CommunityAccess":
+      currentRemaining = parseFloat(budget.communityAccessRemaining.toString());
+      break;
+    case "SIL":
+      currentRemaining = parseFloat(budget.silRemaining.toString());
+      break;
+  }
+  
+  if (currentRemaining < shiftCost) {
+    console.log(`[BUDGET DEDUCTION] Insufficient funds: Available $${currentRemaining}, Required $${shiftCost}`);
+    return;
+  }
+
+  // Get tenant's company ID
+  const tenant = await storage.getTenant(shift.tenantId);
+  const companyId = tenant?.companyId || "default-company";
+
+  // Process the budget deduction
+  await storage.processBudgetDeduction({
+    budgetId: budget.id,
+    category,
+    shiftType,
+    ratio: staffRatio,
+    hours: shiftHours,
+    rate: effectiveRate,
+    amount: shiftCost,
+    shiftId: shift.id,
+    description: `Shift completion: ${shift.title}`,
+    companyId,
+    createdByUserId: userId,
+    tenantId: shift.tenantId,
+  });
+
+  console.log(`[BUDGET DEDUCTION] Successfully processed $${shiftCost} deduction for shift ${shift.id}`);
+
+  // Log the budget deduction activity
+  await storage.createActivityLog({
+    userId,
+    action: "budget_deduction",
+    resourceType: "ndis_budget",
+    resourceId: budget.id,
+    description: `Deducted $${shiftCost.toFixed(2)} for completed shift: ${shift.title} (${shiftHours.toFixed(1)}h @ $${effectiveRate}/h)`,
+    tenantId: shift.tenantId,
+  });
+}
+
 function determineShiftType(startTime: Date): "AM" | "PM" | "ActiveNight" | "Sleepover" {
   const hour = startTime.getHours();
   

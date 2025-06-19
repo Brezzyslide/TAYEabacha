@@ -1348,6 +1348,22 @@ export class DatabaseStorage implements IStorage {
     return tenant;
   }
 
+  async getAllTenants(): Promise<any[]> {
+    return await db.select().from(tenants);
+  }
+
+  async getCompletedShiftsWithoutBudgetTransactions(tenantId: number): Promise<any[]> {
+    return await db.select()
+      .from(shifts)
+      .leftJoin(budgetTransactions, eq(shifts.id, budgetTransactions.shiftId))
+      .where(and(
+        eq(shifts.tenantId, tenantId),
+        eq(shifts.isActive, false),
+        isNotNull(shifts.endTime),
+        isNull(budgetTransactions.shiftId)
+      ));
+  }
+
   async processBudgetDeduction(params: {
     budgetId: number;
     category: string;
