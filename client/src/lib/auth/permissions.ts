@@ -88,13 +88,21 @@ export const hasAction = (roleName: string, module: string, action: string): boo
  * Check if a user has a specific permission capability
  */
 export const hasPermission = (user: any, capability: string): boolean => {
-  if (!user?.role) return false;
+  console.log("[hasPermission] Checking permission:", { user: user?.role, capability });
+  if (!user?.role) {
+    console.log("[hasPermission] No user role found");
+    return false;
+  }
   
   switch (capability) {
     case "canEditBudget":
-      return ["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(user.role);
+      const allowedRoles = ["TeamLeader", "Coordinator", "Admin", "ConsoleManager"];
+      const canEdit = allowedRoles.some(role => role.toLowerCase() === user.role.toLowerCase());
+      console.log("[hasPermission] canEditBudget result:", canEdit, "for role:", user.role);
+      return canEdit;
     case "canViewPricing":
-      return ["Admin", "ConsoleManager"].includes(user.role);
+      const pricingRoles = ["Admin", "ConsoleManager"];
+      return pricingRoles.some(role => role.toLowerCase() === user.role.toLowerCase());
     case "canManageBudgets":
       return ["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(user.role);
     case "canViewBudgets":

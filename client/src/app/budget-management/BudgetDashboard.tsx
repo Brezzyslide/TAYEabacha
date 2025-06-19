@@ -48,6 +48,10 @@ export default function BudgetDashboard() {
   });
 
   const canEditBudgets = hasPermission(user, "canEditBudget");
+  
+  // Debug logging
+  console.log("[BudgetDashboard] User data:", user);
+  console.log("[BudgetDashboard] canEditBudgets:", canEditBudgets);
   const canViewPricing = hasPermission(user, "canViewPricing");
 
   // Filter budgets based on search term and selected client
