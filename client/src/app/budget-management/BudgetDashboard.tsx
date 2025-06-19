@@ -122,22 +122,22 @@ export default function BudgetDashboard() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-xl sm:text-3xl font-bold">NDIS Budget Management</h1>
         {canEditBudgets && (
-          <Button onClick={() => setShowCreateForm(true)}>
+          <Button onClick={() => setShowCreateForm(true)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Create Budget
+            <span className="hidden sm:inline">Create </span>Budget
           </Button>
         )}
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Budget</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalBudget.toLocaleString()}</div>
+          <CardContent className="pt-1 sm:pt-2">
+            <div className="text-lg sm:text-2xl font-bold">${totalBudget.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Across {budgets.length} participants
             </p>
@@ -145,12 +145,12 @@ export default function BudgetDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Remaining</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Remaining</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">${totalRemaining.toLocaleString()}</div>
+          <CardContent className="pt-1 sm:pt-2">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">${totalRemaining.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Available for services
             </p>
@@ -158,12 +158,12 @@ export default function BudgetDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Used</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Used</CardTitle>
+            <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">${totalUsed.toLocaleString()}</div>
+          <CardContent className="pt-1 sm:pt-2">
+            <div className="text-lg sm:text-2xl font-bold text-red-600">${totalUsed.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               {utilizationRate.toFixed(1)}% utilization
             </p>
@@ -171,12 +171,12 @@ export default function BudgetDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Budgets</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Low Budgets</CardTitle>
+            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+          <CardContent className="pt-1 sm:pt-2">
+            <div className="text-lg sm:text-2xl font-bold text-yellow-600">
               {budgets.filter(b => {
                 const totalRemaining = parseFloat(b.silRemaining || "0") + 
                   parseFloat(b.communityAccessRemaining || "0") + 
@@ -195,29 +195,39 @@ export default function BudgetDashboard() {
       </div>
 
       <Tabs defaultValue="budgets" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="budgets">Participant Budgets</TabsTrigger>
-          <TabsTrigger value="transactions">Budget Transactions</TabsTrigger>
-          {canViewPricing && <TabsTrigger value="pricing">NDIS Pricing</TabsTrigger>}
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+          <TabsTrigger value="budgets" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            <span className="hidden sm:inline">Participant </span>Budgets
+          </TabsTrigger>
+          <TabsTrigger value="transactions" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            <span className="hidden sm:inline">Budget </span>Transactions
+          </TabsTrigger>
+          {canViewPricing && (
+            <TabsTrigger value="pricing" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+              <span className="hidden sm:inline">NDIS </span>Pricing
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="reports" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            Reports
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="budgets" className="space-y-6">
+        <TabsContent value="budgets" className="space-y-4 sm:space-y-6 mt-3 sm:mt-4">
           {/* Search and Filter Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-              <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-center flex-1">
+              <div className="relative w-full sm:flex-1 sm:max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search by client name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm"
                 />
               </div>
               
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Filter className="h-4 w-4 text-gray-400 flex-shrink-0" />
                 <Select value={selectedClient} onValueChange={setSelectedClient}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by client" />
