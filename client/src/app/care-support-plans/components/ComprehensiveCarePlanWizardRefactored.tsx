@@ -185,21 +185,23 @@ function WizardContent({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex flex-col h-full max-h-[95vh]">
-      {/* Header with progress - more compact */}
-      <div className="border-b bg-white dark:bg-gray-900 px-6 py-4">
-        <div className="flex justify-between items-center mb-3">
-          <div>
-            <h2 className="text-xl font-bold">Care Support Plan</h2>
-            <p className="text-sm text-muted-foreground">
+      {/* Header with progress - mobile optimized */}
+      <div className="border-b bg-white dark:bg-gray-900 px-2 sm:px-6 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mb-3">
+          <div className="flex-1">
+            <h2 className="text-lg sm:text-xl font-bold">Care Support Plan</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Step {currentStep + 1} of {WIZARD_STEPS.length}: {WIZARD_STEPS[currentStep].title}
             </p>
           </div>
-          <SaveStatusIndicator />
+          <div className="flex justify-end">
+            <SaveStatusIndicator />
+          </div>
         </div>
         
         <Progress value={progress} className="mb-3 h-1.5" />
         
-        {/* Step navigation - horizontal scroll with progressive unlocking */}
+        {/* Step navigation - mobile optimized horizontal scroll */}
         <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
           {WIZARD_STEPS.map((step, index) => {
             const sectionStatus = getSectionStatus(step.id);
@@ -218,70 +220,83 @@ function WizardContent({ onClose }: { onClose: () => void }) {
                 size="sm"
                 onClick={() => !isLocked && handleStepClick(index)}
                 disabled={isLocked}
-                className={`whitespace-nowrap text-xs px-3 py-1.5 h-auto ${
+                className={`whitespace-nowrap text-xs px-2 sm:px-3 py-1.5 h-auto min-w-fit ${
                   isLocked ? 'opacity-50 cursor-not-allowed text-gray-400' : ''
                 } ${
-                  isCompleted ? 'bg-green-100 text-green-800 border-green-200' : ''
+                  isCompleted ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-100' : ''
                 }`}
                 title={isLocked ? 'Complete previous sections to unlock' : step.description}
               >
                 {isLocked && '🔒 '}
                 {isCompleted && '✓ '}
-                {index + 1}. {step.title}
+                <span className="sm:hidden">{index + 1}</span>
+                <span className="hidden sm:inline">{index + 1}. {step.title}</span>
               </Button>
             );
           })}
         </div>
       </div>
 
-      {/* Content area with centered cards */}
+      {/* Content area - mobile optimized */}
       <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-6xl mx-auto p-6">
-          {/* Section header centered */}
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold mb-2">{WIZARD_STEPS[currentStep].title}</h3>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+        <div className="max-w-6xl mx-auto p-2 sm:p-6">
+          {/* Section header - mobile responsive */}
+          <div className="text-center mb-4 sm:mb-8">
+            <h3 className="text-xl sm:text-2xl font-bold mb-2">{WIZARD_STEPS[currentStep].title}</h3>
+            <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto px-2">
               {WIZARD_STEPS[currentStep].description}
             </p>
           </div>
           
-          {/* Content with proper padding */}
+          {/* Content with responsive padding */}
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border">
-            <div className="p-8">
+            <div className="p-3 sm:p-6 lg:p-8">
               {renderStepContent()}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer navigation - cleaner design */}
-      <div className="border-t bg-white dark:bg-gray-900 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Button 
-            variant="outline" 
-            onClick={handlePrevious} 
-            disabled={isFirstStep}
-            size="sm"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
-          
-          <div className="text-xs text-muted-foreground bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-            {currentStep + 1} of {WIZARD_STEPS.length}
+      {/* Footer navigation - mobile optimized */}
+      <div className="border-t bg-white dark:bg-gray-900 px-2 sm:px-6 py-3 sm:py-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={handlePrevious} 
+              disabled={isFirstStep}
+              size="sm"
+              className="w-full sm:w-auto order-2 sm:order-1"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            
+            <div className="text-xs text-muted-foreground bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-center order-1 sm:order-2">
+              {currentStep + 1} of {WIZARD_STEPS.length}
+            </div>
+            
+            {isLastStep ? (
+              <Button 
+                onClick={handleSave} 
+                size="sm"
+                className="w-full sm:w-auto order-3"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                Complete Plan
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleNext} 
+                size="sm"
+                className="w-full sm:w-auto order-3"
+                disabled={!isNextSectionUnlocked(currentStep + 1)}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
           </div>
-          
-          {isLastStep ? (
-            <Button onClick={handleSave} size="sm">
-              <Save className="h-4 w-4 mr-1" />
-              Complete Plan
-            </Button>
-          ) : (
-            <Button onClick={handleNext} size="sm">
-              Next
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          )}
         </div>
       </div>
     </div>
