@@ -155,6 +155,8 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                                     ? 'bg-emerald-600 text-white border border-emerald-700'
                                     : shift.status === 'in-progress'
                                     ? 'bg-orange-500 text-white border border-orange-600'
+                                    : shift.status === 'requested'
+                                    ? 'bg-yellow-500 text-white border border-yellow-600'
                                     : isAssigned 
                                     ? 'bg-green-500 text-white border border-green-600' 
                                     : 'bg-red-500 text-white border border-red-600'
@@ -238,6 +240,8 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                                 ? 'bg-emerald-600 text-white border border-emerald-700'
                                 : shift.status === 'in-progress'
                                 ? 'bg-orange-500 text-white border border-orange-600'
+                                : shift.status === 'requested'
+                                ? 'bg-yellow-500 text-white border border-yellow-600'
                                 : isAssigned 
                                 ? 'bg-green-500 text-white border border-green-600' 
                                 : 'bg-red-500 text-white border border-red-600'
