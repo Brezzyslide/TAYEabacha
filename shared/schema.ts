@@ -12,6 +12,8 @@ export const companies = pgTable("companies", {
   primaryContactName: text("primary_contact_name").notNull(),
   primaryContactEmail: text("primary_contact_email").notNull(),
   primaryContactPhone: text("primary_contact_phone"),
+  customLogo: text("custom_logo"), // URL for uploaded company logo
+  logoUploadedAt: timestamp("logo_uploaded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -655,6 +657,7 @@ export const userRoleAssignmentsRelations = relations(userRoleAssignments, ({ on
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
   createdAt: true,
+  logoUploadedAt: true,
 });
 
 export const insertTenantSchema = createInsertSchema(tenants).omit({

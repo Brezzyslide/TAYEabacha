@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Menu, MapPin, ChevronDown, Home, LogOut, X } from "lucide-react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,10 +14,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import MobileSidebar from "./mobile-sidebar";
+import CompanyLogo from "@/components/ui/company-logo";
+
 export default function Header() {
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
+  // Fetch company information
+  const { data: company } = useQuery({
+    queryKey: ['/api/company'],
+    enabled: !!user,
+  });
 
   if (!user) return null;
 
@@ -55,11 +64,29 @@ export default function Header() {
             >
               <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Dashboard</h1>
-              <p className="text-xs sm:text-sm text-gray-500 truncate">
-                Welcome back, <span className="font-medium">{user.fullName}</span>
-              </p>
+            {/* Company Logo */}
+            <div className="flex items-center space-x-3 min-w-0">
+              {company && (
+                <CompanyLogo 
+                  companyName={company.name}
+                  customLogo={company.customLogo}
+                  size="sm"
+                  showName={false}
+                />
+              )}
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Dashboard</h1>
+                <div className="flex flex-col">
+                  {company && (
+                    <p className="text-xs sm:text-sm text-gray-800 font-bold truncate">
+                      {company.name}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 truncate">
+                    Welcome back, <span className="font-medium">{user.fullName}</span>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         
