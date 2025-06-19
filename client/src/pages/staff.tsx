@@ -323,17 +323,17 @@ export default function Staff() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
-          <p className="text-gray-600 mt-1">View and manage your team members</p>
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Staff Management</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">View and manage your team members</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 w-full sm:w-auto">
               <UserPlus className="h-4 w-4" />
-              Create Staff
+              <span className="hidden sm:inline">Create </span>Staff
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
@@ -470,48 +470,48 @@ export default function Staff() {
         </Dialog>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Staff</p>
-                <p className="text-3xl font-bold text-gray-900">{staff?.length || 0}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Staff</p>
+                <p className="text-xl sm:text-3xl font-bold text-gray-900">{staff?.length || 0}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <UserCircle className="h-6 w-6 text-blue-600" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <UserCircle className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Staff</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Active Staff</p>
+                <p className="text-xl sm:text-3xl font-bold text-gray-900">
                   {staff?.filter(s => s.isActive).length || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <UserCircle className="h-6 w-6 text-green-600" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <UserCircle className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Administrators</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Administrators</p>
+                <p className="text-xl sm:text-3xl font-bold text-gray-900">
                   {staff?.filter(s => ['Admin', 'ConsoleManager'].includes(s.role)).length || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <Shield className="h-6 w-6 text-red-600" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -520,16 +520,16 @@ export default function Staff() {
       
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Staff Directory</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <CardTitle className="text-lg sm:text-xl">Staff Directory</CardTitle>
             <div className="flex items-center space-x-2">
-              <div className="relative">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search staff..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 text-sm"
                 />
               </div>
             </div>
@@ -539,19 +539,22 @@ export default function Staff() {
           {isLoading ? (
             <div className="text-center py-8">Loading staff...</div>
           ) : filteredStaff && filteredStaff.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="w-32">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden lg:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead className="w-32">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
               <TableBody>
                 {filteredStaff.map((member) => (
                   <TableRow key={member.id}>
@@ -620,8 +623,81 @@ export default function Staff() {
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody>
-            </Table>
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="lg:hidden space-y-4">
+                {filteredStaff.map((member) => (
+                  <Card key={member.id} className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                          {getRoleIcon(member.role)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{member.username}</h3>
+                          <Badge variant={getRoleColor(member.role)} className="text-xs">
+                            {member.role}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Badge variant={member.isActive ? "default" : "secondary"} className="text-xs">
+                        {member.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span>{member.email || "No email"}</span>
+                      </div>
+                      {member.phone && (
+                        <div className="flex items-center space-x-2">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span>{member.phone}</span>
+                        </div>
+                      )}
+                      {member.address && (
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span>{member.address}</span>
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        Joined: {new Date(member.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <PermissionGuard module="staff" action="edit">
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditStaff(member)}
+                          className="flex-1"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                        <PermissionGuard module="staff" action="reset-password">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleResetPassword(member)}
+                            className="flex-1"
+                          >
+                            <Key className="h-4 w-4 mr-2" />
+                            Reset Password
+                          </Button>
+                        </PermissionGuard>
+                      </div>
+                    </PermissionGuard>
+                  </Card>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="text-center py-8 text-gray-500">No staff members found</div>
           )}
