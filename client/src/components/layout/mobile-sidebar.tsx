@@ -67,9 +67,9 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     const Icon = item.icon;
     return (
       <Link href={item.href}>
-        <a
+        <div
           className={cn(
-            "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+            "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors cursor-pointer",
             isActive(item.href)
               ? "bg-primary/10 text-primary border-r-2 border-primary"
               : "text-gray-700 hover:bg-gray-100"
@@ -78,7 +78,7 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         >
           <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
           {item.name}
-        </a>
+        </div>
       </Link>
     );
   };
@@ -96,19 +96,19 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden",
+          "fixed top-0 left-0 z-50 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Building className="h-5 w-5 text-white" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">CareConnect</h2>
-              <p className="text-xs text-gray-500">{user.role}</p>
+              <p className="text-xs text-gray-500 capitalize">{user.role}</p>
             </div>
           </div>
           <Button
@@ -122,7 +122,7 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
           {/* Support Work Section */}
           <div>
             <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
