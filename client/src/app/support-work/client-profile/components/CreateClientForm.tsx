@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ interface CreateClientFormProps {
 export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<InsertClient>({
@@ -50,13 +52,20 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
   });
 
   const createClientMutation = useMutation({
-    mutationFn: (data: InsertClient) => apiRequest("/api/clients", "POST", data),
-    onSuccess: () => {
+    mutationFn: async (data: InsertClient) => {
+      const response = await apiRequest("POST", "/api/clients", data);
+      return response.json();
+    },
+    onSuccess: (newClient) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
         title: "Success",
         description: "Client created successfully",
       });
+      
+      // Redirect to the new client's profile page
+      setLocation(`/support-work/client-profile/${newClient.id}`);
+      
       onSuccess?.();
     },
     onError: (error) => {

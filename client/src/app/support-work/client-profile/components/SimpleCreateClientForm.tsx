@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ interface SimpleCreateClientFormProps {
 export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCreateClientFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateClientFormData>({
@@ -68,17 +70,22 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
   });
 
   const createClientMutation = useMutation({
-    mutationFn: (data: any) => {
+    mutationFn: async (data: any) => {
       // Server will add tenantId and createdBy from auth context
-      return apiRequest("POST", "/api/clients", data);
+      const response = await apiRequest("POST", "/api/clients", data);
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newClient) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       form.reset(); // Reset the form after successful creation
       toast({
         title: "Success",
         description: "Client created successfully",
       });
+      
+      // Redirect to the new client's profile page
+      setLocation(`/support-work/client-profile/${newClient.id}`);
+      
       onSuccess?.();
     },
     onError: (error: any) => {
