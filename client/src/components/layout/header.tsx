@@ -70,22 +70,18 @@ export default function Header() {
             </Button>
             {/* Company Logo */}
             <div className="flex items-center space-x-3 min-w-0">
-              {company && (
-                <CompanyLogo 
-                  companyName={company.name}
-                  customLogo={company.customLogo}
-                  size="sm"
-                  showName={false}
-                />
-              )}
+              <CompanyLogo 
+                companyName={company?.name || "Default Company"}
+                customLogo={company?.customLogo}
+                size="sm"
+                showName={false}
+              />
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Dashboard</h1>
                 <div className="flex flex-col">
-                  {company && (
-                    <p className="text-xs sm:text-sm text-gray-800 font-bold truncate">
-                      {company.name}
-                    </p>
-                  )}
+                  <p className="text-xs sm:text-sm text-gray-800 font-bold truncate">
+                    {company?.name || "XYZ LTD"}
+                  </p>
                   <p className="text-xs text-gray-500 truncate">
                     Welcome back, <span className="font-medium">{user.fullName}</span>
                   </p>
