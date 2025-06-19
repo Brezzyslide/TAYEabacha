@@ -11,6 +11,7 @@ interface LocationData {
   latitude: number;
   longitude: number;
   accuracy: number;
+  address: string;
 }
 
 interface ShiftActionButtonsProps {
@@ -27,6 +28,21 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
   const canStartShift = !shift.isActive && shift.userId;
   const canEndShift = shift.isActive && isUserShift;
 
+  // Convert coordinates to readable address
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      }
+    } catch (error) {
+      console.warn("Nominatim geocoding failed:", error);
+    }
+    
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  };
+
   const getCurrentLocation = (): Promise<LocationData> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -36,12 +52,15 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
 
       setIsGettingLocation(true);
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          const address = await getAddressFromCoordinates(latitude, longitude);
           setIsGettingLocation(false);
           resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
+            latitude,
+            longitude,
+            accuracy,
+            address,
           });
         },
         (error) => {
@@ -79,7 +98,7 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         ...(locationData && {
           latitude: locationData.latitude.toString(),
           longitude: locationData.longitude.toString(),
-          location: `${locationData.latitude}, ${locationData.longitude}`,
+          location: locationData.address,
         }),
       };
 
@@ -124,7 +143,7 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         ...(locationData && {
           latitude: locationData.latitude.toString(),
           longitude: locationData.longitude.toString(),
-          location: `${locationData.latitude}, ${locationData.longitude}`,
+          location: locationData.address,
         }),
       };
 

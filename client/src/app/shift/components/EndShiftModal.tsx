@@ -44,6 +44,34 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
     queryKey: ["/api/clients"],
   });
 
+  // Convert coordinates to readable address
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=YOUR_API_KEY`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          return data.results[0].formatted;
+        }
+      }
+    } catch (error) {
+      console.warn("Geocoding failed:", error);
+    }
+    
+    // Fallback to reverse geocoding using browser API or return coordinates
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      }
+    } catch (error) {
+      console.warn("Nominatim geocoding failed:", error);
+    }
+    
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  };
+
   // Get current location when modal opens
   useEffect(() => {
     if (isOpen && !location) {
@@ -52,12 +80,13 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const { latitude, longitude } = position.coords;
+            const address = await getAddressFromCoordinates(latitude, longitude);
             setLocation({
               latitude,
               longitude,
-              address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+              address
             });
             setIsLoadingLocation(false);
           },
@@ -81,15 +110,18 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
   const endShiftMutation = useMutation({
     mutationFn: async () => {
       const updateData = {
-        status: "completed",
-        endTimestamp: new Date().toISOString(),
-        endLocation: location ? `${location.latitude},${location.longitude}` : null,
+        endTime: new Date().toISOString(),
+        isActive: false,
+        ...(location && {
+          latitude: location.latitude.toString(),
+          longitude: location.longitude.toString(),
+          location: location.address,
+        }),
         handoverGivenToStaffId: handoverToStaffId ? parseInt(handoverToStaffId) : null,
         handoverNotesOut: handoverNotes.trim() || null
       };
 
-      // Fixed parameter order: method, url, data
-      return apiRequest("PATCH", `/api/shifts/${shift.id}`, updateData);
+      return apiRequest("PUT", `/api/shifts/${shift.id}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
