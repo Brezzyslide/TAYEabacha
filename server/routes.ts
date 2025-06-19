@@ -609,13 +609,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const shiftId = parseInt(req.params.id);
       const updateData = req.body;
       
+      // Convert timestamp strings to Date objects for database compatibility
+      const processedUpdateData = { ...updateData };
+      if (processedUpdateData.startTimestamp && typeof processedUpdateData.startTimestamp === 'string') {
+        processedUpdateData.startTimestamp = new Date(processedUpdateData.startTimestamp);
+      }
+      if (processedUpdateData.endTimestamp && typeof processedUpdateData.endTimestamp === 'string') {
+        processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
+      }
+      
       // Enhanced validation for shift request operation
-      if (updateData.userId && updateData.status === "requested") {
+      if (processedUpdateData.userId && processedUpdateData.status === "requested") {
         console.log(`[SHIFT REQUEST] User ${req.user.id} requesting shift ${shiftId}`);
         
         // Ensure user can only request for themselves
-        if (updateData.userId !== req.user.id) {
-          console.log(`[SHIFT REQUEST] ERROR: User ${req.user.id} trying to request for user ${updateData.userId}`);
+        if (processedUpdateData.userId !== req.user.id) {
+          console.log(`[SHIFT REQUEST] ERROR: User ${req.user.id} trying to request for user ${processedUpdateData.userId}`);
           return res.status(403).json({ message: "Can only request shifts for yourself" });
         }
         
@@ -631,10 +640,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Shift already assigned" });
         }
         
-        console.log(`[SHIFT REQUEST] Valid request - assigning userId ${updateData.userId} to shift ${shiftId}`);
+        console.log(`[SHIFT REQUEST] Valid request - assigning userId ${processedUpdateData.userId} to shift ${shiftId}`);
       }
       
-      const shift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
+      const shift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
       
       if (!shift) {
         console.log(`[SHIFT UPDATE] ERROR: Failed to update shift ${shiftId}`);
@@ -642,22 +651,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Verify shift request userId assignment
-      if (updateData.status === "requested" && updateData.userId) {
-        if (shift.userId !== updateData.userId) {
-          console.log(`[SHIFT REQUEST] CRITICAL ERROR: userId not assigned! Expected: ${updateData.userId}, Actual: ${shift.userId}`);
+      if (processedUpdateData.status === "requested" && processedUpdateData.userId) {
+        if (shift.userId !== processedUpdateData.userId) {
+          console.log(`[SHIFT REQUEST] CRITICAL ERROR: userId not assigned! Expected: ${processedUpdateData.userId}, Actual: ${shift.userId}`);
           return res.status(500).json({ message: "User assignment failed during shift request" });
         }
         console.log(`[SHIFT REQUEST] SUCCESS - shift ${shiftId} assigned to user ${shift.userId} with status ${shift.status}`);
       }
       
       // Log activity for shift requests
-      if (updateData.status === "requested") {
+      if (processedUpdateData.status === "requested") {
         await storage.createActivityLog({
           userId: req.user.id,
           action: "request_shift",
           resourceType: "shift",
           resourceId: shift.id,
           description: `Requested shift: ${shift.title}`,
+          tenantId: req.user.tenantId,
+        });
+      }
+      
+      // Log activity for shift starts
+      if (processedUpdateData.status === "in-progress" && processedUpdateData.startTimestamp) {
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "start_shift",
+          resourceType: "shift",
+          resourceId: shift.id,
+          description: `Started shift: ${shift.title}`,
           tenantId: req.user.tenantId,
         });
       }
