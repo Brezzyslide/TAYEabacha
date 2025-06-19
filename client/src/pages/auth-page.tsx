@@ -9,6 +9,7 @@ import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { useLocation } from "wouter";
 import { Building, Shield, Users, FileText } from "lucide-react";
+import { useEffect } from "react";
 
 const loginSchema = insertUserSchema.pick({ username: true, password: true });
 
@@ -26,9 +27,15 @@ export default function AuthPage() {
     },
   });
 
-  // Redirect if already logged in - after all hooks are called
+  // Redirect if already logged in using useEffect
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
+  // Return null while redirecting
   if (user) {
-    navigate("/dashboard");
     return null;
   }
 

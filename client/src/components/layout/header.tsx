@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import MobileSidebar from "./mobile-sidebar";
 export default function Header() {
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
@@ -38,7 +39,12 @@ export default function Header() {
     .toUpperCase();
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+    <>
+      <MobileSidebar 
+        isOpen={showMobileSidebar} 
+        onClose={() => setShowMobileSidebar(false)} 
+      />
+      <header className="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
             <Button 
@@ -57,7 +63,7 @@ export default function Header() {
             </div>
           </div>
         
-        <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
+          <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
           {/* Dashboard Button - Hidden on mobile, icon only on tablet */}
           <Button 
             variant="outline" 
@@ -127,7 +133,8 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
-    </header>
+        </div>
+      </header>
+    </>
   );
 }
