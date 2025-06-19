@@ -21,7 +21,7 @@ export default function PendingRequestsTab() {
     refetchInterval: 30000,
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
   });
 
@@ -64,8 +64,9 @@ export default function PendingRequestsTab() {
     return format(date, "EEEE, MMM d");
   };
 
-  const getClientName = (clientId: number) => {
-    const client = clients.find(c => c.id === clientId);
+  const getClientName = (clientId: number | null) => {
+    if (!clientId) return "Unknown Client";
+    const client = clients.find((c: any) => c.id === clientId);
     return client ? `${client.firstName} ${client.lastName}` : "Unknown Client";
   };
 
@@ -113,10 +114,10 @@ export default function PendingRequestsTab() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {shift.title}
+                      {shift.title || "Untitled Shift"}
                     </CardTitle>
                     <div className="flex items-center gap-2 mt-1">
-                      <ShiftStatusTag status={shift.status} />
+                      <ShiftStatusTag status={shift.status || "unknown"} />
                       <Badge variant="outline" className="text-yellow-700 bg-yellow-50 border-yellow-200 dark:text-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-800">
                         Awaiting Approval
                       </Badge>
@@ -162,9 +163,9 @@ export default function PendingRequestsTab() {
                   </div>
                 )}
 
-                {shift.notes && (
+                {shift.description && (
                   <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{shift.notes}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{shift.description}</p>
                   </div>
                 )}
               </CardContent>

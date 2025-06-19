@@ -27,10 +27,13 @@ export default function MyShiftsTab() {
     queryKey: ["/api/clients"],
   });
 
-  // Filter shifts assigned to current user
+  // Filter shifts assigned to current user that are approved (not just requested)
   const myShifts = useMemo(() => {
     if (!user) return [];
-    return shifts.filter(shift => shift.userId === user.id);
+    return shifts.filter(shift => 
+      shift.userId === user.id && 
+      shift.status !== "requested" // Exclude pending requests
+    );
   }, [shifts, user]);
 
   // Get the next upcoming shift

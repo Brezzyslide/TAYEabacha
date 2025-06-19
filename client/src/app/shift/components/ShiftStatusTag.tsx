@@ -25,7 +25,7 @@ export default function ShiftStatusTag({ status, className }: ShiftStatusTagProp
         return {
           label: "Requested",
           variant: "outline" as const,
-          className: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300"
+          className: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300"
         };
       case "assigned":
         return {
