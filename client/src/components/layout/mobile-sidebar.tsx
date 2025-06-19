@@ -69,15 +69,22 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       <Link href={item.href}>
         <div
           className={cn(
-            "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors cursor-pointer",
-            isActive(item.href)
-              ? "bg-primary/10 text-primary border-r-2 border-primary"
-              : "text-gray-700 hover:bg-gray-100"
+            "modern-nav-item group cursor-pointer",
+            isActive(item.href) && "active"
           )}
           onClick={onClose}
         >
-          <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-          {item.name}
+          <div className="flex items-center space-x-3">
+            <div className={cn(
+              "p-2 rounded-xl transition-all duration-300",
+              isActive(item.href) 
+                ? "bg-cyan-500 shadow-lg shadow-cyan-500/25" 
+                : "bg-white/10 group-hover:bg-white/20"
+            )}>
+              <Icon className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-medium text-white">{item.name}</span>
+          </div>
         </div>
       </Link>
     );
@@ -96,26 +103,32 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col",
+          "fixed top-0 left-0 z-50 h-full w-80 glass-nav shadow-2xl transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col relative overflow-hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-4 w-24 h-24 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 right-4 w-20 h-20 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/25">
               <Building className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">CareConnect</h2>
-              <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+              <h2 className="text-xl font-bold text-gradient-primary">NeedCareAI+</h2>
+              <p className="text-sm text-slate-300 capitalize font-medium">{user.role}</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="p-2"
+            className="p-3 rounded-2xl hover:bg-white/10 text-white"
           >
             <X className="h-5 w-5" />
           </Button>

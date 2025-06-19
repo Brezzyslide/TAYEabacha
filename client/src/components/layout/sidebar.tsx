@@ -62,24 +62,32 @@ export default function Sidebar() {
   const isAdmin = user.role.toLowerCase() === "admin" || user.role.toLowerCase() === "consolemanager";
   const canManageCompaniesAccess = canManageCompanies(user);
 
-  const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (
-    <div className="mb-6">
-      <div className={cn("px-4 py-2 rounded-lg mb-2", headerColor)}>
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+  const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], gradientColor: string) => (
+    <div className="mb-8">
+      <div className={cn("px-4 py-3 rounded-2xl mb-4 backdrop-blur-sm border border-white/10", gradientColor)}>
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider">{title}</h3>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-2">
         {items.map((item) => {
           const isActive = location === item.href;
+          const Icon = item.icon;
           return (
             <Link key={item.name} href={item.href} 
               className={cn(
-                "flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                isActive 
-                  ? "bg-gray-800 text-white" 
-                  : "text-gray-700 hover:bg-gray-100"
+                "modern-nav-item group",
+                isActive && "active"
               )}>
-              <item.icon className="h-4 w-4" />
-              <span>{item.name}</span>
+              <div className="flex items-center space-x-3">
+                <div className={cn(
+                  "p-2 rounded-xl transition-all duration-300",
+                  isActive 
+                    ? "bg-cyan-500 shadow-lg shadow-cyan-500/25" 
+                    : "bg-white/10 group-hover:bg-white/20"
+                )}>
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
+                <span className="font-medium text-white">{item.name}</span>
+              </div>
             </Link>
           );
         })}
@@ -88,35 +96,41 @@ export default function Sidebar() {
   );
 
   return (
-    <aside className="hidden lg:block w-64 bg-slate-50 flex-shrink-0 border-r border-gray-200">
+    <aside className="hidden lg:block w-72 glass-nav flex-shrink-0 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-10 left-4 w-32 h-32 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-20 right-4 w-24 h-24 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+      </div>
+
       {/* Navigation Menu */}
-      <nav className="p-4 space-y-6">
+      <nav className="relative z-10 p-6 space-y-8 h-full overflow-y-auto">
         {/* Support Work Section */}
         {renderNavigationSection(
           "SUPPORT WORK", 
           supportWorkNavigation, 
-          "bg-yellow-200"
+          "bg-gradient-to-r from-emerald-500/30 to-teal-500/30"
         )}
 
         {/* Shift Management Section */}
         {renderNavigationSection(
           "SHIFT MANAGEMENT", 
           shiftManagementNavigation, 
-          "bg-yellow-200"
+          "bg-gradient-to-r from-cyan-500/30 to-blue-500/30"
         )}
 
         {/* Staff Management Section - Only for Admins */}
         {isAdmin && renderNavigationSection(
           "STAFF MANAGEMENT", 
           staffManagementNavigation, 
-          "bg-yellow-200"
+          "bg-gradient-to-r from-purple-500/30 to-violet-500/30"
         )}
 
         {/* Company Management Section - ConsoleManager Only */}
         {canManageCompaniesAccess && renderNavigationSection(
           "COMPANY MANAGEMENT", 
           companyManagementNavigation, 
-          "bg-yellow-200"
+          "bg-gradient-to-r from-amber-500/30 to-orange-500/30"
         )}
       </nav>
     </aside>
