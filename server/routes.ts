@@ -2340,7 +2340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const budgetData = {
         ...req.body,
-        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303",
+        tenantId: req.user.tenantId,
       };
       
       const budget = await storage.createNdisBudget(budgetData);
@@ -2356,6 +2356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(budget);
     } catch (error: any) {
+      console.error("NDIS Budget creation error:", error);
+      console.error("Budget data:", req.body);
       res.status(500).json({ message: "Failed to create NDIS budget", error: error.message });
     }
   });
@@ -2363,7 +2365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/ndis-budgets/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const budgetId = parseInt(req.params.id);
-      const budget = await storage.updateNdisBudget(budgetId, req.body, "5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      const budget = await storage.updateNdisBudget(budgetId, req.body, req.user.tenantId);
       
       if (!budget) {
         return res.status(404).json({ message: "NDIS budget not found" });
