@@ -88,6 +88,7 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
         handoverNotesOut: handoverNotes.trim() || null
       };
 
+      // Fixed parameter order: method, url, data
       return apiRequest("PATCH", `/api/shifts/${shift.id}`, updateData);
     },
     onSuccess: () => {

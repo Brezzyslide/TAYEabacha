@@ -117,6 +117,7 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
         handoverNotesIn: handoverNotes.trim() || null
       };
 
+      // Fixed parameter order: method, url, data
       return apiRequest("PATCH", `/api/shifts/${shift.id}`, updateData);
     },
     onSuccess: () => {
