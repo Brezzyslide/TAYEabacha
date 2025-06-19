@@ -698,15 +698,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process NDIS budget deduction when shift is completed
       if (processedUpdateData.status === "completed" && processedUpdateData.endTimestamp && shift.startTimestamp) {
+        console.log(`[BUDGET DEDUCTION] Starting budget deduction for shift ${shift.id}`);
         try {
           // Calculate shift duration in hours
           const startTime = new Date(shift.startTimestamp);
           const endTime = new Date(processedUpdateData.endTimestamp);
           const shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
           
+          console.log(`[BUDGET DEDUCTION] Shift hours: ${shiftHours}, Client ID: ${shift.clientId}`);
+          
           if (shiftHours > 0 && shift.clientId) {
             // Get client's NDIS budget
             const budget = await storage.getNdisBudgetByClient(shift.clientId, req.user.tenantId);
+            console.log(`[BUDGET DEDUCTION] Budget found:`, budget ? `ID ${budget.id}` : 'None');
             
             if (budget) {
               // Determine shift type and get pricing
