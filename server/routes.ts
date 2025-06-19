@@ -672,9 +672,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Shift is not in requested status" });
       }
       
-      // Approve the shift by changing status to assigned
+      // Approve the shift by changing status to assigned (keep the userId from the request)
       const updatedShift = await storage.updateShift(shiftId, {
         status: "assigned"
+        // Note: userId should already be set from the original request, so we don't change it
       }, req.user.tenantId);
       
       console.log(`[APPROVE SHIFT] Updated shift status to: ${updatedShift?.status}`);
