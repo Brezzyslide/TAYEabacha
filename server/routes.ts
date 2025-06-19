@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -108,6 +109,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isFirstLogin: true,
       });
 
+      // Automatically provision comprehensive features for new tenant
+      try {
+        await provisionTenant(tenant.id, company.id);
+        console.log(`[TENANT PROVISIONING] Successfully provisioned tenant ${tenant.id} with comprehensive features`);
+      } catch (error) {
+        console.error(`[TENANT PROVISIONING] Error provisioning tenant ${tenant.id}:`, error);
+      }
+
       // Log to console as requested
       console.table([
         {
@@ -116,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId: tenant.id,
           adminUserId: adminUser.id,
           adminEmail: adminUser.email,
-          status: "Created Successfully"
+          status: "Created Successfully with Full Features"
         }
       ]);
 
@@ -124,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         company,
         tenant,
         admin: adminUser,
-        message: "Company created successfully"
+        message: "Company created successfully with comprehensive features"
       });
     } catch (error) {
       console.error("Company creation error:", error);

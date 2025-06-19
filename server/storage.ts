@@ -1445,6 +1445,42 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(careSupportPlans.id, id), eq(careSupportPlans.tenantId, tenantId)));
     return (result.rowCount || 0) > 0;
   }
+
+  // Tenant provisioning methods
+  async getAllTenants(): Promise<Array<{ id: number; companyId?: string }>> {
+    const tenantData = await db.select({ 
+      tenantId: users.tenantId 
+    }).from(users)
+    .groupBy(users.tenantId)
+    .orderBy(users.tenantId);
+    
+    return tenantData.map(t => ({ id: t.tenantId, companyId: `company-${t.tenantId}` }));
+  }
+
+  async getClientCountByTenant(tenantId: number): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(clients)
+      .where(eq(clients.tenantId, tenantId));
+    
+    return result[0]?.count || 0;
+  }
+
+  async getClientsByTenant(tenantId: number): Promise<Client[]> {
+    return await db.select().from(clients)
+      .where(eq(clients.tenantId, tenantId))
+      .orderBy(clients.createdAt);
+  }
+
+  async getUsersByTenant(tenantId: number): Promise<User[]> {
+    return await db.select().from(users)
+      .where(eq(users.tenantId, tenantId))
+      .orderBy(users.createdAt);
+  }
+
+  async createNdisBudget(budgetData: any): Promise<NdisBudget> {
+    const [budget] = await db.insert(ndisBudgets).values(budgetData).returning();
+    return budget;
+  }
 }
 
 export const storage = new DatabaseStorage();

@@ -101,8 +101,10 @@ async function provisionSampleClients(tenantId: number, companyId: string): Prom
       ...template,
       clientId: `${template.clientId}_T${tenantId}`, // Make unique per tenant
       ndisNumber: `${template.ndisNumber}_T${tenantId}`,
+      dateOfBirth: new Date(template.dateOfBirth),
       tenantId,
       companyId,
+      createdBy: 1, // Default system user
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()
