@@ -609,28 +609,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const shiftId = parseInt(req.params.id);
       const updateData = req.body;
       
-      // Validate that this is a shift request operation
+      // Enhanced validation for shift request operation
       if (updateData.userId && updateData.status === "requested") {
+        console.log(`[SHIFT REQUEST] User ${req.user.id} requesting shift ${shiftId}`);
+        
         // Ensure user can only request for themselves
         if (updateData.userId !== req.user.id) {
+          console.log(`[SHIFT REQUEST] ERROR: User ${req.user.id} trying to request for user ${updateData.userId}`);
           return res.status(403).json({ message: "Can only request shifts for yourself" });
         }
         
         // Check if shift exists and is unassigned
         const existingShift = await storage.getShift(shiftId, req.user.tenantId);
         if (!existingShift) {
+          console.log(`[SHIFT REQUEST] ERROR: Shift ${shiftId} not found`);
           return res.status(404).json({ message: "Shift not found" });
         }
         
         if (existingShift.userId) {
+          console.log(`[SHIFT REQUEST] ERROR: Shift ${shiftId} already assigned to user ${existingShift.userId}`);
           return res.status(400).json({ message: "Shift already assigned" });
         }
+        
+        console.log(`[SHIFT REQUEST] Valid request - assigning userId ${updateData.userId} to shift ${shiftId}`);
       }
       
       const shift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
       
       if (!shift) {
+        console.log(`[SHIFT UPDATE] ERROR: Failed to update shift ${shiftId}`);
         return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      // Verify shift request userId assignment
+      if (updateData.status === "requested" && updateData.userId) {
+        if (shift.userId !== updateData.userId) {
+          console.log(`[SHIFT REQUEST] CRITICAL ERROR: userId not assigned! Expected: ${updateData.userId}, Actual: ${shift.userId}`);
+          return res.status(500).json({ message: "User assignment failed during shift request" });
+        }
+        console.log(`[SHIFT REQUEST] SUCCESS - shift ${shiftId} assigned to user ${shift.userId} with status ${shift.status}`);
       }
       
       // Log activity for shift requests
@@ -686,8 +703,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[APPROVE SHIFT] Updating with data:`, updateData);
       const updatedShift = await storage.updateShift(shiftId, updateData, req.user.tenantId);
       
-      console.log(`[APPROVE SHIFT] Updated shift - status: ${updatedShift?.status}, userId: ${updatedShift?.userId}`);
-      console.log(`[APPROVE SHIFT] Original userId preserved: ${shift.userId === updatedShift?.userId}`);
+      if (!updatedShift) {
+        console.log(`[APPROVE SHIFT] ERROR: Failed to update shift ${shiftId}`);
+        return res.status(500).json({ message: "Failed to approve shift" });
+      }
+      
+      // Verify userId preservation
+      if (updatedShift.userId !== shift.userId) {
+        console.log(`[APPROVE SHIFT] CRITICAL ERROR: userId not preserved! Original: ${shift.userId}, New: ${updatedShift.userId}`);
+        return res.status(500).json({ message: "User assignment lost during approval" });
+      }
+      
+      console.log(`[APPROVE SHIFT] SUCCESS - status: ${updatedShift.status}, userId: ${updatedShift.userId}`);
       
       // Log activity
       if (storage.createActivityLog) {
