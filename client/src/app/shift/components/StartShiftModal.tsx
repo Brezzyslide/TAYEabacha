@@ -117,7 +117,7 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
         handoverNotesIn: handoverNotes.trim() || null
       };
 
-      return apiRequest(`/api/shifts/${shift.id}`, "PATCH", updateData);
+      return apiRequest("PATCH", `/api/shifts/${shift.id}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });

@@ -88,7 +88,7 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
         handoverNotesOut: handoverNotes.trim() || null
       };
 
-      return apiRequest(`/api/shifts/${shift.id}`, "PATCH", updateData);
+      return apiRequest("PATCH", `/api/shifts/${shift.id}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
