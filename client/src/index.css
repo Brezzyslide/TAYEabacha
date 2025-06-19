@@ -171,6 +171,22 @@
   .modern-table tr:hover {
     @apply bg-white/5;
   }
+
+  .modern-button {
+    @apply relative overflow-hidden bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105;
+  }
+
+  .modern-button-secondary {
+    @apply relative overflow-hidden bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-slate-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105;
+  }
+
+  .modern-form {
+    @apply modern-card space-y-6 p-8;
+  }
+
+  .modern-dialog {
+    @apply modern-card border-2 border-cyan-500/20 shadow-2xl shadow-cyan-500/10;
+  }
 }
 
 @layer utilities {

@@ -173,35 +173,50 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
         <TabsContent value="overview" className="space-y-6">
           {/* Overview Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
+            <Card className="modern-card group hover:scale-105 transition-all duration-300">
               <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Pill className="h-8 w-8 text-blue-600" />
-                  <div className="ml-4">
-                    <p className="text-2xl font-bold">{activePlans.length}</p>
-                    <p className="text-gray-600">Active Plans</p>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                    <div className="relative w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                      <Pill className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gradient-primary">{activePlans.length}</p>
+                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Active Plans</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="modern-card group hover:scale-105 transition-all duration-300">
               <CardContent className="p-6">
-                <div className="flex items-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-2xl font-bold">{totalAdministered}</p>
-                    <p className="text-gray-600">Administered</p>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                    <div className="relative w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
+                      <CheckCircle className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gradient-primary">{totalAdministered}</p>
+                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Administered</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="modern-card group hover:scale-105 transition-all duration-300">
               <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Clock className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-2xl font-bold">{totalRefused}</p>
-                    <p className="text-gray-600">Refused</p>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                    <div className="relative w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/25">
+                      <Clock className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gradient-primary">{totalRefused}</p>
+                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Refused</p>
                   </div>
                 </div>
               </CardContent>
