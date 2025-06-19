@@ -107,16 +107,14 @@ export default function LandingPage() {
             </nav>
 
             {/* Desktop Login Button */}
-            <Button
-              onClick={() => {
-                console.log("Navigating to auth page");
-                setLocation("/auth");
-              }}
-              variant="outline"
-              className="hidden md:flex border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
-            >
-              Login
-            </Button>
+            <a href="/auth">
+              <Button
+                variant="outline"
+                className="hidden md:flex border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+              >
+                Login
+              </Button>
+            </a>
 
             {/* Mobile Menu Button */}
             <button
@@ -153,16 +151,14 @@ export default function LandingPage() {
                   {tab.label}
                 </button>
               ))}
-              <Button
-                onClick={() => {
-                  console.log("Navigating to auth page from mobile");
-                  setLocation("/auth");
-                }}
-                variant="outline"
-                className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
-              >
-                Login
-              </Button>
+              <a href="/auth" className="block">
+                <Button
+                  variant="outline"
+                  className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+                >
+                  Login
+                </Button>
+              </a>
             </div>
           </div>
         )}
