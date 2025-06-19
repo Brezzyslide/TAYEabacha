@@ -45,6 +45,10 @@ export default function BudgetDashboard() {
 
   const canEditBudgets = hasPermission(user, "canEditBudget");
   const canViewPricing = hasPermission(user, "canViewPricing");
+  
+  console.log("Budget Dashboard - User:", user?.role);
+  console.log("Budget Dashboard - canEditBudgets:", canEditBudgets);
+  console.log("Budget Dashboard - showCreateForm:", showCreateForm);
 
   const getTotalBudgetValue = (budgets: NdisBudget[]) => {
     return budgets.reduce((total, budget) => {
@@ -96,7 +100,10 @@ export default function BudgetDashboard() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">NDIS Budget Management</h1>
         {canEditBudgets && (
-          <Button onClick={() => setShowCreateForm(true)}>
+          <Button onClick={() => {
+            console.log("Create Budget button clicked");
+            setShowCreateForm(true);
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Create Budget
           </Button>
