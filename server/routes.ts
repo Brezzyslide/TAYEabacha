@@ -133,19 +133,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clients API
   app.get("/api/clients", requireAuth, async (req: any, res) => {
     try {
-      const clients = await storage.getClients(req.user.tenantId);
+      let clients;
+      
+      // Check if user is a support worker - they should only see assigned clients
+      if (req.user.role === "SupportWorker") {
+        // Get all shifts assigned to this user
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        
+        // Extract unique client IDs from user's shifts
+        const clientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null) as number[];
+        const assignedClientIds = Array.from(new Set(clientIds));
+        
+        if (assignedClientIds.length === 0) {
+          // No clients assigned - return empty array
+          return res.json([]);
+        }
+        
+        // Get only the clients this user is assigned to
+        const allClients = await storage.getClients(req.user.tenantId);
+        clients = allClients.filter(client => assignedClientIds.includes(client.id));
+        
+        console.log(`[CLIENT ACCESS] SupportWorker ${req.user.username} can access ${clients.length} clients based on shift assignments`);
+      } else {
+        // Admin, Coordinator, TeamLeader, ConsoleManager can see all clients
+        clients = await storage.getClients(req.user.tenantId);
+      }
+      
       res.json(clients);
     } catch (error) {
+      console.error("Error fetching clients:", error);
       res.status(500).json({ message: "Failed to fetch clients" });
     }
   });
 
   app.get("/api/clients/:id", requireAuth, async (req: any, res) => {
     try {
-      const client = await storage.getClient(parseInt(req.params.id), req.user.tenantId);
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getClient(clientId, req.user.tenantId);
+      
       if (!client) {
         return res.status(404).json({ message: "Client not found" });
       }
+
+      // Check if support worker has access to this client
+      if (req.user.role === "SupportWorker") {
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+        
+        if (!assignedClientIds.includes(clientId)) {
+          console.log(`[CLIENT ACCESS DENIED] SupportWorker ${req.user.username} attempted to access client ${clientId} without shift assignment`);
+          return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+        }
+      }
+      
       res.json(client);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch client" });
@@ -438,12 +478,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating shift:", error);
       console.error("Request body:", req.body);
-      console.error("Processed body:", processedBody);
       if (error instanceof z.ZodError) {
         console.error("Zod validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid shift data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create shift", error: error.message });
+      res.status(500).json({ message: "Failed to create shift", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -986,6 +1025,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientId = parseInt(req.params.clientId);
       const tenantId = req.user.tenantId;
       
+      // Check if support worker has access to this client
+      if (req.user.role === "SupportWorker") {
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+        
+        if (!assignedClientIds.includes(clientId)) {
+          return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+        }
+      }
+      
       const caseNotes = await storage.getCaseNotes(clientId, tenantId);
       
       // Get client details and recent shifts for linking
@@ -1261,10 +1310,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/clients/:clientId/medication-plans", async (req: any, res) => {
+  app.get("/api/clients/:clientId/medication-plans", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
-      const tenantId = req.user?.tenantId || 1; // Default tenant for testing
+      const tenantId = req.user.tenantId;
+      
+      // Check if support worker has access to this client
+      if (req.user.role === "SupportWorker") {
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+        
+        if (!assignedClientIds.includes(clientId)) {
+          return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+        }
+      }
+      
       const plans = await storage.getMedicationPlans(clientId, tenantId);
       res.json(plans);
     } catch (error) {
