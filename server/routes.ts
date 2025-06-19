@@ -1552,7 +1552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filteredRecords = records.filter(record => assignedClientIds.includes(record.clientId));
       }
       
-      res.json(records);
+      res.json(filteredRecords);
     } catch (error) {
       console.error("Medication records API error:", error);
       res.status(500).json({ message: "Failed to fetch medication records" });
@@ -2854,9 +2854,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let plans;
       
       if (clientId) {
+        // Check if support worker has access to this specific client
+        if (req.user.role === "SupportWorker") {
+          const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+          const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+          
+          if (!assignedClientIds.includes(parseInt(clientId))) {
+            return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+          }
+        }
         plans = await storage.getCareSupportPlansByClient(parseInt(clientId), req.user.tenantId);
       } else {
-        plans = await storage.getCareSupportPlans(req.user.tenantId);
+        // Get care support plans for accessible clients only
+        if (req.user.role === "SupportWorker") {
+          const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+          const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null);
+          
+          if (assignedClientIds.length === 0) {
+            return res.json([]);
+          }
+          
+          // Get plans for all assigned clients
+          let allPlans = [];
+          for (const clientId of assignedClientIds) {
+            const clientPlans = await storage.getCareSupportPlansByClient(clientId, req.user.tenantId);
+            allPlans.push(...clientPlans);
+          }
+          plans = allPlans;
+        } else {
+          plans = await storage.getCareSupportPlans(req.user.tenantId);
+        }
       }
       
       res.json(plans);
