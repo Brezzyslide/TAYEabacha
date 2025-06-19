@@ -78,7 +78,7 @@ export default function NDISPricingManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/ndis-pricing/${id}`, "DELETE");
+      return apiRequest("DELETE", `/api/ndis-pricing/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ndis-pricing"] });
