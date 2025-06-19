@@ -57,30 +57,28 @@ export default function Header() {
             </div>
           </div>
         
-        <div className="flex items-center space-x-3 overflow-x-auto scrollbar-hide pb-2 min-w-0">
-          {/* Dashboard Button */}
+        <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
+          {/* Dashboard Button - Hidden on mobile, icon only on tablet */}
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleDashboard}
-            className="flex items-center space-x-2 flex-shrink-0"
+            className="hidden sm:flex items-center space-x-2 flex-shrink-0"
           >
             <Home className="h-4 w-4" />
-            <span className="hidden sm:inline">Dashboard</span>
+            <span className="hidden md:inline">Dashboard</span>
           </Button>
 
-          {/* Logout Button */}
+          {/* Mobile-only Logout Button - Icon only */}
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm"
             onClick={handleLogout}
             disabled={logoutMutation.isPending}
-            className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
+            className="sm:hidden flex items-center p-2 text-red-600 hover:bg-red-50 flex-shrink-0"
+            title="Logout"
           >
             <LogOut className="h-4 w-4" />
-            <span>
-              {logoutMutation.isPending ? "Logging out..." : "Logout"}
-            </span>
           </Button>
           
           {/* Location Status */}
@@ -89,42 +87,41 @@ export default function Header() {
             <span>Location Verified</span>
           </div>
           
-          {/* Notifications */}
-          <Button variant="ghost" size="sm" className="relative flex-shrink-0">
-            <Bell className="h-5 w-5 text-gray-500" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+          {/* Notifications - Mobile optimized */}
+          <Button variant="ghost" size="sm" className="relative flex-shrink-0 p-2">
+            <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[10px] sm:text-xs">
               3
             </span>
           </Button>
           
-          {/* User Menu */}
+          {/* User Menu - Mobile optimized */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-3 text-gray-700 hover:text-gray-900 flex-shrink-0">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
+              <Button variant="ghost" className="flex items-center space-x-1 sm:space-x-3 text-gray-700 hover:text-gray-900 flex-shrink-0 p-1 sm:p-2">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm">
                   {userInitials}
                 </div>
-                <span className="hidden md:block font-medium">{user.fullName}</span>
-                <ChevronDown className="h-4 w-4" />
+                <span className="hidden lg:block font-medium text-sm">{user.fullName}</span>
+                <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-48 sm:w-56">
+              <DropdownMenuLabel className="text-sm">My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <div className="flex flex-col">
-                  <span className="font-medium">{user.fullName}</span>
-                  <span className="text-sm text-gray-500 capitalize">{user.role}</span>
+                  <span className="font-medium text-sm">{user.fullName}</span>
+                  <span className="text-xs text-gray-500 capitalize">{user.role}</span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-              <DropdownMenuItem>Preferences</DropdownMenuItem>
-              <DropdownMenuSeparator />
+              {/* Desktop logout in dropdown */}
               <DropdownMenuItem 
                 onClick={handleLogout}
-                className="text-red-600"
+                className="text-red-600 hidden sm:flex"
               >
+                <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -132,6 +129,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-    </div>
   );
 }
