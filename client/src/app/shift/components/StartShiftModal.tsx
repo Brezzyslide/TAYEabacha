@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -182,6 +182,9 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
             <Clock className="h-5 w-5 text-green-600" />
             Start Shift
           </DialogTitle>
+          <DialogDescription>
+            Begin your shift with GPS verification and handover notes
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

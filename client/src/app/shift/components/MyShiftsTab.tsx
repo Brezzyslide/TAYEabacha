@@ -30,28 +30,20 @@ export default function MyShiftsTab() {
   // Filter shifts assigned to current user that are approved (not just requested)
   const myShifts = useMemo(() => {
     if (!user) return [];
-    const filtered = shifts.filter(shift => 
+    return shifts.filter(shift => 
       shift.userId === user.id && 
       shift.status !== "requested" // Exclude pending requests
     );
-    console.log(`[MY SHIFTS] User ${user.id} has ${filtered.length} shifts:`, filtered.map(s => ({ id: s.id, title: s.title, startTime: s.startTime, status: (s as any).status })));
-    return filtered;
   }, [shifts, user]);
 
   // Get the next upcoming shift
   const nextUpcomingShift = useMemo(() => {
     const now = new Date();
-    console.log(`[UPCOMING SHIFTS] Checking ${myShifts.length} shifts for upcoming ones...`);
     
     const upcomingShifts = myShifts
       .filter(shift => {
-        if (!shift.startTime) {
-          console.log(`[UPCOMING SHIFTS] Shift ${shift.id} (${shift.title}) has no startTime, including as upcoming`);
-          return true; // Include shifts without start time as upcoming
-        }
-        const isUpcoming = isAfter(new Date(shift.startTime), now);
-        console.log(`[UPCOMING SHIFTS] Shift ${shift.id} (${shift.title}) startTime: ${shift.startTime}, upcoming: ${isUpcoming}`);
-        return isUpcoming;
+        if (!shift.startTime) return true; // Include shifts without start time as upcoming
+        return isAfter(new Date(shift.startTime), now);
       })
       .sort((a, b) => {
         if (!a.startTime && !b.startTime) return 0;
@@ -60,7 +52,6 @@ export default function MyShiftsTab() {
         return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
       });
     
-    console.log(`[UPCOMING SHIFTS] Found ${upcomingShifts.length} upcoming shifts`);
     return upcomingShifts[0] || null;
   }, [myShifts]);
 
