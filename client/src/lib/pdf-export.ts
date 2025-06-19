@@ -309,18 +309,21 @@ export class PDFExportUtility {
 }
 
 export async function exportCarePlanToPDF(plan: any, client: any, user: any): Promise<void> {
-  // Fetch company information based on user's tenant
+  // Always fetch fresh company name from API to ensure we have the latest data
   let companyName = 'CareConnect'; // Default fallback
+  
   try {
-    const response = await fetch('/api/auth/user');
+    const response = await fetch('/api/user');
     if (response.ok) {
       const userData = await response.json();
       if (userData?.companyName) {
         companyName = userData.companyName;
       }
+    } else {
+      console.warn('API user endpoint returned:', response.status);
     }
   } catch (error) {
-    console.warn('Could not fetch company name, using default');
+    console.warn('Could not fetch company name, using default:', error);
   }
 
   const sections: PDFSection[] = [];
