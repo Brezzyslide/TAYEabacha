@@ -225,8 +225,8 @@ export default function MessageDashboard() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Unread Messages</p>
-                    <p className="text-2xl font-bold text-gradient-primary mt-1">{getUnreadCount()}</p>
+                    <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">Unread Messages</p>
+                    <p className="text-2xl font-bold text-white mt-1">{getUnreadCount()}</p>
                   </div>
                 </div>
               </CardContent>
@@ -242,8 +242,8 @@ export default function MessageDashboard() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Urgent Unread</p>
-                    <p className="text-2xl font-bold text-gradient-primary mt-1">{getUrgentCount()}</p>
+                    <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">Urgent Unread</p>
+                    <p className="text-2xl font-bold text-white mt-1">{getUrgentCount()}</p>
                   </div>
                 </div>
               </CardContent>
@@ -259,8 +259,8 @@ export default function MessageDashboard() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Sent Today</p>
-                    <p className="text-2xl font-bold text-gradient-primary mt-1">
+                    <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">Sent Today</p>
+                    <p className="text-2xl font-bold text-white mt-1">
                       {messages.filter((msg: StaffMessage) => 
                         msg.senderId === user?.id && 
                         format(new Date(msg.createdAt), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')

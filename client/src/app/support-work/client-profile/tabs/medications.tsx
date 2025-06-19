@@ -183,8 +183,8 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                     </div>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gradient-primary">{activePlans.length}</p>
-                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Active Plans</p>
+                    <p className="text-2xl font-bold text-white">{activePlans.length}</p>
+                    <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">Active Plans</p>
                   </div>
                 </div>
               </CardContent>
@@ -199,8 +199,8 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                     </div>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gradient-primary">{totalAdministered}</p>
-                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Administered</p>
+                    <p className="text-2xl font-bold text-white">{totalAdministered}</p>
+                    <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">Administered</p>
                   </div>
                 </div>
               </CardContent>
@@ -215,8 +215,8 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                     </div>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gradient-primary">{totalRefused}</p>
-                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Refused</p>
+                    <p className="text-2xl font-bold text-white">{totalRefused}</p>
+                    <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">Refused</p>
                   </div>
                 </div>
               </CardContent>
