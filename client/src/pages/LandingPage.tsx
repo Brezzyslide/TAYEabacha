@@ -5,17 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, ArrowRight, Sparkles, Shield, Users, Brain, Zap, CheckCircle, Star } from "lucide-react";
 import needCareAILogo from "../../../attached_assets/ChatGPT Image Jun 19, 2025, 09_40_28 AM_1750290306428.png";
 
 const floatingMessages = [
-  "Built by and for people who do the work — not tech bros.",
-  "PBS in every button — not just every plan.",
-  "Every shift structured. Every life supported.",
-  "NDIS-ready. Compliance isn't a feature — it's the foundation.",
-  "Supports NDIS funding applications with evidence-backed care design.",
-  "Made for staff. Trusted by coordinators. Loved by participants."
+  { text: "Built by practitioners", icon: Users, color: "from-emerald-400 to-teal-500" },
+  { text: "PBS integrated everywhere", icon: Brain, color: "from-purple-400 to-violet-500" },
+  { text: "NDIS compliance built-in", icon: Shield, color: "from-blue-400 to-cyan-500" },
+  { text: "Evidence-backed design", icon: Star, color: "from-amber-400 to-orange-500" },
+  { text: "Trusted by coordinators", icon: CheckCircle, color: "from-green-400 to-emerald-500" },
+  { text: "AI-powered insights", icon: Sparkles, color: "from-pink-400 to-rose-500" }
 ];
 
 export default function LandingPage() {
@@ -38,35 +38,57 @@ export default function LandingPage() {
     setContactForm({ name: "", email: "", message: "" });
   };
 
-  const FloatingBubble = ({ text, delay }: { text: string; delay: number }) => (
-    <motion.div
-      initial={{ opacity: 0, x: -100, y: 100 }}
-      animate={{
-        opacity: [0, 0.7, 0],
-        x: [0, 200, 400],
-        y: [0, -50, -100]
-      }}
-      transition={{
-        duration: 20,
-        delay,
-        repeat: Infinity,
-        ease: "linear"
-      }}
-      className="absolute hidden lg:block text-sm text-slate-400 bg-slate-800/20 px-4 py-2 rounded-full backdrop-blur-sm border border-slate-700/30 pointer-events-none z-0"
-    >
-      {text}
-    </motion.div>
-  );
+  const FloatingBubble = ({ item, delay }: { item: typeof floatingMessages[0]; delay: number }) => {
+    const Icon = item.icon;
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8, x: -150, y: 150 }}
+        animate={{
+          opacity: [0, 1, 0.8, 0],
+          scale: [0.8, 1.1, 1, 0.9],
+          x: [0, 250, 500, 750],
+          y: [0, -100, -200, -300],
+          rotate: [0, 15, -10, 5]
+        }}
+        transition={{
+          duration: 25,
+          delay,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        className="absolute hidden xl:block pointer-events-none z-0"
+      >
+        <div className={`relative bg-gradient-to-r ${item.color} p-4 rounded-2xl shadow-2xl backdrop-blur-md border border-white/20`}>
+          <div className="flex items-center space-x-3">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <Icon className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-white font-medium text-sm whitespace-nowrap">
+              {item.text}
+            </span>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent rounded-2xl" />
+        </div>
+      </motion.div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white relative overflow-hidden">
+      {/* Modern Geometric Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
+
       {/* Floating Message Bubbles */}
-      <div className="fixed inset-0 pointer-events-none">
+      <div className="fixed inset-0 pointer-events-none z-10">
         {floatingMessages.map((message, index) => (
           <FloatingBubble
             key={index}
-            text={message}
-            delay={index * 3}
+            item={message}
+            delay={index * 4}
           />
         ))}
       </div>
