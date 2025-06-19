@@ -2930,6 +2930,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Budget backfill endpoint for processing completed shifts
+  app.post("/api/budget/backfill", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      console.log("[BUDGET BACKFILL] API endpoint called by user:", req.user.id);
+      
+      // Import the backfill function
+      const { backfillBudgetDeductions } = await import("./budget-backfill");
+      
+      // Run the backfill process
+      await backfillBudgetDeductions();
+      
+      res.json({ 
+        success: true, 
+        message: "Budget backfill process completed successfully" 
+      });
+    } catch (error: any) {
+      console.error("[BUDGET BACKFILL] API endpoint error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to run budget backfill process", 
+        error: error.message 
+      });
+    }
+  });
+
   // Spell Check API using OpenAI
   app.post("/api/spellcheck-gpt", requireAuth, async (req: any, res) => {
     try {
