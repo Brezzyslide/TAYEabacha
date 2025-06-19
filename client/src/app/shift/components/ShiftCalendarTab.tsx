@@ -46,7 +46,7 @@ export default function ShiftCalendarTab() {
   // Mutation for requesting shifts
   const requestShiftMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return apiRequest(`/api/shifts/${shiftId}`, "PATCH", {
+      return apiRequest("PATCH", `/api/shifts/${shiftId}`, {
         userId: user?.id,
         status: "requested"
       });
