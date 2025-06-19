@@ -151,7 +151,11 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                                 key={shift.id}
                                 onClick={() => onShiftClick(shift)}
                                 className={`p-3 rounded cursor-pointer hover:scale-105 transform transition-all duration-200 shadow-sm ${
-                                  isAssigned 
+                                  shift.status === 'completed'
+                                    ? 'bg-emerald-600 text-white border border-emerald-700'
+                                    : shift.status === 'in-progress'
+                                    ? 'bg-orange-500 text-white border border-orange-600'
+                                    : isAssigned 
                                     ? 'bg-green-500 text-white border border-green-600' 
                                     : 'bg-red-500 text-white border border-red-600'
                                 }`}
@@ -167,7 +171,7 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                                     <Clock className="h-3 w-3" />
                                     {shift.startTime && format(new Date(shift.startTime), 'HH:mm')}
                                   </span>
-                                  <ShiftStatusTag status={shift.status} size="sm" />
+                                  <ShiftStatusTag status={(shift.status as string) || "assigned"} />
                                 </div>
                               </div>
                             );
@@ -230,7 +234,11 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                             key={shift.id}
                             onClick={() => onShiftClick(shift)}
                             className={`p-1.5 rounded text-xs cursor-pointer hover:scale-105 transform transition-all duration-200 shadow-sm ${
-                              isAssigned 
+                              shift.status === 'completed'
+                                ? 'bg-emerald-600 text-white border border-emerald-700'
+                                : shift.status === 'in-progress'
+                                ? 'bg-orange-500 text-white border border-orange-600'
+                                : isAssigned 
                                 ? 'bg-green-500 text-white border border-green-600' 
                                 : 'bg-red-500 text-white border border-red-600'
                             }`}
