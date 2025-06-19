@@ -43,8 +43,9 @@ export default function BudgetTransactionsList() {
     queryKey: ["/api/clients"],
   });
 
-  // Mock transactions data for now - in real app would fetch from API
-  const transactions: BudgetTransaction[] = [];
+  const { data: transactions = [], isLoading } = useQuery<BudgetTransaction[]>({
+    queryKey: ["/api/budget-transactions"],
+  });
 
   const filteredTransactions = transactions.filter(transaction => {
     const matchesBudget = selectedBudget === "all" || transaction.budgetId.toString() === selectedBudget;
@@ -58,6 +59,22 @@ export default function BudgetTransactionsList() {
 
   const totalTransactions = filteredTransactions.length;
   const totalAmount = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   const getCategoryColor = (category: string) => {
     switch (category) {

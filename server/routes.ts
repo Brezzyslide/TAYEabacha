@@ -2731,7 +2731,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/budget-transactions/:budgetId", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const budgetId = parseInt(req.params.budgetId);
-      const transactions = await storage.getBudgetTransactions(budgetId, "5b3d3a66-ef3d-4e48-9399-ee580c64e303");
+      const transactions = await storage.getBudgetTransactions(budgetId, req.user.tenantId.toString());
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch budget transactions" });
+    }
+  });
+
+  // Get all budget transactions for a tenant
+  app.get("/api/budget-transactions", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const transactions = await storage.getAllBudgetTransactions(req.user.tenantId);
       res.json(transactions);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch budget transactions" });

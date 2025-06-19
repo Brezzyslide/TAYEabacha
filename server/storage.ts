@@ -1304,6 +1304,34 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(budgetTransactions.createdAt));
   }
 
+  async getAllBudgetTransactions(tenantId: number): Promise<any[]> {
+    return await db.select({
+      id: budgetTransactions.id,
+      budgetId: budgetTransactions.budgetId,
+      shiftId: budgetTransactions.shiftId,
+      caseNoteId: budgetTransactions.caseNoteId,
+      category: budgetTransactions.category,
+      shiftType: budgetTransactions.shiftType,
+      ratio: budgetTransactions.ratio,
+      hours: budgetTransactions.hours,
+      rate: budgetTransactions.rate,
+      amount: budgetTransactions.amount,
+      description: budgetTransactions.description,
+      transactionType: budgetTransactions.transactionType,
+      createdAt: budgetTransactions.createdAt,
+      createdBy: {
+        id: users.id,
+        fullName: users.fullName,
+        username: users.username,
+      }
+    })
+    .from(budgetTransactions)
+    .leftJoin(users, eq(budgetTransactions.createdByUserId, users.id))
+    .leftJoin(ndisBudgets, eq(budgetTransactions.budgetId, ndisBudgets.id))
+    .where(eq(ndisBudgets.tenantId, tenantId))
+    .orderBy(desc(budgetTransactions.createdAt));
+  }
+
   async createBudgetTransaction(insertTransaction: any): Promise<BudgetTransaction> {
     const [transaction] = await db.insert(budgetTransactions).values(insertTransaction).returning();
     return transaction;
