@@ -84,7 +84,7 @@ export default function MessageDashboard() {
   // Mark message as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (messageId: number) => {
-      return await apiRequest(`/api/messages/${messageId}/read`, "PATCH", {});
+      return await apiRequest("PATCH", `/api/messages/${messageId}/read`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
@@ -94,7 +94,7 @@ export default function MessageDashboard() {
   // Delete message mutation
   const deleteMessageMutation = useMutation({
     mutationFn: async (messageId: number) => {
-      return await apiRequest(`/api/messages/${messageId}`, "DELETE");
+      return await apiRequest("DELETE", `/api/messages/${messageId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
