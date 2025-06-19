@@ -116,18 +116,18 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="w-full max-w-4xl h-full max-h-[95vh] overflow-y-auto p-3 sm:p-6">
+        <DialogHeader className="pb-3">
+          <DialogTitle className="text-lg sm:text-xl">
             {budget ? "Edit NDIS Budget" : "Create NDIS Budget"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             Set up NDIS funding categories and allowed ratios for this participant.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
             {/* Client Selection */}
             <FormField
               control={form.control}
@@ -158,13 +158,13 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
               )}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* SIL Category */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">SIL (Supported Independent Living)</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">SIL (Supported Independent Living)</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   <FormField
                     control={form.control}
                     name="silTotal"
@@ -381,7 +381,7 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
               </CardHeader>
               {showPriceOverrides && (
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     <FormField
                       control={form.control}
                       name="priceOverrides.AM"
@@ -471,11 +471,11 @@ export default function ParticipantBudgetForm({ budget, onClose, onSuccess }: Pa
             </Card>
 
             {/* Form Actions */}
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 sm:justify-end pt-4">
+              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending} className="w-full sm:w-auto">
                 {createMutation.isPending
                   ? (budget ? "Updating..." : "Creating...")
                   : (budget ? "Update Budget" : "Create Budget")

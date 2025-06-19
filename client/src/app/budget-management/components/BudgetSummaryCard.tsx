@@ -82,16 +82,17 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
 
   return (
     <Card className={`relative ${isOverBudget ? 'border-red-200 bg-red-50' : isLowBudget ? 'border-yellow-200 bg-yellow-50' : ''}`}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <CardTitle className="text-base sm:text-lg">
             {client ? `${client.firstName} ${client.lastName}` : `Client ID: ${budget.clientId}`}
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
             {getStatusBadge()}
             {canEdit && (
-              <Button variant="outline" size="sm" onClick={onEdit}>
-                <Edit className="h-4 w-4" />
+              <Button variant="outline" size="sm" onClick={onEdit} className="w-full sm:w-auto">
+                <Edit className="h-4 w-4 mr-2" />
+                <span className="sm:hidden">Edit Budget</span>
               </Button>
             )}
           </div>
@@ -101,15 +102,15 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
         )}
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 pt-0">
         {/* Overall Progress */}
         <div>
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
             <span className="text-sm font-medium">Overall Budget Progress</span>
             <span className="text-sm text-gray-500">{overallProgress.toFixed(1)}%</span>
           </div>
           <Progress value={overallProgress} className="h-2" />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-gray-500 mt-1 gap-1">
             <span>Used: ${totalUsed.toLocaleString()}</span>
             <span>Total: ${totalBudget.toLocaleString()}</span>
           </div>
@@ -118,7 +119,7 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
         {/* SIL Category */}
         {silTotal > 0 && (
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
               <span className="text-sm font-medium">SIL</span>
               <span className="text-sm text-gray-500">${silRemaining.toLocaleString()} remaining</span>
             </div>
@@ -128,7 +129,7 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
                 style={{ width: `${Math.min(silProgress, 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-gray-500 gap-1">
               <span>Ratios: {budget.silAllowedRatios.join(", ")}</span>
               <span>${silTotal.toLocaleString()} total</span>
             </div>
@@ -138,7 +139,7 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
         {/* Community Access Category */}
         {communityTotal > 0 && (
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
               <span className="text-sm font-medium">Community Access</span>
               <span className="text-sm text-gray-500">${communityRemaining.toLocaleString()} remaining</span>
             </div>
@@ -148,7 +149,7 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
                 style={{ width: `${Math.min(communityProgress, 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-gray-500 gap-1">
               <span>Ratios: {budget.communityAccessAllowedRatios.join(", ")}</span>
               <span>${communityTotal.toLocaleString()} total</span>
             </div>
@@ -158,7 +159,7 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
         {/* Capacity Building Category */}
         {capacityTotal > 0 && (
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
               <span className="text-sm font-medium">Capacity Building</span>
               <span className="text-sm text-gray-500">${capacityRemaining.toLocaleString()} remaining</span>
             </div>
@@ -168,7 +169,7 @@ export default function BudgetSummaryCard({ budget, client, onEdit, canEdit }: B
                 style={{ width: `${Math.min(capacityProgress, 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-gray-500 gap-1">
               <span>Ratios: {budget.capacityBuildingAllowedRatios.join(", ")}</span>
               <span>${capacityTotal.toLocaleString()} total</span>
             </div>
