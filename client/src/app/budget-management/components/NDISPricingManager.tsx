@@ -57,7 +57,7 @@ export default function NDISPricingManager() {
     mutationFn: async (data: PricingFormData) => {
       const url = editingPricing ? `/api/ndis-pricing/${editingPricing.id}` : "/api/ndis-pricing";
       const method = editingPricing ? "PUT" : "POST";
-      return apiRequest(url, method, data);
+      return apiRequest(method, url, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ndis-pricing"] });

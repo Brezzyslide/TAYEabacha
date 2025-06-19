@@ -1237,6 +1237,17 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount! > 0;
   }
 
+  async getNdisPricingByTypeAndRatio(shiftType: string, ratio: string, tenantId: number): Promise<NdisPricing | undefined> {
+    const [pricing] = await db.select().from(ndisPricing)
+      .where(and(
+        eq(ndisPricing.shiftType, shiftType),
+        eq(ndisPricing.ratio, ratio),
+        eq(ndisPricing.tenantId, tenantId),
+        eq(ndisPricing.isActive, true)
+      ));
+    return pricing;
+  }
+
   // NDIS Budget methods
   async getNdisBudgets(tenantId: number): Promise<NdisBudget[]> {
     return await db.select().from(ndisBudgets)

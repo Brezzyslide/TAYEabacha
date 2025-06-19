@@ -8,6 +8,19 @@ import { eq, desc, and } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+
+// Helper function to determine shift type based on start time
+function determineShiftType(startTime: Date): "AM" | "PM" | "ActiveNight" | "Sleepover" {
+  const hour = startTime.getHours();
+  
+  if (hour >= 6 && hour < 20) {
+    return "AM"; // Day shift: 6:00 AM - 8:00 PM
+  } else if (hour >= 20 && hour < 24) {
+    return "PM"; // Evening shift: 8:00 PM - 12:00 AM
+  } else {
+    return "ActiveNight"; // Night shift: 12:00 AM - 6:00 AM
+  }
+}
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 
@@ -679,6 +692,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
           resourceType: "shift",
           resourceId: shift.id,
           description: `Started shift: ${shift.title}`,
+          tenantId: req.user.tenantId,
+        });
+      }
+      
+      // Process NDIS budget deduction when shift is completed
+      if (processedUpdateData.status === "completed" && processedUpdateData.endTimestamp && shift.startTimestamp) {
+        try {
+          // Calculate shift duration in hours
+          const startTime = new Date(shift.startTimestamp);
+          const endTime = new Date(processedUpdateData.endTimestamp);
+          const shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+          
+          if (shiftHours > 0 && shift.clientId) {
+            // Get client's NDIS budget
+            const budget = await storage.getNdisBudgetByClient(shift.clientId, req.user.tenantId);
+            
+            if (budget) {
+              // Determine shift type and get pricing
+              const shiftType = determineShiftType(startTime);
+              const staffRatio = shift.staffRatio || "1:1";
+              
+              // Get pricing for this shift type and ratio
+              const pricing = await storage.getNdisPricingByTypeAndRatio(shiftType, staffRatio, req.user.tenantId);
+              
+              if (pricing) {
+                // Get effective rate for this shift type
+                const effectiveRate = parseFloat(pricing.rate.toString());
+                const shiftCost = effectiveRate * shiftHours;
+                
+                // Determine which budget category to deduct from based on shift type
+                let budgetUpdate: any = {};
+                if (shiftType === "AM" || shiftType === "PM") {
+                  // Community Access for day shifts
+                  const currentRemaining = parseFloat(budget.communityAccessRemaining.toString());
+                  if (currentRemaining >= shiftCost) {
+                    budgetUpdate = {
+                      communityAccessRemaining: (currentRemaining - shiftCost).toString()
+                    };
+                  }
+                } else {
+                  // SIL for overnight shifts
+                  const currentRemaining = parseFloat(budget.silRemaining.toString());
+                  if (currentRemaining >= shiftCost) {
+                    budgetUpdate = {
+                      silRemaining: (currentRemaining - shiftCost).toString()
+                    };
+                  }
+                }
+                
+                // Update budget if deduction is possible
+                if (Object.keys(budgetUpdate).length > 0) {
+                  await storage.updateNdisBudget(budget.id, budgetUpdate, req.user.tenantId);
+                  
+                  // Log the budget deduction
+                  await storage.createActivityLog({
+                    userId: req.user.id,
+                    action: "budget_deduction",
+                    resourceType: "ndis_budget",
+                    resourceId: budget.id,
+                    description: `Deducted $${shiftCost.toFixed(2)} for completed shift: ${shift.title} (${shiftHours.toFixed(1)}h @ $${effectiveRate}/h)`,
+                    tenantId: req.user.tenantId,
+                  });
+                }
+              }
+            }
+          }
+        } catch (budgetError) {
+          console.error("Error processing NDIS budget deduction:", budgetError);
+          // Don't fail the shift completion if budget deduction fails
+        }
+        
+        // Log activity for shift completion
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "complete_shift",
+          resourceType: "shift",
+          resourceId: shift.id,
+          description: `Completed shift: ${shift.title}`,
           tenantId: req.user.tenantId,
         });
       }
@@ -2529,7 +2620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const pricingData = {
         ...req.body,
-        companyId: "5b3d3a66-ef3d-4e48-9399-ee580c64e303",
+        tenantId: req.user.tenantId,
       };
       
       const pricing = await storage.createNdisPricing(pricingData);
