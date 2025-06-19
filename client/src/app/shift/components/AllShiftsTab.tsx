@@ -182,32 +182,32 @@ export default function AllShiftsTab() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="modern-card group hover:scale-105 transition-all duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gradient-primary">{stats.total}</div>
-            <div className="text-sm text-slate-300 font-medium uppercase tracking-wider">Total</div>
+            <div className="text-2xl font-bold text-white">{stats.total}</div>
+            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Total</div>
           </CardContent>
         </Card>
         <Card className="modern-card group hover:scale-105 transition-all duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gradient-primary">{stats.assigned}</div>
-            <div className="text-sm text-slate-300 font-medium uppercase tracking-wider">Assigned</div>
+            <div className="text-2xl font-bold text-white">{stats.assigned}</div>
+            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Assigned</div>
           </CardContent>
         </Card>
         <Card className="modern-card group hover:scale-105 transition-all duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gradient-primary">{stats.unassigned}</div>
-            <div className="text-sm text-slate-300 font-medium uppercase tracking-wider">Unassigned</div>
+            <div className="text-2xl font-bold text-white">{stats.unassigned}</div>
+            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Unassigned</div>
           </CardContent>
         </Card>
         <Card className="modern-card group hover:scale-105 transition-all duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gradient-primary">{stats.inProgress}</div>
-            <div className="text-sm text-slate-300 font-medium uppercase tracking-wider">In Progress</div>
+            <div className="text-2xl font-bold text-white">{stats.inProgress}</div>
+            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">In Progress</div>
           </CardContent>
         </Card>
         <Card className="modern-card group hover:scale-105 transition-all duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gradient-primary">{stats.completed}</div>
-            <div className="text-sm text-slate-300 font-medium uppercase tracking-wider">Completed</div>
+            <div className="text-2xl font-bold text-white">{stats.completed}</div>
+            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Completed</div>
           </CardContent>
         </Card>
       </div>

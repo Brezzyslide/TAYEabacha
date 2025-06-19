@@ -120,7 +120,9 @@
   }
   
   .glass-nav {
-    @apply bg-black/20 backdrop-blur-xl border-b border-white/10;
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(71, 85, 105, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
   }
   
   .gradient-button-primary {
@@ -140,8 +142,8 @@
   }
   
   .modern-card {
-    @apply relative overflow-hidden rounded-3xl border border-white/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300;
-    background: rgba(15, 23, 42, 0.6);
+    @apply relative overflow-hidden rounded-3xl border border-white/20 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300;
+    background: rgba(30, 41, 59, 0.85);
   }
   
   .modern-nav-item {

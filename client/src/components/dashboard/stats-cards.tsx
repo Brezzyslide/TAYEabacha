@@ -87,9 +87,9 @@ export default function StatsCards() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">{stat.title}</p>
-                <p className="text-3xl font-bold text-gradient-primary mt-2">{stat.value}</p>
-                <p className={`text-sm mt-3 flex items-center text-slate-400 font-medium`}>
+                <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">{stat.title}</p>
+                <p className="text-3xl font-bold text-white mt-2">{stat.value}</p>
+                <p className={`text-sm mt-3 flex items-center text-slate-300 font-medium`}>
                   <stat.subtitleIcon className="h-4 w-4 mr-2" />
                   {stat.subtitle}
                 </p>

@@ -134,7 +134,7 @@ export default function BudgetDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Card className="modern-card group hover:scale-105 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-300 uppercase tracking-wider">Total Budget</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-200 uppercase tracking-wider">Total Budget</CardTitle>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
               <div className="relative w-8 h-8 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
@@ -143,8 +143,8 @@ export default function BudgetDashboard() {
             </div>
           </CardHeader>
           <CardContent className="pt-1 sm:pt-2">
-            <div className="text-lg sm:text-2xl font-bold text-gradient-primary">${totalBudget.toLocaleString()}</div>
-            <p className="text-xs text-slate-400 font-medium mt-2">
+            <div className="text-lg sm:text-2xl font-bold text-white">${totalBudget.toLocaleString()}</div>
+            <p className="text-xs text-slate-300 font-medium mt-2">
               {selectedClient !== "all" ? 
                 `For ${clients.find(c => c.id.toString() === selectedClient)?.fullName || 'selected client'}` :
                 `Across ${filteredBudgets.length} participants`
