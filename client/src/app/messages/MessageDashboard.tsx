@@ -215,37 +215,52 @@ export default function MessageDashboard() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Inbox className="h-5 w-5 text-blue-600" />
+            <Card className="modern-card group hover:scale-105 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                    <div className="relative w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                      <Inbox className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-600">Unread Messages</p>
-                    <p className="text-2xl font-bold">{getUnreadCount()}</p>
+                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Unread Messages</p>
+                    <p className="text-2xl font-bold text-gradient-primary mt-1">{getUnreadCount()}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
+            <Card className="modern-card group hover:scale-105 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                    <div className="relative w-12 h-12 bg-gradient-to-r from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25">
+                      <AlertTriangle className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-600">Urgent Unread</p>
-                    <p className="text-2xl font-bold">{getUrgentCount()}</p>
+                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Urgent Unread</p>
+                    <p className="text-2xl font-bold text-gradient-primary mt-1">{getUrgentCount()}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Send className="h-5 w-5 text-green-600" />
+            <Card className="modern-card group hover:scale-105 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                    <div className="relative w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
+                      <Send className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-600">Sent Today</p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Sent Today</p>
+                    <p className="text-2xl font-bold text-gradient-primary mt-1">
                       {messages.filter((msg: StaffMessage) => 
                         msg.senderId === user?.id && 
                         format(new Date(msg.createdAt), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')

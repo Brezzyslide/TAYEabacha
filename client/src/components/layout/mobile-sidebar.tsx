@@ -135,13 +135,13 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
+        <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8 min-h-0">
           {/* Support Work Section */}
           <div>
-            <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Support Work
-            </h3>
-            <nav className="space-y-1">
+            <div className="px-4 py-3 rounded-2xl mb-4 backdrop-blur-sm border border-white/10 bg-gradient-to-r from-emerald-500/30 to-teal-500/30">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">SUPPORT WORK</h3>
+            </div>
+            <nav className="space-y-2">
               {supportWorkNavigation.map((item) => (
                 <NavigationItem key={item.name} item={item} />
               ))}
@@ -150,10 +150,10 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
           {/* Shift Management Section */}
           <div>
-            <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Shift Management
-            </h3>
-            <nav className="space-y-1">
+            <div className="px-4 py-3 rounded-2xl mb-4 backdrop-blur-sm border border-white/10 bg-gradient-to-r from-cyan-500/30 to-blue-500/30">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">SHIFT MANAGEMENT</h3>
+            </div>
+            <nav className="space-y-2">
               {shiftManagementNavigation.map((item) => (
                 <NavigationItem key={item.name} item={item} />
               ))}

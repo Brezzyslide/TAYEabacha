@@ -140,7 +140,8 @@
   }
   
   .modern-card {
-    @apply glass-card p-6 hover:shadow-2xl hover:shadow-cyan-500/10 transition-all duration-300;
+    @apply relative overflow-hidden rounded-3xl border border-white/10 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300;
+    background: rgba(15, 23, 42, 0.6);
   }
   
   .modern-nav-item {
