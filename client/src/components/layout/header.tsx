@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Menu, MapPin, ChevronDown, Home, LogOut } from "lucide-react";
+import { Bell, Menu, MapPin, ChevronDown, Home, LogOut, X } from "lucide-react";
 import { useLocation } from "wouter";
 import {
   DropdownMenu,
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 export default function Header() {
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
@@ -39,24 +38,24 @@ export default function Header() {
     .toUpperCase();
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="lg:hidden text-gray-500 hover:text-gray-700"
-            onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500">
-              Welcome back, <span className="font-medium">{user.fullName}</span>
-            </p>
+    <header className="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="lg:hidden text-gray-500 hover:text-gray-700 flex-shrink-0"
+              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+            >
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+            </Button>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Dashboard</h1>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">
+                Welcome back, <span className="font-medium">{user.fullName}</span>
+              </p>
+            </div>
           </div>
-        </div>
         
         <div className="flex items-center space-x-3 overflow-x-auto scrollbar-hide pb-2 min-w-0">
           {/* Dashboard Button */}
@@ -133,5 +132,6 @@ export default function Header() {
         </div>
       </div>
     </header>
+    </div>
   );
 }
