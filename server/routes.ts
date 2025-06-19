@@ -757,6 +757,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   // Create budget transaction record
                   const category = (shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL";
+                  
+                  // Get the tenant's company ID, fallback to default if null
+                  const tenant = await storage.getTenant(req.user.tenantId);
+                  const companyId = tenant?.companyId || "5b3d3a66-ef3d-4e48-9399-ee580c64e303";
+                  
                   await storage.processBudgetDeduction({
                     budgetId: budget.id,
                     category,
@@ -767,7 +772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     amount: shiftCost,
                     shiftId: shift.id,
                     description: `Shift completion: ${shift.title}`,
-                    companyId: req.user.tenantId.toString(),
+                    companyId,
                     createdByUserId: req.user.id,
                     tenantId: req.user.tenantId,
                   });

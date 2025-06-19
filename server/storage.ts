@@ -1337,6 +1337,11 @@ export class DatabaseStorage implements IStorage {
     return transaction;
   }
 
+  async getTenant(tenantId: number): Promise<any> {
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    return tenant;
+  }
+
   async processBudgetDeduction(params: {
     budgetId: number;
     category: string;
