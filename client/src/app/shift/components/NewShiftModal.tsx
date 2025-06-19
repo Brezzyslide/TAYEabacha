@@ -153,7 +153,28 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     const shifts: any[] = [];
     const startDate = new Date(data.startDateTime);
     const endDate = data.endDateTime ? new Date(data.endDateTime) : null;
-    const duration = endDate ? endDate.getTime() - startDate.getTime() : 8 * 60 * 60 * 1000; // 8 hours default
+    
+    // Extract time components for reliable duration calculation
+    const startHours = startDate.getHours();
+    const startMinutes = startDate.getMinutes();
+    const startSeconds = startDate.getSeconds();
+    
+    let endHours = startHours + 8; // Default 8 hour shift
+    let endMinutes = startMinutes;
+    let endSeconds = startSeconds;
+    let nextDay = false;
+    
+    if (endDate) {
+      endHours = endDate.getHours();
+      endMinutes = endDate.getMinutes();
+      endSeconds = endDate.getSeconds();
+      
+      // Check if shift spans multiple days
+      const sameDay = startDate.toDateString() === endDate.toDateString();
+      if (!sameDay) {
+        nextDay = true;
+      }
+    }
     
     const selectedWeekdays = data.selectedWeekdays || [];
     if (selectedWeekdays.length === 0) return shifts;
@@ -167,30 +188,41 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     const endByDate = data.endConditionType === "endDate" ? data.recurrenceEndDate : null;
     const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
 
-    let currentWeekStart = new Date(startDate);
-    currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay()); // Start of week (Sunday)
-    
+    // Start from the beginning of the week containing our start date
+    let currentDate = new Date(startDate);
     let totalShiftsGenerated = 0;
     let weekCount = 0;
 
-    while (totalShiftsGenerated < maxOccurrences && (!endByDate || currentWeekStart <= endByDate)) {
+    while (totalShiftsGenerated < maxOccurrences && (!endByDate || currentDate <= endByDate)) {
+      // Calculate the start of the current week (Monday = 0)
+      const currentWeekStart = new Date(currentDate);
+      const dayOffset = currentWeekStart.getDay() === 0 ? 6 : currentWeekStart.getDay() - 1; // Monday as start of week
+      currentWeekStart.setDate(currentWeekStart.getDate() - dayOffset);
+      
       for (const weekdayName of selectedWeekdays) {
         const weekdayNumber = weekdayMap[weekdayName as keyof typeof weekdayMap];
-        const shiftDate = new Date(currentWeekStart);
-        shiftDate.setDate(currentWeekStart.getDate() + weekdayNumber);
+        const adjustedWeekday = weekdayNumber === 0 ? 6 : weekdayNumber - 1; // Convert to Monday = 0 system
         
-        // Set the time from the original start date
-        shiftDate.setHours(startDate.getHours(), startDate.getMinutes(), startDate.getSeconds());
+        const shiftStartDate = new Date(currentWeekStart);
+        shiftStartDate.setDate(currentWeekStart.getDate() + adjustedWeekday);
+        
+        // Set the exact time from original shift
+        shiftStartDate.setHours(startHours, startMinutes, startSeconds, 0);
         
         // Skip if this date is before our start date or after end date
-        if (shiftDate < startDate || (endByDate && shiftDate > endByDate)) continue;
+        if (shiftStartDate < startDate || (endByDate && shiftStartDate > endByDate)) continue;
         
-        const shiftEnd = new Date(shiftDate.getTime() + duration);
+        // Calculate end time with proper day handling
+        const shiftEndDate = new Date(shiftStartDate);
+        if (nextDay) {
+          shiftEndDate.setDate(shiftEndDate.getDate() + 1);
+        }
+        shiftEndDate.setHours(endHours, endMinutes, endSeconds, 0);
         
         shifts.push({
           title: data.title,
-          startTime: shiftDate.toISOString(),
-          endTime: shiftEnd.toISOString(),
+          startTime: shiftStartDate.toISOString(),
+          endTime: shiftEndDate.toISOString(),
           userId: data.userId,
           clientId: data.clientId,
           fundingCategory: data.fundingCategory,
@@ -203,8 +235,10 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         if (totalShiftsGenerated >= maxOccurrences) break;
       }
       
-      // Move to next week (or fortnightly)
-      currentWeekStart.setDate(currentWeekStart.getDate() + (7 * frequencyWeeks));
+      if (totalShiftsGenerated >= maxOccurrences) break;
+      
+      // Move to next week pattern (weekly or fortnightly)
+      currentDate.setDate(currentDate.getDate() + (7 * frequencyWeeks));
       weekCount++;
     }
 
