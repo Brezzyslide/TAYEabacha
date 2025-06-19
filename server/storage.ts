@@ -1322,6 +1322,7 @@ export class DatabaseStorage implements IStorage {
     description?: string;
     companyId: string;
     createdByUserId: number;
+    tenantId: number;
   }): Promise<{ transaction: BudgetTransaction; updatedBudget: NdisBudget }> {
     return await db.transaction(async (tx) => {
       // Create the transaction record

@@ -769,6 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     description: `Shift completion: ${shift.title}`,
                     companyId: req.user.tenantId.toString(),
                     createdByUserId: req.user.id,
+                    tenantId: req.user.tenantId,
                   });
                   
                   // Log the budget deduction
