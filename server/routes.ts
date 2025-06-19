@@ -658,14 +658,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/shifts/:id/approve", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
     try {
       const shiftId = parseInt(req.params.id);
+      console.log(`[APPROVE SHIFT] ShiftId: ${shiftId}, User: ${req.user.username}, TenantId: ${req.user.tenantId}`);
       
       // Get the shift to find the requesting user
       const shift = await storage.getShift(shiftId, req.user.tenantId);
       if (!shift) {
+        console.log(`[APPROVE SHIFT] Shift not found: ${shiftId}`);
         return res.status(404).json({ message: "Shift not found" });
       }
       
-      if ((shift as any).status !== "requested") {
+      console.log(`[APPROVE SHIFT] Current shift status: ${shift.status}`);
+      if (shift.status !== "requested") {
         return res.status(400).json({ message: "Shift is not in requested status" });
       }
       
@@ -674,19 +677,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "assigned"
       }, req.user.tenantId);
       
+      console.log(`[APPROVE SHIFT] Updated shift status to: ${updatedShift?.status}`);
+      
       // Log activity
-      await storage.createActivityLog({
-        userId: req.user.id,
-        action: "approve_shift_request",
-        resourceType: "shift",
-        resourceId: shift.id,
-        description: `Approved shift request: ${shift.title}`,
-        tenantId: req.user.tenantId,
-      });
+      if (storage.createActivityLog) {
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "approve_shift_request",
+          resourceType: "shift",
+          resourceId: shift.id,
+          description: `Approved shift request: ${shift.title}`,
+          tenantId: req.user.tenantId,
+        });
+      }
       
       res.json(updatedShift);
     } catch (error) {
-      res.status(500).json({ message: "Failed to approve shift request" });
+      console.error("[APPROVE SHIFT] Error:", error);
+      res.status(500).json({ message: "Failed to approve shift request", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -694,14 +702,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/shifts/:id/reject", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
     try {
       const shiftId = parseInt(req.params.id);
+      console.log(`[REJECT SHIFT] ShiftId: ${shiftId}, User: ${req.user.username}, TenantId: ${req.user.tenantId}`);
       
       // Get the shift to find the requesting user
       const shift = await storage.getShift(shiftId, req.user.tenantId);
       if (!shift) {
+        console.log(`[REJECT SHIFT] Shift not found: ${shiftId}`);
         return res.status(404).json({ message: "Shift not found" });
       }
       
-      if ((shift as any).status !== "requested") {
+      console.log(`[REJECT SHIFT] Current shift status: ${shift.status}`);
+      if (shift.status !== "requested") {
         return res.status(400).json({ message: "Shift is not in requested status" });
       }
       
@@ -711,19 +722,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "unassigned"
       }, req.user.tenantId);
       
+      console.log(`[REJECT SHIFT] Updated shift status to: ${updatedShift?.status}`);
+      
       // Log activity
-      await storage.createActivityLog({
-        userId: req.user.id,
-        action: "reject_shift_request",
-        resourceType: "shift",
-        resourceId: shift.id,
-        description: `Rejected shift request: ${shift.title}`,
-        tenantId: req.user.tenantId,
-      });
+      if (storage.createActivityLog) {
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "reject_shift_request",
+          resourceType: "shift",
+          resourceId: shift.id,
+          description: `Rejected shift request: ${shift.title}`,
+          tenantId: req.user.tenantId,
+        });
+      }
       
       res.json(updatedShift);
     } catch (error) {
-      res.status(500).json({ message: "Failed to reject shift request" });
+      console.error("[REJECT SHIFT] Error:", error);
+      res.status(500).json({ message: "Failed to reject shift request", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
