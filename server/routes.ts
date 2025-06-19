@@ -667,18 +667,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Shift not found" });
       }
       
-      console.log(`[APPROVE SHIFT] Current shift status: ${shift.status}`);
+      console.log(`[APPROVE SHIFT] Current shift status: ${shift.status}, userId: ${shift.userId}`);
       if (shift.status !== "requested") {
         return res.status(400).json({ message: "Shift is not in requested status" });
       }
       
-      // Approve the shift by changing status to assigned (keep the userId from the request)
+      // Approve the shift by changing status to assigned while preserving userId
       const updatedShift = await storage.updateShift(shiftId, {
-        status: "assigned"
-        // Note: userId should already be set from the original request, so we don't change it
+        status: "assigned",
+        userId: shift.userId // Explicitly preserve the original requester's userId
       }, req.user.tenantId);
       
-      console.log(`[APPROVE SHIFT] Updated shift status to: ${updatedShift?.status}`);
+      console.log(`[APPROVE SHIFT] Updated shift - status: ${updatedShift?.status}, userId: ${updatedShift?.userId}`);
+      console.log(`[APPROVE SHIFT] Original userId preserved: ${shift.userId === updatedShift?.userId}`);
       
       // Log activity
       if (storage.createActivityLog) {
