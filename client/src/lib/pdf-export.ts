@@ -25,6 +25,7 @@ export class PDFExportUtility {
   private contentWidth: number;
   private headerHeight: number = 40;
   private footerHeight: number = 15;
+  private headerAdded: boolean = false;
 
   constructor() {
     this.pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
@@ -32,7 +33,8 @@ export class PDFExportUtility {
   }
 
   async generateStructuredPDF(options: PDFExportOptions, sections: PDFSection[]): Promise<void> {
-    this.addHeader(options);
+    // Add header only on first page
+    this.addHeaderFirstPageOnly(options);
     this.currentY = this.headerHeight + 10;
 
     this.pdf.setFontSize(18);
@@ -44,17 +46,22 @@ export class PDFExportUtility {
       this.addSection(section);
     }
 
-    this.addFooter();
+    // Add footers to all pages
+    this.addFooterAllPages(options);
     this.savePDF(options.filename || `${options.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`);
   }
 
-  private addHeader(options: PDFExportOptions): void {
+  private addHeaderFirstPageOnly(options: PDFExportOptions): void {
+    // Ensure we're on the first page
+    this.pdf.setPage(1);
+    
     this.pdf.setFillColor(245, 245, 245);
     this.pdf.rect(this.margin, 10, this.contentWidth, this.headerHeight, 'F');
     this.pdf.setDrawColor(200, 200, 200);
     this.pdf.rect(this.margin, 10, this.contentWidth, this.headerHeight, 'S');
 
-    this.pdf.setFontSize(14);
+    // Company name - unique for each tenant
+    this.pdf.setFontSize(16);
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setTextColor(0, 0, 0);
     this.pdf.text(options.companyName, this.margin + 5, 20);
@@ -73,10 +80,12 @@ export class PDFExportUtility {
       minute: '2-digit',
       hour12: false
     });
-    this.pdf.text(`Exported: ${exportTime}`, this.pageWidth - this.margin - 40, 28);
+    this.pdf.text(`Exported: ${exportTime}`, this.pageWidth - this.margin - 50, 28);
+    
+    this.headerAdded = true;
   }
 
-  private addFooter(): void {
+  private addFooterAllPages(options: PDFExportOptions): void {
     const pageCount = this.pdf.getNumberOfPages();
     
     for (let i = 1; i <= pageCount; i++) {
@@ -84,7 +93,6 @@ export class PDFExportUtility {
       
       const footerY = this.pageHeight - this.footerHeight;
       
-      // Remove footer boxes - just add plain text
       this.pdf.setFontSize(8);
       this.pdf.setFont('helvetica', 'normal');
       this.pdf.setTextColor(100, 100, 100);
@@ -93,7 +101,8 @@ export class PDFExportUtility {
       const timestamp = now.toISOString().split('T')[0] + ' ' + 
                        now.toTimeString().split(' ')[0].substring(0, 5);
       
-      this.pdf.text(`Generated: ${timestamp}`, this.margin + 5, footerY + 8);
+      // Footer with company name on each page
+      this.pdf.text(`${options.companyName} | Generated: ${timestamp}`, this.margin + 5, footerY + 8);
       this.pdf.text(`Page ${i} of ${pageCount}`, this.pageWidth - this.margin - 20, footerY + 8);
     }
   }
@@ -178,16 +187,8 @@ export class PDFExportUtility {
 
   private checkPageBreak(requiredSpace: number): void {
     if (this.currentY + requiredSpace > this.pageHeight - this.footerHeight - 15) {
-      this.addFooter();
       this.pdf.addPage();
-      this.addHeader({
-        title: 'Care Support Plan (Continued)',
-        contentHtml: '',
-        companyName: 'CareConnect',
-        staffName: '',
-        submissionDate: ''
-      });
-      this.currentY = this.headerHeight + 15;
+      this.currentY = this.margin + 15; // No header on additional pages
     }
   }
 
@@ -308,6 +309,20 @@ export class PDFExportUtility {
 }
 
 export async function exportCarePlanToPDF(plan: any, client: any, user: any): Promise<void> {
+  // Fetch company information based on user's tenant
+  let companyName = 'CareConnect'; // Default fallback
+  try {
+    const response = await fetch('/api/auth/user');
+    if (response.ok) {
+      const userData = await response.json();
+      if (userData?.companyName) {
+        companyName = userData.companyName;
+      }
+    }
+  } catch (error) {
+    console.warn('Could not fetch company name, using default');
+  }
+
   const sections: PDFSection[] = [];
 
   sections.push({
@@ -450,7 +465,7 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
   const options: PDFExportOptions = {
     title: 'NDIS Care Support Plan',
     contentHtml: '',
-    companyName: 'CareConnect',
+    companyName: companyName,
     staffName: user?.username || 'Unknown Staff',
     submissionDate: plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
     filename: `care-plan-${plan.planTitle?.replace(/[^a-zA-Z0-9]/g, '-') || 'untitled'}.pdf`
