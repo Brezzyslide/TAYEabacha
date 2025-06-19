@@ -713,19 +713,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const shiftType = determineShiftType(startTime);
               const staffRatio = shift.staffRatio || "1:1";
               
-              // Get pricing for this shift type and ratio
-              const pricing = await storage.getNdisPricingByTypeAndRatio(shiftType, staffRatio, req.user.tenantId);
-              
+              // Determine shift type and get pricing
               let effectiveRate = 0;
               
-              if (pricing) {
-                // Use NDIS pricing table rate
-                effectiveRate = parseFloat(pricing.rate.toString());
+              // First priority: Use price overrides from budget (when available)
+              const priceOverrides = budget.priceOverrides as any;
+              if (priceOverrides && priceOverrides[shiftType]) {
+                effectiveRate = parseFloat(priceOverrides[shiftType].toString());
               } else {
-                // Use price overrides from budget when no pricing records exist
-                const priceOverrides = budget.priceOverrides as any;
-                if (priceOverrides && priceOverrides[shiftType]) {
-                  effectiveRate = parseFloat(priceOverrides[shiftType].toString());
+                // Fallback: Use NDIS pricing table when overrides unavailable
+                const pricing = await storage.getNdisPricingByTypeAndRatio(shiftType, staffRatio, req.user.tenantId);
+                if (pricing) {
+                  effectiveRate = parseFloat(pricing.rate.toString());
                 }
               }
               
