@@ -203,9 +203,12 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 
 ### Critical Multi-Tenant Requirements
 1. **All features MUST work consistently across ALL tenants/companies**
-2. **Permission systems must respect tenant boundaries while ensuring role consistency**
-3. **Every feature implementation requires testing across multiple tenants**
-4. **Admin users must have full company access without cross-tenant restrictions**
+2. **ALL changes must automatically carry through to existing and new tenants**
+3. **Frontend code changes are automatically available to all tenants**
+4. **Backend data/features require automatic tenant provisioning integration**
+5. **Permission systems must respect tenant boundaries while ensuring role consistency**
+6. **Every feature implementation requires testing across multiple tenants**
+7. **Admin users must have full company access without cross-tenant restrictions**
 
 ### Multi-Tenant Testing Checklist
 Before marking any feature complete:
