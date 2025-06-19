@@ -132,8 +132,45 @@ export default function NDISPricingManager() {
       case "1:2": return "bg-yellow-100 text-yellow-800";
       case "1:3": return "bg-green-100 text-green-800";
       case "1:4": return "bg-blue-100 text-blue-800";
+      case "2:1": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
+  };
+
+  // Auto-populate pricing ratios based on 1:1 rate
+  const autoPopulatePricing = (baseRate: number, shiftType: string) => {
+    const ratioMultipliers = {
+      "1:2": 0.50, // Half price for 1 staff : 2 clients
+      "1:3": 0.33, // One-third price for 1 staff : 3 clients  
+      "1:4": 0.25, // Quarter price for 1 staff : 4 clients
+      "2:1": 2.00  // Double price for 2 staff : 1 client
+    };
+
+    const mutations = Object.entries(ratioMultipliers).map(([ratio, multiplier]) => {
+      const calculatedRate = baseRate * multiplier;
+      return {
+        shiftType,
+        ratio,
+        rate: Math.round(calculatedRate * 100) / 100 // Round to 2 decimal places
+      };
+    });
+
+    // Create all ratio pricing entries
+    mutations.forEach(async (pricingData) => {
+      try {
+        await apiRequest("POST", "/api/ndis-pricing", pricingData);
+      } catch (error) {
+        console.error(`Failed to create ${pricingData.ratio} pricing:`, error);
+      }
+    });
+
+    // Refresh the pricing data
+    queryClient.invalidateQueries({ queryKey: ["/api/ndis-pricing"] });
+    
+    toast({
+      title: "Auto-populated pricing ratios",
+      description: `Created pricing for all ratios based on 1:1 rate of $${baseRate}`,
+    });
   };
 
   // Group pricing data by shift type and ratio for better organization
@@ -144,7 +181,7 @@ export default function NDISPricingManager() {
   }, {} as Record<string, NdisPricing>);
 
   const shiftTypes = ["AM", "PM", "ActiveNight", "Sleepover"];
-  const ratios = ["1:1", "1:2", "1:3", "1:4"];
+  const ratios = ["1:1", "1:2", "1:3", "1:4", "2:1"];
 
   if (isLoading) {
     return (
@@ -257,6 +294,31 @@ export default function NDISPricingManager() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Auto-populate section - only show for 1:1 ratio */}
+                    {form.watch("ratio") === "1:1" && form.watch("rate") > 0 && (
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 className="font-medium text-blue-900 mb-2">Auto-populate Other Ratios</h4>
+                        <p className="text-sm text-blue-700 mb-3">
+                          Create pricing for all ratios based on your 1:1 rate of ${form.watch("rate")}:
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-sm text-blue-600 mb-3">
+                          <div>1:2 = ${(form.watch("rate") * 0.50).toFixed(2)}</div>
+                          <div>1:3 = ${(form.watch("rate") * 0.33).toFixed(2)}</div>
+                          <div>1:4 = ${(form.watch("rate") * 0.25).toFixed(2)}</div>
+                          <div>2:1 = ${(form.watch("rate") * 2.00).toFixed(2)}</div>
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => autoPopulatePricing(form.watch("rate"), form.watch("shiftType"))}
+                          className="w-full"
+                        >
+                          Auto-populate All Ratios
+                        </Button>
+                      </div>
+                    )}
 
                     <div className="flex justify-end space-x-2 pt-4">
                       <Button type="button" variant="outline" onClick={handleCloseModal}>

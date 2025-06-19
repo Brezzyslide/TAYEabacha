@@ -83,11 +83,8 @@ export class PDFExportUtility {
       this.pdf.setPage(i);
       
       const footerY = this.pageHeight - this.footerHeight;
-      this.pdf.setFillColor(245, 245, 245);
-      this.pdf.rect(this.margin, footerY, this.contentWidth, this.footerHeight, 'F');
-      this.pdf.setDrawColor(200, 200, 200);
-      this.pdf.rect(this.margin, footerY, this.contentWidth, this.footerHeight, 'S');
-
+      
+      // Remove footer boxes - just add plain text
       this.pdf.setFontSize(8);
       this.pdf.setFont('helvetica', 'normal');
       this.pdf.setTextColor(100, 100, 100);
@@ -151,7 +148,10 @@ export class PDFExportUtility {
     const rightColumnWidth = this.contentWidth - leftColumnWidth - 10;
     
     for (const [key, value] of Object.entries(tableData)) {
-      this.checkPageBreak(12);
+      // Calculate required space for this row
+      const valueLines = this.pdf.splitTextToSize(String(value), rightColumnWidth);
+      const requiredSpace = Math.max(12, valueLines.length * 6 + 8);
+      this.checkPageBreak(requiredSpace);
       
       // Add key (bold)
       this.pdf.setFont('helvetica', 'bold');
@@ -159,19 +159,18 @@ export class PDFExportUtility {
       
       // Add value (normal, with text wrapping)
       this.pdf.setFont('helvetica', 'normal');
-      const valueLines = this.pdf.splitTextToSize(String(value), rightColumnWidth);
       
       let valueY = this.currentY;
       for (let i = 0; i < valueLines.length; i++) {
         if (i > 0) {
+          valueY += 6;
           this.checkPageBreak(7);
-          valueY = this.currentY;
         }
         this.pdf.text(valueLines[i], this.margin + leftColumnWidth + 5, valueY);
-        if (i > 0) this.currentY += 6;
       }
       
-      this.currentY += 8; // Extra spacing between table rows
+      // Move currentY to the end of this row
+      this.currentY = valueY + 10; // Extra spacing between table rows
     }
   }
 
