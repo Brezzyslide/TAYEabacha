@@ -66,7 +66,7 @@ export default function ReplyModal({ isOpen, onClose, originalMessage, users }: 
   // Create reply mutation
   const createReplyMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/messages", "POST", data);
+      return await apiRequest("POST", "/api/messages", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });

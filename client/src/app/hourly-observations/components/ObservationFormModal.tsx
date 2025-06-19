@@ -186,9 +186,9 @@ export default function ObservationFormModal({
       };
 
       if (isEditing) {
-        return apiRequest(`/api/observations/${observation.id}`, "PATCH", payload);
+        return apiRequest("PATCH", `/api/observations/${observation.id}`, payload);
       } else {
-        return apiRequest("/api/observations", "POST", payload);
+        return apiRequest("POST", "/api/observations", payload);
       }
     },
     onSuccess: () => {

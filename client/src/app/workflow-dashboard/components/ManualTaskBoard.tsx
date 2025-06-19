@@ -80,7 +80,7 @@ export default function ManualTaskBoard() {
         status: "todo",
         assignedToUserId: data.assignedToUserId ? parseInt(data.assignedToUserId) : null,
       };
-      return apiRequest('/api/task-board-tasks', 'POST', taskData);
+      return apiRequest('POST', '/api/task-board-tasks', taskData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/task-board-tasks'] });
@@ -95,7 +95,7 @@ export default function ManualTaskBoard() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: number; updates: any }) => {
-      return apiRequest(`/api/task-board-tasks/${taskId}`, 'PUT', updates);
+      return apiRequest('PUT', `/api/task-board-tasks/${taskId}`, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/task-board-tasks'] });
@@ -108,7 +108,7 @@ export default function ManualTaskBoard() {
 
   const deleteTaskMutation = useMutation({
     mutationFn: async (taskId: number) => {
-      return apiRequest(`/api/task-board-tasks/${taskId}`, 'DELETE');
+      return apiRequest('DELETE', `/api/task-board-tasks/${taskId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/task-board-tasks'] });
