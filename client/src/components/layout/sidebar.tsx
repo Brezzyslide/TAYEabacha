@@ -32,7 +32,7 @@ const supportWorkNavigation = [
   { name: "Medication Tracker", href: "/medications", icon: Pill },
   { name: "Care Support Plans", href: "/care-support-plans", icon: ClipboardList },
   { name: "NDIS Budget Management", href: "/budget-management", icon: DollarSign },
-  { name: "Workflow Dashboard", href: "/", icon: BarChart3 },
+  { name: "Workflow Dashboard", href: "/workflow-dashboard", icon: BarChart3 },
   { name: "Incident Management", href: "/incident-management", icon: AlertTriangle },
   { name: "Messages", href: "/messages", icon: MessageSquare },
 ];
