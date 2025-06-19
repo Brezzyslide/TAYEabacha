@@ -91,10 +91,7 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
 
   const closeIncidentMutation = useMutation({
     mutationFn: (data: ClosureFormData) => 
-      apiRequest("/api/incident-closures", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("POST", "/api/incident-closures", data),
     onSuccess: () => {
       toast({
         title: "Success",

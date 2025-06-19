@@ -54,7 +54,7 @@ export default function RequestShiftModal({ isOpen, onClose }: RequestShiftModal
 
   const requestMutation = useMutation({
     mutationFn: async (data: RequestShiftFormData) => {
-      return apiRequest("/api/shifts", "POST", {
+      return apiRequest("POST", "/api/shifts", {
         title: data.title,
         description: data.description,
         startTime: data.startDateTime.toISOString(),

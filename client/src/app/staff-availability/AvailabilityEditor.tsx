@@ -88,7 +88,7 @@ export default function AvailabilityEditor() {
   // Submit availability mutation
   const submitAvailabilityMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/staff-availability", "POST", data);
+      return await apiRequest("POST", "/api/staff-availability", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff-availability"] });

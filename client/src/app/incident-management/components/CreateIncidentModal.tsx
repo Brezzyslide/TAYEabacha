@@ -117,14 +117,11 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
 
   const createIncidentMutation = useMutation({
     mutationFn: (data: IncidentFormData) => 
-      apiRequest("/api/incident-reports", {
-        method: "POST",
-        body: JSON.stringify({
-          ...data,
-          dateTime: new Date(data.dateTime).toISOString(),
-          triggers: selectedTriggers,
-          staffResponses: selectedResponses,
-        }),
+      apiRequest("POST", "/api/incident-reports", {
+        ...data,
+        dateTime: new Date(data.dateTime).toISOString(),
+        triggers: selectedTriggers,
+        staffResponses: selectedResponses,
       }),
     onSuccess: () => {
       toast({
