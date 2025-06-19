@@ -569,6 +569,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Shift not found" });
       }
       
+      // Process budget deduction when shift is completed
+      if (processedUpdateData.endTime && processedUpdateData.isActive === false) {
+        console.log(`[BUDGET DEDUCTION] Processing budget deduction for completed shift ${shiftId}`);
+        try {
+          await processBudgetDeduction(updatedShift, req.user.id);
+          console.log(`[BUDGET DEDUCTION] Successfully processed budget deduction for shift ${shiftId}`);
+        } catch (budgetError) {
+          console.error(`[BUDGET DEDUCTION ERROR] Failed to process budget deduction for shift ${shiftId}:`, budgetError);
+          // Don't fail the shift update if budget processing fails
+        }
+      }
+      
       // Log activity
       await storage.createActivityLog({
         userId: req.user.id,
