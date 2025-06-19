@@ -47,9 +47,9 @@ function requireRole(roles: string[]) {
     const userRole = req.user.role.toLowerCase();
     const allowedRoles = roles.map(role => role.toLowerCase());
     
-    // ConsoleManager has access to everything
-    if (userRole === 'consolemanager') {
-      console.log(`[ROLE CHECK] PASSED - ConsoleManager has universal access`);
+    // ConsoleManager and Admin have universal access - permissions should not be restricted by tenant
+    if (userRole === 'consolemanager' || userRole === 'admin') {
+      console.log(`[ROLE CHECK] PASSED - ${req.user.role} has universal access across all tenants`);
       return next();
     }
     
