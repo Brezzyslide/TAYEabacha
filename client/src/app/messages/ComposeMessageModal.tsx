@@ -66,7 +66,7 @@ export default function ComposeMessageModal({ isOpen, onClose, users }: ComposeM
   // Create message mutation
   const createMessageMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/messages", "POST", data);
+      return await apiRequest("POST", "/api/messages", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
