@@ -85,6 +85,18 @@ export async function provisionTenant(tenantId: number, companyId: string): Prom
     // 4. Create sample care support plans
     await provisionCarePlans(tenantId);
     
+    // 5. Create standardized medication plans
+    await provisionMedicationPlans(tenantId);
+    
+    // 6. Create standardized hourly observations
+    await provisionHourlyObservations(tenantId);
+    
+    // 7. Create standardized case notes
+    await provisionCaseNotes(tenantId);
+    
+    // 8. Create standardized custom roles
+    await provisionCustomRoles(tenantId);
+    
     console.log(`[TENANT PROVISIONING] Successfully provisioned tenant ${tenantId}`);
   } catch (error) {
     console.error(`[TENANT PROVISIONING] Error provisioning tenant ${tenantId}:`, error);
@@ -233,6 +245,129 @@ async function provisionCarePlans(tenantId: number): Promise<void> {
   }
   
   console.log(`[TENANT PROVISIONING] Created care support plan for tenant ${tenantId}`);
+}
+
+/**
+ * Creates standardized medication plans for the tenant
+ */
+async function provisionMedicationPlans(tenantId: number): Promise<void> {
+  const clients = await storage.getClientsByTenant(tenantId);
+  
+  for (const client of clients.slice(0, 3)) { // Create plans for first 3 clients
+    const medicationData = {
+      clientId: client.id,
+      medicationName: client.firstName === 'Sarah' ? 'Vitamin D3' : 
+                    client.firstName === 'Michael' ? 'Calcium Supplement' : 'Multivitamin',
+      dosage: client.firstName === 'Sarah' ? '1000 IU' : 
+              client.firstName === 'Michael' ? '600mg' : '1 tablet',
+      route: 'Oral',
+      frequency: 'Daily',
+      timeOfDay: client.firstName === 'Sarah' ? 'Morning' : 
+                 client.firstName === 'Michael' ? 'Evening' : 'Morning',
+      startDate: new Date(),
+      prescribedBy: 'Dr. Smith',
+      instructions: 'Take with food',
+      status: 'active',
+      tenantId,
+      createdBy: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    await storage.createMedicationPlan(medicationData);
+  }
+  
+  console.log(`[TENANT PROVISIONING] Created medication plans for tenant ${tenantId}`);
+}
+
+/**
+ * Creates standardized hourly observations for the tenant
+ */
+async function provisionHourlyObservations(tenantId: number): Promise<void> {
+  const clients = await storage.getClientsByTenant(tenantId);
+  const users = await storage.getUsersByTenant(tenantId);
+  const supportWorker = users.find(u => u.role === 'SupportWorker');
+  
+  for (const client of clients.slice(0, 3)) { // Create observations for first 3 clients
+    const observationData = {
+      clientId: client.id,
+      userId: supportWorker?.id || 1,
+      observationType: client.firstName === 'Sarah' ? 'ADL' : 
+                      client.firstName === 'Michael' ? 'Behaviour' : 'ADL',
+      subtype: client.firstName === 'Sarah' ? 'Personal Care' : 
+               client.firstName === 'Michael' ? 'Social Interaction' : 'Daily Tasks',
+      notes: client.firstName === 'Sarah' ? 'Good engagement with daily activities' :
+             client.firstName === 'Michael' ? 'Positive social interaction observed' :
+             'Assistance required with task completion',
+      settingsRating: client.firstName === 'Sarah' ? 4 : client.firstName === 'Michael' ? 5 : 3,
+      timeRating: client.firstName === 'Sarah' ? 4 : client.firstName === 'Michael' ? 5 : 3,
+      antecedentsRating: client.firstName === 'Sarah' ? 4 : client.firstName === 'Michael' ? 5 : 3,
+      responseRating: client.firstName === 'Sarah' ? 4 : client.firstName === 'Michael' ? 5 : 3,
+      tenantId,
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
+    };
+    
+    await storage.createHourlyObservation(observationData);
+  }
+  
+  console.log(`[TENANT PROVISIONING] Created hourly observations for tenant ${tenantId}`);
+}
+
+/**
+ * Creates standardized case notes for the tenant
+ */
+async function provisionCaseNotes(tenantId: number): Promise<void> {
+  const clients = await storage.getClientsByTenant(tenantId);
+  const users = await storage.getUsersByTenant(tenantId);
+  const supportWorker = users.find(u => u.role === 'SupportWorker');
+  
+  for (const client of clients.slice(0, 3)) { // Create notes for first 3 clients
+    const caseNoteData = {
+      clientId: client.id,
+      userId: supportWorker?.id || 1,
+      title: client.firstName === 'Sarah' ? 'Daily Routine Progress Update' :
+             client.firstName === 'Michael' ? 'Community Access Session' : 
+             'Daily Living Skills Development',
+      content: client.firstName === 'Sarah' ? 'Client engaged well in morning routine. Demonstrated independence with personal care tasks. Positive mood throughout the session.' :
+               client.firstName === 'Michael' ? 'Participated actively in community access activity. Good social interaction with peers. No concerns noted during support period.' :
+               'Required moderate assistance with daily living tasks. Responded positively to verbal prompts. Progress noted in communication skills.',
+      caseNoteTags: client.firstName === 'Sarah' ? '["daily_routine", "independence", "positive_progress"]' :
+                    client.firstName === 'Michael' ? '["community_access", "social_skills", "peer_interaction"]' :
+                    '["daily_living", "communication", "skill_development"]',
+      tenantId,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+      updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+    };
+    
+    await storage.createCaseNote(caseNoteData);
+  }
+  
+  console.log(`[TENANT PROVISIONING] Created case notes for tenant ${tenantId}`);
+}
+
+/**
+ * Creates standardized custom roles for the tenant
+ */
+async function provisionCustomRoles(tenantId: number): Promise<void> {
+  const users = await storage.getUsersByTenant(tenantId);
+  const admin = users.find(u => u.role.toLowerCase() === 'admin');
+  
+  const roleData = {
+    name: 'Senior Support Worker',
+    displayName: 'Senior Support Worker',
+    description: 'Enhanced support worker role with additional responsibilities',
+    basedOnRole: 'SupportWorker',
+    isActive: true,
+    tenantId,
+    createdBy: admin?.id || 1,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  
+  await storage.createCustomRole(roleData);
+  console.log(`[TENANT PROVISIONING] Created custom role for tenant ${tenantId}`);
 }
 
 /**
