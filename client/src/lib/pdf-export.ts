@@ -13,7 +13,7 @@ export interface PDFExportOptions {
 export interface PDFSection {
   title: string;
   content: string | { [key: string]: any };
-  type?: 'text' | 'list' | 'table' | 'html';
+  type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support';
 }
 
 export class PDFExportUtility {
@@ -114,6 +114,8 @@ export class PDFExportUtility {
       this.addList(section.content);
     } else if (section.type === 'table' && typeof section.content === 'object') {
       this.addTable(section.content);
+    } else if (section.type === 'behaviour_support' && typeof section.content === 'object') {
+      this.addBehaviourSupport(section.content);
     } else {
       this.addText(String(section.content));
     }
@@ -187,6 +189,117 @@ export class PDFExportUtility {
       });
       this.currentY = this.headerHeight + 15;
     }
+  }
+
+  private addBehaviourSupport(behaviourData: any): void {
+    // Add general behavior information first
+    if (behaviourData.overallApproach) {
+      this.addText(`Overall Approach: ${behaviourData.overallApproach}`);
+      this.currentY += 5;
+    }
+    
+    if (behaviourData.environmentalFactors) {
+      this.addText(`Environmental Factors: ${behaviourData.environmentalFactors}`);
+      this.currentY += 5;
+    }
+    
+    // Add saved behaviors with colored strategy boxes
+    if (behaviourData.savedBehaviours && Array.isArray(behaviourData.savedBehaviours)) {
+      for (const behavior of behaviourData.savedBehaviours) {
+        this.checkPageBreak(15);
+        
+        // Add behavior name and description
+        this.pdf.setFontSize(12);
+        this.pdf.setFont('helvetica', 'bold');
+        this.pdf.text(`Behavior: ${behavior.name || 'Unnamed'}`, this.margin + 5, this.currentY);
+        this.currentY += 8;
+        
+        if (behavior.description) {
+          this.pdf.setFontSize(10);
+          this.pdf.setFont('helvetica', 'normal');
+          this.addText(`Description: ${behavior.description}`);
+          this.currentY += 5;
+        }
+        
+        if (behavior.triggers) {
+          this.addText(`Triggers: ${behavior.triggers}`);
+          this.currentY += 5;
+        }
+        
+        // Add colored strategy boxes
+        if (behavior.proactiveStrategies) {
+          this.addColoredStrategyBox('Proactive Strategies', behavior.proactiveStrategies, 'proactive');
+        }
+        
+        if (behavior.reactiveStrategies) {
+          this.addColoredStrategyBox('Reactive Strategies', behavior.reactiveStrategies, 'reactive');
+        }
+        
+        if (behavior.protectiveStrategies) {
+          this.addColoredStrategyBox('Protective Strategies', behavior.protectiveStrategies, 'protective');
+        }
+        
+        this.currentY += 10; // Extra spacing between behaviors
+      }
+    }
+    
+    // Add global strategies
+    if (behaviourData.deEscalationTechniques) {
+      this.addColoredStrategyBox('De-escalation Techniques', behaviourData.deEscalationTechniques, 'reactive');
+    }
+    
+    if (behaviourData.positiveBehaviourSupport) {
+      this.addColoredStrategyBox('PBS Approach', behaviourData.positiveBehaviourSupport, 'proactive');
+    }
+  }
+
+  private addColoredStrategyBox(title: string, content: string, color: 'proactive' | 'reactive' | 'protective'): void {
+    const requiredSpace = 20 + (content.length / 100) * 6; // Estimate space needed
+    this.checkPageBreak(requiredSpace);
+    
+    // Set colors based on strategy type
+    let fillColor: [number, number, number] = [245, 245, 245];
+    let textColor: [number, number, number] = [0, 0, 0];
+    
+    switch (color) {
+      case 'proactive':
+        fillColor = [220, 252, 231]; // Light green
+        textColor = [21, 128, 61]; // Dark green
+        break;
+      case 'reactive':
+        fillColor = [254, 242, 242]; // Light red
+        textColor = [153, 27, 27]; // Dark red
+        break;
+      case 'protective':
+        fillColor = [239, 246, 255]; // Light blue
+        textColor = [29, 78, 216]; // Dark blue
+        break;
+    }
+    
+    // Draw colored box
+    this.pdf.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
+    this.pdf.rect(this.margin + 5, this.currentY - 5, this.contentWidth - 10, 15, 'F');
+    
+    // Add title
+    this.pdf.setFontSize(11);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setTextColor(textColor[0], textColor[1], textColor[2]);
+    this.pdf.text(title, this.margin + 10, this.currentY + 3);
+    this.currentY += 12;
+    
+    // Add content
+    this.pdf.setFontSize(9);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setTextColor(0, 0, 0);
+    const contentLines = this.pdf.splitTextToSize(content, this.contentWidth - 20);
+    
+    for (const line of contentLines) {
+      this.checkPageBreak(6);
+      this.pdf.text(line, this.margin + 10, this.currentY);
+      this.currentY += 5;
+    }
+    
+    this.currentY += 8; // Extra spacing after strategy box
   }
 
   private savePDF(filename: string): void {
@@ -263,17 +376,11 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'table'
   });
 
-  // Section 6: Behaviour Support
+  // Section 6: Behaviour Support - Custom handling with colored boxes
   sections.push({
     title: 'Behaviour Support',
-    content: {
-      'Overall Approach': plan.behaviourData?.overallApproach || 'Not specified',
-      'Environmental Factors': plan.behaviourData?.environmentalFactors || 'Not specified',
-      'Preventative Strategies': plan.behaviourData?.preventativeStrategies || 'Not specified',
-      'De-escalation Techniques': plan.behaviourData?.deEscalationTechniques || 'Not specified',
-      'PBS Approach': plan.behaviourData?.positiveBehaviourSupport || 'Not specified'
-    },
-    type: 'table'
+    content: plan.behaviourData || {},
+    type: 'behaviour_support'
   });
 
   // Section 4: Structure & Routine
