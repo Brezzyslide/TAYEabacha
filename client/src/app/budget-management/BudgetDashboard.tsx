@@ -2,8 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, DollarSign, TrendingDown, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, DollarSign, TrendingDown, AlertTriangle, Search, Filter } from "lucide-react";
+import { useState, useMemo } from "react";
 import ParticipantBudgetForm from "./components/ParticipantBudgetForm";
 import BudgetSummaryCard from "./components/BudgetSummaryCard";
 import BudgetTransactionsList from "./components/BudgetTransactionsList";
@@ -34,6 +36,8 @@ export default function BudgetDashboard() {
   const { user } = useAuth();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<NdisBudget | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClient, setSelectedClient] = useState<string>("all");
 
   const { data: budgets = [], isLoading } = useQuery<NdisBudget[]>({
     queryKey: ["/api/ndis-budgets"],
@@ -45,7 +49,27 @@ export default function BudgetDashboard() {
 
   const canEditBudgets = hasPermission(user, "canEditBudget");
   const canViewPricing = hasPermission(user, "canViewPricing");
-  
+
+  // Filter budgets based on search term and selected client
+  const filteredBudgets = useMemo(() => {
+    let filtered = budgets;
+
+    // Filter by selected client
+    if (selectedClient !== "all") {
+      filtered = filtered.filter(budget => budget.clientId.toString() === selectedClient);
+    }
+
+    // Filter by search term (client name)
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(budget => {
+        const client = clients.find(c => c.id === budget.clientId);
+        const clientName = client ? `${client.firstName} ${client.lastName}`.toLowerCase() : "";
+        return clientName.includes(searchTerm.toLowerCase());
+      });
+    }
+
+    return filtered;
+  }, [budgets, clients, selectedClient, searchTerm]);
 
 
   const getTotalBudgetValue = (budgets: NdisBudget[]) => {
@@ -179,8 +203,44 @@ export default function BudgetDashboard() {
         </TabsList>
 
         <TabsContent value="budgets" className="space-y-6">
+          {/* Search and Filter Controls */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search by client name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-400" />
+                <Select value={selectedClient} onValueChange={setSelectedClient}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filter by client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Clients</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id.toString()}>
+                        {client.firstName} {client.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              Showing {filteredBudgets.length} of {budgets.length} budgets
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {budgets.map((budget) => {
+            {filteredBudgets.map((budget) => {
               const client = clients.find(c => c.id === budget.clientId);
               return (
                 <BudgetSummaryCard
@@ -192,6 +252,23 @@ export default function BudgetDashboard() {
                 />
               );
             })}
+            
+            {filteredBudgets.length === 0 && searchTerm && (
+              <div className="col-span-full text-center py-12">
+                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No budgets found</h3>
+                <p className="text-gray-500 mb-4">No budgets match your search criteria.</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedClient("all");
+                  }}
+                >
+                  Clear filters
+                </Button>
+              </div>
+            )}
             
             {budgets.length === 0 && (
               <div className="col-span-full text-center py-12">
