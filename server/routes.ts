@@ -755,6 +755,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 if (Object.keys(budgetUpdate).length > 0) {
                   await storage.updateNdisBudget(budget.id, budgetUpdate, req.user.tenantId);
                   
+                  // Create budget transaction record
+                  const category = (shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL";
+                  await storage.processBudgetDeduction({
+                    budgetId: budget.id,
+                    category,
+                    shiftType,
+                    ratio: staffRatio,
+                    hours: shiftHours,
+                    rate: effectiveRate,
+                    amount: shiftCost,
+                    shiftId: shift.id,
+                    description: `Shift completion: ${shift.title}`,
+                    companyId: req.user.tenantId.toString(),
+                    createdByUserId: req.user.id,
+                  });
+                  
                   // Log the budget deduction
                   await storage.createActivityLog({
                     userId: req.user.id,
