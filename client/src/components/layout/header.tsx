@@ -21,7 +21,15 @@ export default function Header() {
   if (!user) return null;
 
   const handleDashboard = () => {
-    setLocation("/");
+    setLocation("/dashboard");
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setLocation("/");
+      }
+    });
   };
 
   const userInitials = user.fullName
@@ -66,7 +74,7 @@ export default function Header() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => logoutMutation.mutate()}
+            onClick={handleLogout}
             disabled={logoutMutation.isPending}
             className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
           >
@@ -115,7 +123,7 @@ export default function Header() {
               <DropdownMenuItem>Preferences</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={() => logoutMutation.mutate()}
+                onClick={handleLogout}
                 className="text-red-600"
               >
                 Sign Out
