@@ -6,6 +6,7 @@ import { Plus, Home, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import MyShiftsTab from "./components/MyShiftsTab";
 import ShiftCalendarTab from "./components/ShiftCalendarTab";
+import PendingRequestsTab from "./components/PendingRequestsTab";
 import RequestedShiftsTab from "./components/RequestedShiftsTab";
 import ShiftRequestsTab from "./components/ShiftRequestsTab";
 import AllShiftsTab from "./components/AllShiftsTab";
@@ -28,12 +29,15 @@ export default function ShiftDashboard() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex items-center justify-between mb-6">
-                <TabsList className="grid grid-cols-5 lg:w-[600px]">
+                <TabsList className="grid grid-cols-6 lg:w-[700px]">
                   <TabsTrigger value="shift-calendar" className="flex items-center gap-2">
                     📅 Calendar
                   </TabsTrigger>
                   <TabsTrigger value="my-shifts" className="flex items-center gap-2">
                     🗂 My Shifts
+                  </TabsTrigger>
+                  <TabsTrigger value="pending-requests" className="flex items-center gap-2">
+                    🟡 Pending
                   </TabsTrigger>
                   <TabsTrigger value="requested-shifts" className="flex items-center gap-2">
                     📋 Available
@@ -58,6 +62,10 @@ export default function ShiftDashboard() {
 
           <TabsContent value="shift-calendar" className="space-y-4">
             <ShiftCalendarTab />
+          </TabsContent>
+
+          <TabsContent value="pending-requests" className="space-y-4">
+            <PendingRequestsTab />
           </TabsContent>
 
           <TabsContent value="requested-shifts" className="space-y-4">
