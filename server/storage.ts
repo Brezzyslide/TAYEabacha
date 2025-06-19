@@ -28,6 +28,7 @@ export interface IStorage {
   getCompany(id: string): Promise<Company | undefined>;
   createCompany(company: InsertCompany): Promise<Company>;
   getCompanies(): Promise<Company[]>;
+  getCompanyByTenantId(tenantId: number): Promise<Company | undefined>;
 
   // Users
   getUser(id: number): Promise<User | undefined>;
@@ -197,6 +198,26 @@ export class DatabaseStorage implements IStorage {
 
   async getCompanies(): Promise<Company[]> {
     return await db.select().from(companies);
+  }
+
+  async getCompanyByTenantId(tenantId: number): Promise<Company | undefined> {
+    const [result] = await db
+      .select({
+        id: companies.id,
+        name: companies.name,
+        businessAddress: companies.businessAddress,
+        registrationNumber: companies.registrationNumber,
+        primaryContactName: companies.primaryContactName,
+        primaryContactEmail: companies.primaryContactEmail,
+        primaryContactPhone: companies.primaryContactPhone,
+        customLogo: companies.customLogo,
+        logoUploadedAt: companies.logoUploadedAt,
+        createdAt: companies.createdAt
+      })
+      .from(companies)
+      .innerJoin(tenants, eq(tenants.companyId, companies.id))
+      .where(eq(tenants.id, tenantId));
+    return result || undefined;
   }
 
   // Users

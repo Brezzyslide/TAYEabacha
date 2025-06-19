@@ -86,8 +86,23 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    
+    try {
+      const user = req.user as any;
+      // Get company information for the user's tenant
+      const company = await storage.getCompanyByTenantId(user.tenantId);
+      
+      const userWithCompany = {
+        ...user,
+        companyName: company?.name || 'CareConnect'
+      };
+      
+      res.json(userWithCompany);
+    } catch (error) {
+      console.error('Error fetching user with company info:', error);
+      res.json(req.user);
+    }
   });
 }
