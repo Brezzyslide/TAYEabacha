@@ -40,8 +40,9 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Auto-provisioning disabled - new tenants start with empty databases
-  console.log("[TENANT PROVISIONING] Auto-provisioning disabled - new tenants will start with clean databases");
+  // Auto-provision all existing tenants with ScHADS pay scales
+  await provisionAllExistingTenants();
+  console.log("[TENANT PROVISIONING] Completed provisioning for all tenants");
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

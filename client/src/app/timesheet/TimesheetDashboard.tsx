@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import PayScaleManagement from "@/app/admin/PayScaleManagement";
 
 interface TimesheetEntry {
   id: number;
@@ -235,10 +236,13 @@ export default function TimesheetDashboard() {
       )}
 
       <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <TabsTrigger value="current">Current Period</TabsTrigger>
           <TabsTrigger value="history">Timesheet History</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
+          {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
+            <TabsTrigger value="pay-scales">Pay Scales</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="current" className="space-y-4">
@@ -407,6 +411,12 @@ export default function TimesheetDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
+          <TabsContent value="pay-scales" className="space-y-4">
+            <PayScaleManagement />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

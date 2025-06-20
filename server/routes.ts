@@ -3565,6 +3565,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/schads-rates", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const scHADSRates = [
+        { level: 1, payPoint: 1, hourlyRate: 25.41, description: "Entry level support worker" },
+        { level: 1, payPoint: 2, hourlyRate: 26.15, description: "Support worker with basic experience" },
+        { level: 1, payPoint: 3, hourlyRate: 26.88, description: "Experienced support worker" },
+        { level: 1, payPoint: 4, hourlyRate: 27.62, description: "Senior support worker" },
+        { level: 2, payPoint: 1, hourlyRate: 28.35, description: "Support worker grade 2" },
+        { level: 2, payPoint: 2, hourlyRate: 29.09, description: "Support worker grade 2 with experience" },
+        { level: 2, payPoint: 3, hourlyRate: 29.82, description: "Senior support worker grade 2" },
+        { level: 2, payPoint: 4, hourlyRate: 30.56, description: "Lead support worker grade 2" },
+        { level: 3, payPoint: 1, hourlyRate: 31.29, description: "Team leader/Coordinator" },
+        { level: 3, payPoint: 2, hourlyRate: 32.03, description: "Senior team leader" },
+        { level: 3, payPoint: 3, hourlyRate: 32.76, description: "Program coordinator" },
+        { level: 3, payPoint: 4, hourlyRate: 33.50, description: "Senior coordinator" },
+        { level: 4, payPoint: 1, hourlyRate: 34.31, description: "Manager/Senior coordinator" },
+        { level: 4, payPoint: 2, hourlyRate: 34.31, description: "Senior manager" },
+        { level: 4, payPoint: 3, hourlyRate: 34.31, description: "Program manager" },
+        { level: 4, payPoint: 4, hourlyRate: 34.31, description: "Senior program manager" }
+      ];
+      res.json(scHADSRates);
+    } catch (error: any) {
+      console.error("Get ScHADS rates error:", error);
+      res.status(500).json({ message: "Failed to get ScHADS rates" });
+    }
+  });
+
   app.put("/api/pay-scales/:level/:payPoint", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const { level, payPoint } = req.params;
