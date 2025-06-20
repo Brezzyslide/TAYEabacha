@@ -187,7 +187,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="bg-gradient-to-br from-white/10 via-secondary/10 to-accent/10 backdrop-blur-sm border border-white/20 rounded-3xl p-8 mb-12 shadow-2xl"
           >
-            <blockquote className="text-lg leading-relaxed text-amber-100 italic font-semibold drop-shadow-lg">
+            <blockquote className="text-lg leading-relaxed text-amber-50 italic font-bold drop-shadow-2xl">
               "NeedsCareAI+ was built by disability support workers, not tech bros.
               It aggressively incorporates Positive Behaviour Support principles to help participants stay regulated, live with dignity, and reach their goals.
               This platform doesn't just look compliant — it thinks like a practitioner."
@@ -210,7 +210,7 @@ export default function LandingPage() {
                   <CardTitle className="text-secondary font-bold text-xl">Built for Practitioners</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-amber-100 font-semibold drop-shadow-lg">
+                  <p className="text-amber-50 font-bold drop-shadow-2xl text-lg">
                     Created by support workers who understand the daily challenges of disability care.
                     Every feature is designed with real-world practice in mind.
                   </p>
@@ -222,7 +222,7 @@ export default function LandingPage() {
                   <CardTitle className="text-accent font-bold text-xl">NDIS Compliance</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-emerald-100 font-semibold drop-shadow-lg">
+                  <p className="text-emerald-50 font-bold drop-shadow-2xl text-lg">
                     Built-in compliance features ensure your documentation meets NDIS standards
                     and supports funding applications with evidence-backed care design.
                   </p>
@@ -234,7 +234,7 @@ export default function LandingPage() {
                   <CardTitle className="text-secondary font-bold text-xl">Positive Behaviour Support</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-amber-100 font-semibold drop-shadow-lg">
+                  <p className="text-amber-50 font-bold drop-shadow-2xl text-lg">
                     PBS principles are integrated throughout the platform, not just in care plans.
                     Every interaction is designed to support participant regulation and dignity.
                   </p>
@@ -246,7 +246,7 @@ export default function LandingPage() {
                   <CardTitle className="text-accent font-bold text-xl">Comprehensive Features</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-emerald-100 font-semibold drop-shadow-lg">
+                  <p className="text-emerald-50 font-bold drop-shadow-2xl text-lg">
                     From shift management to care planning, medication tracking to incident reporting.
                     Everything you need in one integrated platform.
                   </p>
@@ -269,7 +269,7 @@ export default function LandingPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-amber-100 mb-6 font-semibold drop-shadow-lg">
+                  <p className="text-amber-50 mb-6 font-bold drop-shadow-2xl text-lg">
                     Our team will walk you through the platform's features and show you how
                     it can transform your care management processes.
                   </p>
@@ -291,22 +291,22 @@ export default function LandingPage() {
                 <CardHeader>
                   <CardTitle className="text-secondary font-bold text-2xl text-center">Our Philosophy</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6 text-amber-100">
+                <CardContent className="space-y-6 text-amber-50">
                   <div>
-                    <h3 className="text-xl font-bold text-secondary mb-3 drop-shadow-lg">Person-Centered Design</h3>
-                    <p className="font-semibold drop-shadow-lg">Every feature is built with the participant at the center. Technology should enhance human connection, not replace it.</p>
+                    <h3 className="text-xl font-bold text-secondary mb-3 drop-shadow-2xl">Person-Centered Design</h3>
+                    <p className="font-bold drop-shadow-2xl text-lg">Every feature is built with the participant at the center. Technology should enhance human connection, not replace it.</p>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-accent mb-3 drop-shadow-lg">Practitioner-Led Development</h3>
-                    <p className="font-semibold drop-shadow-lg">Built by support workers who understand the reality of care delivery. No ivory tower solutions here.</p>
+                    <h3 className="text-xl font-bold text-accent mb-3 drop-shadow-2xl">Practitioner-Led Development</h3>
+                    <p className="font-bold drop-shadow-2xl text-lg">Built by support workers who understand the reality of care delivery. No ivory tower solutions here.</p>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-secondary mb-3 drop-shadow-lg">Evidence-Based Practice</h3>
-                    <p className="font-semibold drop-shadow-lg">Every interaction supports evidence collection for better outcomes and NDIS compliance.</p>
+                    <h3 className="text-xl font-bold text-secondary mb-3 drop-shadow-2xl">Evidence-Based Practice</h3>
+                    <p className="font-bold drop-shadow-2xl text-lg">Every interaction supports evidence collection for better outcomes and NDIS compliance.</p>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-accent mb-3 drop-shadow-lg">Dignity in Technology</h3>
-                    <p className="font-semibold drop-shadow-lg">Technology that respects the dignity of both participants and support workers in every interaction.</p>
+                    <h3 className="text-xl font-bold text-accent mb-3 drop-shadow-2xl">Dignity in Technology</h3>
+                    <p className="font-bold drop-shadow-2xl text-lg">Technology that respects the dignity of both participants and support workers in every interaction.</p>
                   </div>
                 </CardContent>
               </Card>
