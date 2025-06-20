@@ -71,7 +71,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   });
 
   // Fetch client data
-  const { data: client } = useQuery<any>({
+  const { data: client } = useQuery({
     queryKey: ["/api/clients", clientId],
     enabled: !!clientId,
   });
@@ -98,15 +98,15 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       
       toast({
-        title: "Case note submitted successfully",
-        description: `Case note saved for ${client?.firstName || 'client'}. Great work documenting their care.`,
+        title: "Case Note Created",
+        description: "Your case note has been saved successfully.",
       });
       setIsModalOpen(false);
     },
     onError: () => {
       toast({
-        title: "Unable to save case note",
-        description: "Please check your connection and try again. Your work is important to us.",
+        title: "Error",
+        description: "Failed to create case note. Please try again.",
         variant: "destructive",
       });
     },

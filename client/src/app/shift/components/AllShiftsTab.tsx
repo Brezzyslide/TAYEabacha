@@ -180,34 +180,34 @@ export default function AllShiftsTab() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{stats.total}</div>
-            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Total</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
           </CardContent>
         </Card>
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{stats.assigned}</div>
-            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Assigned</div>
+            <div className="text-2xl font-bold text-green-600">{stats.assigned}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Assigned</div>
           </CardContent>
         </Card>
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{stats.unassigned}</div>
-            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Unassigned</div>
+            <div className="text-2xl font-bold text-gray-600">{stats.unassigned}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Unassigned</div>
           </CardContent>
         </Card>
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{stats.inProgress}</div>
-            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">In Progress</div>
+            <div className="text-2xl font-bold text-orange-600">{stats.inProgress}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
           </CardContent>
         </Card>
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{stats.completed}</div>
-            <div className="text-sm text-slate-200 font-medium uppercase tracking-wider">Completed</div>
+            <div className="text-2xl font-bold text-purple-600">{stats.completed}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
           </CardContent>
         </Card>
       </div>

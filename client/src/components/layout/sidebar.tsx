@@ -62,32 +62,24 @@ export default function Sidebar() {
   const isAdmin = user.role.toLowerCase() === "admin" || user.role.toLowerCase() === "consolemanager";
   const canManageCompaniesAccess = canManageCompanies(user);
 
-  const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], gradientColor: string) => (
-    <div className="mb-8">
-      <div className="px-4 py-3 rounded-lg mb-4 bg-slate-800 border border-slate-700">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">{title}</h3>
+  const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (
+    <div className="mb-6">
+      <div className={cn("px-4 py-2 rounded-lg mb-2", headerColor)}>
+        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1">
         {items.map((item) => {
           const isActive = location === item.href;
-          const Icon = item.icon;
           return (
             <Link key={item.name} href={item.href} 
               className={cn(
-                "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group",
+                "flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                 isActive 
-                  ? "bg-blue-600 text-white" 
-                  : "text-gray-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-gray-800 text-white" 
+                  : "text-gray-700 hover:bg-gray-100"
               )}>
-              <div className={cn(
-                "p-2 rounded-lg transition-all duration-200",
-                isActive 
-                  ? "bg-blue-500 text-white" 
-                  : "bg-slate-700 text-gray-300 group-hover:bg-slate-600 group-hover:text-white"
-              )}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <span className="font-medium">{item.name}</span>
+              <item.icon className="h-4 w-4" />
+              <span>{item.name}</span>
             </Link>
           );
         })}
@@ -96,35 +88,35 @@ export default function Sidebar() {
   );
 
   return (
-    <aside className="hidden lg:block w-72 bg-slate-900 flex-shrink-0 relative">
+    <aside className="hidden lg:block w-64 bg-slate-50 flex-shrink-0 border-r border-gray-200">
       {/* Navigation Menu */}
-      <nav className="p-6 space-y-8 h-full overflow-y-auto">
+      <nav className="p-4 space-y-6">
         {/* Support Work Section */}
         {renderNavigationSection(
           "SUPPORT WORK", 
           supportWorkNavigation, 
-          "bg-gradient-to-r from-emerald-500/30 to-teal-500/30"
+          "bg-yellow-200"
         )}
 
         {/* Shift Management Section */}
         {renderNavigationSection(
           "SHIFT MANAGEMENT", 
           shiftManagementNavigation, 
-          "bg-gradient-to-r from-cyan-500/30 to-blue-500/30"
+          "bg-yellow-200"
         )}
 
         {/* Staff Management Section - Only for Admins */}
         {isAdmin && renderNavigationSection(
           "STAFF MANAGEMENT", 
           staffManagementNavigation, 
-          "bg-gradient-to-r from-purple-500/30 to-violet-500/30"
+          "bg-yellow-200"
         )}
 
         {/* Company Management Section - ConsoleManager Only */}
         {canManageCompaniesAccess && renderNavigationSection(
           "COMPANY MANAGEMENT", 
           companyManagementNavigation, 
-          "bg-gradient-to-r from-amber-500/30 to-orange-500/30"
+          "bg-yellow-200"
         )}
       </nav>
     </aside>

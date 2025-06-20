@@ -132,19 +132,14 @@ export default function BudgetDashboard() {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-200 uppercase tracking-wider">Total Budget</CardTitle>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
-              <div className="relative w-8 h-8 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                <DollarSign className="h-4 w-4 text-white" />
-              </div>
-            </div>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Budget</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pt-1 sm:pt-2">
-            <div className="text-lg sm:text-2xl font-bold text-white">${totalBudget.toLocaleString()}</div>
-            <p className="text-xs text-slate-300 font-medium mt-2">
+            <div className="text-lg sm:text-2xl font-bold">${totalBudget.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
               {selectedClient !== "all" ? 
                 `For ${clients.find(c => c.id.toString() === selectedClient)?.fullName || 'selected client'}` :
                 `Across ${filteredBudgets.length} participants`
@@ -153,54 +148,39 @@ export default function BudgetDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-300 uppercase tracking-wider">Total Remaining</CardTitle>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
-              <div className="relative w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
-                <DollarSign className="h-4 w-4 text-white" />
-              </div>
-            </div>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Remaining</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
           </CardHeader>
           <CardContent className="pt-1 sm:pt-2">
-            <div className="text-lg sm:text-2xl font-bold text-gradient-primary">${totalRemaining.toLocaleString()}</div>
-            <p className="text-xs text-slate-400 font-medium mt-2">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">${totalRemaining.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
               Available for services
             </p>
           </CardContent>
         </Card>
 
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-300 uppercase tracking-wider">Total Used</CardTitle>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
-              <div className="relative w-8 h-8 bg-gradient-to-r from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/25">
-                <TrendingDown className="h-4 w-4 text-white" />
-              </div>
-            </div>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Used</CardTitle>
+            <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
           </CardHeader>
           <CardContent className="pt-1 sm:pt-2">
-            <div className="text-lg sm:text-2xl font-bold text-gradient-primary">${totalUsed.toLocaleString()}</div>
-            <p className="text-xs text-slate-400 font-medium mt-2">
+            <div className="text-lg sm:text-2xl font-bold text-red-600">${totalUsed.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
               {utilizationRate.toFixed(1)}% utilization
             </p>
           </CardContent>
         </Card>
 
-        <Card className="modern-card group hover:scale-105 transition-all duration-300">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold text-slate-300 uppercase tracking-wider">Low Budgets</CardTitle>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
-              <div className="relative w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/25">
-                <AlertTriangle className="h-4 w-4 text-white" />
-              </div>
-            </div>
+            <CardTitle className="text-xs sm:text-sm font-medium">Low Budgets</CardTitle>
+            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
           </CardHeader>
           <CardContent className="pt-1 sm:pt-2">
-            <div className="text-lg sm:text-2xl font-bold text-gradient-primary">
+            <div className="text-lg sm:text-2xl font-bold text-yellow-600">
               {filteredBudgets.filter(b => {
                 const totalRemaining = parseFloat(b.silRemaining || "0") + 
                   parseFloat(b.communityAccessRemaining || "0") + 
@@ -211,7 +191,7 @@ export default function BudgetDashboard() {
                 return totalBudget > 0 && (totalRemaining / totalBudget) < 0.2;
               }).length}
             </div>
-            <p className="text-xs text-slate-400 font-medium mt-2">
+            <p className="text-xs text-muted-foreground">
               {selectedClient !== "all" ? 
                 (filteredBudgets.length > 0 && filteredBudgets.some(b => {
                   const totalRemaining = parseFloat(b.silRemaining || "0") + 

@@ -58,8 +58,8 @@ export default function AuthPage() {
                 <Building className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">NeedCareAI+</h1>
-            <p className="text-gray-600 mt-2">Welcome to NeedCareAI+</p>
+            <h1 className="text-3xl font-bold text-gray-900">CareConnect</h1>
+            <p className="text-gray-600 mt-2">Multi-Tenant Care Management System</p>
           </div>
 
           <Card>
@@ -115,33 +115,47 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* Right side - NeedCareAI+ Messaging */}
-      <div className="hidden lg:flex flex-1 bg-[#0c1e35] relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0c1e35] to-[#132f54]" />
-        <div className="relative z-10 flex flex-col justify-center p-12 text-white">
+      {/* Right side - Hero section */}
+      <div className="hidden lg:flex flex-1 bg-primary relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-600" />
+        <div className="relative z-10 flex flex-col justify-center p-12 text-primary-foreground">
           <h2 className="text-4xl font-bold mb-6">
-            Built with Positive Behaviour in Mind — not just Buttons.
+            Streamline Your Care Management
           </h2>
+          <p className="text-xl mb-8 opacity-90">
+            Secure, multi-tenant platform for healthcare facilities with advanced features for staff management and client care.
+          </p>
           
-          <div className="space-y-6 mb-8">
-            <p className="text-xl opacity-90">
-              Care that starts with listening, not loading.
-            </p>
-            <p className="text-xl opacity-90">
-              NDIS reporting and compliance made easy.
-            </p>
-            <p className="text-xl opacity-90">
-              This system was designed by disability support workers — not tech bros.
-            </p>
-            <p className="text-xl opacity-90">
-              From shift to shift, we've got your back.
-            </p>
-          </div>
-          
-          <div className="border-t border-white/20 pt-6">
-            <p className="text-lg font-semibold opacity-95">
-              Every Shift Structured & Safe • Participant-Centric Design
-            </p>
+          <div className="space-y-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary-foreground/20 rounded-lg flex items-center justify-center">
+                <Shield className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Role-Based Access</h3>
+                <p className="opacity-80">Secure permissions for admin, staff, and viewer roles</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary-foreground/20 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Staff Shift Tracking</h3>
+                <p className="opacity-80">GPS-verified shift logging with real-time monitoring</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary-foreground/20 rounded-lg flex items-center justify-center">
+                <FileText className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Dynamic Forms</h3>
+                <p className="opacity-80">Custom form builder for assessments and intake processes</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

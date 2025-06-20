@@ -5,17 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowRight, Sparkles, Shield, Users, Brain, Zap, CheckCircle, Star } from "lucide-react";
+import { motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
 import needCareAILogo from "../../../attached_assets/ChatGPT Image Jun 19, 2025, 09_40_28 AM_1750290306428.png";
 
 const floatingMessages = [
-  { text: "Built by practitioners", icon: Users, color: "from-emerald-400 to-teal-500" },
-  { text: "PBS integrated everywhere", icon: Brain, color: "from-purple-400 to-violet-500" },
-  { text: "NDIS compliance built-in", icon: Shield, color: "from-blue-400 to-cyan-500" },
-  { text: "Evidence-backed design", icon: Star, color: "from-amber-400 to-orange-500" },
-  { text: "Trusted by coordinators", icon: CheckCircle, color: "from-green-400 to-emerald-500" },
-  { text: "AI-powered insights", icon: Sparkles, color: "from-pink-400 to-rose-500" }
+  "Built by and for people who do the work — not tech bros.",
+  "PBS in every button — not just every plan.",
+  "Every shift structured. Every life supported.",
+  "NDIS-ready. Compliance isn't a feature — it's the foundation.",
+  "Supports NDIS funding applications with evidence-backed care design.",
+  "Made for staff. Trusted by coordinators. Loved by participants."
 ];
 
 export default function LandingPage() {
@@ -38,134 +38,88 @@ export default function LandingPage() {
     setContactForm({ name: "", email: "", message: "" });
   };
 
-  const FloatingBubble = ({ item, delay }: { item: typeof floatingMessages[0]; delay: number }) => {
-    const Icon = item?.icon;
-    if (!item || !Icon) return null;
-    
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8, x: -150, y: 150 }}
-        animate={{
-          opacity: [0, 1, 0.8, 0],
-          scale: [0.8, 1.1, 1, 0.9],
-          x: [0, 250, 500, 750],
-          y: [0, -100, -200, -300],
-          rotate: [0, 15, -10, 5]
-        }}
-        transition={{
-          duration: 25,
-          delay,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="absolute hidden xl:block pointer-events-none z-0"
-      >
-        <div className={`relative bg-gradient-to-r ${item.color} p-4 rounded-2xl shadow-2xl backdrop-blur-md border border-white/20`}>
-          <div className="flex items-center space-x-3">
-            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-              <Icon className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-white font-medium text-sm whitespace-nowrap">
-              {item.text}
-            </span>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent rounded-2xl" />
-        </div>
-      </motion.div>
-    );
-  };
+  const FloatingBubble = ({ text, delay }: { text: string; delay: number }) => (
+    <motion.div
+      initial={{ opacity: 0, x: -100, y: 100 }}
+      animate={{
+        opacity: [0, 0.7, 0],
+        x: [0, 200, 400],
+        y: [0, -50, -100]
+      }}
+      transition={{
+        duration: 20,
+        delay,
+        repeat: Infinity,
+        ease: "linear"
+      }}
+      className="absolute hidden lg:block text-sm text-slate-400 bg-slate-800/20 px-4 py-2 rounded-full backdrop-blur-sm border border-slate-700/30 pointer-events-none z-0"
+    >
+      {text}
+    </motion.div>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white relative overflow-hidden">
-      {/* Modern Geometric Background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
       {/* Floating Message Bubbles */}
-      <div className="fixed inset-0 pointer-events-none z-10">
+      <div className="fixed inset-0 pointer-events-none">
         {floatingMessages.map((message, index) => (
           <FloatingBubble
             key={index}
-            item={message}
-            delay={index * 4}
+            text={message}
+            delay={index * 3}
           />
         ))}
       </div>
 
       {/* Header Navigation */}
-      <header className="relative z-50 bg-black/20 backdrop-blur-xl border-b border-white/10">
+      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-3"
-            >
-              <div className="relative">
-                <img 
-                  src={needCareAILogo} 
-                  alt="NeedCareAI+ Logo" 
-                  className="h-14 w-auto drop-shadow-2xl"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-lg blur-xl"></div>
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                  NeedCareAI+
-                </h1>
-                <p className="text-xs text-slate-400 font-medium">Care Management Platform</p>
-              </div>
-            </motion.div>
+            <div className="flex items-center space-x-3">
+              <img 
+                src={needCareAILogo} 
+                alt="NeedCareAI+ Logo" 
+                className="h-12 w-auto"
+              />
+            </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex space-x-2">
+            <nav className="hidden md:flex space-x-8">
               {[
-                { id: "about", label: "About Us", icon: Users },
-                { id: "demo", label: "Book Demo", icon: Zap },
-                { id: "philosophy", label: "Philosophy", icon: Brain },
-                { id: "pricing", label: "Pricing", icon: Star }
-              ].map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <motion.button
-                    key={tab.id}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-                      activeTab === tab.id
-                        ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/25"
-                        : "text-slate-300 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/20"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="font-medium">{tab.label}</span>
-                  </motion.button>
-                );
-              })}
+                { id: "about", label: "About Us" },
+                { id: "demo", label: "Book a Demo" },
+                { id: "philosophy", label: "Our Philosophy" },
+                { id: "pricing", label: "Pricing" }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    activeTab === tab.id
+                      ? "bg-cyan-600 text-white"
+                      : "text-slate-300 hover:text-white hover:bg-slate-700"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </nav>
 
             {/* Desktop Login Button */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <a href="/auth">
-                <Button className="hidden md:flex bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0 shadow-lg shadow-emerald-500/25 font-semibold px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105">
-                  <span>Login</span>
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
-            </motion.div>
+            <a href="/auth">
+              <Button
+                variant="outline"
+                className="hidden md:flex border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+              >
+                Login
+              </Button>
+            </a>
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden text-white p-3 rounded-xl hover:bg-white/10 transition-colors"
+              className="md:hidden text-white p-2"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -211,126 +165,35 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-20 py-24 px-6">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Content */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="space-y-8"
-            >
-              <div className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="flex items-center space-x-3"
-                >
-                  <div className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-4 py-2 rounded-full border border-emerald-500/30">
-                    <Sparkles className="h-4 w-4 text-emerald-400" />
-                    <span className="text-emerald-300 font-medium text-sm">AI-Powered Care Management</span>
-                  </div>
-                </motion.div>
+      <section className="relative z-10 py-20 px-6">
+        <div className="container mx-auto max-w-4xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="mb-12"
+          >
+            <h1 className="text-5xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              NeedCareAI+
+            </h1>
+            <p className="text-xl text-slate-300 mb-8">
+              Comprehensive Care Management Platform
+            </p>
+          </motion.div>
 
-                <h1 className="text-6xl lg:text-8xl font-black mb-6">
-                  <span className="bg-gradient-to-r from-white via-cyan-200 to-blue-300 bg-clip-text text-transparent leading-tight block">
-                    Need
-                  </span>
-                  <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent leading-tight block">
-                    Care
-                  </span>
-                  <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight block">
-                    AI+
-                  </span>
-                </h1>
-
-                <p className="text-2xl text-slate-300 font-light leading-relaxed">
-                  Transform disability care with the platform built by practitioners, for practitioners.
-                </p>
-
-                <div className="flex flex-wrap gap-4 pt-6">
-                  <motion.a
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    href="/auth"
-                    className="inline-flex items-center space-x-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl shadow-cyan-500/25 transition-all duration-300"
-                  >
-                    <span>Start Free Trial</span>
-                    <ArrowRight className="h-5 w-5" />
-                  </motion.a>
-                  
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setActiveTab("demo")}
-                    className="inline-flex items-center space-x-3 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-300"
-                  >
-                    <Zap className="h-5 w-5" />
-                    <span>Book Demo</span>
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Right Column - Strategic Message */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="space-y-6"
-            >
-              {/* Main Quote Card */}
-              <div className="relative bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-3xl"></div>
-                <div className="relative">
-                  <div className="flex items-start space-x-4 mb-6">
-                    <div className="bg-gradient-to-r from-cyan-500 to-blue-500 p-3 rounded-2xl">
-                      <Brain className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-2">Built by Practitioners</h3>
-                      <p className="text-slate-300 leading-relaxed">
-                        "Built by disability support workers, not tech bros. Aggressively incorporates PBS principles to help participants stay regulated, live with dignity, and reach their goals."
-                      </p>
-                    </div>
-                  </div>
-                  <div className="border-t border-white/10 pt-6">
-                    <p className="text-cyan-300 font-semibold italic">
-                      "This platform doesn't just look compliant — it thinks like a practitioner."
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Feature Highlights */}
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { icon: Shield, label: "NDIS Compliant", color: "from-emerald-500 to-teal-500" },
-                  { icon: Users, label: "Multi-Tenant", color: "from-purple-500 to-violet-500" },
-                  { icon: Sparkles, label: "AI-Powered", color: "from-pink-500 to-rose-500" },
-                  { icon: CheckCircle, label: "PBS Focused", color: "from-amber-500 to-orange-500" }
-                ].map((feature, index) => {
-                  const Icon = feature.icon;
-                  return (
-                    <motion.div
-                      key={feature.label}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6 + index * 0.1 }}
-                      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-colors"
-                    >
-                      <div className={`bg-gradient-to-r ${feature.color} w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3`}>
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
-                      <p className="text-white font-medium text-sm">{feature.label}</p>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </div>
+          {/* Strategic Message Box */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="bg-slate-800/60 backdrop-blur-sm border border-slate-600 rounded-2xl p-8 mb-12"
+          >
+            <blockquote className="text-lg leading-relaxed text-slate-200 italic">
+              "NeedCareAI+ was built by disability support workers, not tech bros.
+              It aggressively incorporates Positive Behaviour Support principles to help participants stay regulated, live with dignity, and reach their goals.
+              This platform doesn't just look compliant — it thinks like a practitioner."
+            </blockquote>
+          </motion.div>
         </div>
       </section>
 
