@@ -3,18 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, Play, Square, User } from "lucide-react";
+import { Calendar, Clock, MapPin, Play, Square, User, X } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday, isAfter } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { type Shift } from "@shared/schema";
 import ShiftStatusTag from "./ShiftStatusTag";
 import StartShiftModal from "./StartShiftModal";
 import EndShiftModal from "./EndShiftModal";
+import { CancelShiftModal } from "./CancelShiftModal";
 
 export default function MyShiftsTab() {
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [shiftToCancel, setShiftToCancel] = useState<Shift | null>(null);
   
   const { user } = useAuth();
 
@@ -79,6 +82,11 @@ export default function MyShiftsTab() {
     setIsEndModalOpen(true);
   };
 
+  const handleCancelShift = (shift: Shift) => {
+    setShiftToCancel(shift);
+    setIsCancelModalOpen(true);
+  };
+
   const handleShiftCardClick = (shift: Shift) => {
     const status = (shift as any).status;
     if (status === "assigned") {
@@ -86,6 +94,11 @@ export default function MyShiftsTab() {
     } else if (status === "in-progress") {
       handleEndShift(shift);
     }
+  };
+
+  const canCancelShift = (shift: Shift) => {
+    const status = (shift as any).status;
+    return status === "assigned" || status === "cancellation_requested";
   };
 
   if (isLoading) {
@@ -239,27 +252,43 @@ export default function MyShiftsTab() {
                             status={(shift as any).status || "assigned"} 
                             className="text-sm px-2 py-1" 
                           />
-                          <Button
-                            variant={((shift as any).status === "in-progress") ? "destructive" : "outline"}
-                            size="sm"
-                            className="flex items-center gap-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleShiftCardClick(shift);
-                            }}
-                          >
-                            {((shift as any).status === "in-progress") ? (
-                              <>
-                                <Square className="h-4 w-4" />
-                                End
-                              </>
-                            ) : (
-                              <>
-                                <Play className="h-4 w-4" />
-                                Start
-                              </>
+                          <div className="flex gap-2">
+                            {canCancelShift(shift) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancelShift(shift);
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                                Cancel
+                              </Button>
                             )}
-                          </Button>
+                            <Button
+                              variant={((shift as any).status === "in-progress") ? "destructive" : "outline"}
+                              size="sm"
+                              className="flex items-center gap-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShiftCardClick(shift);
+                              }}
+                            >
+                              {((shift as any).status === "in-progress") ? (
+                                <>
+                                  <Square className="h-4 w-4" />
+                                  End
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="h-4 w-4" />
+                                  Start
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardHeader>
@@ -311,6 +340,15 @@ export default function MyShiftsTab() {
           />
         </>
       )}
+
+      <CancelShiftModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setShiftToCancel(null);
+        }}
+        shift={shiftToCancel}
+      />
     </div>
   );
 }
