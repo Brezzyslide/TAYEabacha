@@ -4274,7 +4274,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ScHADS Pay Scale Management Routes
   app.get("/api/pay-scales", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const payScales = await storage.getPayScales(req.user.tenantId);
+      const { employmentType } = req.query;
+      const payScales = await storage.getPayScales(req.user.tenantId, employmentType as string);
       res.json(payScales);
     } catch (error) {
       console.error("Error fetching pay scales:", error);
@@ -4286,16 +4287,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const level = parseInt(req.params.level);
       const payPoint = parseInt(req.params.payPoint);
-      const { hourlyRate } = req.body;
+      const { hourlyRate, employmentType = "fulltime" } = req.body;
 
-      const updatedPayScale = await storage.updatePayScale(req.user.tenantId, level, payPoint, hourlyRate);
+      const updatedPayScale = await storage.updatePayScale(req.user.tenantId, level, payPoint, hourlyRate, employmentType);
       
       await storage.createActivityLog({
         userId: req.user.id,
         action: "update_pay_scale",
         resourceType: "pay_scale",
         resourceId: updatedPayScale.id,
-        description: `Updated pay scale Level ${level}, Pay Point ${payPoint} to $${hourlyRate}/hour`,
+        description: `Updated ${employmentType} pay scale Level ${level}, Pay Point ${payPoint} to $${hourlyRate}/hour`,
         tenantId: req.user.tenantId,
       });
 

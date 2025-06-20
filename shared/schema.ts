@@ -1253,6 +1253,7 @@ export const payScales = pgTable("pay_scales", {
   tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
   level: integer("level").notNull(), // 1-4
   payPoint: integer("pay_point").notNull(), // 1-4
+  employmentType: text("employment_type").notNull().default("fulltime"), // "fulltime", "parttime", "casual"
   hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }).notNull(),
   effectiveDate: timestamp("effective_date").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

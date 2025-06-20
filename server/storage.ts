@@ -1628,19 +1628,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Pay Scale Management methods
-  async getPayScales(tenantId: number): Promise<PayScale[]> {
+  async getPayScales(tenantId: number, employmentType?: string): Promise<PayScale[]> {
+    const conditions = [eq(payScales.tenantId, tenantId)];
+    if (employmentType) {
+      conditions.push(eq(payScales.employmentType, employmentType));
+    }
+    
     return await db.select().from(payScales)
-      .where(eq(payScales.tenantId, tenantId))
-      .orderBy(payScales.level, payScales.payPoint);
+      .where(and(...conditions))
+      .orderBy(payScales.employmentType, payScales.level, payScales.payPoint);
   }
 
   async getPayScalesByTenant(tenantId: number): Promise<PayScale[]> {
     return await db.select().from(payScales)
       .where(eq(payScales.tenantId, tenantId))
-      .orderBy(payScales.level, payScales.payPoint);
+      .orderBy(payScales.employmentType, payScales.level, payScales.payPoint);
   }
 
-  async updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<PayScale> {
+  async updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number, employmentType: string = "fulltime"): Promise<PayScale> {
     const [updated] = await db.update(payScales)
       .set({
         hourlyRate: hourlyRate.toString(),
@@ -1649,7 +1654,8 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(payScales.tenantId, tenantId),
         eq(payScales.level, level),
-        eq(payScales.payPoint, payPoint)
+        eq(payScales.payPoint, payPoint),
+        eq(payScales.employmentType, employmentType)
       ))
       .returning();
     
