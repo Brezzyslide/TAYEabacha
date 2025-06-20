@@ -3256,43 +3256,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Staff Bulk Upload API
   app.post("/api/staff/bulk-upload", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const csvData = req.body.file; // Assuming multer or similar middleware processes the file
-      // Parse CSV and create multiple staff members
+      const { data: staffData } = req.body;
+      
+      if (!Array.isArray(staffData) || staffData.length === 0) {
+        return res.status(400).json({ message: "No valid staff data provided" });
+      }
+
       const results = {
         success: 0,
-        errors: []
+        errors: [] as string[]
       };
       
-      // This is a simplified implementation - in production you'd use a proper CSV parser
-      const lines = csvData.split('\n');
-      const headers = lines[0].split(',');
-      
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',');
-        if (values.length !== headers.length) continue;
-        
-        const userData = {};
-        headers.forEach((header, index) => {
-          userData[header.trim()] = values[index]?.trim();
-        });
+      for (let i = 0; i < staffData.length; i++) {
+        const userData = staffData[i];
         
         try {
+          // Validate required fields
+          if (!userData.username || !userData.email || !userData.password || !userData.fullName) {
+            results.errors.push(`Row ${i + 1}: Missing required fields (username, email, password, fullName)`);
+            continue;
+          }
+
+          // Hash password
           const hashedPassword = await hashPassword(userData.password);
+          
+          // Create user with proper validation
           const user = await storage.createUser({
-            ...userData,
+            username: userData.username,
+            email: userData.email,
             password: hashedPassword,
+            fullName: userData.fullName,
+            role: userData.role || "SupportWorker",
+            phone: userData.phone || null,
+            address: userData.address || null,
             tenantId: req.user.tenantId,
+            isActive: true,
           });
+          
           results.success++;
-        } catch (error) {
-          results.errors.push(`Row ${i}: ${error.message}`);
+        } catch (error: any) {
+          results.errors.push(`Row ${i + 1}: ${error.message || 'Unknown error'}`);
         }
       }
       
-      res.json(results);
-    } catch (error) {
+      res.json({
+        ...results,
+        message: `Successfully created ${results.success} staff members${results.errors.length > 0 ? ` with ${results.errors.length} errors` : ''}`
+      });
+    } catch (error: any) {
       console.error("Bulk upload error:", error);
-      res.status(500).json({ message: "Failed to process bulk upload" });
+      res.status(500).json({ message: "Failed to process bulk upload", error: error.message });
     }
   });
 
