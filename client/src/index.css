@@ -88,24 +88,25 @@
   }
 
   body {
-    @apply font-sans antialiased bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 25%, #2d3748 50%, #1a1f2e 75%, #0f1419 100%);
     background-attachment: fixed;
-    color: rgb(250 202 21); /* gold-400 */
+    color: #ffffff;
   }
   
-  /* Global text color inheritance for better visibility */
+  /* Global text color inheritance for optimal visibility */
   * {
     color: inherit;
   }
   
-  /* Ensure all text elements have elegant gold tones */
+  /* High contrast text elements */
   p, span, div, h1, h2, h3, h4, h5, h6 {
-    color: rgb(250 202 21); /* gold-400 */
+    color: #ffffff;
   }
   
-  /* Specific overrides for muted text */
+  /* Muted text with good contrast */
   .text-muted, .muted {
-    color: rgb(245 158 11) !important; /* amber-500 */
+    color: #e2e8f0 !important; /* slate-200 */
   }
 
   /* Modern scrollbars */
@@ -115,17 +116,17 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(217, 32%, 17%);
+    background: #374151;
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, hsl(190, 100%, 50%), hsl(217, 91%, 60%));
+    background: linear-gradient(135deg, #06b6d4, #3b82f6);
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, hsl(190, 100%, 60%), hsl(217, 91%, 70%));
+    background: linear-gradient(135deg, #0891b2, #2563eb);
   }
 }
 
@@ -136,9 +137,10 @@
   }
   
   .glass-nav {
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid rgba(148, 163, 184, 0.4);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1);
   }
   
   .gradient-button-primary {
@@ -154,13 +156,25 @@
   }
   
   .modern-input {
-    @apply bg-white/5 border border-white/20 rounded-2xl px-4 py-3 placeholder-yellow-600 focus:bg-white/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/25 transition-all duration-300;
-    color: rgb(250 202 21); /* gold-400 */
+    @apply rounded-2xl px-4 py-3 transition-all duration-300;
+    background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    color: #ffffff;
+    placeholder-color: #cbd5e1;
+  }
+  
+  .modern-input:focus {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+    outline: none;
   }
   
   .modern-card {
-    @apply relative overflow-hidden rounded-3xl border border-white/20 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300;
-    background: rgba(15, 23, 42, 0.85);
+    @apply relative overflow-hidden rounded-3xl border backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
   
   .modern-nav-item {
@@ -180,13 +194,16 @@
   }
   
   .modern-table th {
-    @apply bg-gradient-to-r from-slate-800/60 to-slate-900/60 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider border-b border-white/10;
-    color: rgb(252 211 77); /* gold-300 */
+    @apply px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider;
+    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    color: #ffffff;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.3);
   }
   
   .modern-table td {
-    @apply px-6 py-4 text-sm border-b border-white/5;
-    color: rgb(250 202 21); /* gold-400 */
+    @apply px-6 py-4 text-sm;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   }
   
   .modern-table tr:hover {
@@ -198,7 +215,14 @@
   }
 
   .modern-button-secondary {
-    @apply relative overflow-hidden bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-slate-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105;
+    @apply relative overflow-hidden text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105;
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+  
+  .modern-button-secondary:hover {
+    background: linear-gradient(135deg, #475569 0%, #374151 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   }
 
   .modern-form {
@@ -209,87 +233,90 @@
     @apply modern-card border-2 border-cyan-500/20 shadow-2xl shadow-cyan-500/10;
   }
 
-  /* AI Output and Content Areas - Gold Visibility */
+  /* AI Output and Content Areas - High Contrast */
   .ai-output, .ai-content, .generated-content {
-    @apply bg-slate-900/50 p-4 rounded-lg border border-slate-600;
-    color: rgb(250 202 21); /* gold-400 */
+    @apply p-4 rounded-lg leading-relaxed;
+    background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   }
   
   .ai-output p, .ai-content p, .generated-content p {
     @apply leading-relaxed;
-    color: rgb(250 202 21); /* gold-400 */
+    color: #ffffff;
   }
   
   .ai-output ul, .ai-content ul, .generated-content ul {
     @apply space-y-1;
-    color: rgb(252 211 77); /* gold-300 */
+    color: #e2e8f0;
   }
   
   .ai-output li, .ai-content li, .generated-content li {
-    color: rgb(250 202 21); /* gold-400 */
+    color: #ffffff;
   }
 
-  /* Form Labels and Text - Gold Elegance */
+  /* Form Labels and Text - High Contrast */
   label {
     @apply font-medium;
-    color: rgb(252 211 77); /* gold-300 */
+    color: #ffffff;
   }
   
   .form-description, .text-sm {
-    color: rgb(245 158 11); /* amber-500 */
+    color: #cbd5e1;
   }
   
   /* Card Content Text */
   .card-content p, .card-body p {
-    color: rgb(250 202 21); /* gold-400 */
+    color: #ffffff;
   }
   
   .card-content span, .card-body span {
-    color: rgb(252 211 77); /* gold-300 */
+    color: #e2e8f0;
   }
 }
 
 @layer utilities {
-  /* Gold Variant Text Utilities for Elegance */
+  /* High Contrast Text Utilities for Optimal Readability */
   .text-high-contrast {
-    color: rgb(252 211 77); /* gold-300 */
+    color: #ffffff;
   }
   
   .text-medium-contrast {
-    color: rgb(250 202 21); /* gold-400 */
+    color: #e2e8f0; /* slate-200 */
   }
   
   .text-readable {
-    color: rgb(250 202 21); /* gold-400 */
+    color: #ffffff;
   }
   
   .text-muted-readable {
-    color: rgb(245 158 11); /* amber-500 */
+    color: #cbd5e1; /* slate-300 */
   }
   
-  /* Override low contrast text colors with gold variants */
+  /* Override low contrast text colors with high contrast variants */
   .text-slate-400 {
-    color: rgb(245 158 11) !important; /* amber-500 */
+    color: #cbd5e1 !important; /* slate-300 */
   }
   
   .text-slate-500 {
-    color: rgb(250 202 21) !important; /* gold-400 */
+    color: #e2e8f0 !important; /* slate-200 */
   }
   
   .text-slate-600 {
-    color: rgb(252 211 77) !important; /* gold-300 */
+    color: #ffffff !important; /* white */
   }
   
   .text-gray-400 {
-    color: rgb(245 158 11) !important; /* amber-500 */
+    color: #cbd5e1 !important; /* slate-300 */
   }
   
   .text-gray-500 {
-    color: rgb(250 202 21) !important; /* gold-400 */
+    color: #e2e8f0 !important; /* slate-200 */
   }
   
   .text-gray-600 {
-    color: rgb(252 211 77) !important; /* gold-300 */
+    color: #ffffff !important; /* white */
   }
 
   .scrollbar-hide {
