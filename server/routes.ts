@@ -3554,6 +3554,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ScHADS Pay Scale Management API
+  app.get("/api/pay-scales", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const payScales = await storage.getPayScalesByTenant(req.user.tenantId);
+      res.json(payScales);
+    } catch (error: any) {
+      console.error("Get pay scales error:", error);
+      res.status(500).json({ message: "Failed to get pay scales" });
+    }
+  });
+
+  app.put("/api/pay-scales/:level/:payPoint", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { level, payPoint } = req.params;
+      const { hourlyRate } = req.body;
+
+      if (!hourlyRate || isNaN(parseFloat(hourlyRate))) {
+        return res.status(400).json({ message: "Valid hourly rate is required" });
+      }
+
+      await storage.updatePayScale(
+        req.user.tenantId,
+        parseInt(level),
+        parseInt(payPoint),
+        parseFloat(hourlyRate)
+      );
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_pay_scale",
+        resourceType: "pay_scale",
+        resourceId: `${level}-${payPoint}`,
+        description: `Updated pay scale Level ${level}, Pay Point ${payPoint} to $${hourlyRate}/hour`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ message: "Pay scale updated successfully" });
+    } catch (error: any) {
+      console.error("Update pay scale error:", error);
+      res.status(500).json({ message: "Failed to update pay scale" });
+    }
+  });
+
+  // Get ScHADS rate information
+  app.get("/api/schads-rates", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { getScHADSRateInfo } = await import("./schads-provisioning");
+      const scHADSRates = getScHADSRateInfo();
+      res.json(scHADSRates);
+    } catch (error: any) {
+      console.error("Get ScHADS rates error:", error);
+      res.status(500).json({ message: "Failed to get ScHADS rates" });
+    }
+  });
+
+  // Reset pay scale to ScHADS default
+  app.post("/api/pay-scales/:level/:payPoint/reset", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { level, payPoint } = req.params;
+      const { getScHADSRateInfo } = await import("./schads-provisioning");
+      const scHADSRates = getScHADSRateInfo();
+      
+      const defaultRate = scHADSRates.find(rate => 
+        rate.level === parseInt(level) && rate.payPoint === parseInt(payPoint)
+      );
+
+      if (!defaultRate) {
+        return res.status(404).json({ message: "ScHADS rate not found for this level/pay point" });
+      }
+
+      await storage.updatePayScale(
+        req.user.tenantId,
+        parseInt(level),
+        parseInt(payPoint),
+        defaultRate.hourlyRate
+      );
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "reset_pay_scale",
+        resourceType: "pay_scale",
+        resourceId: `${level}-${payPoint}`,
+        description: `Reset pay scale Level ${level}, Pay Point ${payPoint} to ScHADS default $${defaultRate.hourlyRate}/hour`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ 
+        message: "Pay scale reset to ScHADS default successfully",
+        hourlyRate: defaultRate.hourlyRate
+      });
+    } catch (error: any) {
+      console.error("Reset pay scale error:", error);
+      res.status(500).json({ message: "Failed to reset pay scale" });
+    }
+  });
+
   // Company Logo Upload API
   app.post("/api/company/logo", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {

@@ -1,4 +1,5 @@
 import { storage } from "./storage";
+import { provisionScHADSRates } from "./schads-provisioning";
 
 /**
  * Automatic Tenant Provisioning System
@@ -96,6 +97,9 @@ export async function provisionTenant(tenantId: number, companyId: string): Prom
     
     // 8. Create standardized custom roles
     await provisionCustomRoles(tenantId);
+    
+    // 9. Provision ScHADS award wage rates
+    await provisionPayScales(tenantId);
     
     console.log(`[TENANT PROVISIONING] Successfully provisioned tenant ${tenantId}`);
   } catch (error) {
@@ -368,6 +372,14 @@ async function provisionCustomRoles(tenantId: number): Promise<void> {
   
   await storage.createCustomRole(roleData);
   console.log(`[TENANT PROVISIONING] Created custom role for tenant ${tenantId}`);
+}
+
+/**
+ * Provisions ScHADS award wage rates for the tenant
+ */
+async function provisionPayScales(tenantId: number): Promise<void> {
+  await provisionScHADSRates(tenantId);
+  console.log(`[TENANT PROVISIONING] Created ScHADS pay scales for tenant ${tenantId}`);
 }
 
 /**
