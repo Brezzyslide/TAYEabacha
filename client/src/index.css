@@ -3,75 +3,132 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(20, 14.3%, 4.1%);
-  --muted: hsl(60, 4.8%, 95.9%);
-  --muted-foreground: hsl(25, 5.3%, 44.7%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(20, 5.9%, 90%);
-  --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(60, 4.8%, 95.9%);
-  --secondary-foreground: hsl(24, 9.8%, 10%);
-  --accent: hsl(60, 4.8%, 95.9%);
-  --accent-foreground: hsl(24, 9.8%, 10%);
-  --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
+  /* NeedCareAI+ Professional Theme */
+  --background: hsl(255, 255, 255);
+  --foreground: hsl(15, 23, 42);
+  --muted: hsl(248, 250, 252);
+  --muted-foreground: hsl(100, 116, 139);
+  --popover: hsl(255, 255, 255);
+  --popover-foreground: hsl(15, 23, 42);
+  --card: hsl(255, 255, 255);
+  --card-foreground: hsl(15, 23, 42);
+  --border: hsl(226, 232, 240);
+  --input: hsl(226, 232, 240);
+  --primary: hsl(30, 64, 175); /* Professional Blue */
+  --primary-foreground: hsl(248, 250, 252);
+  --secondary: hsl(241, 245, 249);
+  --secondary-foreground: hsl(51, 65, 85);
+  --accent: hsl(239, 246, 255);
+  --accent-foreground: hsl(30, 64, 175);
+  --destructive: hsl(239, 68, 68);
+  --destructive-foreground: hsl(248, 250, 252);
+  --ring: hsl(30, 64, 175);
   --radius: 0.5rem;
-  --sidebar-background: hsl(0, 0%, 100%);
-  --sidebar-foreground: hsl(20, 14.3%, 4.1%);
-  --sidebar-primary: hsl(207, 90%, 54%);
-  --sidebar-primary-foreground: hsl(211, 100%, 99%);
-  --sidebar-accent: hsl(60, 4.8%, 95.9%);
-  --sidebar-accent-foreground: hsl(24, 9.8%, 10%);
-  --sidebar-border: hsl(20, 5.9%, 90%);
-  --sidebar-ring: hsl(20, 14.3%, 4.1%);
-  --chart-1: hsl(207, 90%, 54%);
-  --chart-2: hsl(147, 64%, 52%);
-  --chart-3: hsl(45, 93%, 58%);
-  --chart-4: hsl(326, 78%, 68%);
-  --chart-5: hsl(280, 65%, 60%);
+  
+  /* Sidebar with NeedCareAI+ branding */
+  --sidebar-background: hsl(255, 255, 255);
+  --sidebar-foreground: hsl(15, 23, 42);
+  --sidebar-primary: hsl(30, 64, 175);
+  --sidebar-primary-foreground: hsl(248, 250, 252);
+  --sidebar-accent: hsl(239, 246, 255);
+  --sidebar-accent-foreground: hsl(30, 64, 175);
+  --sidebar-border: hsl(226, 232, 240);
+  --sidebar-ring: hsl(30, 64, 175);
+  
+  /* Professional Chart Colors */
+  --chart-1: hsl(59, 130, 246);
+  --chart-2: hsl(16, 185, 129);
+  --chart-3: hsl(245, 101, 101);
+  --chart-4: hsl(251, 191, 36);
+  --chart-5: hsl(168, 85, 247);
+  
+  /* NeedCareAI+ Brand Colors */
+  --brand-primary: hsl(30, 64, 175);
+  --brand-secondary: hsl(51, 65, 85);
+  --brand-accent: hsl(16, 185, 129);
+  --success: hsl(16, 185, 129);
+  --warning: hsl(251, 191, 36);
+  --info: hsl(59, 130, 246);
 }
 
 .dark {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
+  /* NeedCareAI+ Dark Professional Theme */
+  --background: hsl(2, 6, 23);
+  --foreground: hsl(248, 250, 252);
+  --muted: hsl(30, 41, 59);
+  --muted-foreground: hsl(148, 163, 184);
+  --popover: hsl(15, 23, 42);
+  --popover-foreground: hsl(248, 250, 252);
+  --card: hsl(15, 23, 42);
+  --card-foreground: hsl(248, 250, 252);
+  --border: hsl(30, 41, 59);
+  --input: hsl(30, 41, 59);
+  --primary: hsl(59, 130, 246);
+  --primary-foreground: hsl(2, 6, 23);
+  --secondary: hsl(30, 41, 59);
+  --secondary-foreground: hsl(203, 213, 225);
+  --accent: hsl(30, 41, 59);
+  --accent-foreground: hsl(59, 130, 246);
+  --destructive: hsl(248, 113, 113);
+  --destructive-foreground: hsl(2, 6, 23);
+  --ring: hsl(59, 130, 246);
   --radius: 0.5rem;
-  --sidebar-background: hsl(240, 10%, 3.9%);
-  --sidebar-foreground: hsl(0, 0%, 98%);
-  --sidebar-primary: hsl(207, 90%, 54%);
-  --sidebar-primary-foreground: hsl(211, 100%, 99%);
-  --sidebar-accent: hsl(240, 3.7%, 15.9%);
-  --sidebar-accent-foreground: hsl(0, 0%, 98%);
-  --sidebar-border: hsl(240, 3.7%, 15.9%);
-  --sidebar-ring: hsl(240, 4.9%, 83.9%);
-  --chart-1: hsl(207, 90%, 54%);
-  --chart-2: hsl(147, 64%, 52%);
-  --chart-3: hsl(45, 93%, 58%);
-  --chart-4: hsl(326, 78%, 68%);
-  --chart-5: hsl(280, 65%, 60%);
+  
+  /* Dark Sidebar */
+  --sidebar-background: hsl(15, 23, 42);
+  --sidebar-foreground: hsl(248, 250, 252);
+  --sidebar-primary: hsl(59, 130, 246);
+  --sidebar-primary-foreground: hsl(2, 6, 23);
+  --sidebar-accent: hsl(30, 41, 59);
+  --sidebar-accent-foreground: hsl(59, 130, 246);
+  --sidebar-border: hsl(30, 41, 59);
+  --sidebar-ring: hsl(59, 130, 246);
+  
+  /* Dark Chart Colors */
+  --chart-1: hsl(59, 130, 246);
+  --chart-2: hsl(34, 197, 94);
+  --chart-3: hsl(248, 113, 113);
+  --chart-4: hsl(251, 191, 36);
+  --chart-5: hsl(168, 85, 247);
+}
+
+.high-contrast {
+  /* High Contrast for Vision Accessibility */
+  --background: hsl(0, 0, 100);
+  --foreground: hsl(0, 0, 0);
+  --muted: hsl(0, 0, 95);
+  --muted-foreground: hsl(0, 0, 25);
+  --popover: hsl(0, 0, 100);
+  --popover-foreground: hsl(0, 0, 0);
+  --card: hsl(0, 0, 100);
+  --card-foreground: hsl(0, 0, 0);
+  --border: hsl(0, 0, 50);
+  --input: hsl(0, 0, 100);
+  --primary: hsl(0, 0, 0);
+  --primary-foreground: hsl(0, 0, 100);
+  --secondary: hsl(0, 0, 94);
+  --secondary-foreground: hsl(0, 0, 0);
+  --accent: hsl(60, 100, 50);
+  --accent-foreground: hsl(0, 0, 0);
+  --destructive: hsl(0, 80, 40);
+  --destructive-foreground: hsl(0, 0, 100);
+  --ring: hsl(0, 0, 0);
+  --radius: 0.5rem;
+  
+  /* High Contrast Sidebar */
+  --sidebar-background: hsl(0, 0, 100);
+  --sidebar-foreground: hsl(0, 0, 0);
+  --sidebar-primary: hsl(0, 0, 0);
+  --sidebar-primary-foreground: hsl(0, 0, 100);
+  --sidebar-accent: hsl(60, 100, 50);
+  --sidebar-accent-foreground: hsl(0, 0, 0);
+  --sidebar-border: hsl(0, 0, 50);
+  --sidebar-ring: hsl(0, 0, 0);
+  
+  /* High Contrast Status Colors */
+  --success: hsl(120, 100, 25);
+  --warning: hsl(45, 100, 35);
+  --info: hsl(240, 100, 50);
 }
 
 @layer base {
@@ -91,5 +148,139 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari and Opera */
+  }
+  
+  /* Font Scaling Options for Accessibility */
+  .font-small { font-size: 0.875rem; }
+  .font-normal { font-size: 1rem; }
+  .font-large { font-size: 1.125rem; }
+  .font-xl { font-size: 1.25rem; }
+  
+  /* Professional Card Shadows */
+  .card-elevated {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  }
+  .card-elevated-lg {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  
+  /* Professional Button Gradients */
+  .btn-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+  }
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.9) 0%, hsl(var(--primary) / 0.7) 100%);
+  }
+  
+  /* Data Table Enhancements */
+  .table-row:hover {
+    background-color: hsl(var(--muted) / 0.5);
+  }
+  .table-header {
+    background: linear-gradient(to bottom, hsl(var(--muted)), hsl(var(--muted) / 0.8));
+  }
+  
+  /* Professional Status Indicators */
+  .status-indicator {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .status-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .status-success { color: hsl(var(--success)); }
+  .status-warning { color: hsl(var(--warning)); }
+  .status-error { color: hsl(var(--destructive)); }
+  .status-info { color: hsl(var(--info)); }
+  
+  /* Mobile Optimizations */
+  .mobile-stack { 
+    flex-direction: column; 
+    gap: 1rem; 
+  }
+  .mobile-full { width: 100%; }
+  .mobile-text-sm { font-size: 0.875rem; }
+  
+  /* Navigation Scroll */
+  .nav-scroll {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Enhanced Focus States for Accessibility */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Skip to Content Link for Screen Readers */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 1000;
+  border-radius: var(--radius);
+  font-weight: 500;
+}
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Form Floating Labels */
+.floating-label {
+  position: relative;
+}
+.floating-label input:focus + label,
+.floating-label input:not(:placeholder-shown) + label {
+  transform: translateY(-1.5rem) scale(0.75);
+  color: hsl(var(--primary));
+}
+.floating-label label {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  transition: all 0.2s ease-in-out;
+  pointer-events: none;
+  background: hsl(var(--background));
+  padding: 0 0.25rem;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+  .mobile-stack {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .mobile-full {
+    width: 100%;
+  }
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+  
+  /* Mobile-specific card spacing */
+  .card {
+    margin: 0.5rem;
+  }
+  
+  /* Mobile button adjustments */
+  .btn {
+    min-height: 44px; /* Touch-friendly target size */
   }
 }

@@ -1,0 +1,97 @@
+ Please apply the full visual identity and UX strategy for the application named:
+ 
+📛 **NeedCareAI+**
+ 
+This includes theming, layout, branding, button design, messaging, and accessibility across all modules and screens.
+ 
+---
+ 
+## 🎨 Theme & Design Direction
+ 
+Apply a **dark-blue and neutral-light UI palette** with a **minimalist, modern, professional feel**.
+ 
+ 
+✅ Ensure:
+- All buttons remain visible and accessible across backgrounds
+- No element loses contrast or appears hidden
+- Use subtle hover states and responsive layouts
+ 
+---
+ 
+## 💬 Login Page Strategic Messaging
+ 
+Update the login screen content to reflect the mission of NeedCareAI+:
+ 
+### Title:
+```txt
+Welcome to NeedCareAI+
+Subheading:
+txt
+Copy
+Edit
+Built with Positive Behaviour in Mind — not just Buttons.
+Supporting Strategic Copy:
+txt
+Copy
+Edit
+Care that starts with listening, not loading.  
+NDIS reporting and compliance made easy.  
+This system was designed by disability support workers — not tech bros.  
+From shift to shift, we've got your back.
+Footer Tagline:
+txt
+Copy
+Edit
+Every Shift Structured & Safe • Participant-Centric Design
+🧩 Apply This Branding Across:
+AppHeader (brand title or logo = NeedCareAI+)
+ 
+Page headers and dashboard welcome:
+ 
+txt
+Copy
+Edit
+Welcome to your NeedCareAI+ Workspace
+Mobile + sidebar layout
+ 
+All major modules (Client Profile, Shifts, Case Notes, Medications, Observations, Budgets)
+ 
+✅ Success & Error Messaging
+Replace generic toasts and modal alerts with real contextual messages:
+ 
+Examples:
+ 
+"Case note submitted successfully for [Client Name]"
+ 
+"Shift saved. View it in the calendar."
+ 
+"Medication administration recorded."
+ 
+On failure:
+ 
+"Could not save shift — missing required fields"
+ 
+"Case note must be at least 130 words"
+ 
+Use useToast() or ShadCN modals for consistent feedback.
+ 
+📦 Update Visuals & Theme in:
+src/components/ui/*
+ 
+All form modals (Shift, Observation, Case Note, Medication)
+ 
+AppHeader + layout
+ 
+Login screen
+ 
+Tabbed pages under client-profile
+ 
+⚠️ Final Instructions
+Keep all permission logic, module structure, and business rules intact
+ 
+Do not hide any core buttons or actions
+ 
+Focus on visual consistency, professional clarity, and emotional calm
+ 
+No hardcoded demo content or placeholder-only views should remain
+ 

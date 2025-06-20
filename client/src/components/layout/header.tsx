@@ -57,33 +57,38 @@ export default function Header() {
         isOpen={showMobileSidebar} 
         onClose={() => setShowMobileSidebar(false)} 
       />
-      <header className="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+      <header className="bg-white dark:bg-card shadow-sm border-b border-border px-4 sm:px-6 py-3 sm:py-4 card-elevated">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
             <Button 
               variant="ghost" 
               size="sm"
-              className="lg:hidden text-gray-500 hover:text-gray-700 flex-shrink-0"
+              className="lg:hidden text-muted-foreground hover:text-foreground flex-shrink-0"
               onClick={() => setShowMobileSidebar(!showMobileSidebar)}
             >
               <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
-            {/* Company Logo */}
+            {/* NeedCareAI+ Branding */}
             <div className="flex items-center space-x-3 min-w-0">
-              <CompanyLogo 
-                companyName={company?.name || "Default Company"}
-                customLogo={company?.customLogo}
-                size="sm"
-                showName={false}
-              />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-sm sm:text-base">AI+</span>
+              </div>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">Dashboard</h1>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-lg sm:text-xl font-bold text-foreground">NeedCareAI+</h1>
+                  <CompanyLogo 
+                    companyName={company?.name || "Default Company"}
+                    customLogo={company?.customLogo}
+                    size="xs"
+                    showName={false}
+                  />
+                </div>
                 <div className="flex flex-col">
-                  <p className="text-xs sm:text-sm text-gray-800 font-bold truncate">
-                    {company?.name || "XYZ LTD"}
+                  <p className="text-xs sm:text-sm text-foreground font-medium truncate">
+                    {company?.name || "Care Organization"}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    Welcome back, <span className="font-medium">{user.fullName}</span>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Welcome back, <span className="font-medium text-primary">{user.fullName}</span>
                   </p>
                 </div>
               </div>

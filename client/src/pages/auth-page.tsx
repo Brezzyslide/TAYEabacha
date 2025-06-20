@@ -48,68 +48,146 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Auth forms */}
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+      {/* Skip to content for accessibility */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      
+      {/* Left side - Professional hero section */}
+      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-12 bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+        <div className="max-w-md">
+          <div className="mb-8">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
+              <Building className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold mb-4">NeedCareAI+</h1>
+            <p className="text-xl text-blue-100 mb-6">
+              Built with Positive Behaviour in Mind — not just Buttons.
+            </p>
+          </div>
+          
+          <div className="space-y-4 text-blue-100">
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
+              <p>Care that starts with listening, not loading.</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
+              <p>NDIS reporting and compliance made easy.</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
+              <p>This system was designed by disability support workers — not tech bros.</p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
+              <p>From shift to shift, we've got your back.</p>
+            </div>
+          </div>
+          
+          <div className="mt-12 pt-8 border-t border-blue-400/30">
+            <p className="text-sm text-blue-200 font-medium">
+              Every Shift Structured & Safe • Participant-Centric Design
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side - Auth forms */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
+          {/* Mobile branding */}
+          <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center card-elevated">
                 <Building className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">CareConnect</h1>
-            <p className="text-gray-600 mt-2">Multi-Tenant Care Management System</p>
+            <h1 className="text-3xl font-bold text-foreground">NeedCareAI+</h1>
+            <p className="text-muted-foreground mt-2">Built with Positive Behaviour in Mind</p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Welcome back</CardTitle>
-              <CardDescription>
-                Sign in to your account to continue
+          <Card className="card-elevated-lg border-0 shadow-xl">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl font-semibold text-foreground">Welcome to your NeedCareAI+ Workspace</CardTitle>
+              <CardDescription className="text-base text-muted-foreground">
+                Sign in to access your care management platform
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                <div>
-                  <Label htmlFor="login-username">Username</Label>
+            <CardContent id="main-content" className="pt-6">
+              <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="login-username" className="text-sm font-medium text-foreground">
+                    Username or Email
+                  </Label>
                   <Input
                     id="login-username"
                     {...loginForm.register("username")}
-                    placeholder="Enter your username"
+                    placeholder="Enter your username or email"
                     disabled={loginMutation.isPending}
+                    className="h-11 text-base border-2 focus:border-primary transition-colors"
+                    autoComplete="username"
+                    required
                   />
                   {loginForm.formState.errors.username && (
-                    <p className="text-sm text-destructive mt-1">
+                    <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                      <span className="w-4 h-4 rounded-full bg-destructive/10 flex items-center justify-center text-xs">!</span>
                       {loginForm.formState.errors.username.message}
                     </p>
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="login-password">Password</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password" className="text-sm font-medium text-foreground">
+                    Password
+                  </Label>
                   <Input
                     id="login-password"
                     type="password"
                     {...loginForm.register("password")}
                     placeholder="Enter your password"
                     disabled={loginMutation.isPending}
+                    className="h-11 text-base border-2 focus:border-primary transition-colors"
+                    autoComplete="current-password"
+                    required
                   />
                   {loginForm.formState.errors.password && (
-                    <p className="text-sm text-destructive mt-1">
+                    <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                      <span className="w-4 h-4 rounded-full bg-destructive/10 flex items-center justify-center text-xs">!</span>
                       {loginForm.formState.errors.password.message}
                     </p>
                   )}
                 </div>
 
+                {loginMutation.isError && (
+                  <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
+                    <p className="font-medium">Unable to sign in</p>
+                    <p className="text-xs mt-1 opacity-90">Please check your credentials and try again</p>
+                  </div>
+                )}
+
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className="w-full h-11 text-base font-medium btn-gradient hover:shadow-lg transition-all duration-200" 
                   disabled={loginMutation.isPending}
                 >
-                  {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                  {loginMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Signing in...
+                    </div>
+                  ) : (
+                    "Access Your Workspace"
+                  )}
                 </Button>
               </form>
+              
+              <div className="mt-6 pt-6 border-t border-border/50 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Secure access to your care management platform
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
