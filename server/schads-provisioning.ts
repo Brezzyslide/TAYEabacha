@@ -32,32 +32,45 @@ const SCHADS_RATES = [
 export async function provisionScHADSRates(tenantId: number): Promise<void> {
   console.log(`Provisioning ScHADS award rates for tenant ${tenantId}...`);
 
-  for (const rate of SCHADS_RATES) {
-    // Check if rate already exists
-    const existing = await db
-      .select()
-      .from(payScales)
-      .where(and(
-        eq(payScales.tenantId, tenantId),
-        eq(payScales.level, rate.level),
-        eq(payScales.payPoint, rate.payPoint)
-      ))
-      .limit(1);
+  const employmentTypes = [
+    { type: "fulltime", multiplier: 1.0, description: "Full-time permanent" },
+    { type: "parttime", multiplier: 1.0, description: "Part-time permanent" },
+    { type: "casual", multiplier: 1.25, description: "Casual with 25% loading" }
+  ];
 
-    if (!existing.length) {
-      await db.insert(payScales).values({
-        tenantId,
-        level: rate.level,
-        payPoint: rate.payPoint,
-        hourlyRate: rate.hourlyRate.toString(),
-        effectiveDate: new Date(),
-      });
-      
-      console.log(`Added ScHADS rate: Level ${rate.level}, Pay Point ${rate.payPoint} - $${rate.hourlyRate}/hour`);
+  for (const employmentType of employmentTypes) {
+    console.log(`  Provisioning ${employmentType.description} rates...`);
+    
+    for (const rate of SCHADS_RATES) {
+      // Check if rate already exists for this employment type
+      const existing = await db
+        .select()
+        .from(payScales)
+        .where(and(
+          eq(payScales.tenantId, tenantId),
+          eq(payScales.level, rate.level),
+          eq(payScales.payPoint, rate.payPoint),
+          eq(payScales.employmentType, employmentType.type)
+        ))
+        .limit(1);
+
+      if (!existing.length) {
+        const adjustedRate = rate.hourlyRate * employmentType.multiplier;
+        await db.insert(payScales).values({
+          tenantId,
+          level: rate.level,
+          payPoint: rate.payPoint,
+          employmentType: employmentType.type,
+          hourlyRate: adjustedRate.toFixed(2),
+          effectiveDate: new Date(),
+        });
+        
+        console.log(`    Added ${employmentType.type}: Level ${rate.level}, Pay Point ${rate.payPoint} - $${adjustedRate.toFixed(2)}/hour`);
+      }
     }
   }
 
-  console.log(`ScHADS rates provisioning completed for tenant ${tenantId}`);
+  console.log(`✓ ScHADS rates provisioning completed for all employment types for tenant ${tenantId}`);
 }
 
 export async function updateScHADSRate(

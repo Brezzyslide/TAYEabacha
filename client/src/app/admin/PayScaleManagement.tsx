@@ -14,6 +14,7 @@ interface PayScale {
   tenantId: number;
   level: number;
   payPoint: number;
+  employmentType: string;
   hourlyRate: string;
   effectiveDate: string;
   createdAt: string;
@@ -26,84 +27,144 @@ interface ScHADSRate {
   description: string;
 }
 
+const EMPLOYMENT_TYPES = [
+  { 
+    value: "fulltime", 
+    label: "Full-Time", 
+    icon: Users, 
+    description: "Permanent full-time employees",
+    multiplier: 1.0
+  },
+  { 
+    value: "parttime", 
+    label: "Part-Time", 
+    icon: Clock, 
+    description: "Permanent part-time employees",
+    multiplier: 1.0
+  },
+  { 
+    value: "casual", 
+    label: "Casual", 
+    icon: UserCheck, 
+    description: "Casual employees with 25% loading",
+    multiplier: 1.25
+  }
+];
+
 export default function PayScaleManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [editingCell, setEditingCell] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const [editingRates, setEditingRates] = useState<Record<string, string>>({});
+  const [activeEmploymentType, setActiveEmploymentType] = useState("fulltime");
 
-  // Fetch current pay scales
-  const { data: payScales = [], isLoading: payScalesLoading } = useQuery<PayScale[]>({
-    queryKey: ["/api/pay-scales"],
+  // Fetch pay scales for current employment type
+  const { data: payScales = [], isLoading } = useQuery({
+    queryKey: ["/api/pay-scales", activeEmploymentType],
+    queryFn: () => apiRequest("GET", `/api/pay-scales?employmentType=${activeEmploymentType}`),
   });
 
   // Fetch ScHADS default rates
-  const { data: scHADSRates = [], isLoading: scHADSLoading } = useQuery<ScHADSRate[]>({
+  const { data: scHADSRates = [] } = useQuery<ScHADSRate[]>({
     queryKey: ["/api/schads-rates"],
   });
 
-  // Calculate different employment type rates
-  const calculatePartTimeRate = (fullTimeRate: number): number => {
-    // Part-time permanent rates are typically the same as full-time under ScHADS
-    return fullTimeRate;
-  };
-
-  const calculateCasualRate = (permanentRate: number): number => {
-    return Math.round((permanentRate * 1.25) * 100) / 100;
-  };
-
   // Update pay scale mutation
   const updatePayScaleMutation = useMutation({
-    mutationFn: async ({ level, payPoint, hourlyRate }: { level: number; payPoint: number; hourlyRate: number }) => {
-      return await apiRequest("PUT", `/api/pay-scales/${level}/${payPoint}`, { hourlyRate });
-    },
+    mutationFn: ({ level, payPoint, hourlyRate, employmentType }: { 
+      level: number; 
+      payPoint: number; 
+      hourlyRate: number;
+      employmentType: string;
+    }) =>
+      apiRequest("PUT", `/api/pay-scales/${level}/${payPoint}`, { 
+        hourlyRate, 
+        employmentType 
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pay-scales"] });
       toast({
         title: "Pay scale updated",
         description: "The hourly rate has been successfully updated.",
       });
-      setEditingCell(null);
     },
     onError: () => {
       toast({
-        title: "Update failed",
-        description: "Failed to update the pay scale. Please try again.",
+        title: "Error",
+        description: "Failed to update pay scale. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  // Reset pay scales to ScHADS defaults
-  const resetPayScalesMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/pay-scales/reset");
-    },
+  // Reset to ScHADS default mutation
+  const resetToDefaultMutation = useMutation({
+    mutationFn: ({ level, payPoint }: { level: number; payPoint: number }) =>
+      apiRequest("POST", `/api/pay-scales/${level}/${payPoint}/reset`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pay-scales"] });
       toast({
-        title: "Pay scales reset",
+        title: "Reset successful",
+        description: "Pay scale has been reset to ScHADS default rate.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reset pay scale. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reset all scales mutation
+  const resetAllScalesMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/pay-scales/reset"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pay-scales"] });
+      toast({
+        title: "All scales reset",
         description: "All pay scales have been reset to ScHADS default rates.",
       });
     },
     onError: () => {
       toast({
-        title: "Reset failed",
-        description: "Failed to reset pay scales. Please try again.",
+        title: "Error",
+        description: "Failed to reset all pay scales. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const handleCellEdit = (level: number, payPoint: number, currentRate: string) => {
-    const cellKey = `${level}-${payPoint}`;
-    setEditingCell(cellKey);
-    setEditValue(currentRate);
+  const getScHADSRate = (level: number, payPoint: number): number => {
+    const rate = scHADSRates.find(r => r.level === level && r.payPoint === payPoint);
+    return rate ? rate.hourlyRate : 0;
   };
 
-  const handleCellSave = (level: number, payPoint: number) => {
-    const hourlyRate = parseFloat(editValue);
-    if (isNaN(hourlyRate) || hourlyRate <= 0) {
+  const getAdjustedRate = (baseRate: number, employmentType: string): number => {
+    const typeConfig = EMPLOYMENT_TYPES.find(t => t.value === employmentType);
+    return baseRate * (typeConfig?.multiplier || 1.0);
+  };
+
+  const isOverridden = (level: number, payPoint: number): boolean => {
+    const currentRate = parseFloat(
+      payScales.find(p => p.level === level && p.payPoint === payPoint)?.hourlyRate || "0"
+    );
+    const scHADSRate = getScHADSRate(level, payPoint);
+    const expectedRate = getAdjustedRate(scHADSRate, activeEmploymentType);
+    
+    return Math.abs(currentRate - expectedRate) > 0.01;
+  };
+
+  const handleRateChange = (level: number, payPoint: number, value: string) => {
+    const key = `${level}-${payPoint}`;
+    setEditingRates(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveRate = (level: number, payPoint: number) => {
+    const key = `${level}-${payPoint}`;
+    const newRate = parseFloat(editingRates[key]);
+    
+    if (isNaN(newRate) || newRate <= 0) {
       toast({
         title: "Invalid rate",
         description: "Please enter a valid hourly rate.",
@@ -111,138 +172,36 @@ export default function PayScaleManagement() {
       });
       return;
     }
-    updatePayScaleMutation.mutate({ level, payPoint, hourlyRate });
+
+    updatePayScaleMutation.mutate({ 
+      level, 
+      payPoint, 
+      hourlyRate: newRate,
+      employmentType: activeEmploymentType
+    });
+    
+    setEditingRates(prev => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
   };
 
-  const handleCellCancel = () => {
-    setEditingCell(null);
-    setEditValue("");
+  const handleResetToDefault = (level: number, payPoint: number) => {
+    resetToDefaultMutation.mutate({ level, payPoint });
   };
 
-  const getPayScaleRate = (level: number, payPoint: number): string => {
-    const payScale = payScales.find(ps => ps.level === level && ps.payPoint === payPoint);
-    return payScale?.hourlyRate || "0.00";
+  const getCurrentRate = (level: number, payPoint: number): string => {
+    const key = `${level}-${payPoint}`;
+    if (editingRates[key] !== undefined) {
+      return editingRates[key];
+    }
+    return payScales.find(p => p.level === level && p.payPoint === payPoint)?.hourlyRate || "0.00";
   };
 
-  const getScHADSRate = (level: number, payPoint: number): number => {
-    const scHADSRate = scHADSRates.find(sr => sr.level === level && sr.payPoint === payPoint);
-    return scHADSRate?.hourlyRate || 0;
-  };
+  const currentEmploymentType = EMPLOYMENT_TYPES.find(t => t.value === activeEmploymentType);
 
-  const isOverride = (level: number, payPoint: number): boolean => {
-    const currentRate = parseFloat(getPayScaleRate(level, payPoint));
-    const defaultRate = getScHADSRate(level, payPoint);
-    return Math.abs(currentRate - defaultRate) > 0.01;
-  };
-
-  const renderPayScaleTable = (employmentType: "fulltime" | "parttime" | "casual") => {
-    const levels = [1, 2, 3, 4];
-    const payPoints = [1, 2, 3, 4];
-
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-slate-300 rounded-lg">
-          <thead>
-            <tr className="bg-slate-100">
-              <th className="border border-slate-300 p-3 text-left font-semibold">Level / Pay Point</th>
-              {payPoints.map(point => (
-                <th key={point} className="border border-slate-300 p-3 text-center font-semibold">
-                  Pay Point {point}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {levels.map(level => (
-              <tr key={level} className="hover:bg-slate-50">
-                <td className="border border-slate-300 p-3 font-medium bg-slate-50">
-                  Level {level}
-                </td>
-                {payPoints.map(payPoint => {
-                  const cellKey = `${level}-${payPoint}`;
-                  const isEditing = editingCell === cellKey;
-                  const permanentRate = parseFloat(getPayScaleRate(level, payPoint));
-                  
-                  let displayRate = permanentRate;
-                  if (employmentType === "parttime") {
-                    displayRate = calculatePartTimeRate(permanentRate);
-                  } else if (employmentType === "casual") {
-                    displayRate = calculateCasualRate(permanentRate);
-                  }
-
-                  const isManualOverride = isOverride(level, payPoint);
-
-                  return (
-                    <td key={payPoint} className="border border-slate-300 p-2">
-                      <div className="flex items-center justify-between">
-                        {isEditing && employmentType === "fulltime" ? (
-                          <div className="flex items-center space-x-1 w-full">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              className="w-20 h-8 text-sm"
-                              autoFocus
-                            />
-                            <Button
-                              size="sm"
-                              onClick={() => handleCellSave(level, payPoint)}
-                              className="h-8 px-2"
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={handleCellCancel}
-                              className="h-8 px-2"
-                            >
-                              ✕
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-mono text-sm">
-                                ${displayRate.toFixed(2)}
-                              </span>
-                              {isManualOverride && employmentType === "fulltime" && (
-                                <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs">
-                                  Override
-                                </Badge>
-                              )}
-                              {!isManualOverride && employmentType === "fulltime" && (
-                                <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 text-xs">
-                                  Default
-                                </Badge>
-                              )}
-                            </div>
-                            {employmentType === "fulltime" && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleCellEdit(level, payPoint, permanentRate.toString())}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <DollarSign className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  if (payScalesLoading || scHADSLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex items-center space-x-2">
@@ -254,176 +213,235 @@ export default function PayScaleManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">ScHADS Pay Scale Management</h2>
-          <p className="text-slate-600">Manage award wage rates for different employment types</p>
+          <h2 className="text-2xl font-bold">Pay Scale Management</h2>
+          <p className="text-muted-foreground">
+            Manage ScHADS award rates by employment type
+          </p>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <DollarSign className="h-5 w-5 text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-600">2024-25 Award Rates</span>
-          </div>
-          <Button
-            onClick={() => resetPayScalesMutation.mutate()}
-            disabled={resetPayScalesMutation.isPending}
-            variant="outline"
-            size="sm"
-          >
-            {resetPayScalesMutation.isPending ? (
-              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Reset to Defaults
-          </Button>
-        </div>
+        <Button
+          onClick={() => resetAllScalesMutation.mutate()}
+          disabled={resetAllScalesMutation.isPending}
+          variant="outline"
+          className="flex items-center space-x-2"
+        >
+          {resetAllScalesMutation.isPending ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          <span>Reset All to ScHADS</span>
+        </Button>
       </div>
+
+      {/* Employment Type Tabs */}
+      <Tabs value={activeEmploymentType} onValueChange={setActiveEmploymentType}>
+        <TabsList className="grid w-full grid-cols-3">
+          {EMPLOYMENT_TYPES.map((type) => {
+            const Icon = type.icon;
+            return (
+              <TabsTrigger 
+                key={type.value} 
+                value={type.value}
+                className="flex items-center space-x-2"
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{type.label}</span>
+                <span className="sm:hidden">{type.label.split('-')[0]}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        {EMPLOYMENT_TYPES.map((employmentType) => (
+          <TabsContent key={employmentType.value} value={employmentType.value}>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center space-x-2">
+                  <employmentType.icon className="h-5 w-5" />
+                  <CardTitle>{employmentType.label} Employees</CardTitle>
+                </div>
+                <CardDescription>
+                  {employmentType.description}
+                  {employmentType.multiplier !== 1.0 && (
+                    <span className="ml-2 text-amber-600 font-medium">
+                      ({((employmentType.multiplier - 1) * 100).toFixed(0)}% loading applied)
+                    </span>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-3 font-medium">Level</th>
+                        <th className="text-left p-3 font-medium">Pay Point 1</th>
+                        <th className="text-left p-3 font-medium">Pay Point 2</th>
+                        <th className="text-left p-3 font-medium">Pay Point 3</th>
+                        <th className="text-left p-3 font-medium">Pay Point 4</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[1, 2, 3, 4].map((level) => (
+                        <tr key={level} className="border-b hover:bg-muted/50">
+                          <td className="p-3 font-medium">Level {level}</td>
+                          {[1, 2, 3, 4].map((payPoint) => {
+                            const key = `${level}-${payPoint}`;
+                            const isEditing = editingRates[key] !== undefined;
+                            const currentRate = getCurrentRate(level, payPoint);
+                            const scHADSRate = getScHADSRate(level, payPoint);
+                            const expectedRate = getAdjustedRate(scHADSRate, employmentType.value);
+                            const isModified = isOverridden(level, payPoint);
+
+                            return (
+                              <td key={payPoint} className="p-3">
+                                <div className="space-y-2">
+                                  <div className="flex items-center space-x-2">
+                                    {isEditing ? (
+                                      <div className="flex items-center space-x-1">
+                                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={editingRates[key]}
+                                          onChange={(e) => handleRateChange(level, payPoint, e.target.value)}
+                                          className="w-20 h-8"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              handleSaveRate(level, payPoint);
+                                            } else if (e.key === 'Escape') {
+                                              setEditingRates(prev => {
+                                                const updated = { ...prev };
+                                                delete updated[key];
+                                                return updated;
+                                              });
+                                            }
+                                          }}
+                                          autoFocus
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center space-x-1">
+                                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                        <span
+                                          className="cursor-pointer hover:bg-muted px-2 py-1 rounded"
+                                          onClick={() => handleRateChange(level, payPoint, currentRate)}
+                                        >
+                                          {parseFloat(currentRate).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    
+                                    {isModified && !isEditing && (
+                                      <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+                                        Override
+                                      </Badge>
+                                    )}
+                                  </div>
+
+                                  {isEditing && (
+                                    <div className="flex space-x-1">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSaveRate(level, payPoint)}
+                                        disabled={updatePayScaleMutation.isPending}
+                                      >
+                                        <CheckCircle className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setEditingRates(prev => {
+                                            const updated = { ...prev };
+                                            delete updated[key];
+                                            return updated;
+                                          });
+                                        }}
+                                      >
+                                        <AlertCircle className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  )}
+
+                                  {!isEditing && (
+                                    <div className="flex space-x-1">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleRateChange(level, payPoint, currentRate)}
+                                      >
+                                        Edit
+                                      </Button>
+                                      {isModified && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => handleResetToDefault(level, payPoint)}
+                                          disabled={resetToDefaultMutation.isPending}
+                                        >
+                                          Reset
+                                        </Button>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  <div className="text-xs text-muted-foreground">
+                                    ScHADS: ${expectedRate.toFixed(2)}
+                                  </div>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
 
       {/* Legend */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Pay Scale Legend</CardTitle>
+          <CardTitle className="flex items-center space-x-2">
+            <Briefcase className="h-5 w-5" />
+            <span>Pay Scale Legend</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-              <span>ScHADS Default Rate</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-amber-500 rounded"></div>
-              <span>Manual Override Active</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
-              <span>Click to edit rate</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RefreshCw className="h-4 w-4 text-blue-600" />
-              <span>Reset to default</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Employment Type Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>ScHADS Employment Types</CardTitle>
-          <CardDescription>
-            Social, Community, Home Care and Disability Services Industry Award 2010
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Briefcase className="h-5 w-5 text-blue-600" />
-                <h3 className="font-semibold text-blue-900">Full-Time Permanent</h3>
-              </div>
-              <p className="text-sm text-blue-700">
-                Standard ScHADS rates for full-time ongoing employees. Editable with manual override.
-              </p>
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                Default
+              </Badge>
+              <span className="text-sm">ScHADS standard rate</span>
             </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <UserCheck className="h-5 w-5 text-green-600" />
-                <h3 className="font-semibold text-green-900">Part-Time Permanent</h3>
-              </div>
-              <p className="text-sm text-green-700">
-                Same rates as full-time permanent under ScHADS award structure.
-              </p>
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+                Override
+              </Badge>
+              <span className="text-sm">Manual rate override</span>
             </div>
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-5 w-5 text-orange-600" />
-                <h3 className="font-semibold text-orange-900">Casual Employees</h3>
-              </div>
-              <p className="text-sm text-orange-700">
-                Permanent rates plus 25% casual loading as per ScHADS award.
-              </p>
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                Loading
+              </Badge>
+              <span className="text-sm">Casual 25% loading applied</span>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Pay Scale Matrix with Employment Type Tabs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Award Wage Matrix - ScHADS 2024-25</CardTitle>
-          <CardDescription>
-            Level 1-4, Pay Point 1-4 structure. Full-time rates are editable, others calculated automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="fulltime" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="fulltime" className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4" />
-                Full-Time Permanent
-              </TabsTrigger>
-              <TabsTrigger value="parttime" className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4" />
-                Part-Time Permanent
-              </TabsTrigger>
-              <TabsTrigger value="casual" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Casual (+25%)
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="fulltime">
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Briefcase className="h-5 w-5 text-blue-600" />
-                    <h3 className="font-semibold text-blue-900">Full-Time Permanent Employee Rates</h3>
-                  </div>
-                  <p className="text-sm text-blue-700">
-                    Standard ScHADS award rates for full-time ongoing employees. 
-                    Click any rate to edit with manual override capability.
-                  </p>
-                </div>
-                <div className="group">
-                  {renderPayScaleTable("fulltime")}
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="parttime">
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <UserCheck className="h-5 w-5 text-green-600" />
-                    <h3 className="font-semibold text-green-900">Part-Time Permanent Employee Rates</h3>
-                  </div>
-                  <p className="text-sm text-green-700">
-                    Under the ScHADS award, part-time permanent employees receive the same hourly rates as full-time permanent employees.
-                    These rates are automatically synchronized with the full-time rates.
-                  </p>
-                </div>
-                {renderPayScaleTable("parttime")}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="casual">
-              <div className="space-y-4">
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users className="h-5 w-5 text-orange-600" />
-                    <h3 className="font-semibold text-orange-900">Casual Employee Rates (25% Loading)</h3>
-                  </div>
-                  <p className="text-sm text-orange-700">
-                    Casual employees receive the permanent employee rate plus 25% casual loading as mandated by the ScHADS award.
-                    These rates are automatically calculated from the permanent rates.
-                  </p>
-                </div>
-                {renderPayScaleTable("casual")}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className="text-sm text-muted-foreground">
+            Click on any rate to edit. Casual rates automatically include 25% loading on top of ScHADS rates.
+            Use the Reset button to restore ScHADS default rates for individual positions.
+          </div>
         </CardContent>
       </Card>
     </div>
