@@ -191,6 +191,15 @@ export interface IStorage {
   updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<PayScale>;
   resetPayScalesToDefault(tenantId: number): Promise<void>;
 
+  // Notifications
+  getNotifications(userId: number, tenantId: number): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: number, tenantId: number): Promise<number>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number, userId: number, tenantId: number): Promise<boolean>;
+  markAllNotificationsAsRead(userId: number, tenantId: number): Promise<boolean>;
+  deleteNotification(id: number, userId: number, tenantId: number): Promise<boolean>;
+  createBulkNotifications(notifications: InsertNotification[]): Promise<Notification[]>;
+
   // Session store
   sessionStore: any;
 }
@@ -1763,6 +1772,82 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(cancellationRequests.id, id), eq(cancellationRequests.tenantId, tenantId)))
       .returning();
     return updatedRequest;
+  }
+
+  // Notification methods
+  async getNotifications(userId: number, tenantId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.tenantId, tenantId)
+      ))
+      .orderBy(desc(notifications.createdAt))
+      .limit(50);
+  }
+
+  async getUnreadNotificationCount(userId: number, tenantId: number): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.tenantId, tenantId),
+        eq(notifications.isRead, false)
+      ));
+    
+    return result[0]?.count || 0;
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [created] = await db.insert(notifications).values(notification).returning();
+    return created;
+  }
+
+  async markNotificationAsRead(id: number, userId: number, tenantId: number): Promise<boolean> {
+    const result = await db.update(notifications)
+      .set({ 
+        isRead: true, 
+        readAt: new Date() 
+      })
+      .where(and(
+        eq(notifications.id, id),
+        eq(notifications.userId, userId),
+        eq(notifications.tenantId, tenantId)
+      ));
+    
+    return (result.rowCount || 0) > 0;
+  }
+
+  async markAllNotificationsAsRead(userId: number, tenantId: number): Promise<boolean> {
+    const result = await db.update(notifications)
+      .set({ 
+        isRead: true, 
+        readAt: new Date() 
+      })
+      .where(and(
+        eq(notifications.userId, userId),
+        eq(notifications.tenantId, tenantId),
+        eq(notifications.isRead, false)
+      ));
+    
+    return (result.rowCount || 0) > 0;
+  }
+
+  async deleteNotification(id: number, userId: number, tenantId: number): Promise<boolean> {
+    const result = await db.delete(notifications)
+      .where(and(
+        eq(notifications.id, id),
+        eq(notifications.userId, userId),
+        eq(notifications.tenantId, tenantId)
+      ));
+    
+    return (result.rowCount || 0) > 0;
+  }
+
+  async createBulkNotifications(notificationList: InsertNotification[]): Promise<Notification[]> {
+    if (notificationList.length === 0) return [];
+    
+    const created = await db.insert(notifications).values(notificationList).returning();
+    return created;
   }
 }
 
