@@ -90,7 +90,7 @@
   body {
     @apply font-sans antialiased bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-foreground;
     background-attachment: fixed;
-    color: white;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   /* Global text color inheritance for better visibility */
@@ -98,14 +98,14 @@
     color: inherit;
   }
   
-  /* Ensure all text elements have high contrast */
+  /* Ensure all text elements have elegant gold tones */
   p, span, div, h1, h2, h3, h4, h5, h6 {
-    color: rgb(248 250 252); /* slate-50 */
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   /* Specific overrides for muted text */
   .text-muted, .muted {
-    color: rgb(226 232 240) !important; /* slate-200 */
+    color: rgb(245 158 11) !important; /* amber-500 */
   }
 
   /* Modern scrollbars */
@@ -154,7 +154,8 @@
   }
   
   .modern-input {
-    @apply bg-white/5 border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-slate-300 focus:bg-white/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/25 transition-all duration-300;
+    @apply bg-white/5 border border-white/20 rounded-2xl px-4 py-3 placeholder-yellow-600 focus:bg-white/10 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/25 transition-all duration-300;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   .modern-card {
@@ -179,11 +180,13 @@
   }
   
   .modern-table th {
-    @apply bg-gradient-to-r from-slate-800/60 to-slate-900/60 px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider border-b border-white/10;
+    @apply bg-gradient-to-r from-slate-800/60 to-slate-900/60 px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider border-b border-white/10;
+    color: rgb(252 211 77); /* gold-300 */
   }
   
   .modern-table td {
-    @apply px-6 py-4 text-sm text-white border-b border-white/5;
+    @apply px-6 py-4 text-sm border-b border-white/5;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   .modern-table tr:hover {
@@ -206,83 +209,87 @@
     @apply modern-card border-2 border-cyan-500/20 shadow-2xl shadow-cyan-500/10;
   }
 
-  /* AI Output and Content Areas - High Visibility */
+  /* AI Output and Content Areas - Gold Visibility */
   .ai-output, .ai-content, .generated-content {
-    @apply text-white bg-slate-900/50 p-4 rounded-lg border border-slate-600;
+    @apply bg-slate-900/50 p-4 rounded-lg border border-slate-600;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   .ai-output p, .ai-content p, .generated-content p {
-    @apply text-slate-50 leading-relaxed;
+    @apply leading-relaxed;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   .ai-output ul, .ai-content ul, .generated-content ul {
-    @apply text-slate-100 space-y-1;
+    @apply space-y-1;
+    color: rgb(252 211 77); /* gold-300 */
   }
   
   .ai-output li, .ai-content li, .generated-content li {
-    @apply text-slate-50;
+    color: rgb(250 202 21); /* gold-400 */
   }
 
-  /* Form Labels and Text - Enhanced Readability */
+  /* Form Labels and Text - Gold Elegance */
   label {
-    @apply text-white font-medium;
+    @apply font-medium;
+    color: rgb(252 211 77); /* gold-300 */
   }
   
   .form-description, .text-sm {
-    @apply text-slate-100;
+    color: rgb(245 158 11); /* amber-500 */
   }
   
   /* Card Content Text */
   .card-content p, .card-body p {
-    @apply text-white;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   .card-content span, .card-body span {
-    @apply text-slate-100;
+    color: rgb(252 211 77); /* gold-300 */
   }
 }
 
 @layer utilities {
-  /* High Contrast Text Utilities for Readability */
+  /* Gold Variant Text Utilities for Elegance */
   .text-high-contrast {
-    @apply text-white;
+    color: rgb(252 211 77); /* gold-300 */
   }
   
   .text-medium-contrast {
-    @apply text-slate-100;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   .text-readable {
-    @apply text-slate-50;
+    color: rgb(250 202 21); /* gold-400 */
   }
   
   .text-muted-readable {
-    @apply text-slate-200;
+    color: rgb(245 158 11); /* amber-500 */
   }
   
-  /* Override low contrast text colors globally */
+  /* Override low contrast text colors with gold variants */
   .text-slate-400 {
-    @apply text-slate-200 !important;
+    color: rgb(245 158 11) !important; /* amber-500 */
   }
   
   .text-slate-500 {
-    @apply text-slate-100 !important;
+    color: rgb(250 202 21) !important; /* gold-400 */
   }
   
   .text-slate-600 {
-    @apply text-white !important;
+    color: rgb(252 211 77) !important; /* gold-300 */
   }
   
   .text-gray-400 {
-    @apply text-slate-200 !important;
+    color: rgb(245 158 11) !important; /* amber-500 */
   }
   
   .text-gray-500 {
-    @apply text-slate-100 !important;
+    color: rgb(250 202 21) !important; /* gold-400 */
   }
   
   .text-gray-600 {
-    @apply text-white !important;
+    color: rgb(252 211 77) !important; /* gold-300 */
   }
 
   .scrollbar-hide {
