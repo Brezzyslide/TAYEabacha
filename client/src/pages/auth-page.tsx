@@ -48,46 +48,49 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen flex bg-gradient-to-br from-background via-muted to-accent/10">
       {/* Skip to content for accessibility */}
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
       
-      {/* Left side - Professional hero section */}
-      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-12 bg-gradient-to-br from-blue-600 to-blue-800 text-white">
-        <div className="max-w-md">
-          <div className="mb-8">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
-              <Building className="h-8 w-8 text-white" />
+      {/* Left side - Sophisticated hero section with TUSK branding */}
+      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-12 bg-gradient-to-br from-primary via-primary/90 to-accent text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 backdrop-blur-3xl"></div>
+        <div className="relative z-10 max-w-md">
+          <div className="mb-10">
+            <div className="w-20 h-20 bg-gradient-to-br from-secondary to-accent rounded-3xl flex items-center justify-center mb-8 shadow-2xl glass-effect">
+              <span className="text-2xl font-bold text-white">AI+</span>
             </div>
-            <h1 className="text-4xl font-bold mb-4">NeedCareAI+</h1>
-            <p className="text-xl text-blue-100 mb-6">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white to-secondary/80 bg-clip-text text-transparent">
+              NeedCareAI+
+            </h1>
+            <p className="text-xl text-white/90 mb-8 font-medium">
               Built with Positive Behaviour in Mind — not just Buttons.
             </p>
           </div>
           
-          <div className="space-y-4 text-blue-100">
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
-              <p>Care that starts with listening, not loading.</p>
+          <div className="space-y-6 text-white/90">
+            <div className="flex items-start space-x-4">
+              <div className="w-3 h-3 bg-gradient-to-r from-secondary to-accent rounded-full mt-2 flex-shrink-0 shadow-lg"></div>
+              <p className="text-lg">Care that starts with listening, not loading.</p>
             </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
-              <p>NDIS reporting and compliance made easy.</p>
+            <div className="flex items-start space-x-4">
+              <div className="w-3 h-3 bg-gradient-to-r from-secondary to-accent rounded-full mt-2 flex-shrink-0 shadow-lg"></div>
+              <p className="text-lg">NDIS reporting and compliance made easy.</p>
             </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
-              <p>This system was designed by disability support workers — not tech bros.</p>
+            <div className="flex items-start space-x-4">
+              <div className="w-3 h-3 bg-gradient-to-r from-secondary to-accent rounded-full mt-2 flex-shrink-0 shadow-lg"></div>
+              <p className="text-lg">This system was designed by disability support workers — not tech bros.</p>
             </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-300 rounded-full mt-2 flex-shrink-0"></div>
-              <p>From shift to shift, we've got your back.</p>
+            <div className="flex items-start space-x-4">
+              <div className="w-3 h-3 bg-gradient-to-r from-secondary to-accent rounded-full mt-2 flex-shrink-0 shadow-lg"></div>
+              <p className="text-lg">From shift to shift, we've got your back.</p>
             </div>
           </div>
           
-          <div className="mt-12 pt-8 border-t border-blue-400/30">
-            <p className="text-sm text-blue-200 font-medium">
+          <div className="mt-16 pt-8 border-t border-white/20">
+            <p className="text-sm text-white/80 font-semibold tracking-wide">
               Every Shift Structured & Safe • Participant-Centric Design
             </p>
           </div>
@@ -108,11 +111,13 @@ export default function AuthPage() {
             <p className="text-muted-foreground mt-2">Built with Positive Behaviour in Mind</p>
           </div>
 
-          <Card className="card-elevated-lg border-0 shadow-xl">
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-semibold text-foreground">Welcome to your NeedCareAI+ Workspace</CardTitle>
-              <CardDescription className="text-base text-muted-foreground">
-                Sign in to access your care management platform
+          <Card className="card-premium shadow-2xl border-0">
+            <CardHeader className="text-center pb-6">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Welcome to your NeedCareAI+ Workspace
+              </CardTitle>
+              <CardDescription className="text-lg text-muted-foreground mt-4">
+                Sign in to access your sophisticated care management platform
               </CardDescription>
             </CardHeader>
             <CardContent id="main-content" className="pt-6">
@@ -126,7 +131,7 @@ export default function AuthPage() {
                     {...loginForm.register("username")}
                     placeholder="Enter your username or email"
                     disabled={loginMutation.isPending}
-                    className="h-11 text-base border-2 focus:border-primary transition-colors"
+                    className="h-14 text-base border-2 focus:border-primary transition-all duration-300 rounded-2xl bg-white/50 backdrop-blur-sm focus:bg-white focus:shadow-lg"
                     autoComplete="username"
                     required
                   />
@@ -148,7 +153,7 @@ export default function AuthPage() {
                     {...loginForm.register("password")}
                     placeholder="Enter your password"
                     disabled={loginMutation.isPending}
-                    className="h-11 text-base border-2 focus:border-primary transition-colors"
+                    className="h-14 text-base border-2 focus:border-primary transition-all duration-300 rounded-2xl bg-white/50 backdrop-blur-sm focus:bg-white focus:shadow-lg"
                     autoComplete="current-password"
                     required
                   />
@@ -169,16 +174,18 @@ export default function AuthPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full h-11 text-base font-medium btn-gradient hover:shadow-lg transition-all duration-200" 
+                  className="w-full h-16 text-lg font-semibold btn-gradient rounded-2xl tracking-wide" 
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Signing in...
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Signing in...</span>
                     </div>
                   ) : (
-                    "Access Your Workspace"
+                    <span className="bg-gradient-to-r from-white to-secondary/20 bg-clip-text text-transparent font-bold">
+                      Access Your Workspace
+                    </span>
                   )}
                 </Button>
               </form>

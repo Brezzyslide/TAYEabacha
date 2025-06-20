@@ -3,52 +3,52 @@
 @tailwind utilities;
 
 :root {
-  /* NeedCareAI+ Professional Theme */
-  --background: hsl(255, 255, 255);
-  --foreground: hsl(15, 23, 42);
-  --muted: hsl(248, 250, 252);
-  --muted-foreground: hsl(100, 116, 139);
-  --popover: hsl(255, 255, 255);
-  --popover-foreground: hsl(15, 23, 42);
-  --card: hsl(255, 255, 255);
-  --card-foreground: hsl(15, 23, 42);
-  --border: hsl(226, 232, 240);
-  --input: hsl(226, 232, 240);
-  --primary: hsl(30, 64, 175); /* Professional Blue */
-  --primary-foreground: hsl(248, 250, 252);
-  --secondary: hsl(241, 245, 249);
-  --secondary-foreground: hsl(51, 65, 85);
-  --accent: hsl(239, 246, 255);
-  --accent-foreground: hsl(30, 64, 175);
-  --destructive: hsl(239, 68, 68);
-  --destructive-foreground: hsl(248, 250, 252);
-  --ring: hsl(30, 64, 175);
-  --radius: 0.5rem;
+  /* TUSK/MH&R Modern Theme - Extracted from Logo */
+  --background: hsl(46, 66%, 89%); /* Warm cream #F4E4A6 */
+  --foreground: hsl(210, 35%, 31%); /* Deep navy #2B4B73 */
+  --muted: hsl(46, 56%, 85%);
+  --muted-foreground: hsl(210, 25%, 45%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(210, 35%, 31%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(210, 35%, 31%);
+  --border: hsl(46, 36%, 75%);
+  --input: hsl(0, 0%, 100%);
+  --primary: hsl(210, 35%, 31%); /* Deep Navy #2B4B73 */
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(38, 40%, 52%); /* Warm Gold #B8944D */
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(85, 15%, 51%); /* Sage Green #7A8471 */
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(210, 35%, 31%);
+  --radius: 1rem; /* Increased for modern curved look */
   
-  /* Sidebar with NeedCareAI+ branding */
-  --sidebar-background: hsl(255, 255, 255);
-  --sidebar-foreground: hsl(15, 23, 42);
-  --sidebar-primary: hsl(30, 64, 175);
-  --sidebar-primary-foreground: hsl(248, 250, 252);
-  --sidebar-accent: hsl(239, 246, 255);
-  --sidebar-accent-foreground: hsl(30, 64, 175);
-  --sidebar-border: hsl(226, 232, 240);
-  --sidebar-ring: hsl(30, 64, 175);
+  /* Sidebar with TUSK branding */
+  --sidebar-background: hsl(210, 35%, 31%); /* Deep Navy */
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(38, 40%, 52%); /* Gold accent */
+  --sidebar-primary-foreground: hsl(210, 35%, 31%);
+  --sidebar-accent: hsl(85, 15%, 51%); /* Sage Green */
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(210, 25%, 40%);
+  --sidebar-ring: hsl(38, 40%, 52%);
   
-  /* Professional Chart Colors */
-  --chart-1: hsl(59, 130, 246);
-  --chart-2: hsl(16, 185, 129);
-  --chart-3: hsl(245, 101, 101);
-  --chart-4: hsl(251, 191, 36);
-  --chart-5: hsl(168, 85, 247);
+  /* Modern Chart Colors */
+  --chart-1: hsl(210, 35%, 31%); /* Navy */
+  --chart-2: hsl(38, 40%, 52%); /* Gold */
+  --chart-3: hsl(85, 15%, 51%); /* Sage */
+  --chart-4: hsl(46, 66%, 89%); /* Cream */
+  --chart-5: hsl(210, 25%, 45%); /* Light Navy */
   
-  /* NeedCareAI+ Brand Colors */
-  --brand-primary: hsl(30, 64, 175);
-  --brand-secondary: hsl(51, 65, 85);
-  --brand-accent: hsl(16, 185, 129);
-  --success: hsl(16, 185, 129);
-  --warning: hsl(251, 191, 36);
-  --info: hsl(59, 130, 246);
+  /* Brand Colors from Logo */
+  --brand-primary: hsl(210, 35%, 31%); /* Deep Navy */
+  --brand-secondary: hsl(38, 40%, 52%); /* Warm Gold */
+  --brand-accent: hsl(85, 15%, 51%); /* Sage Green */
+  --success: hsl(142, 71%, 45%);
+  --warning: hsl(38, 40%, 52%); /* Gold for warnings */
+  --info: hsl(210, 35%, 31%); /* Navy for info */
 }
 
 .dark {
@@ -156,20 +156,87 @@
   .font-large { font-size: 1.125rem; }
   .font-xl { font-size: 1.25rem; }
   
-  /* Professional Card Shadows */
+  /* Modern Card System */
   .card-elevated {
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 4px 20px rgba(43, 75, 115, 0.08);
+    border-radius: 1.5rem;
+    border: 1px solid hsl(var(--border));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .card-elevated-lg {
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  .card-elevated:hover {
+    box-shadow: 0 8px 32px rgba(43, 75, 115, 0.12);
+    transform: translateY(-2px);
   }
   
-  /* Professional Button Gradients */
+  .card-elevated-lg {
+    box-shadow: 0 8px 32px rgba(43, 75, 115, 0.12);
+    border-radius: 2rem;
+    border: 1px solid hsl(var(--border));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-elevated-lg:hover {
+    box-shadow: 0 16px 48px rgba(43, 75, 115, 0.16);
+    transform: translateY(-4px);
+  }
+  
+  /* Premium Card with Gradient Border */
+  .card-premium {
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent))) border-box;
+    border: 2px solid transparent;
+    border-radius: 2rem;
+    box-shadow: 0 12px 40px rgba(43, 75, 115, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-premium:hover {
+    box-shadow: 0 20px 60px rgba(43, 75, 115, 0.2);
+    transform: translateY(-3px);
+  }
+  
+  /* Modern Button Styles with TUSK Colors */
   .btn-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    box-shadow: 0 8px 24px hsl(var(--primary) / 0.2);
+    border: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .btn-gradient:hover {
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.9) 0%, hsl(var(--primary) / 0.7) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.9) 0%, hsl(var(--secondary) / 0.9) 100%);
+    box-shadow: 0 12px 32px hsl(var(--primary) / 0.3);
+    transform: translateY(-2px);
+  }
+  
+  /* Sleek Secondary Button */
+  .btn-sleek-secondary {
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent) / 0.8) 100%);
+    box-shadow: 0 6px 20px hsl(var(--accent) / 0.2);
+    border: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-sleek-secondary:hover {
+    box-shadow: 0 10px 28px hsl(var(--accent) / 0.3);
+    transform: translateY(-1px);
+  }
+  
+  /* Modern Glass Effect */
+  .glass-effect {
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Floating Action Button */
+  .fab {
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    box-shadow: 0 6px 20px hsl(var(--primary) / 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .fab:hover {
+    box-shadow: 0 8px 28px hsl(var(--primary) / 0.4);
+    transform: scale(1.1);
   }
   
   /* Data Table Enhancements */
