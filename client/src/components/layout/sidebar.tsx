@@ -46,6 +46,7 @@ const shiftManagementNavigation = [
 const staffManagementNavigation = [
   { name: "Roles & Permissions", href: "/roles-permissions", icon: Shield },
   { name: "User Management", href: "/staff", icon: Users },
+  { name: "Manage Staff Availability", href: "/manage-staff-availability", icon: Clock },
 ];
 
 const companyManagementNavigation = [

@@ -155,11 +155,28 @@ export default function AvailabilityEditor() {
       {/* Current Availability Status */}
       {currentAvailability && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-5 w-5" />
               <span>Current Availability Status</span>
             </CardTitle>
+            <div className="flex items-center space-x-2">
+              <Badge variant={currentAvailability.overrideByManager ? "default" : "secondary"}>
+                {currentAvailability.overrideByManager ? "Approved" : "Pending Review"}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Load current availability into editor
+                  setSelectedDays(Object.keys(currentAvailability.availability));
+                  setDayAvailability(currentAvailability.availability);
+                  form.setValue("availability", currentAvailability.availability);
+                }}
+              >
+                Edit
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
@@ -180,6 +197,11 @@ export default function AvailabilityEditor() {
                 </div>
               ))}
             </div>
+            {currentAvailability.patternName && (
+              <div className="mt-3 text-sm text-gray-600">
+                Saved as pattern: <span className="font-medium">{currentAvailability.patternName}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -317,7 +339,10 @@ export default function AvailabilityEditor() {
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {submitAvailabilityMutation.isPending ? "Submitting..." : "Submit Availability"}
+                  {submitAvailabilityMutation.isPending ? 
+                    (currentAvailability ? "Updating..." : "Submitting...") : 
+                    (currentAvailability ? "Update Availability" : "Submit Availability")
+                  }
                 </Button>
               </div>
             </form>

@@ -1267,7 +1267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isQuickPattern,
         userId: req.user.id,
         tenantId: req.user.tenantId
-      });
+      }, req.user.tenantId);
       
       // Log activity
       await storage.createActivityLog({
