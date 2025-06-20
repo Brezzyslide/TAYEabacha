@@ -660,6 +660,22 @@ export const userRoleAssignments = pgTable("user_role_assignments", {
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
 });
 
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // "admin_request", "shift_assignment", "due_task", "message", "available_shift", "timesheet_submitted"
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  resourceType: text("resource_type"), // "shift", "message", "timesheet", "case_note", etc.
+  resourceId: integer("resource_id"), // ID of the related resource
+  isRead: boolean("is_read").default(false).notNull(),
+  priority: text("priority").default("normal").notNull(), // "low", "normal", "high", "urgent"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  readAt: timestamp("read_at"),
+});
+
 // Relations for new tables
 export const customRolesRelations = relations(customRoles, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -704,6 +720,17 @@ export const userRoleAssignmentsRelations = relations(userRoleAssignments, ({ on
   }),
   tenant: one(tenants, {
     fields: [userRoleAssignments.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [notifications.tenantId],
     references: [tenants.id],
   }),
 }));
@@ -867,6 +894,12 @@ export const insertUserRoleAssignmentSchema = createInsertSchema(userRoleAssignm
   expiresAt: z.date().optional(),
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  readAt: true,
+});
+
 // Types
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
@@ -927,6 +960,9 @@ export type InsertCustomPermission = z.infer<typeof insertCustomPermissionSchema
 
 export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
 export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // Relations for cancellation tables
 export const shiftCancellationsRelations = relations(shiftCancellations, ({ one }) => ({

@@ -2,7 +2,7 @@ import {
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
-  shiftCancellations, cancellationRequests, payScales,
+  shiftCancellations, cancellationRequests, payScales, notifications,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -16,7 +16,7 @@ import {
   type NdisPricing, type InsertNdisPricing, type NdisBudget, type InsertNdisBudget,
   type BudgetTransaction, type InsertBudgetTransaction, type CareSupportPlan, type InsertCareSupportPlan,
   type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest,
-  type PayScale
+  type PayScale, type Notification, type InsertNotification
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
