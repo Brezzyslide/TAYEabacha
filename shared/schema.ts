@@ -131,6 +131,48 @@ export const shifts = pgTable("shifts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Shift Cancellations table for audit logging
+export const shiftCancellations = pgTable("shift_cancellations", {
+  id: serial("id").primaryKey(),
+  shiftId: integer("shift_id").notNull().references(() => shifts.id),
+  cancelledByUserId: integer("cancelled_by_user_id").notNull().references(() => users.id),
+  cancelledByUserName: text("cancelled_by_user_name").notNull(),
+  shiftTitle: text("shift_title"),
+  shiftStartTime: timestamp("shift_start_time").notNull(),
+  shiftEndTime: timestamp("shift_end_time"),
+  clientName: text("client_name"),
+  cancellationType: text("cancellation_type").notNull(), // "immediate" or "requested"
+  cancellationReason: text("cancellation_reason"),
+  hoursNotice: integer("hours_notice").notNull(), // Hours between cancellation and shift start
+  approvedByUserId: integer("approved_by_user_id").references(() => users.id), // For requested cancellations
+  approvedByUserName: text("approved_by_user_name"),
+  approvedAt: timestamp("approved_at"),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Cancellation Requests table for pending approvals
+export const cancellationRequests = pgTable("cancellation_requests", {
+  id: serial("id").primaryKey(),
+  shiftId: integer("shift_id").notNull().references(() => shifts.id),
+  requestedByUserId: integer("requested_by_user_id").notNull().references(() => users.id),
+  requestedByUserName: text("requested_by_user_name").notNull(),
+  shiftTitle: text("shift_title"),
+  shiftStartTime: timestamp("shift_start_time").notNull(),
+  shiftEndTime: timestamp("shift_end_time"),
+  clientName: text("client_name"),
+  requestReason: text("request_reason"),
+  hoursNotice: integer("hours_notice").notNull(),
+  status: text("status").notNull().default("pending"), // "pending", "approved", "denied"
+  reviewedByUserId: integer("reviewed_by_user_id").references(() => users.id),
+  reviewedByUserName: text("reviewed_by_user_name"),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Staff Availability table
 export const staffAvailability = pgTable("staff_availability", {
   id: serial("id").primaryKey(),
@@ -878,6 +920,63 @@ export type InsertCustomPermission = z.infer<typeof insertCustomPermissionSchema
 
 export type UserRoleAssignment = typeof userRoleAssignments.$inferSelect;
 export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSchema>;
+
+// Relations for cancellation tables
+export const shiftCancellationsRelations = relations(shiftCancellations, ({ one }) => ({
+  shift: one(shifts, {
+    fields: [shiftCancellations.shiftId],
+    references: [shifts.id],
+  }),
+  cancelledByUser: one(users, {
+    fields: [shiftCancellations.cancelledByUserId],
+    references: [users.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [shiftCancellations.approvedByUserId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [shiftCancellations.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const cancellationRequestsRelations = relations(cancellationRequests, ({ one }) => ({
+  shift: one(shifts, {
+    fields: [cancellationRequests.shiftId],
+    references: [shifts.id],
+  }),
+  requestedByUser: one(users, {
+    fields: [cancellationRequests.requestedByUserId],
+    references: [users.id],
+  }),
+  reviewedByUser: one(users, {
+    fields: [cancellationRequests.reviewedByUserId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [cancellationRequests.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+// Shift Cancellation schemas
+export const insertShiftCancellationSchema = createInsertSchema(shiftCancellations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCancellationRequestSchema = createInsertSchema(cancellationRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ShiftCancellation = typeof shiftCancellations.$inferSelect;
+export type InsertShiftCancellation = z.infer<typeof insertShiftCancellationSchema>;
+
+export type CancellationRequest = typeof cancellationRequests.$inferSelect;
+export type InsertCancellationRequest = z.infer<typeof insertCancellationRequestSchema>;
 
 // Task Board Tasks table
 export const taskBoardTasks = pgTable("task_board_tasks", {
