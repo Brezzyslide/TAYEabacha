@@ -2,6 +2,7 @@ import {
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
+  shiftCancellations, cancellationRequests,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -13,7 +14,8 @@ import {
   type CustomRole, type InsertCustomRole, type CustomPermission, type InsertCustomPermission,
   type UserRoleAssignment, type InsertUserRoleAssignment, type TaskBoardTask, type InsertTaskBoardTask,
   type NdisPricing, type InsertNdisPricing, type NdisBudget, type InsertNdisBudget,
-  type BudgetTransaction, type InsertBudgetTransaction, type CareSupportPlan, type InsertCareSupportPlan
+  type BudgetTransaction, type InsertBudgetTransaction, type CareSupportPlan, type InsertCareSupportPlan,
+  type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -166,6 +168,22 @@ export interface IStorage {
   createCareSupportPlan(plan: InsertCareSupportPlan): Promise<CareSupportPlan>;
   updateCareSupportPlan(id: number, plan: Partial<InsertCareSupportPlan>, tenantId: number): Promise<CareSupportPlan | undefined>;
   deleteCareSupportPlan(id: number, tenantId: number): Promise<boolean>;
+
+  // Shift Cancellations
+  getShiftCancellations(tenantId: number): Promise<ShiftCancellation[]>;
+  getShiftCancellation(id: number, tenantId: number): Promise<ShiftCancellation | undefined>;
+  createShiftCancellation(cancellation: InsertShiftCancellation): Promise<ShiftCancellation>;
+  getShiftCancellationsForExport(tenantId: number, filters: {
+    staffId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<ShiftCancellation[]>;
+
+  // Cancellation Requests
+  getCancellationRequests(tenantId: number): Promise<CancellationRequest[]>;
+  getCancellationRequest(id: number, tenantId: number): Promise<CancellationRequest | undefined>;
+  createCancellationRequest(request: InsertCancellationRequest): Promise<CancellationRequest>;
+  updateCancellationRequest(id: number, request: Partial<InsertCancellationRequest>, tenantId: number): Promise<CancellationRequest | undefined>;
 
   // Session store
   sessionStore: any;
@@ -1601,6 +1619,74 @@ export class DatabaseStorage implements IStorage {
   async createNdisBudget(budgetData: any): Promise<NdisBudget> {
     const [budget] = await db.insert(ndisBudgets).values(budgetData).returning();
     return budget;
+  }
+
+  // Shift Cancellation methods
+  async getShiftCancellations(tenantId: number): Promise<ShiftCancellation[]> {
+    return await db.select().from(shiftCancellations)
+      .where(eq(shiftCancellations.tenantId, tenantId))
+      .orderBy(desc(shiftCancellations.createdAt));
+  }
+
+  async getShiftCancellation(id: number, tenantId: number): Promise<ShiftCancellation | undefined> {
+    const [cancellation] = await db.select().from(shiftCancellations)
+      .where(and(eq(shiftCancellations.id, id), eq(shiftCancellations.tenantId, tenantId)));
+    return cancellation;
+  }
+
+  async createShiftCancellation(cancellation: InsertShiftCancellation): Promise<ShiftCancellation> {
+    const [newCancellation] = await db.insert(shiftCancellations).values(cancellation).returning();
+    return newCancellation;
+  }
+
+  async getShiftCancellationsForExport(tenantId: number, filters: {
+    staffId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<ShiftCancellation[]> {
+    const conditions = [eq(shiftCancellations.tenantId, tenantId)];
+
+    if (filters.staffId) {
+      conditions.push(eq(shiftCancellations.cancelledByUserId, filters.staffId));
+    }
+
+    if (filters.startDate) {
+      conditions.push(sql`${shiftCancellations.createdAt} >= ${filters.startDate}`);
+    }
+
+    if (filters.endDate) {
+      conditions.push(sql`${shiftCancellations.createdAt} <= ${filters.endDate}`);
+    }
+
+    return await db.select().from(shiftCancellations)
+      .where(and(...conditions))
+      .orderBy(desc(shiftCancellations.createdAt));
+  }
+
+  // Cancellation Request methods
+  async getCancellationRequests(tenantId: number): Promise<CancellationRequest[]> {
+    return await db.select().from(cancellationRequests)
+      .where(eq(cancellationRequests.tenantId, tenantId))
+      .orderBy(desc(cancellationRequests.createdAt));
+  }
+
+  async getCancellationRequest(id: number, tenantId: number): Promise<CancellationRequest | undefined> {
+    const [request] = await db.select().from(cancellationRequests)
+      .where(and(eq(cancellationRequests.id, id), eq(cancellationRequests.tenantId, tenantId)));
+    return request;
+  }
+
+  async createCancellationRequest(request: InsertCancellationRequest): Promise<CancellationRequest> {
+    const [newRequest] = await db.insert(cancellationRequests).values(request).returning();
+    return newRequest;
+  }
+
+  async updateCancellationRequest(id: number, request: Partial<InsertCancellationRequest>, tenantId: number): Promise<CancellationRequest | undefined> {
+    const [updatedRequest] = await db.update(cancellationRequests)
+      .set({ ...request, updatedAt: new Date() })
+      .where(and(eq(cancellationRequests.id, id), eq(cancellationRequests.tenantId, tenantId)))
+      .returning();
+    return updatedRequest;
   }
 }
 

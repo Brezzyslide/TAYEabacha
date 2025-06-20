@@ -3309,6 +3309,251 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Shift Cancellation API - Cancel a shift (immediate if 24+ hours, request if under 24 hours)
+  app.post("/api/shifts/:id/cancel", requireAuth, async (req: any, res) => {
+    try {
+      const shiftId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      // Get shift details
+      const shift = await storage.getShift(shiftId, req.user.tenantId);
+      if (!shift) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+
+      // Check if user is assigned to this shift
+      if (shift.userId !== req.user.id) {
+        return res.status(403).json({ message: "You can only cancel your own shifts" });
+      }
+
+      // Calculate hours until shift start
+      const now = new Date();
+      const shiftStart = new Date(shift.startTime);
+      const hoursNotice = Math.floor((shiftStart.getTime() - now.getTime()) / (1000 * 60 * 60));
+
+      // Get client name for logging
+      const client = shift.clientId ? await storage.getClient(shift.clientId, req.user.tenantId) : null;
+      const clientName = client ? `${client.firstName} ${client.lastName}` : null;
+
+      if (hoursNotice >= 24) {
+        // Immediate cancellation - 24+ hours notice
+        await storage.updateShift(shiftId, { 
+          userId: null, 
+          status: "unassigned" 
+        }, req.user.tenantId);
+
+        // Log the cancellation
+        await storage.createShiftCancellation({
+          shiftId,
+          cancelledByUserId: req.user.id,
+          cancelledByUserName: req.user.fullName,
+          shiftTitle: shift.title,
+          shiftStartTime: shift.startTime,
+          shiftEndTime: shift.endTime,
+          clientName,
+          cancellationType: "immediate",
+          cancellationReason: reason,
+          hoursNotice,
+          tenantId: req.user.tenantId,
+        });
+
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "cancel_shift",
+          resourceType: "shift",
+          resourceId: shiftId,
+          description: `Cancelled shift: ${shift.title} (${hoursNotice} hours notice)`,
+          tenantId: req.user.tenantId,
+        });
+
+        res.json({ 
+          message: "Shift cancelled successfully", 
+          type: "immediate",
+          hoursNotice 
+        });
+      } else {
+        // Create cancellation request - under 24 hours
+        await storage.createCancellationRequest({
+          shiftId,
+          requestedByUserId: req.user.id,
+          requestedByUserName: req.user.fullName,
+          shiftTitle: shift.title,
+          shiftStartTime: shift.startTime,
+          shiftEndTime: shift.endTime,
+          clientName,
+          requestReason: reason,
+          hoursNotice,
+          status: "pending",
+          tenantId: req.user.tenantId,
+        });
+
+        // Update shift status to indicate cancellation requested
+        await storage.updateShift(shiftId, { 
+          status: "cancellation_requested" 
+        }, req.user.tenantId);
+
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "request_shift_cancellation",
+          resourceType: "shift",
+          resourceId: shiftId,
+          description: `Requested cancellation for shift: ${shift.title} (${hoursNotice} hours notice)`,
+          tenantId: req.user.tenantId,
+        });
+
+        res.json({ 
+          message: "Cancellation request submitted for admin approval", 
+          type: "requested",
+          hoursNotice 
+        });
+      }
+    } catch (error: any) {
+      console.error("Shift cancellation error:", error);
+      res.status(500).json({ message: "Failed to process cancellation" });
+    }
+  });
+
+  // Get cancelled shifts for admin view
+  app.get("/api/shifts/cancelled", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const cancellations = await storage.getShiftCancellations(req.user.tenantId);
+      res.json(cancellations);
+    } catch (error: any) {
+      console.error("Get cancelled shifts error:", error);
+      res.status(500).json({ message: "Failed to fetch cancelled shifts" });
+    }
+  });
+
+  // Get cancellation requests for admin approval
+  app.get("/api/cancellation-requests", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const requests = await storage.getCancellationRequests(req.user.tenantId);
+      res.json(requests);
+    } catch (error: any) {
+      console.error("Get cancellation requests error:", error);
+      res.status(500).json({ message: "Failed to fetch cancellation requests" });
+    }
+  });
+
+  // Approve or deny cancellation request
+  app.post("/api/cancellation-requests/:id/review", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const { action, reviewNotes } = req.body; // action: "approve" or "deny"
+      
+      const request = await storage.getCancellationRequest(requestId, req.user.tenantId);
+      if (!request) {
+        return res.status(404).json({ message: "Cancellation request not found" });
+      }
+
+      if (request.status !== "pending") {
+        return res.status(400).json({ message: "Request has already been reviewed" });
+      }
+
+      // Update the request
+      await storage.updateCancellationRequest(requestId, {
+        status: action === "approve" ? "approved" : "denied",
+        reviewedByUserId: req.user.id,
+        reviewedByUserName: req.user.fullName,
+        reviewedAt: new Date(),
+        reviewNotes,
+      }, req.user.tenantId);
+
+      if (action === "approve") {
+        // Cancel the shift
+        await storage.updateShift(request.shiftId, { 
+          userId: null, 
+          status: "unassigned" 
+        }, req.user.tenantId);
+
+        // Log the approved cancellation
+        await storage.createShiftCancellation({
+          shiftId: request.shiftId,
+          cancelledByUserId: request.requestedByUserId,
+          cancelledByUserName: request.requestedByUserName,
+          shiftTitle: request.shiftTitle,
+          shiftStartTime: request.shiftStartTime,
+          shiftEndTime: request.shiftEndTime,
+          clientName: request.clientName,
+          cancellationType: "requested",
+          cancellationReason: request.requestReason,
+          hoursNotice: request.hoursNotice,
+          approvedByUserId: req.user.id,
+          approvedByUserName: req.user.fullName,
+          approvedAt: new Date(),
+          tenantId: req.user.tenantId,
+        });
+      } else {
+        // Restore shift status if denied
+        await storage.updateShift(request.shiftId, { 
+          status: "assigned" 
+        }, req.user.tenantId);
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: `${action}_cancellation_request`,
+        resourceType: "cancellation_request",
+        resourceId: requestId.toString(),
+        description: `${action === "approve" ? "Approved" : "Denied"} cancellation request for shift: ${request.shiftTitle}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ 
+        message: `Cancellation request ${action === "approve" ? "approved" : "denied"} successfully`,
+        action 
+      });
+    } catch (error: any) {
+      console.error("Review cancellation request error:", error);
+      res.status(500).json({ message: "Failed to review cancellation request" });
+    }
+  });
+
+  // Export cancelled shifts for admin
+  app.get("/api/shifts/cancelled/export", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { staffId, startDate, endDate } = req.query;
+      const cancellations = await storage.getShiftCancellationsForExport(req.user.tenantId, {
+        staffId: staffId ? parseInt(staffId as string) : undefined,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+      });
+
+      // Set headers for CSV download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=cancelled_shifts.csv');
+
+      // Generate CSV content
+      const headers = [
+        'Date Cancelled', 'Staff Member', 'Shift Title', 'Shift Start', 'Shift End', 
+        'Client', 'Cancellation Type', 'Hours Notice', 'Reason', 'Approved By'
+      ];
+      
+      let csv = headers.join(',') + '\n';
+      
+      cancellations.forEach(cancellation => {
+        const row = [
+          new Date(cancellation.createdAt).toLocaleDateString(),
+          cancellation.cancelledByUserName,
+          cancellation.shiftTitle || '',
+          new Date(cancellation.shiftStartTime).toLocaleString(),
+          cancellation.shiftEndTime ? new Date(cancellation.shiftEndTime).toLocaleString() : '',
+          cancellation.clientName || '',
+          cancellation.cancellationType,
+          cancellation.hoursNotice.toString(),
+          (cancellation.cancellationReason || '').replace(/,/g, ';'), // Escape commas
+          cancellation.approvedByUserName || ''
+        ];
+        csv += row.join(',') + '\n';
+      });
+
+      res.send(csv);
+    } catch (error: any) {
+      console.error("Export cancelled shifts error:", error);
+      res.status(500).json({ message: "Failed to export cancelled shifts" });
+    }
+  });
+
   // Company Logo Upload API
   app.post("/api/company/logo", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
