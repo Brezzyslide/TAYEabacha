@@ -150,30 +150,29 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                               <div
                                 key={shift.id}
                                 onClick={() => onShiftClick(shift)}
-                                className={`p-3 rounded cursor-pointer hover:scale-105 transform transition-all duration-200 shadow-sm ${
+                                className={`p-2 rounded-xl cursor-pointer hover:scale-[1.02] transform transition-all duration-300 shadow-sm border backdrop-blur-sm ${
                                   shift.status === 'completed'
-                                    ? 'bg-emerald-600 text-white border border-emerald-700'
+                                    ? 'bg-gradient-to-r from-emerald-500/90 to-emerald-600/90 text-white border-emerald-400/30'
                                     : shift.status === 'in-progress'
-                                    ? 'bg-orange-500 text-white border border-orange-600'
+                                    ? 'bg-gradient-to-r from-orange-500/90 to-orange-600/90 text-white border-orange-400/30'
                                     : shift.status === 'requested'
-                                    ? 'bg-yellow-500 text-white border border-yellow-600'
+                                    ? 'bg-gradient-to-r from-yellow-500/90 to-yellow-600/90 text-white border-yellow-400/30'
                                     : isAssigned 
-                                    ? 'bg-green-500 text-white border border-green-600' 
-                                    : 'bg-red-500 text-white border border-red-600'
+                                    ? 'bg-gradient-to-r from-green-500/90 to-green-600/90 text-white border-green-400/30' 
+                                    : 'bg-gradient-to-r from-red-500/90 to-red-600/90 text-white border-red-400/30'
                                 }`}
                               >
-                                <div className="font-medium text-sm">
+                                <div className="font-semibold text-xs truncate">
                                   {shift.title || 'Untitled Shift'}
                                 </div>
-                                <div className="text-sm opacity-75">
+                                <div className="text-xs opacity-80 truncate">
                                   {clientName}
                                 </div>
-                                <div className="flex items-center justify-between mt-2">
-                                  <span className="flex items-center gap-1 text-sm">
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="flex items-center gap-1 text-xs">
                                     <Clock className="h-3 w-3" />
                                     {shift.startTime && format(new Date(shift.startTime), 'HH:mm')}
                                   </span>
-                                  <ShiftStatusTag status={(shift.status as string) || "assigned"} />
                                 </div>
                               </div>
                             );
@@ -235,39 +234,32 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                           <div
                             key={shift.id}
                             onClick={() => onShiftClick(shift)}
-                            className={`p-1.5 rounded text-xs cursor-pointer hover:scale-105 transform transition-all duration-200 shadow-sm ${
+                            className={`p-1 rounded-lg text-xs cursor-pointer hover:scale-[1.02] transform transition-all duration-300 shadow-sm border-0 backdrop-blur-sm mb-1 ${
                               shift.status === 'completed'
-                                ? 'bg-emerald-600 text-white border border-emerald-700'
+                                ? 'bg-gradient-to-r from-emerald-500/80 to-emerald-600/80 text-white'
                                 : shift.status === 'in-progress'
-                                ? 'bg-orange-500 text-white border border-orange-600'
+                                ? 'bg-gradient-to-r from-orange-500/80 to-orange-600/80 text-white'
                                 : shift.status === 'requested'
-                                ? 'bg-yellow-500 text-white border border-yellow-600'
+                                ? 'bg-gradient-to-r from-yellow-500/80 to-yellow-600/80 text-white'
                                 : isAssigned 
-                                ? 'bg-green-500 text-white border border-green-600' 
-                                : 'bg-red-500 text-white border border-red-600'
+                                ? 'bg-gradient-to-r from-green-500/80 to-green-600/80 text-white' 
+                                : 'bg-gradient-to-r from-red-500/80 to-red-600/80 text-white'
                             }`}
                           >
-                            <div className="font-medium truncate mb-1">
+                            <div className="font-semibold truncate text-[10px] leading-tight">
                               {shift.title}
                             </div>
                             
-                            <div className="flex items-center gap-1 text-xs opacity-90">
-                              <Clock className="h-3 w-3" />
+                            <div className="flex items-center gap-1 text-[10px] opacity-90 mt-0.5">
+                              <Clock className="h-2.5 w-2.5" />
                               <span>
                                 {shift.startTime ? format(new Date(shift.startTime), 'HH:mm') : 'TBD'}
                               </span>
                             </div>
                             
-                            {isAssigned && (
-                              <div className="flex items-center gap-1 text-xs opacity-90 mt-1">
-                                <User className="h-3 w-3" />
-                                <span className="truncate">Assigned</span>
-                              </div>
-                            )}
-                            
                             {clientName && clientName !== 'Unknown Client' && (
-                              <div className="text-xs opacity-90 mt-1 truncate">
-                                🏠 {clientName}
+                              <div className="text-[9px] opacity-80 truncate leading-tight">
+                                {clientName}
                               </div>
                             )}
                           </div>
