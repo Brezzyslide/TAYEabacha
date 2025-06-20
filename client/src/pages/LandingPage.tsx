@@ -374,27 +374,27 @@ export default function LandingPage() {
       </section>
 
       {/* Contact Section */}
-      <section className="relative z-10 py-16 px-6 bg-slate-800/30">
+      <section className="relative z-10 py-16 px-6 bg-gradient-to-r from-secondary/10 via-accent/5 to-primary/10">
         <div className="container mx-auto max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Card className="bg-slate-800/60 border-slate-600">
+            <Card className="bg-gradient-to-br from-white/10 via-secondary/10 to-accent/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
               <CardHeader>
-                <CardTitle className="text-cyan-400 text-center">Contact Support</CardTitle>
-                <CardDescription className="text-slate-300 text-center">
+                <CardTitle className="text-secondary font-bold text-2xl text-center">Contact Support</CardTitle>
+                <CardDescription className="text-white/90 font-medium text-center">
                   Get in touch with our team
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleContactSubmit} className="space-y-4">
+                <form onSubmit={handleContactSubmit} className="space-y-6">
                   <Input
                     placeholder="Your Name"
                     value={contactForm.name}
                     onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-2xl h-12 font-medium backdrop-blur-sm"
                     required
                   />
                   <Input
@@ -402,20 +402,20 @@ export default function LandingPage() {
                     placeholder="Your Email"
                     value={contactForm.email}
                     onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-2xl h-12 font-medium backdrop-blur-sm"
                     required
                   />
                   <Textarea
                     placeholder="Your Message"
                     value={contactForm.message}
                     onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60 rounded-2xl font-medium backdrop-blur-sm"
                     rows={4}
                     required
                   />
                   <Button
                     type="submit"
-                    className="w-full bg-cyan-600 hover:bg-cyan-700"
+                    className="w-full bg-gradient-to-r from-secondary to-accent hover:shadow-xl rounded-2xl h-12 font-bold transition-all duration-300"
                   >
                     Contact Support
                   </Button>
