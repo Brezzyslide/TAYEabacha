@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,16 @@ export default function MyShiftsTab() {
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [shiftToCancel, setShiftToCancel] = useState<Shift | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every minute for real-time countdown
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
   
   const { user } = useAuth();
 
@@ -111,6 +121,37 @@ export default function MyShiftsTab() {
     return status === "assigned" || status === "cancellation_requested";
   };
 
+  const canStartShift = (shift: Shift) => {
+    if (!shift.startTime) return true; // Allow if no start time set
+    
+    const now = new Date();
+    const shiftStart = new Date(shift.startTime);
+    const timeDifferenceMinutes = (shiftStart.getTime() - now.getTime()) / (1000 * 60);
+    
+    // Allow starting 15 minutes before scheduled time
+    return timeDifferenceMinutes <= 15;
+  };
+
+  const getStartButtonText = (shift: Shift) => {
+    if (!shift.startTime) return "Start Shift";
+    
+    const now = new Date();
+    const shiftStart = new Date(shift.startTime);
+    const timeDifferenceMinutes = Math.ceil((shiftStart.getTime() - now.getTime()) / (1000 * 60));
+    
+    if (timeDifferenceMinutes > 15) {
+      const hours = Math.floor(timeDifferenceMinutes / 60);
+      const minutes = timeDifferenceMinutes % 60;
+      if (hours > 0) {
+        return `Available in ${hours}h ${minutes}m`;
+      } else {
+        return `Available in ${minutes}m`;
+      }
+    }
+    
+    return "Start Shift";
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -169,10 +210,16 @@ export default function MyShiftsTab() {
                         variant={((nextUpcomingShift as any).status === "in-progress") ? "destructive" : "default"}
                         size="sm"
                         className="flex items-center gap-2"
+                        disabled={((nextUpcomingShift as any).status === "assigned") && !canStartShift(nextUpcomingShift)}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleShiftCardClick(nextUpcomingShift);
                         }}
+                        title={
+                          ((nextUpcomingShift as any).status === "assigned") && !canStartShift(nextUpcomingShift)
+                            ? "Start button available 15 minutes before shift time"
+                            : ""
+                        }
                       >
                         {((nextUpcomingShift as any).status === "in-progress") ? (
                           <>
@@ -182,7 +229,7 @@ export default function MyShiftsTab() {
                         ) : (
                           <>
                             <Play className="h-4 w-4" />
-                            Start Shift
+                            {getStartButtonText(nextUpcomingShift)}
                           </>
                         )}
                       </Button>
@@ -296,10 +343,16 @@ export default function MyShiftsTab() {
                               variant={((shift as any).status === "in-progress") ? "destructive" : "outline"}
                               size="sm"
                               className="flex items-center gap-2"
+                              disabled={((shift as any).status === "assigned") && !canStartShift(shift)}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleShiftCardClick(shift);
                               }}
+                              title={
+                                ((shift as any).status === "assigned") && !canStartShift(shift)
+                                  ? "Start button available 15 minutes before shift time"
+                                  : ""
+                              }
                             >
                               {((shift as any).status === "in-progress") ? (
                                 <>
@@ -309,7 +362,7 @@ export default function MyShiftsTab() {
                               ) : (
                                 <>
                                   <Play className="h-4 w-4" />
-                                  Start
+                                  {canStartShift(shift) ? "Start" : getStartButtonText(shift)}
                                 </>
                               )}
                             </Button>
