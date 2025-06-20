@@ -69,9 +69,9 @@ export default function Header() {
             >
               <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
-            {/* NeedCareAI+ Branding */}
+            {/* TUSK/NeedCareAI+ Branding */}
             <div className="flex items-center space-x-3 min-w-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary via-secondary to-accent rounded-2xl flex items-center justify-center shadow-2xl">
                 <span className="text-white font-bold text-sm sm:text-base">AI+</span>
               </div>
               <div className="min-w-0">
