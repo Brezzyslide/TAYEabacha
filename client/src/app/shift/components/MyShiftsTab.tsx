@@ -11,6 +11,7 @@ import ShiftStatusTag from "./ShiftStatusTag";
 import StartShiftModal from "./StartShiftModal";
 import EndShiftModal from "./EndShiftModal";
 import { CancelShiftModal } from "./CancelShiftModal";
+import CaseNoteStatusBadge, { CaseNoteStatusBanner } from "./CaseNoteStatusBadge";
 
 export default function MyShiftsTab() {
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
