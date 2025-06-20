@@ -33,7 +33,7 @@ export function ProtectedRoute({
 
   return (
     <Route path={path}>
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50 flex protected-route">
         <Sidebar />
         <div className="flex-1 flex flex-col">
           <Header />

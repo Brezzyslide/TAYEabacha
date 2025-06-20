@@ -94,44 +94,24 @@
     color: #1f2937;
   }
   
-  /* Sidebar and navigation with dark backgrounds for readability */
-  .sidebar,
-  .nav-menu,
-  [data-sidebar],
-  .bg-slate-900,
-  .bg-gray-900 {
+  /* Only apply fixes to authenticated app areas - NOT landing page */
+  .protected-route .sidebar,
+  .protected-route .nav-menu,
+  .protected-route [data-sidebar],
+  .protected-route .bg-slate-900,
+  .protected-route .bg-gray-900 {
     background-color: #0f172a !important;
     color: #ffffff !important;
   }
   
-  /* Cards and content areas - keep light with dark text */
-  .bg-white {
-    background-color: #ffffff;
-    color: #1f2937;
-  }
-  
-  /* Normal text colors */
-  .text-gray-900 { color: #111827; }
-  .text-gray-800 { color: #1f2937; }
-  .text-gray-700 { color: #374151; }
-  .text-gray-600 { color: #4b5563; }
-  .text-gray-500 { color: #6b7280; }
-  
-  /* Button text - keep normal colors */
-  button {
-    color: inherit;
-  }
-  
-  /* Input text - dark on light */
-  input, textarea, select {
-    background-color: #ffffff;
-    color: #1f2937;
-    border-color: #d1d5db;
-  }
-  
-  /* Ensure sidebar text is always white */
-  .sidebar * {
+  /* Ensure sidebar text is always white in authenticated areas only */
+  .protected-route .sidebar * {
     color: #ffffff !important;
+  }
+  
+  /* Landing page remains completely unchanged */
+  .landing-page * {
+    /* Preserve all original styles */
   }
   
   /* Professional dark text elements */
