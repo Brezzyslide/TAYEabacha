@@ -64,8 +64,8 @@ export default function Sidebar() {
 
   const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (
     <div className="mb-6">
-      <div className={cn("px-4 py-2 rounded-lg mb-2", headerColor)}>
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+      <div className={cn("px-3 py-2 rounded-lg mb-3 border", headerColor)}>
+        <h3 className="text-xs font-bold uppercase tracking-wider">{title}</h3>
       </div>
       <div className="space-y-1">
         {items.map((item) => {
@@ -73,13 +73,13 @@ export default function Sidebar() {
           return (
             <Link key={item.name} href={item.href} 
               className={cn(
-                "flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive 
-                  ? "bg-gray-800 text-white" 
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-primary text-primary-foreground shadow-md border border-primary/20" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               )}>
-              <item.icon className="h-4 w-4" />
-              <span>{item.name}</span>
+              <item.icon className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{item.name}</span>
             </Link>
           );
         })}
@@ -88,35 +88,48 @@ export default function Sidebar() {
   );
 
   return (
-    <aside className="hidden lg:block w-64 bg-slate-50 flex-shrink-0 border-r border-gray-200">
+    <aside className="hidden lg:block w-64 bg-card border-r border-border flex-shrink-0 card-elevated">
+      {/* NeedCareAI+ Sidebar Header */}
+      <div className="p-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-sm">AI+</span>
+          </div>
+          <div>
+            <h2 className="font-bold text-lg text-foreground">NeedCareAI+</h2>
+            <p className="text-xs text-muted-foreground">Care Management Platform</p>
+          </div>
+        </div>
+      </div>
+
       {/* Navigation Menu */}
       <nav className="p-4 space-y-6">
         {/* Support Work Section */}
         {renderNavigationSection(
           "SUPPORT WORK", 
           supportWorkNavigation, 
-          "bg-yellow-200"
+          "bg-primary/10 text-primary border-primary/20"
         )}
 
         {/* Shift Management Section */}
         {renderNavigationSection(
           "SHIFT MANAGEMENT", 
           shiftManagementNavigation, 
-          "bg-yellow-200"
+          "bg-info/10 text-info border-info/20"
         )}
 
         {/* Staff Management Section - Only for Admins */}
         {isAdmin && renderNavigationSection(
           "STAFF MANAGEMENT", 
           staffManagementNavigation, 
-          "bg-yellow-200"
+          "bg-warning/10 text-warning border-warning/20"
         )}
 
         {/* Company Management Section - ConsoleManager Only */}
         {canManageCompaniesAccess && renderNavigationSection(
-          "COMPANY MANAGEMENT", 
+          "CONSOLE MANAGEMENT", 
           companyManagementNavigation, 
-          "bg-yellow-200"
+          "bg-destructive/10 text-destructive border-destructive/20"
         )}
       </nav>
     </aside>
