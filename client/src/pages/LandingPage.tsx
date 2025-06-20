@@ -185,7 +185,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="bg-gradient-to-br from-white/10 via-secondary/10 to-accent/10 backdrop-blur-sm border border-white/20 rounded-3xl p-8 mb-12 shadow-2xl"
+            className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 backdrop-blur-sm border border-white/20 rounded-3xl p-8 mb-12 shadow-2xl"
           >
             <blockquote className="text-lg leading-relaxed text-amber-50 italic font-bold drop-shadow-2xl">
               "NeedsCareAI+ was built by disability support workers, not tech bros.
@@ -205,7 +205,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="grid md:grid-cols-2 gap-8"
             >
-              <Card className="bg-gradient-to-br from-white/10 via-secondary/5 to-accent/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-secondary font-bold text-xl">Built for Practitioners</CardTitle>
                 </CardHeader>
@@ -217,7 +217,7 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white/10 via-accent/5 to-secondary/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">NDIS Compliance</CardTitle>
                 </CardHeader>
@@ -229,7 +229,7 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white/10 via-secondary/5 to-accent/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-secondary font-bold text-xl">Positive Behaviour Support</CardTitle>
                 </CardHeader>
@@ -241,7 +241,7 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white/10 via-accent/5 to-secondary/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">Comprehensive Features</CardTitle>
                 </CardHeader>
@@ -261,7 +261,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-center"
             >
-              <Card className="bg-gradient-to-br from-white/10 via-secondary/10 to-accent/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl max-w-2xl mx-auto">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl max-w-2xl mx-auto">
                 <CardHeader>
                   <CardTitle className="text-secondary font-bold text-2xl">Book a Demo</CardTitle>
                   <CardDescription className="text-white/90 font-medium">
@@ -287,7 +287,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="max-w-4xl mx-auto"
             >
-              <Card className="bg-gradient-to-br from-white/10 via-secondary/10 to-accent/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-secondary font-bold text-2xl text-center">Our Philosophy</CardTitle>
                 </CardHeader>
@@ -319,7 +319,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="grid md:grid-cols-3 gap-8"
             >
-              <Card className="bg-gradient-to-br from-white/10 via-secondary/5 to-accent/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-secondary font-bold text-xl">Starter</CardTitle>
                   <CardDescription className="text-white/90 font-medium">Perfect for small teams</CardDescription>
@@ -335,7 +335,7 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white/15 via-accent/10 to-secondary/15 border-secondary/50 border-2 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-700/90 via-slate-800/90 to-slate-700/90 border-secondary/50 border-2 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">Professional</CardTitle>
                   <CardDescription className="text-amber-50 font-bold drop-shadow-2xl">Most popular choice</CardDescription>
@@ -352,7 +352,7 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-white/10 via-accent/5 to-secondary/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+              <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">Enterprise</CardTitle>
                   <CardDescription className="text-amber-50 font-bold drop-shadow-2xl">For large organizations</CardDescription>
