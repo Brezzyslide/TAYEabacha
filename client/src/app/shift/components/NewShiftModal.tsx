@@ -251,8 +251,6 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     }
 
     return shifts;
-
-    return shifts;
   };
 
   const onSubmit = (data: ShiftFormData) => {
