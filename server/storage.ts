@@ -187,8 +187,9 @@ export interface IStorage {
   updateCancellationRequest(id: number, request: Partial<InsertCancellationRequest>, tenantId: number): Promise<CancellationRequest | undefined>;
 
   // Pay Scale Management
-  getPayScalesByTenant(tenantId: number): Promise<PayScale[]>;
-  updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<void>;
+  getPayScales(tenantId: number): Promise<PayScale[]>;
+  updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<PayScale>;
+  resetPayScalesToDefault(tenantId: number): Promise<void>;
 
   // Session store
   sessionStore: any;
@@ -1627,14 +1628,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Pay Scale Management methods
-  async getPayScalesByTenant(tenantId: number): Promise<PayScale[]> {
+  async getPayScales(tenantId: number): Promise<PayScale[]> {
     return await db.select().from(payScales)
       .where(eq(payScales.tenantId, tenantId))
       .orderBy(payScales.level, payScales.payPoint);
   }
 
-  async updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<void> {
-    await db.update(payScales)
+  async updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<PayScale> {
+    const [updated] = await db.update(payScales)
       .set({
         hourlyRate: hourlyRate.toString(),
         effectiveDate: new Date(),
@@ -1643,7 +1644,45 @@ export class DatabaseStorage implements IStorage {
         eq(payScales.tenantId, tenantId),
         eq(payScales.level, level),
         eq(payScales.payPoint, payPoint)
-      ));
+      ))
+      .returning();
+    
+    return updated;
+  }
+
+  async resetPayScalesToDefault(tenantId: number): Promise<void> {
+    // ScHADS default rates for 2024-25
+    const defaultRates = [
+      { level: 1, payPoint: 1, rate: 25.41 },
+      { level: 1, payPoint: 2, rate: 26.02 },
+      { level: 1, payPoint: 3, rate: 26.63 },
+      { level: 1, payPoint: 4, rate: 27.24 },
+      { level: 2, payPoint: 1, rate: 27.85 },
+      { level: 2, payPoint: 2, rate: 28.46 },
+      { level: 2, payPoint: 3, rate: 29.07 },
+      { level: 2, payPoint: 4, rate: 29.68 },
+      { level: 3, payPoint: 1, rate: 30.29 },
+      { level: 3, payPoint: 2, rate: 30.90 },
+      { level: 3, payPoint: 3, rate: 31.51 },
+      { level: 3, payPoint: 4, rate: 32.12 },
+      { level: 4, payPoint: 1, rate: 32.73 },
+      { level: 4, payPoint: 2, rate: 33.34 },
+      { level: 4, payPoint: 3, rate: 33.95 },
+      { level: 4, payPoint: 4, rate: 34.31 },
+    ];
+
+    for (const defaultRate of defaultRates) {
+      await db.update(payScales)
+        .set({
+          hourlyRate: defaultRate.rate.toString(),
+          effectiveDate: new Date(),
+        })
+        .where(and(
+          eq(payScales.tenantId, tenantId),
+          eq(payScales.level, defaultRate.level),
+          eq(payScales.payPoint, defaultRate.payPoint)
+        ));
+    }
   }
 
   // Shift Cancellation methods

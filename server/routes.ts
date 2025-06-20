@@ -4271,6 +4271,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ScHADS Pay Scale Management Routes
+  app.get("/api/pay-scales", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const payScales = await storage.getPayScales(req.user.tenantId);
+      res.json(payScales);
+    } catch (error) {
+      console.error("Error fetching pay scales:", error);
+      res.status(500).json({ message: "Failed to fetch pay scales" });
+    }
+  });
+
+  app.put("/api/pay-scales/:level/:payPoint", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const level = parseInt(req.params.level);
+      const payPoint = parseInt(req.params.payPoint);
+      const { hourlyRate } = req.body;
+
+      const updatedPayScale = await storage.updatePayScale(req.user.tenantId, level, payPoint, hourlyRate);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_pay_scale",
+        resourceType: "pay_scale",
+        resourceId: updatedPayScale.id,
+        description: `Updated pay scale Level ${level}, Pay Point ${payPoint} to $${hourlyRate}/hour`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(updatedPayScale);
+    } catch (error) {
+      console.error("Error updating pay scale:", error);
+      res.status(500).json({ message: "Failed to update pay scale" });
+    }
+  });
+
+  app.post("/api/pay-scales/reset", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      await storage.resetPayScalesToDefault(req.user.tenantId);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "reset_pay_scales",
+        resourceType: "pay_scale",
+        resourceId: null,
+        description: "Reset all pay scales to ScHADS default rates",
+        tenantId: req.user.tenantId,
+      });
+
+      const payScales = await storage.getPayScales(req.user.tenantId);
+      res.json(payScales);
+    } catch (error) {
+      console.error("Error resetting pay scales:", error);
+      res.status(500).json({ message: "Failed to reset pay scales" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
