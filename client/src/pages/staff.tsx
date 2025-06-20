@@ -782,7 +782,7 @@ export default function Staff() {
                         <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                           {getRoleIcon(member.role)}
                         </div>
-                        <span>{member.username}</span>
+                        <span>{member.fullName || member.username}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -856,7 +856,7 @@ export default function Staff() {
                           {getRoleIcon(member.role)}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{member.username}</h3>
+                          <h3 className="font-semibold text-gray-900">{member.fullName || member.username}</h3>
                           <Badge variant={getRoleColor(member.role)} className="text-xs">
                             {member.role}
                           </Badge>
