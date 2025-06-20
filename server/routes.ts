@@ -1220,6 +1220,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get all staff availability submissions for tenant
+  app.get("/api/staff-availability/admin", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const availabilities = await storage.getAllStaffAvailabilities(req.user.tenantId);
+      res.json(availabilities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch staff availabilities" });
+    }
+  });
+
+  // Admin: Approve/reject staff availability
+  app.put("/api/staff-availability/:id/approval", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { isApproved } = req.body;
+      
+      const availability = await storage.updateStaffAvailabilityApproval(parseInt(id), isApproved, req.user.tenantId);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: isApproved ? "approve_availability" : "reject_availability",
+        resourceType: "staff_availability",
+        resourceId: parseInt(id),
+        description: `${isApproved ? "Approved" : "Rejected"} staff availability`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(availability);
+    } catch (error) {
+      console.error("Staff availability approval error:", error);
+      res.status(500).json({ message: "Failed to update availability approval" });
+    }
+  });
+
+  // Update staff availability (for staff to edit their own)
+  app.put("/api/staff-availability/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { availability, patternName, isQuickPattern } = req.body;
+      
+      const updated = await storage.updateStaffAvailability(parseInt(id), {
+        availability,
+        patternName,
+        isQuickPattern,
+        userId: req.user.id,
+        tenantId: req.user.tenantId
+      });
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_availability",
+        resourceType: "staff_availability",
+        resourceId: parseInt(id),
+        description: "Updated staff availability",
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Staff availability update error:", error);
+      res.status(500).json({ message: "Failed to update availability" });
+    }
+  });
+
   // Get conflict analysis
   app.get("/api/staff-availability/conflicts", requireAuth, requireRole(["Admin", "TeamLeader"]), async (req: any, res) => {
     try {

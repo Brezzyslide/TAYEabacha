@@ -77,6 +77,8 @@ export interface IStorage {
   updateStaffAvailability(id: number, availability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined>;
   getQuickPatterns(userId: number, tenantId: number): Promise<StaffAvailability[]>;
   getAllStaffAvailability(tenantId: number, showArchived: boolean): Promise<any[]>;
+  getAllStaffAvailabilities(tenantId: number): Promise<any[]>;
+  updateStaffAvailabilityApproval(id: number, isApproved: boolean, tenantId: number): Promise<StaffAvailability | undefined>;
   archiveStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined>;
   getAvailabilityConflicts(tenantId: number): Promise<any[]>;
 
@@ -537,6 +539,46 @@ export class DatabaseStorage implements IStorage {
     .orderBy(desc(staffAvailability.createdAt));
 
     return await query;
+  }
+
+  async getAllStaffAvailabilities(tenantId: number): Promise<any[]> {
+    const query = db.select({
+      id: staffAvailability.id,
+      availabilityId: staffAvailability.availabilityId,
+      userId: staffAvailability.userId,
+      username: users.username,
+      userFullName: users.fullName,
+      availability: staffAvailability.availability,
+      patternName: staffAvailability.patternName,
+      isQuickPattern: staffAvailability.isQuickPattern,
+      overrideByManager: staffAvailability.overrideByManager,
+      isActive: staffAvailability.isActive,
+      createdAt: staffAvailability.createdAt,
+      updatedAt: staffAvailability.updatedAt,
+    })
+    .from(staffAvailability)
+    .leftJoin(users, eq(staffAvailability.userId, users.id))
+    .where(and(
+      eq(staffAvailability.tenantId, tenantId),
+      eq(staffAvailability.isActive, true)
+    ))
+    .orderBy(desc(staffAvailability.createdAt));
+
+    return await query;
+  }
+
+  async updateStaffAvailabilityApproval(id: number, isApproved: boolean, tenantId: number): Promise<StaffAvailability | undefined> {
+    const [availability] = await db.update(staffAvailability)
+      .set({ 
+        overrideByManager: isApproved,
+        updatedAt: new Date() 
+      })
+      .where(and(
+        eq(staffAvailability.id, id),
+        eq(staffAvailability.tenantId, tenantId)
+      ))
+      .returning();
+    return availability;
   }
 
   async archiveStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined> {
