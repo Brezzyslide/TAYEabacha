@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User } from "@shared/schema";
-import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin, Upload, ImageIcon } from "lucide-react";
+import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin, Upload, ImageIcon, FileText, FileSpreadsheet } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,40 +48,107 @@ type EditStaffFormData = z.infer<typeof editStaffSchema>;
 function StaffBulkUploadForm() {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [templateFormat, setTemplateFormat] = useState<'csv' | 'excel'>('csv');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const downloadTemplate = () => {
-    const csvContent = "username,email,password,role,fullName,phone,address\nexample.user,user@example.com,password123,SupportWorker,John Doe,1234567890,123 Main St";
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'staff_upload_template.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const downloadTemplate = (format: 'csv' | 'excel' = templateFormat) => {
+    const headers = ["username", "email", "password", "role", "fullName", "phone", "address"];
+    const sampleData = ["example.user", "user@example.com", "password123", "SupportWorker", "John Doe", "1234567890", "123 Main St"];
+    
+    if (format === 'csv') {
+      const csvContent = `${headers.join(',')}\n${sampleData.join(',')}`;
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'staff_upload_template.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } else {
+      // Create Excel file
+      const ws = XLSX.utils.aoa_to_sheet([headers, sampleData]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Staff Template");
+      XLSX.writeFile(wb, "staff_upload_template.xlsx");
+    }
+  };
+
+  const parseFileData = async (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          let parsedData: any[] = [];
+          
+          if (file.name.endsWith('.csv')) {
+            // Parse CSV
+            const text = data as string;
+            const lines = text.split('\n').filter(line => line.trim());
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            for (let i = 1; i < lines.length; i++) {
+              const values = lines[i].split(',').map(v => v.trim());
+              if (values.length === headers.length) {
+                const row: any = {};
+                headers.forEach((header, index) => {
+                  row[header] = values[index];
+                });
+                parsedData.push(row);
+              }
+            }
+          } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+            // Parse Excel
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            parsedData = XLSX.utils.sheet_to_json(worksheet);
+          }
+          
+          resolve(parsedData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      
+      if (file.name.endsWith('.csv')) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    });
   };
 
   const handleFileUpload = async () => {
     if (!file) {
       toast({
         title: "Error",
-        description: "Please select a CSV file to upload",
+        description: "Please select a CSV or Excel file to upload",
         variant: "destructive",
       });
       return;
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
 
     try {
-      await apiRequest("POST", "/api/staff/bulk-upload", formData);
+      const parsedData = await parseFileData(file);
+      
+      if (parsedData.length === 0) {
+        throw new Error("No valid data found in file");
+      }
+
+      // Send parsed data to backend
+      const response = await apiRequest("POST", "/api/staff/bulk-upload", { data: parsedData });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
       toast({
         title: "Success",
-        description: "Staff members uploaded successfully",
+        description: `${parsedData.length} staff members processed successfully`,
       });
       setFile(null);
     } catch (error: any) {
@@ -95,38 +163,87 @@ function StaffBulkUploadForm() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600">Download the template and fill in your staff data</p>
-        <Button variant="outline" onClick={downloadTemplate}>
-          Download Template
-        </Button>
+    <div className="space-y-6">
+      {/* Template Download Section */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Choose template format and download</p>
+        </div>
+        
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <Select value={templateFormat} onValueChange={(value: 'csv' | 'excel') => setTemplateFormat(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="csv">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    CSV Template
+                  </div>
+                </SelectItem>
+                <SelectItem value="excel">
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="h-4 w-4" />
+                    Excel Template
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="outline" onClick={() => downloadTemplate(templateFormat)}>
+            Download {templateFormat.toUpperCase()}
+          </Button>
+        </div>
       </div>
-      
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+
+      {/* File Upload Section */}
+      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20">
         <input
           type="file"
-          accept=".csv"
+          accept=".csv,.xlsx,.xls"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
           className="hidden"
-          id="csv-upload"
+          id="file-upload"
         />
-        <label htmlFor="csv-upload" className="cursor-pointer">
+        <label htmlFor="file-upload" className="cursor-pointer">
           <div className="text-center">
-            <Upload className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-600">
-              {file ? file.name : "Click to select CSV file"}
+            <div className="flex justify-center mb-4">
+              {file?.name.endsWith('.xlsx') || file?.name.endsWith('.xls') ? (
+                <FileSpreadsheet className="h-12 w-12 text-green-500" />
+              ) : (
+                <FileText className="h-12 w-12 text-blue-500" />
+              )}
+            </div>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {file ? file.name : "Click to select CSV or Excel file"}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Supports .csv, .xlsx, and .xls files
             </p>
           </div>
         </label>
       </div>
 
+      {/* Upload Button */}
       <Button 
         onClick={handleFileUpload} 
         disabled={!file || isUploading}
         className="w-full"
+        size="lg"
       >
-        {isUploading ? "Uploading..." : "Upload Staff Data"}
+        {isUploading ? (
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Processing {file?.name.endsWith('.xlsx') || file?.name.endsWith('.xls') ? 'Excel' : 'CSV'} file...
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload Staff Data
+          </div>
+        )}
       </Button>
     </div>
   );
