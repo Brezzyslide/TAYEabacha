@@ -59,11 +59,11 @@ export default function AuthPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 backdrop-blur-3xl"></div>
         <div className="relative z-10 max-w-md">
           <div className="mb-10">
-            <div className="w-20 h-20 bg-gradient-to-br from-secondary to-accent rounded-3xl flex items-center justify-center mb-8 shadow-2xl glass-effect">
-              <span className="text-2xl font-bold text-white">AI+</span>
+            <div className="w-20 h-20 bg-gradient-to-br from-secondary to-accent rounded-3xl flex items-center justify-center mb-8 shadow-2xl border-2 border-white/20">
+              <span className="text-2xl font-bold text-white drop-shadow-lg">AI+</span>
             </div>
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white to-secondary/80 bg-clip-text text-transparent">
-              NeedCareAI+
+            <h1 className="text-5xl font-bold mb-6 text-white drop-shadow-lg">
+              NeedsCareAI+
             </h1>
             <p className="text-xl text-white/90 mb-8 font-medium">
               Built with Positive Behaviour in Mind — not just Buttons.
@@ -183,7 +183,7 @@ export default function AuthPage() {
                       <span>Signing in...</span>
                     </div>
                   ) : (
-                    <span className="bg-gradient-to-r from-white to-secondary/20 bg-clip-text text-transparent font-bold">
+                    <span className="text-white font-bold drop-shadow-lg">
                       Access Your Workspace
                     </span>
                   )}

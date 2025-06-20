@@ -71,12 +71,12 @@ export default function Header() {
             </Button>
             {/* TUSK/NeedCareAI+ Branding */}
             <div className="flex items-center space-x-3 min-w-0">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary via-secondary to-accent rounded-2xl flex items-center justify-center shadow-2xl">
-                <span className="text-white font-bold text-sm sm:text-base">AI+</span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary via-secondary to-accent rounded-2xl flex items-center justify-center shadow-2xl border border-white/20">
+                <span className="text-white font-bold text-sm sm:text-base drop-shadow-md">AI+</span>
               </div>
               <div className="min-w-0">
                 <div className="flex items-center space-x-2">
-                  <h1 className="text-lg sm:text-xl font-bold text-foreground">NeedCareAI+</h1>
+                  <h1 className="text-lg sm:text-xl font-bold text-foreground">NeedsCareAI+</h1>
                   <CompanyLogo 
                     companyName={company?.name || "Default Company"}
                     customLogo={company?.customLogo}

@@ -20,15 +20,15 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-3">
-              Welcome to your NeedCareAI+ Workspace
+              Welcome to your NeedsCareAI+ Workspace
             </h1>
             <p className="text-muted-foreground text-lg font-medium">
               Care that starts with listening, not loading. Your sophisticated dashboard is ready.
             </p>
           </div>
           <div className="hidden md:block">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary via-secondary to-accent rounded-3xl flex items-center justify-center shadow-2xl glass-effect">
-              <span className="text-white font-bold text-2xl">AI+</span>
+            <div className="w-20 h-20 bg-gradient-to-br from-primary via-secondary to-accent rounded-3xl flex items-center justify-center shadow-2xl border-2 border-white/20">
+              <span className="text-white font-bold text-2xl drop-shadow-lg">AI+</span>
             </div>
           </div>
         </div>
