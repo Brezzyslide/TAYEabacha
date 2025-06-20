@@ -11,7 +11,7 @@ import ShiftStatusTag from "./ShiftStatusTag";
 import StartShiftModal from "./StartShiftModal";
 import EndShiftModal from "./EndShiftModal";
 import { CancelShiftModal } from "./CancelShiftModal";
-import CaseNoteStatusBadge, { CaseNoteStatusBanner } from "./CaseNoteStatusBadge";
+import CaseNoteStatusBadge, { CaseNoteCornerIndicator, CaseNoteStatusBorder } from "./CaseNoteStatusBadge";
 
 export default function MyShiftsTab() {
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
@@ -29,6 +29,11 @@ export default function MyShiftsTab() {
 
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
+  });
+
+  const { data: caseNotes = [] } = useQuery({
+    queryKey: ["/api/case-notes"],
+    refetchInterval: 60000,
   });
 
   // Filter shifts assigned to current user that are approved (not just requested)
@@ -71,6 +76,10 @@ export default function MyShiftsTab() {
     if (!clientId) return "No client assigned";
     const client = (clients as any[]).find(c => c.id === clientId);
     return client?.fullName || "Unknown client";
+  };
+
+  const hasCaseNoteForShift = (shiftId: number) => {
+    return (caseNotes as any[]).some(note => note.shiftId === shiftId);
   };
 
   const handleStartShift = (shift: Shift) => {
@@ -234,9 +243,17 @@ export default function MyShiftsTab() {
                 .map((shift) => (
                   <Card 
                     key={shift.id}
-                    className="hover:shadow-md transition-all cursor-pointer"
+                    className="hover:shadow-md transition-all cursor-pointer relative"
                     onClick={() => handleShiftCardClick(shift)}
                   >
+                    <CaseNoteStatusBorder 
+                      shift={shift} 
+                      caseNoteSubmitted={hasCaseNoteForShift(shift.id)} 
+                    />
+                    <CaseNoteCornerIndicator 
+                      shift={shift} 
+                      caseNoteSubmitted={hasCaseNoteForShift(shift.id)} 
+                    />
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -249,10 +266,17 @@ export default function MyShiftsTab() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <ShiftStatusTag 
-                            status={(shift as any).status || "assigned"} 
-                            className="text-sm px-2 py-1" 
-                          />
+                          <div className="flex gap-2">
+                            <CaseNoteStatusBadge 
+                              shift={shift} 
+                              caseNoteSubmitted={hasCaseNoteForShift(shift.id)}
+                              className="text-xs"
+                            />
+                            <ShiftStatusTag 
+                              status={(shift as any).status || "assigned"} 
+                              className="text-sm px-2 py-1" 
+                            />
+                          </div>
                           <div className="flex gap-2">
                             {canCancelShift(shift) && (
                               <Button
