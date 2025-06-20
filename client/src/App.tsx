@@ -39,6 +39,7 @@ import RolesPermissionsDashboard from "@/app/roles-permissions/RolesPermissionsD
 import WorkflowDashboard from "@/app/workflow-dashboard/WorkflowDashboard";
 import BudgetDashboard from "@/app/budget-management/BudgetDashboard";
 import { CareSupportPlans } from "@/app/care-support-plans/CareSupportPlans";
+import TimesheetDashboard from "@/app/timesheet/TimesheetDashboard";
 import LandingPage from "@/pages/LandingPage";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -68,6 +69,7 @@ function Router() {
       <ProtectedRoute path="/workflow-dashboard" component={WorkflowDashboard} />
       <ProtectedRoute path="/budget-management" component={BudgetDashboard} />
       <ProtectedRoute path="/care-support-plans" component={CareSupportPlans} />
+      <ProtectedRoute path="/timesheet" component={TimesheetDashboard} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />

@@ -17,6 +17,7 @@ import {
   Shield,
   Users,
   DollarSign,
+  Receipt,
   X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const shiftManagementNavigation = [
   { name: "Shift Calendar", href: "/shift", icon: Calendar },
   { name: "My Availability", href: "/staff-availability", icon: Clock },
   { name: "Staff Hour Allocations", href: "/staff-hour-allocations", icon: TrendingUp },
+  { name: "Timesheet & Pay Scales", href: "/timesheet", icon: Receipt },
 ];
 
 const staffManagementNavigation = [
