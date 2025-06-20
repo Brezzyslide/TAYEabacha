@@ -187,7 +187,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="bg-gradient-to-br from-white/10 via-secondary/10 to-accent/10 backdrop-blur-sm border border-white/20 rounded-3xl p-8 mb-12 shadow-2xl"
           >
-            <blockquote className="text-lg leading-relaxed text-white italic font-semibold drop-shadow-lg">
+            <blockquote className="text-lg leading-relaxed text-amber-100 italic font-semibold drop-shadow-lg">
               "NeedsCareAI+ was built by disability support workers, not tech bros.
               It aggressively incorporates Positive Behaviour Support principles to help participants stay regulated, live with dignity, and reach their goals.
               This platform doesn't just look compliant — it thinks like a practitioner."
@@ -210,7 +210,7 @@ export default function LandingPage() {
                   <CardTitle className="text-secondary font-bold text-xl">Built for Practitioners</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-white font-semibold drop-shadow-lg">
+                  <p className="text-amber-100 font-semibold drop-shadow-lg">
                     Created by support workers who understand the daily challenges of disability care.
                     Every feature is designed with real-world practice in mind.
                   </p>
@@ -222,7 +222,7 @@ export default function LandingPage() {
                   <CardTitle className="text-accent font-bold text-xl">NDIS Compliance</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-white font-semibold drop-shadow-lg">
+                  <p className="text-emerald-100 font-semibold drop-shadow-lg">
                     Built-in compliance features ensure your documentation meets NDIS standards
                     and supports funding applications with evidence-backed care design.
                   </p>
@@ -234,7 +234,7 @@ export default function LandingPage() {
                   <CardTitle className="text-secondary font-bold text-xl">Positive Behaviour Support</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-white font-semibold drop-shadow-lg">
+                  <p className="text-amber-100 font-semibold drop-shadow-lg">
                     PBS principles are integrated throughout the platform, not just in care plans.
                     Every interaction is designed to support participant regulation and dignity.
                   </p>
@@ -246,7 +246,7 @@ export default function LandingPage() {
                   <CardTitle className="text-accent font-bold text-xl">Comprehensive Features</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-white font-semibold drop-shadow-lg">
+                  <p className="text-emerald-100 font-semibold drop-shadow-lg">
                     From shift management to care planning, medication tracking to incident reporting.
                     Everything you need in one integrated platform.
                   </p>
@@ -269,7 +269,7 @@ export default function LandingPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-white mb-6 font-semibold drop-shadow-lg">
+                  <p className="text-amber-100 mb-6 font-semibold drop-shadow-lg">
                     Our team will walk you through the platform's features and show you how
                     it can transform your care management processes.
                   </p>
@@ -291,7 +291,7 @@ export default function LandingPage() {
                 <CardHeader>
                   <CardTitle className="text-secondary font-bold text-2xl text-center">Our Philosophy</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6 text-white">
+                <CardContent className="space-y-6 text-amber-100">
                   <div>
                     <h3 className="text-xl font-bold text-secondary mb-3 drop-shadow-lg">Person-Centered Design</h3>
                     <p className="font-semibold drop-shadow-lg">Every feature is built with the participant at the center. Technology should enhance human connection, not replace it.</p>
@@ -325,8 +325,8 @@ export default function LandingPage() {
                   <CardDescription className="text-white/90 font-medium">Perfect for small teams</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white mb-4 drop-shadow-lg">$29/month</div>
-                  <ul className="text-white space-y-2 font-semibold drop-shadow-lg">
+                  <div className="text-3xl font-bold text-amber-100 mb-4 drop-shadow-lg">$29/month</div>
+                  <ul className="text-emerald-100 space-y-2 font-semibold drop-shadow-lg">
                     <li>• Up to 10 participants</li>
                     <li>• Basic shift management</li>
                     <li>• Care plan templates</li>
@@ -338,11 +338,11 @@ export default function LandingPage() {
               <Card className="bg-gradient-to-br from-white/15 via-accent/10 to-secondary/15 border-secondary/50 border-2 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">Professional</CardTitle>
-                  <CardDescription className="text-white font-semibold drop-shadow-lg">Most popular choice</CardDescription>
+                  <CardDescription className="text-amber-100 font-semibold drop-shadow-lg">Most popular choice</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white mb-4 drop-shadow-lg">$79/month</div>
-                  <ul className="text-white space-y-2 font-semibold drop-shadow-lg">
+                  <div className="text-3xl font-bold text-amber-100 mb-4 drop-shadow-lg">$79/month</div>
+                  <ul className="text-emerald-100 space-y-2 font-semibold drop-shadow-lg">
                     <li>• Unlimited participants</li>
                     <li>• Advanced analytics</li>
                     <li>• AI-powered insights</li>
@@ -355,11 +355,11 @@ export default function LandingPage() {
               <Card className="bg-gradient-to-br from-white/10 via-accent/5 to-secondary/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">Enterprise</CardTitle>
-                  <CardDescription className="text-white font-semibold drop-shadow-lg">For large organizations</CardDescription>
+                  <CardDescription className="text-amber-100 font-semibold drop-shadow-lg">For large organizations</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Custom</div>
-                  <ul className="text-white space-y-2 font-semibold drop-shadow-lg">
+                  <div className="text-3xl font-bold text-amber-100 mb-4 drop-shadow-lg">Custom</div>
+                  <ul className="text-emerald-100 space-y-2 font-semibold drop-shadow-lg">
                     <li>• Multi-site management</li>
                     <li>• Custom integrations</li>
                     <li>• Dedicated support</li>
