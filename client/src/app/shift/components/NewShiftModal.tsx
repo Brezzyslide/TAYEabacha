@@ -111,11 +111,17 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       if (!user?.tenantId) throw new Error("No tenant ID available");
       
       if (data.isRecurring && data.selectedWeekdays && data.selectedWeekdays.length > 0) {
-        // Generate recurring shifts using weekly pattern
+        // Generate recurring shifts using dedicated calendar fields
         const shifts = generateWeeklyPatternShifts(data);
         const promises = shifts.map(shift => 
           apiRequest("POST", "/api/shifts", {
             ...shift,
+            isRecurring: true,
+            recurringPattern: data.recurrenceType,
+            recurringDays: data.selectedWeekdays,
+            shiftStartDate: data.shiftStartDate?.toISOString(),
+            shiftStartTime: data.shiftStartTime,
+            shiftEndTime: data.shiftEndTime,
             tenantId: user.tenantId,
           })
         );
@@ -130,6 +136,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
           clientId: data.clientId,
           fundingCategory: data.fundingCategory,
           staffRatio: data.staffRatio,
+          isRecurring: false,
           tenantId: user.tenantId,
         };
         const response = await apiRequest("POST", "/api/shifts", shiftData);
@@ -190,53 +197,60 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     let weekCount = 0;
 
     while (totalShiftsGenerated < maxOccurrences && (!endByDate || currentDate <= endByDate)) {
-      // Calculate the start of the current week (Monday = 0)
-      const currentWeekStart = new Date(currentDate);
-      const dayOffset = currentWeekStart.getDay() === 0 ? 6 : currentWeekStart.getDay() - 1; // Monday as start of week
-      currentWeekStart.setDate(currentWeekStart.getDate() - dayOffset);
-      
-      for (const weekdayName of selectedWeekdays) {
-        const weekdayNumber = weekdayMap[weekdayName as keyof typeof weekdayMap];
-        const adjustedWeekday = weekdayNumber === 0 ? 6 : weekdayNumber - 1; // Convert to Monday = 0 system
+      // Generate shifts for selected weekdays in current week
+      for (const weekday of selectedWeekdays) {
+        if (totalShiftsGenerated >= maxOccurrences) break;
         
-        const shiftStartDate = new Date(currentWeekStart);
-        shiftStartDate.setDate(currentWeekStart.getDate() + adjustedWeekday);
+        const dayOfWeek = weekdayMap[weekday as keyof typeof weekdayMap];
+        const shiftDate = new Date(currentDate);
         
-        // Set the exact time from recurring shift fields
-        shiftStartDate.setHours(startHours, startMinutes, 0, 0);
+        // Calculate the date for this weekday
+        const daysToAdd = (dayOfWeek - currentDate.getDay() + 7) % 7;
+        shiftDate.setDate(currentDate.getDate() + daysToAdd);
         
-        // Skip if this date is before our start date or after end date
-        if (shiftStartDate < startDate || (endByDate && shiftStartDate > endByDate)) continue;
+        // Skip if this date is before our start date
+        if (shiftDate < startDate) continue;
         
-        // Calculate end time with proper day handling
-        const shiftEndDate = new Date(shiftStartDate);
+        // Skip if this date is after our end date
+        if (endByDate && shiftDate > endByDate) continue;
+        
+        // Create shift start datetime
+        const shiftStart = new Date(shiftDate);
+        shiftStart.setHours(startHours, startMinutes, 0, 0);
+        
+        // Create shift end datetime
+        const shiftEnd = new Date(shiftDate);
         if (nextDay) {
-          shiftEndDate.setDate(shiftEndDate.getDate() + 1);
+          shiftEnd.setDate(shiftEnd.getDate() + 1);
         }
-        shiftEndDate.setHours(endHours, endMinutes, 0, 0);
+        shiftEnd.setHours(endHours, endMinutes, 0, 0);
         
         shifts.push({
           title: data.title,
-          startTime: shiftStartDate.toISOString(),
-          endTime: shiftEndDate.toISOString(),
+          startTime: shiftStart,
+          endTime: shiftEnd,
           userId: data.userId,
           clientId: data.clientId,
           fundingCategory: data.fundingCategory,
           staffRatio: data.staffRatio,
-          seriesId: `pattern_${Date.now()}`,
-          weekday: weekdayName,
+          status: data.userId ? "assigned" : "unassigned",
+          isRecurring: true,
+          recurringPattern: data.recurrenceType,
+          recurringDays: data.selectedWeekdays,
+          shiftStartDate: data.shiftStartDate,
+          shiftStartTime: data.shiftStartTime,
+          shiftEndTime: data.shiftEndTime,
         });
         
         totalShiftsGenerated++;
-        if (totalShiftsGenerated >= maxOccurrences) break;
       }
       
-      if (totalShiftsGenerated >= maxOccurrences) break;
-      
-      // Move to next week pattern (weekly or fortnightly)
+      // Move to next week(s) based on frequency
       currentDate.setDate(currentDate.getDate() + (7 * frequencyWeeks));
       weekCount++;
     }
+
+    return shifts;
 
     return shifts;
   };
@@ -467,7 +481,10 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                   </div>
                 </div>
               )}
+              </div>
+            </div>
 
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -597,6 +614,91 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
               {isRecurring && (
                 <div className="space-y-6 p-6 border-2 border-blue-200 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
                   <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Configure Recurring Pattern</h3>
+                  
+                  {/* Dedicated Recurring Shift Calendar Interface */}
+                  <div className="space-y-4 p-4 border border-amber-200 rounded-lg bg-amber-50/50">
+                    <h4 className="text-md font-semibold text-amber-800">Shift Schedule</h4>
+                    
+                    <FormField
+                      control={form.control}
+                      name="shiftStartDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Shift Start Date *</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick start date for recurring shifts</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date < new Date()}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="shiftStartTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Shift Start Time *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                {...field}
+                                className="w-full"
+                                placeholder="09:00"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="shiftEndTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Shift End Time *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                {...field}
+                                className="w-full"
+                                placeholder="17:00"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
                   
                   {/* Frequency Selection */}
                   <FormField

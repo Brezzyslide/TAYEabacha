@@ -591,6 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         startTime: req.body.startTime ? new Date(req.body.startTime) : undefined,
         endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
+        shiftStartDate: req.body.shiftStartDate ? new Date(req.body.shiftStartDate) : undefined,
         tenantId: req.user.tenantId,
       };
       
