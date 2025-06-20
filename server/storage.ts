@@ -2,7 +2,7 @@ import {
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
-  shiftCancellations, cancellationRequests,
+  shiftCancellations, cancellationRequests, payScales,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -15,7 +15,8 @@ import {
   type UserRoleAssignment, type InsertUserRoleAssignment, type TaskBoardTask, type InsertTaskBoardTask,
   type NdisPricing, type InsertNdisPricing, type NdisBudget, type InsertNdisBudget,
   type BudgetTransaction, type InsertBudgetTransaction, type CareSupportPlan, type InsertCareSupportPlan,
-  type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest
+  type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest,
+  type PayScale
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -184,6 +185,10 @@ export interface IStorage {
   getCancellationRequest(id: number, tenantId: number): Promise<CancellationRequest | undefined>;
   createCancellationRequest(request: InsertCancellationRequest): Promise<CancellationRequest>;
   updateCancellationRequest(id: number, request: Partial<InsertCancellationRequest>, tenantId: number): Promise<CancellationRequest | undefined>;
+
+  // Pay Scale Management
+  getPayScalesByTenant(tenantId: number): Promise<PayScale[]>;
+  updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<void>;
 
   // Session store
   sessionStore: any;
@@ -1619,6 +1624,26 @@ export class DatabaseStorage implements IStorage {
   async createNdisBudget(budgetData: any): Promise<NdisBudget> {
     const [budget] = await db.insert(ndisBudgets).values(budgetData).returning();
     return budget;
+  }
+
+  // Pay Scale Management methods
+  async getPayScalesByTenant(tenantId: number): Promise<PayScale[]> {
+    return await db.select().from(payScales)
+      .where(eq(payScales.tenantId, tenantId))
+      .orderBy(payScales.level, payScales.payPoint);
+  }
+
+  async updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<void> {
+    await db.update(payScales)
+      .set({
+        hourlyRate: hourlyRate.toString(),
+        effectiveDate: new Date(),
+      })
+      .where(and(
+        eq(payScales.tenantId, tenantId),
+        eq(payScales.level, level),
+        eq(payScales.payPoint, payPoint)
+      ));
   }
 
   // Shift Cancellation methods
