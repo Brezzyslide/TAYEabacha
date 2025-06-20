@@ -381,7 +381,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Card className="bg-gradient-to-br from-white/10 via-secondary/10 to-accent/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
+            <Card className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
               <CardHeader>
                 <CardTitle className="text-secondary font-bold text-2xl text-center">Contact Support</CardTitle>
                 <CardDescription className="text-white/90 font-medium text-center">
