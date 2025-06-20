@@ -99,14 +99,14 @@ export default function MessageDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
       toast({
-        title: "Message Deleted",
-        description: "The message has been deleted successfully.",
+        title: "Message removed",
+        description: "Your message has been successfully deleted from the system.",
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete message. Please try again.",
+        title: "Unable to delete message",
+        description: "Please check your connection and try again. We're here to support you.",
         variant: "destructive",
       });
     },

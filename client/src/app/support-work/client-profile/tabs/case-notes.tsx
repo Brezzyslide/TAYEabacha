@@ -71,7 +71,7 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
   });
 
   // Fetch client data
-  const { data: client } = useQuery({
+  const { data: client } = useQuery<any>({
     queryKey: ["/api/clients", clientId],
     enabled: !!clientId,
   });
