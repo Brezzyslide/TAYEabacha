@@ -52,14 +52,14 @@ export default function LandingPage() {
         repeat: Infinity,
         ease: "linear"
       }}
-      className="absolute hidden lg:block text-sm text-slate-400 bg-slate-800/20 px-4 py-2 rounded-full backdrop-blur-sm border border-slate-700/30 pointer-events-none z-0"
+      className="absolute hidden lg:block text-sm text-white/80 bg-secondary/20 px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 pointer-events-none z-0 shadow-xl"
     >
       {text}
     </motion.div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-accent text-white relative overflow-hidden">
       {/* Floating Message Bubbles */}
       <div className="fixed inset-0 pointer-events-none">
         {floatingMessages.map((message, index) => (
@@ -72,16 +72,15 @@ export default function LandingPage() {
       </div>
 
       {/* Header Navigation */}
-      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700">
+      <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-sm border-b border-white/20">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <img 
-                src={needCareAILogo} 
-                alt="NeedCareAI+ Logo" 
-                className="h-12 w-auto"
-              />
+              <div className="w-12 h-12 bg-gradient-to-br from-secondary to-accent rounded-2xl flex items-center justify-center shadow-2xl border border-white/20">
+                <span className="text-white font-bold text-lg drop-shadow-md">AI+</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white drop-shadow-md">NeedsCareAI+</h1>
             </div>
 
             {/* Desktop Navigation */}
@@ -95,10 +94,10 @@ export default function LandingPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                  className={`px-6 py-3 rounded-2xl font-medium transition-all duration-300 ${
                     activeTab === tab.id
-                      ? "bg-cyan-600 text-white"
-                      : "text-slate-300 hover:text-white hover:bg-slate-700"
+                      ? "bg-gradient-to-r from-secondary to-accent text-white shadow-xl"
+                      : "text-white/80 hover:text-white hover:bg-white/10 hover:shadow-lg"
                   }`}
                 >
                   {tab.label}
@@ -110,7 +109,7 @@ export default function LandingPage() {
             <a href="/auth">
               <Button
                 variant="outline"
-                className="hidden md:flex border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+                className="hidden md:flex border-secondary text-secondary hover:bg-secondary hover:text-white rounded-2xl px-6 py-3 font-medium shadow-lg transition-all duration-300"
               >
                 Login
               </Button>
@@ -128,7 +127,7 @@ export default function LandingPage() {
 
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-slate-800 border-t border-slate-700">
+          <div className="md:hidden bg-primary/90 border-t border-white/20 backdrop-blur-sm">
             <div className="px-6 py-4 space-y-4">
               {[
                 { id: "about", label: "About Us" },
@@ -142,10 +141,10 @@ export default function LandingPage() {
                     setActiveTab(tab.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                  className={`block w-full text-left px-6 py-3 rounded-2xl font-medium transition-all duration-300 ${
                     activeTab === tab.id
-                      ? "bg-cyan-600 text-white"
-                      : "text-slate-300 hover:text-white hover:bg-slate-700"
+                      ? "bg-gradient-to-r from-secondary to-accent text-white shadow-xl"
+                      : "text-white/80 hover:text-white hover:bg-white/10 hover:shadow-lg"
                   }`}
                 >
                   {tab.label}
@@ -154,7 +153,7 @@ export default function LandingPage() {
               <a href="/auth" className="block">
                 <Button
                   variant="outline"
-                  className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white"
+                  className="w-full border-secondary text-secondary hover:bg-secondary hover:text-white rounded-2xl py-3 font-medium shadow-lg transition-all duration-300"
                 >
                   Login
                 </Button>
