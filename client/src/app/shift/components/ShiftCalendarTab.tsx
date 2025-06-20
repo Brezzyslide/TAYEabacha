@@ -9,6 +9,7 @@ import ShiftCalendarView from "./ShiftCalendarView";
 import ShiftRequestConfirmDialog from "./ShiftRequestConfirmDialog";
 import NewShiftModal from "./NewShiftModal";
 import EditShiftModal from "./EditShiftModal";
+import { CaseNoteCornerIndicator, CaseNoteStatusBorder } from "./CaseNoteStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,6 +42,11 @@ export default function ShiftCalendarTab() {
 
   const { data: users = [] } = useQuery({
     queryKey: ["/api/users"],
+  });
+
+  const { data: caseNotes = [] } = useQuery({
+    queryKey: ["/api/case-notes"],
+    refetchInterval: 60000,
   });
 
   // Mutation for requesting shifts
@@ -161,6 +167,10 @@ export default function ShiftCalendarTab() {
     if (!clientId) return "No client assigned";
     const client = (clients as any[]).find(c => c.id === clientId);
     return client?.fullName || "Unknown client";
+  };
+
+  const hasCaseNoteForShift = (shiftId: number) => {
+    return (caseNotes as any[]).some(note => note.shiftId === shiftId);
   };
 
   const getStaffName = (userId: number | null) => {
