@@ -16,6 +16,7 @@ import {
 import MobileSidebar from "./mobile-sidebar";
 import CompanyLogo from "@/components/ui/company-logo";
 import { AccessibilitySettings } from "@/components/accessibility-settings";
+import NotificationDropdown from "@/components/notifications/NotificationDropdown";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
@@ -129,13 +130,8 @@ export default function Header() {
           {/* Accessibility Settings */}
           <AccessibilitySettings />
           
-          {/* Notifications - Professional styling */}
-          <Button variant="ghost" size="sm" className="relative flex-shrink-0 p-2 hover:bg-accent rounded-lg">
-            <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-            <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-medium shadow-sm">
-              3
-            </span>
-          </Button>
+          {/* Notifications - Real-time system */}
+          <NotificationDropdown />
           
           {/* User Menu - Professional styling */}
           <DropdownMenu>

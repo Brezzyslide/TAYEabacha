@@ -3022,6 +3022,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification API
+  app.get("/api/notifications", requireAuth, async (req: any, res) => {
+    try {
+      const notifications = await storage.getNotifications(req.user.id, req.user.tenantId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get("/api/notifications/unread-count", requireAuth, async (req: any, res) => {
+    try {
+      const count = await storage.getUnreadNotificationCount(req.user.id, req.user.tenantId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  app.post("/api/notifications/:id/read", requireAuth, async (req: any, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const success = await storage.markNotificationAsRead(notificationId, req.user.id, req.user.tenantId);
+      
+      if (success) {
+        res.json({ message: "Notification marked as read" });
+      } else {
+        res.status(404).json({ message: "Notification not found" });
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/mark-all-read", requireAuth, async (req: any, res) => {
+    try {
+      const success = await storage.markAllNotificationsAsRead(req.user.id, req.user.tenantId);
+      res.json({ message: "All notifications marked as read", success });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
+    }
+  });
+
+  app.delete("/api/notifications/:id", requireAuth, async (req: any, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const success = await storage.deleteNotification(notificationId, req.user.id, req.user.tenantId);
+      
+      if (success) {
+        res.json({ message: "Notification deleted" });
+      } else {
+        res.status(404).json({ message: "Notification not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ message: "Failed to delete notification" });
+    }
+  });
+
   // Spell Check API using OpenAI
   app.post("/api/spellcheck-gpt", requireAuth, async (req: any, res) => {
     try {
