@@ -3085,6 +3085,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create sample notifications endpoint for testing
+  app.post("/api/notifications/create-samples", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { createSampleNotifications } = await import("./create-sample-notifications");
+      await createSampleNotifications();
+      res.json({ message: "Sample notifications created successfully" });
+    } catch (error) {
+      console.error("Error creating sample notifications:", error);
+      res.status(500).json({ message: "Failed to create sample notifications" });
+    }
+  });
+
   // Spell Check API using OpenAI
   app.post("/api/spellcheck-gpt", requireAuth, async (req: any, res) => {
     try {
