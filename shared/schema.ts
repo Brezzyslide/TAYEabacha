@@ -121,6 +121,12 @@ export const shifts = pgTable("shifts", {
   staffRatio: text("staff_ratio"), // "1:1", "1:2", "1:3", "1:4", "2:1"
   isActive: boolean("is_active").default(true),
   seriesId: text("series_id"), // For grouping recurring shifts
+  isRecurring: boolean("is_recurring").default(false),
+  recurringPattern: text("recurring_pattern"), // "weekly", "fortnightly", "monthly"
+  recurringDays: jsonb("recurring_days"), // Array of selected days for recurring shifts
+  shiftStartDate: timestamp("shift_start_date"), // When recurring shifts should start
+  shiftStartTime: text("shift_start_time"), // Time format like "09:00"
+  shiftEndTime: text("shift_end_time"), // Time format like "17:00"
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

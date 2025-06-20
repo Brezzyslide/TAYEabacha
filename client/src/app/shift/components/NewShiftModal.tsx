@@ -47,8 +47,13 @@ import { cn } from "@/lib/utils";
 
 const shiftFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  startDateTime: z.date(),
+  // For single shifts
+  startDateTime: z.date().optional(),
   endDateTime: z.date().optional(),
+  // For recurring shifts - dedicated calendar fields
+  shiftStartDate: z.date().optional(),
+  shiftStartTime: z.string().optional(),
+  shiftEndTime: z.string().optional(),
   userId: z.number().optional(),
   clientId: z.number().optional(),
   fundingCategory: z.enum(["SIL", "CommunityAccess", "CapacityBuilding"]).optional(),
