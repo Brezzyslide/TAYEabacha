@@ -94,25 +94,90 @@
     color: #1f2937;
   }
   
-  /* Only apply fixes to authenticated app areas - NOT landing page */
+  /* Dark blue body for authenticated areas */
+  .protected-route {
+    background: #1e1b4b !important;
+    min-height: 100vh;
+  }
+  
+  /* COMPREHENSIVE DESIGN SYSTEM - Only authenticated areas */
+  
+  /* 1. Dark blue background for all cards (like Built by Practitioners) */
+  .protected-route .bg-white,
+  .protected-route .card,
+  .protected-route [class*="bg-white"],
+  .protected-route [class*="bg-gray-"] {
+    background-color: #1e1b4b !important;
+    color: #ffffff !important;
+    border-color: #334155 !important;
+  }
+  
+  /* 2. Sidebar with dark blue background */
   .protected-route .sidebar,
   .protected-route .nav-menu,
   .protected-route [data-sidebar],
   .protected-route .bg-slate-900,
   .protected-route .bg-gray-900 {
-    background-color: #0f172a !important;
+    background-color: #1e1b4b !important;
     color: #ffffff !important;
   }
   
-  /* Ensure sidebar text is always white in authenticated areas only */
+  /* 3. All sidebar text white */
   .protected-route .sidebar * {
     color: #ffffff !important;
   }
   
-  /* Landing page remains completely unchanged */
-  .landing-page * {
-    /* Preserve all original styles */
+  /* 4. Teal/green buttons (like login button) */
+  .protected-route button,
+  .protected-route .btn,
+  .protected-route [type="submit"],
+  .protected-route .toggle,
+  .protected-route .button {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #10b981 !important;
   }
+  
+  .protected-route button:hover,
+  .protected-route .btn:hover {
+    background-color: #059669 !important;
+  }
+  
+  /* 5. Light blue/cyan headings (like "Need" text) */
+  .protected-route h1,
+  .protected-route h2,
+  .protected-route h3,
+  .protected-route h4,
+  .protected-route h5,
+  .protected-route h6,
+  .protected-route .heading,
+  .protected-route .title {
+    color: #7dd3fc !important;
+  }
+  
+  /* 6. Teal preloaded text and descriptions (like "AI-Powered") */
+  .protected-route .description,
+  .protected-route .help-text,
+  .protected-route .preloaded-text,
+  .protected-route .text-gray-500,
+  .protected-route .text-gray-600,
+  .protected-route .muted {
+    color: #14b8a6 !important;
+  }
+  
+  /* 7. All other text white */
+  .protected-route p,
+  .protected-route span,
+  .protected-route div,
+  .protected-route label,
+  .protected-route .text-gray-900,
+  .protected-route .text-gray-800,
+  .protected-route .text-gray-700,
+  .protected-route .text-black {
+    color: #ffffff !important;
+  }
+  
+  /* Landing page remains completely unchanged */
   
   /* Professional dark text elements */
   p, span, div, h1, h2, h3, h4, h5, h6 {
