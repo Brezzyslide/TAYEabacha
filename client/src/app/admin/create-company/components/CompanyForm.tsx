@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Building2, User, Mail, Phone, Lock, FileText } from "lucide-react";
+import TenantProvisioningToggle from "./TenantProvisioningToggle";
 
 const createCompanySchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -19,6 +20,7 @@ const createCompanySchema = z.object({
   primaryContactEmail: z.string().email("Invalid email address"),
   primaryContactPhone: z.string().optional(),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  includeDemoData: z.boolean().default(true),
 });
 
 type CreateCompanyFormData = z.infer<typeof createCompanySchema>;
@@ -37,6 +39,7 @@ export default function CompanyForm() {
       primaryContactEmail: "",
       primaryContactPhone: "",
       password: "",
+      includeDemoData: true,
     },
   });
 
@@ -196,6 +199,12 @@ export default function CompanyForm() {
             )}
           />
         </div>
+
+        {/* Demo Data Toggle */}
+        <TenantProvisioningToggle 
+          includeDemoData={form.watch("includeDemoData")}
+          onToggle={(value) => form.setValue("includeDemoData", value)}
+        />
 
         {/* Submit Button */}
         <div className="pt-6 border-t">
