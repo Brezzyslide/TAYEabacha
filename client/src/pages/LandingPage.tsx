@@ -52,14 +52,14 @@ export default function LandingPage() {
         repeat: Infinity,
         ease: "linear"
       }}
-      className="absolute hidden lg:block text-sm text-amber-100 bg-primary/40 px-6 py-3 rounded-2xl backdrop-blur-md border border-amber-200/30 pointer-events-none z-0 shadow-2xl font-semibold"
+      className="absolute hidden lg:block text-sm text-white/80 bg-secondary/20 px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 pointer-events-none z-0 shadow-xl"
     >
       {text}
     </motion.div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary via-secondary to-accent text-white relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-accent text-white relative overflow-hidden">
       {/* Floating Message Bubbles */}
       <div className="fixed inset-0 pointer-events-none">
         {floatingMessages.map((message, index) => (
