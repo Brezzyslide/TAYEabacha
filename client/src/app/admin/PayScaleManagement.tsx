@@ -58,9 +58,8 @@ export default function PayScaleManagement() {
   const [activeEmploymentType, setActiveEmploymentType] = useState("fulltime");
 
   // Fetch pay scales for current employment type
-  const { data: payScales = [], isLoading } = useQuery({
-    queryKey: ["/api/pay-scales", activeEmploymentType],
-    queryFn: () => apiRequest("GET", `/api/pay-scales?employmentType=${activeEmploymentType}`),
+  const { data: payScales = [], isLoading } = useQuery<PayScale[]>({
+    queryKey: [`/api/pay-scales?employmentType=${activeEmploymentType}`],
   });
 
   // Fetch ScHADS default rates
@@ -146,8 +145,9 @@ export default function PayScaleManagement() {
   };
 
   const isOverridden = (level: number, payPoint: number): boolean => {
+    const payScalesArray = Array.isArray(payScales) ? payScales : [];
     const currentRate = parseFloat(
-      payScales.find(p => p.level === level && p.payPoint === payPoint)?.hourlyRate || "0"
+      payScalesArray.find((p: PayScale) => p.level === level && p.payPoint === payPoint)?.hourlyRate || "0"
     );
     const scHADSRate = getScHADSRate(level, payPoint);
     const expectedRate = getAdjustedRate(scHADSRate, activeEmploymentType);
@@ -196,7 +196,8 @@ export default function PayScaleManagement() {
     if (editingRates[key] !== undefined) {
       return editingRates[key];
     }
-    return payScales.find(p => p.level === level && p.payPoint === payPoint)?.hourlyRate || "0.00";
+    const payScalesArray = Array.isArray(payScales) ? payScales : [];
+    return payScalesArray.find((p: PayScale) => p.level === level && p.payPoint === payPoint)?.hourlyRate || "0.00";
   };
 
   const currentEmploymentType = EMPLOYMENT_TYPES.find(t => t.value === activeEmploymentType);
