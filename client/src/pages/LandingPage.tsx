@@ -325,8 +325,8 @@ export default function LandingPage() {
                   <CardDescription className="text-white/90 font-medium">Perfect for small teams</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-amber-100 mb-4 drop-shadow-lg">$29/month</div>
-                  <ul className="text-emerald-100 space-y-2 font-semibold drop-shadow-lg">
+                  <div className="text-3xl font-bold text-amber-50 mb-4 drop-shadow-2xl">$29/month</div>
+                  <ul className="text-emerald-50 space-y-2 font-bold drop-shadow-2xl text-lg">
                     <li>• Up to 10 participants</li>
                     <li>• Basic shift management</li>
                     <li>• Care plan templates</li>
@@ -338,11 +338,11 @@ export default function LandingPage() {
               <Card className="bg-gradient-to-br from-white/15 via-accent/10 to-secondary/15 border-secondary/50 border-2 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">Professional</CardTitle>
-                  <CardDescription className="text-amber-100 font-semibold drop-shadow-lg">Most popular choice</CardDescription>
+                  <CardDescription className="text-amber-50 font-bold drop-shadow-2xl">Most popular choice</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-amber-100 mb-4 drop-shadow-lg">$79/month</div>
-                  <ul className="text-emerald-100 space-y-2 font-semibold drop-shadow-lg">
+                  <div className="text-3xl font-bold text-amber-50 mb-4 drop-shadow-2xl">$79/month</div>
+                  <ul className="text-emerald-50 space-y-2 font-bold drop-shadow-2xl text-lg">
                     <li>• Unlimited participants</li>
                     <li>• Advanced analytics</li>
                     <li>• AI-powered insights</li>
@@ -355,11 +355,11 @@ export default function LandingPage() {
               <Card className="bg-gradient-to-br from-white/10 via-accent/5 to-secondary/10 border-white/20 rounded-3xl backdrop-blur-sm shadow-2xl">
                 <CardHeader>
                   <CardTitle className="text-accent font-bold text-xl">Enterprise</CardTitle>
-                  <CardDescription className="text-amber-100 font-semibold drop-shadow-lg">For large organizations</CardDescription>
+                  <CardDescription className="text-amber-50 font-bold drop-shadow-2xl">For large organizations</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-amber-100 mb-4 drop-shadow-lg">Custom</div>
-                  <ul className="text-emerald-100 space-y-2 font-semibold drop-shadow-lg">
+                  <div className="text-3xl font-bold text-amber-50 mb-4 drop-shadow-2xl">Custom</div>
+                  <ul className="text-emerald-50 space-y-2 font-bold drop-shadow-2xl text-lg">
                     <li>• Multi-site management</li>
                     <li>• Custom integrations</li>
                     <li>• Dedicated support</li>
