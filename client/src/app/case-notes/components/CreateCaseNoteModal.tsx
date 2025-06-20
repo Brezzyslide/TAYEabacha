@@ -126,20 +126,66 @@ export default function CreateCaseNoteModal({
     return contentValue.trim().split(/\s+/).filter(word => word.length > 0).length;
   }, [contentValue]);
 
-  // Suggest most relevant shift (closest to current time)
-  const suggestedShift = useMemo(() => {
-    if (!availableShifts || availableShifts.length === 0) return null;
+  // Smart filtering logic for shift suggestions
+  const filteredShifts = useMemo(() => {
+    if (!availableShifts || availableShifts.length === 0) return [];
     
     const now = new Date();
-    return availableShifts.reduce((closest: Shift, shift: Shift) => {
-      const shiftTime = new Date(shift.startTime);
-      const closestTime = new Date(closest.startTime);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    return availableShifts.filter((shift: Shift) => {
+      const shiftDate = new Date(shift.startTime);
+      const shiftDateOnly = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
       
-      return Math.abs(now.getTime() - shiftTime.getTime()) < Math.abs(now.getTime() - closestTime.getTime()) 
-        ? shift 
-        : closest;
-    }, availableShifts[0]);
+      // Include shifts for today
+      if (shiftDateOnly.getTime() === today.getTime()) {
+        return true;
+      }
+      
+      // Include past completed shifts that don't have case notes yet
+      if (shiftDateOnly < today) {
+        const shiftStatus = (shift as any).status;
+        // Only show completed shifts without case notes
+        return shiftStatus === "completed";
+      }
+      
+      // Exclude future shifts
+      return false;
+    });
   }, [availableShifts]);
+
+  // Suggest most relevant shift (prioritize today's shifts, then most recent past shift)
+  const suggestedShift = useMemo(() => {
+    if (!filteredShifts || filteredShifts.length === 0) return null;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // First priority: Today's shifts
+    const todayShifts = filteredShifts.filter((shift: Shift) => {
+      const shiftDate = new Date(shift.startTime);
+      const shiftDateOnly = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
+      return shiftDateOnly.getTime() === today.getTime();
+    });
+    
+    if (todayShifts.length > 0) {
+      // Return the most recent today's shift
+      return todayShifts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
+    }
+    
+    // Second priority: Most recent past completed shift
+    const pastShifts = filteredShifts.filter((shift: Shift) => {
+      const shiftDate = new Date(shift.startTime);
+      const shiftDateOnly = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
+      return shiftDateOnly < today;
+    });
+    
+    if (pastShifts.length > 0) {
+      return pastShifts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
+    }
+    
+    return filteredShifts[0];
+  }, [filteredShifts]);
 
   // Auto-select suggested shift if only one or set suggestion
   useEffect(() => {
@@ -317,7 +363,7 @@ export default function CreateCaseNoteModal({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="0">No shift selected</SelectItem>
-                        {availableShifts?.map((shift: Shift) => (
+                        {filteredShifts?.map((shift: Shift) => (
                           <SelectItem key={shift.id} value={shift.id.toString()}>
                             {format(new Date(shift.startTime), "MMM d, yyyy 'at' h:mm a")} - {shift.title}
                             {shift.id === suggestedShift?.id && (
@@ -328,10 +374,10 @@ export default function CreateCaseNoteModal({
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      {(availableShifts?.length === 0) && selectedClientId ? 
-                        "No recent shifts found for this client" :
+                      {(filteredShifts?.length === 0) && selectedClientId ? 
+                        "No shifts available for case notes (showing today's shifts and past completed shifts only)" :
                         suggestedShift ? `Suggested: ${format(new Date(suggestedShift.startTime), "MMM d 'at' h:mm a")}` : 
-                        "Select the shift this case note relates to"
+                        "Showing today's shifts and past completed shifts without case notes"
                       }
                     </FormDescription>
                     <FormMessage />
