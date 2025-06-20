@@ -1634,6 +1634,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(payScales.level, payScales.payPoint);
   }
 
+  async getPayScalesByTenant(tenantId: number): Promise<PayScale[]> {
+    return await db.select().from(payScales)
+      .where(eq(payScales.tenantId, tenantId))
+      .orderBy(payScales.level, payScales.payPoint);
+  }
+
   async updatePayScale(tenantId: number, level: number, payPoint: number, hourlyRate: number): Promise<PayScale> {
     const [updated] = await db.update(payScales)
       .set({
