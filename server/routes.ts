@@ -3612,8 +3612,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id,
         action: "update_pay_scale",
         resourceType: "pay_scale",
-        resourceId: `${level}-${payPoint}`,
-        description: `Updated pay scale Level ${level}, Pay Point ${payPoint} to $${hourlyRate}/hour`,
+        resourceId: `${parseInt(level)}-${parseInt(payPoint)}`,
+        description: `Updated pay scale Level ${parseInt(level)}, Pay Point ${parseInt(payPoint)} to $${hourlyRate}/hour`,
         tenantId: req.user.tenantId,
       });
 
