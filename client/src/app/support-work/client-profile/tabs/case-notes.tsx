@@ -98,15 +98,15 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       
       toast({
-        title: "Case Note Created",
-        description: "Your case note has been saved successfully.",
+        title: "Case note submitted successfully",
+        description: `Case note saved for ${client?.firstName || 'client'}. Great work documenting their care.`,
       });
       setIsModalOpen(false);
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to create case note. Please try again.",
+        title: "Unable to save case note",
+        description: "Please check your connection and try again. Your work is important to us.",
         variant: "destructive",
       });
     },

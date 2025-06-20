@@ -15,6 +15,14 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-3 sm:space-y-4 p-2 sm:p-0">
+      <div className="bg-white rounded-md shadow-sm border border-gray-200 p-6 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Welcome to your NeedCareAI+ Workspace
+        </h1>
+        <p className="text-gray-600">
+          Manage your care operations with tools designed by disability support workers.
+        </p>
+      </div>
       <Tabs defaultValue="tasks" className="w-full">
         <TabsList className="grid w-full grid-cols-3 h-auto">
           <TabsTrigger value="insights" className="text-xs sm:text-sm py-2 px-1 sm:px-3">

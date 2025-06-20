@@ -289,46 +289,46 @@
 }
 
 @layer utilities {
-  /* High Contrast Text Utilities for Optimal Readability */
+  /* Professional Text Utilities for Light Theme */
   .text-high-contrast {
-    color: #ffffff;
+    color: #1f2937;
   }
   
   .text-medium-contrast {
-    color: #e2e8f0; /* slate-200 */
+    color: #374151;
   }
   
   .text-readable {
-    color: #ffffff;
+    color: #1f2937;
   }
   
   .text-muted-readable {
-    color: #cbd5e1; /* slate-300 */
+    color: #6b7280;
   }
   
-  /* Override low contrast text colors with high contrast variants */
+  /* Override text colors for light theme consistency */
   .text-slate-400 {
-    color: #cbd5e1 !important; /* slate-300 */
+    color: #6b7280 !important; /* gray-500 */
   }
   
   .text-slate-500 {
-    color: #e2e8f0 !important; /* slate-200 */
+    color: #374151 !important; /* gray-700 */
   }
   
   .text-slate-600 {
-    color: #ffffff !important; /* white */
+    color: #1f2937 !important; /* gray-800 */
   }
   
   .text-gray-400 {
-    color: #cbd5e1 !important; /* slate-300 */
+    color: #6b7280 !important; /* gray-500 */
   }
   
   .text-gray-500 {
-    color: #e2e8f0 !important; /* slate-200 */
+    color: #374151 !important; /* gray-700 */
   }
   
   .text-gray-600 {
-    color: #ffffff !important; /* white */
+    color: #1f2937 !important; /* gray-800 */
   }
 
   .scrollbar-hide {
