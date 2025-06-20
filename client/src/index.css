@@ -89,9 +89,9 @@
 
   body {
     @apply font-sans antialiased text-foreground;
-    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 25%, #2d3748 50%, #1a1f2e 75%, #0f1419 100%);
+    background: #f9fafb;
     background-attachment: fixed;
-    color: #ffffff;
+    color: #1f2937;
   }
   
   /* Global text color inheritance for optimal visibility */
@@ -99,14 +99,14 @@
     color: inherit;
   }
   
-  /* High contrast text elements */
+  /* Professional dark text elements */
   p, span, div, h1, h2, h3, h4, h5, h6 {
-    color: #ffffff;
+    color: #1f2937;
   }
   
-  /* Muted text with good contrast */
+  /* Muted text with proper contrast */
   .text-muted, .muted {
-    color: #e2e8f0 !important; /* slate-200 */
+    color: #6b7280 !important; /* gray-500 */
   }
 
   /* Modern scrollbars */
@@ -137,14 +137,20 @@
   }
   
   .glass-nav {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: #ffffff;
     backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(148, 163, 184, 0.4);
-    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+    border-right: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
   
   .gradient-button-primary {
-    @apply bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold px-6 py-3 rounded-2xl shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-105;
+    @apply font-semibold px-6 py-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md;
+    background: #0c1e35;
+    color: white;
+  }
+  
+  .gradient-button-primary:hover {
+    background: #132f54;
   }
   
   .gradient-button-secondary {
@@ -156,25 +162,25 @@
   }
   
   .modern-input {
-    @apply rounded-2xl px-4 py-3 transition-all duration-300;
-    background: linear-gradient(135deg, #475569 0%, #64748b 100%);
-    border: 1px solid rgba(148, 163, 184, 0.5);
-    color: #ffffff;
-    placeholder-color: #cbd5e1;
+    @apply rounded-md px-4 py-3 transition-all duration-300;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #1f2937;
+    placeholder-color: #9ca3af;
   }
   
   .modern-input:focus {
-    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
-    border-color: #06b6d4;
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+    background: #ffffff;
+    border-color: #0c1e35;
+    box-shadow: 0 0 0 3px rgba(12, 30, 53, 0.1);
     outline: none;
   }
   
   .modern-card {
-    @apply relative overflow-hidden rounded-3xl border backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    @apply relative overflow-hidden rounded-md border backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
   
   .modern-nav-item {
@@ -195,15 +201,15 @@
   
   .modern-table th {
     @apply px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider;
-    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-    color: #ffffff;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    background: #f9fafb;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
   }
   
   .modern-table td {
     @apply px-6 py-4 text-sm;
-    color: #ffffff;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    color: #1f2937;
+    border-bottom: 1px solid #f3f4f6;
   }
   
   .modern-table tr:hover {
@@ -211,18 +217,24 @@
   }
 
   .modern-button {
-    @apply relative overflow-hidden bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105;
+    @apply relative overflow-hidden text-white font-semibold py-3 px-6 rounded-md shadow-sm hover:shadow-md transition-all duration-300;
+    background: #0c1e35;
+  }
+  
+  .modern-button:hover {
+    background: #132f54;
   }
 
   .modern-button-secondary {
-    @apply relative overflow-hidden text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105;
-    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    @apply relative overflow-hidden font-semibold py-3 px-6 rounded-md shadow-sm hover:shadow-md transition-all duration-300;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
   }
   
   .modern-button-secondary:hover {
-    background: linear-gradient(135deg, #475569 0%, #374151 100%);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    background: #e5e7eb;
+    border-color: #9ca3af;
   }
 
   .modern-form {
@@ -233,46 +245,46 @@
     @apply modern-card border-2 border-cyan-500/20 shadow-2xl shadow-cyan-500/10;
   }
 
-  /* AI Output and Content Areas - High Contrast */
+  /* AI Output and Content Areas - Clean Light Theme */
   .ai-output, .ai-content, .generated-content {
-    @apply p-4 rounded-lg leading-relaxed;
-    background: linear-gradient(135deg, #475569 0%, #64748b 100%);
-    border: 1px solid rgba(148, 163, 184, 0.5);
-    color: #ffffff;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    @apply p-4 rounded-md leading-relaxed;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #1f2937;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
   
   .ai-output p, .ai-content p, .generated-content p {
     @apply leading-relaxed;
-    color: #ffffff;
+    color: #1f2937;
   }
   
   .ai-output ul, .ai-content ul, .generated-content ul {
     @apply space-y-1;
-    color: #e2e8f0;
+    color: #374151;
   }
   
   .ai-output li, .ai-content li, .generated-content li {
-    color: #ffffff;
+    color: #1f2937;
   }
 
-  /* Form Labels and Text - High Contrast */
+  /* Form Labels and Text - Professional Light Theme */
   label {
     @apply font-medium;
-    color: #ffffff;
+    color: #374151;
   }
   
   .form-description, .text-sm {
-    color: #cbd5e1;
+    color: #6b7280;
   }
   
   /* Card Content Text */
   .card-content p, .card-body p {
-    color: #ffffff;
+    color: #1f2937;
   }
   
   .card-content span, .card-body span {
-    color: #e2e8f0;
+    color: #4b5563;
   }
 }
 
