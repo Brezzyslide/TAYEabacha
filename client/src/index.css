@@ -6,10 +6,10 @@
   --background: hsl(222, 84%, 4%);
   --foreground: hsl(210, 40%, 98%);
   --muted: hsl(217, 32%, 17%);
-  --muted-foreground: hsl(215, 20%, 65%);
-  --popover: hsl(224, 71%, 4%);
+  --muted-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222, 84%, 4%);
   --popover-foreground: hsl(210, 40%, 98%);
-  --card: hsl(224, 71%, 4%);
+  --card: hsl(222, 84%, 4%);
   --card-foreground: hsl(210, 40%, 98%);
   --border: hsl(217, 32%, 17%);
   --input: hsl(217, 32%, 17%);
@@ -88,15 +88,50 @@
   }
 
   body {
-    @apply font-sans antialiased text-foreground;
+    @apply font-sans antialiased;
     background: #f9fafb;
     background-attachment: fixed;
     color: #1f2937;
   }
   
-  /* Global text color inheritance for optimal visibility */
-  * {
+  /* Sidebar and navigation with dark backgrounds for readability */
+  .sidebar,
+  .nav-menu,
+  [data-sidebar],
+  .bg-slate-900,
+  .bg-gray-900 {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+  }
+  
+  /* Cards and content areas - keep light with dark text */
+  .bg-white {
+    background-color: #ffffff;
+    color: #1f2937;
+  }
+  
+  /* Normal text colors */
+  .text-gray-900 { color: #111827; }
+  .text-gray-800 { color: #1f2937; }
+  .text-gray-700 { color: #374151; }
+  .text-gray-600 { color: #4b5563; }
+  .text-gray-500 { color: #6b7280; }
+  
+  /* Button text - keep normal colors */
+  button {
     color: inherit;
+  }
+  
+  /* Input text - dark on light */
+  input, textarea, select {
+    background-color: #ffffff;
+    color: #1f2937;
+    border-color: #d1d5db;
+  }
+  
+  /* Ensure sidebar text is always white */
+  .sidebar * {
+    color: #ffffff !important;
   }
   
   /* Professional dark text elements */

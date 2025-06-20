@@ -64,7 +64,7 @@ export default function Sidebar() {
 
   const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], gradientColor: string) => (
     <div className="mb-8">
-      <div className={cn("px-4 py-3 rounded-2xl mb-4 backdrop-blur-sm border border-white/10", gradientColor)}>
+      <div className="px-4 py-3 rounded-lg mb-4 bg-slate-800 border border-slate-700">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">{title}</h3>
       </div>
       <div className="space-y-2">
@@ -74,20 +74,20 @@ export default function Sidebar() {
           return (
             <Link key={item.name} href={item.href} 
               className={cn(
-                "modern-nav-item group",
-                isActive && "active"
+                "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group",
+                isActive 
+                  ? "bg-blue-600 text-white" 
+                  : "text-gray-300 hover:bg-slate-800 hover:text-white"
               )}>
-              <div className="flex items-center space-x-3">
-                <div className={cn(
-                  "p-2 rounded-xl transition-all duration-300",
-                  isActive 
-                    ? "bg-cyan-500 shadow-lg shadow-cyan-500/25" 
-                    : "bg-white/10 group-hover:bg-white/20"
-                )}>
-                  <Icon className="h-4 w-4 text-white" />
-                </div>
-                <span className="font-medium text-white">{item.name}</span>
+              <div className={cn(
+                "p-2 rounded-lg transition-all duration-200",
+                isActive 
+                  ? "bg-blue-500 text-white" 
+                  : "bg-slate-700 text-gray-300 group-hover:bg-slate-600 group-hover:text-white"
+              )}>
+                <Icon className="h-4 w-4" />
               </div>
+              <span className="font-medium">{item.name}</span>
             </Link>
           );
         })}
@@ -96,15 +96,9 @@ export default function Sidebar() {
   );
 
   return (
-    <aside className="hidden lg:block w-72 glass-nav flex-shrink-0 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-10 left-4 w-32 h-32 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute bottom-20 right-4 w-24 h-24 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-      </div>
-
+    <aside className="hidden lg:block w-72 bg-slate-900 flex-shrink-0 relative">
       {/* Navigation Menu */}
-      <nav className="relative z-10 p-6 space-y-8 h-full overflow-y-auto">
+      <nav className="p-6 space-y-8 h-full overflow-y-auto">
         {/* Support Work Section */}
         {renderNavigationSection(
           "SUPPORT WORK", 
