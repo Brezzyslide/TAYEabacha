@@ -87,6 +87,9 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     defaultValues: {
       title: "",
       startDateTime: new Date(),
+      shiftStartDate: new Date(),
+      shiftStartTime: "09:00",
+      shiftEndTime: "17:00",
       isRecurring: false,
       selectedWeekdays: [],
       numberOfOccurrences: 6,
@@ -121,7 +124,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         // Single shift creation
         const shiftData = {
           title: data.title,
-          startTime: data.startDateTime.toISOString(),
+          startTime: data.startDateTime?.toISOString(),
           endTime: data.endDateTime?.toISOString(),
           userId: data.userId,
           clientId: data.clientId,
@@ -156,30 +159,18 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
 
   const generateWeeklyPatternShifts = (data: ShiftFormData): any[] => {
     const shifts: any[] = [];
-    const startDate = new Date(data.startDateTime);
-    const endDate = data.endDateTime ? new Date(data.endDateTime) : null;
     
-    // Extract time components for reliable duration calculation
-    const startHours = startDate.getHours();
-    const startMinutes = startDate.getMinutes();
-    const startSeconds = startDate.getSeconds();
+    // Use dedicated recurring shift fields
+    const startDate = data.shiftStartDate || new Date();
+    const startTime = data.shiftStartTime || "09:00";
+    const endTime = data.shiftEndTime || "17:00";
     
-    let endHours = startHours + 8; // Default 8 hour shift
-    let endMinutes = startMinutes;
-    let endSeconds = startSeconds;
-    let nextDay = false;
+    // Parse time strings for recurring shifts
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
     
-    if (endDate) {
-      endHours = endDate.getHours();
-      endMinutes = endDate.getMinutes();
-      endSeconds = endDate.getSeconds();
-      
-      // Check if shift spans multiple days
-      const sameDay = startDate.toDateString() === endDate.toDateString();
-      if (!sameDay) {
-        nextDay = true;
-      }
-    }
+    // Check if shift spans to next day
+    const nextDay = endHours < startHours || (endHours === startHours && endMinutes <= startMinutes);
     
     const selectedWeekdays = data.selectedWeekdays || [];
     if (selectedWeekdays.length === 0) return shifts;
@@ -211,8 +202,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         const shiftStartDate = new Date(currentWeekStart);
         shiftStartDate.setDate(currentWeekStart.getDate() + adjustedWeekday);
         
-        // Set the exact time from original shift
-        shiftStartDate.setHours(startHours, startMinutes, startSeconds, 0);
+        // Set the exact time from recurring shift fields
+        shiftStartDate.setHours(startHours, startMinutes, 0, 0);
         
         // Skip if this date is before our start date or after end date
         if (shiftStartDate < startDate || (endByDate && shiftStartDate > endByDate)) continue;
@@ -222,7 +213,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         if (nextDay) {
           shiftEndDate.setDate(shiftEndDate.getDate() + 1);
         }
-        shiftEndDate.setHours(endHours, endMinutes, endSeconds, 0);
+        shiftEndDate.setHours(endHours, endMinutes, 0, 0);
         
         shifts.push({
           title: data.title,
@@ -284,81 +275,84 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="startDateTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Date & Time *</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP HH:mm")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                          <div className="p-3 border-t">
-                            <Input
-                              type="time"
-                              value={field.value ? format(field.value, "HH:mm") : ""}
-                              onChange={(e) => {
-                                const [hours, minutes] = e.target.value.split(":");
-                                const newDate = new Date(field.value || new Date());
-                                newDate.setHours(parseInt(hours), parseInt(minutes));
-                                field.onChange(newDate);
-                              }}
+              {/* Conditional DateTime Fields - Single vs Recurring */}
+              <div>
+                {!isRecurring ? (
+                  <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startDateTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Date & Time *</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP HH:mm")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
                             />
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                            <div className="p-3 border-t">
+                              <Input
+                                type="time"
+                                value={field.value ? format(field.value, "HH:mm") : ""}
+                                onChange={(e) => {
+                                  const [hours, minutes] = e.target.value.split(":");
+                                  const newDate = new Date(field.value || new Date());
+                                  newDate.setHours(parseInt(hours), parseInt(minutes));
+                                  field.onChange(newDate);
+                                }}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="endDateTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Date & Time</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP HH:mm")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  <FormField
+                    control={form.control}
+                    name="endDateTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Date & Time</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP HH:mm")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -388,7 +382,91 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                     </FormItem>
                   )}
                 />
-              </div>
+                </div>
+              ) : (
+                /* Dedicated Recurring Shift Calendar Interface */
+                <div className="space-y-4 p-4 border border-blue-200 rounded-lg bg-blue-50/50">
+                  <h4 className="text-md font-semibold text-blue-800">Recurring Shift Schedule</h4>
+                  
+                  <FormField
+                    control={form.control}
+                    name="shiftStartDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Shift Start Date *</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick start date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="shiftStartTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Shift Start Time *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="time"
+                              {...field}
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="shiftEndTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Shift End Time *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="time"
+                              {...field}
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
