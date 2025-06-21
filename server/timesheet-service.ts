@@ -19,8 +19,8 @@ export async function createTimesheetEntryFromShift(shiftId: number): Promise<vo
     .where(eq(shifts.id, shiftId))
     .limit(1);
 
-  if (!shift.length || !shift[0].actualStartTime || !shift[0].actualEndTime) {
-    throw new Error("Shift not completed or missing actual times");
+  if (!shift.length || !shift[0].startTime || !shift[0].endTime) {
+    throw new Error("Shift not completed or missing start/end times");
   }
 
   const shiftData = shift[0];
@@ -32,8 +32,8 @@ export async function createTimesheetEntryFromShift(shiftId: number): Promise<vo
   }
 
   // Calculate hours worked
-  const startTime = new Date(shiftData.actualStartTime);
-  const endTime = new Date(shiftData.actualEndTime);
+  const startTime = new Date(shiftData.startTime);
+  const endTime = new Date(shiftData.endTime);
   const totalMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
   const breakMinutes = 30; // Standard break time
   const workedMinutes = totalMinutes - breakMinutes;

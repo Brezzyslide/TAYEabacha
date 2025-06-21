@@ -9,6 +9,7 @@ import { eq, desc, and } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import { createTimesheetEntryFromShift } from "./timesheet-service";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -682,15 +683,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Shift not found" });
       }
       
-      // Process budget deduction when shift is completed
+      // Process budget deduction and timesheet entry when shift is completed
       if (processedUpdateData.endTime && processedUpdateData.isActive === false) {
-        console.log(`[BUDGET DEDUCTION] Processing budget deduction for completed shift ${shiftId}`);
+        console.log(`[SHIFT COMPLETION] Processing completion for shift ${shiftId}`);
+        
+        // Process budget deduction
         try {
           await processBudgetDeduction(updatedShift, req.user.id);
           console.log(`[BUDGET DEDUCTION] Successfully processed budget deduction for shift ${shiftId}`);
         } catch (budgetError) {
           console.error(`[BUDGET DEDUCTION ERROR] Failed to process budget deduction for shift ${shiftId}:`, budgetError);
           // Don't fail the shift update if budget processing fails
+        }
+
+        // Create automatic timesheet entry
+        try {
+          await createTimesheetEntryFromShift(shiftId);
+          console.log(`[TIMESHEET] Successfully created timesheet entry for completed shift ${shiftId}`);
+        } catch (timesheetError) {
+          console.error(`[TIMESHEET ERROR] Failed to create timesheet entry for shift ${shiftId}:`, timesheetError);
+          // Don't fail the shift update if timesheet processing fails
         }
       }
       
