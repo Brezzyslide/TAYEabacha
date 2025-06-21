@@ -1708,9 +1708,17 @@ export class DatabaseStorage implements IStorage {
 
   // Shift Cancellation methods
   async getShiftCancellations(tenantId: number): Promise<ShiftCancellation[]> {
-    return await db.select().from(shiftCancellations)
-      .where(eq(shiftCancellations.tenantId, tenantId))
-      .orderBy(desc(shiftCancellations.createdAt));
+    try {
+      console.log(`[STORAGE] Fetching shift cancellations for tenant ${tenantId}`);
+      const results = await db.select().from(shiftCancellations)
+        .where(eq(shiftCancellations.tenantId, tenantId))
+        .orderBy(desc(shiftCancellations.createdAt));
+      console.log(`[STORAGE] Found ${results.length} shift cancellations`);
+      return results;
+    } catch (error) {
+      console.error(`[STORAGE] Error fetching shift cancellations for tenant ${tenantId}:`, error);
+      throw new Error(`Failed to fetch shift cancellations: ${error.message}`);
+    }
   }
 
   async getShiftCancellation(id: number, tenantId: number): Promise<ShiftCancellation | undefined> {
