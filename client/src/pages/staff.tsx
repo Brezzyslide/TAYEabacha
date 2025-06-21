@@ -28,6 +28,9 @@ const createStaffSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   isActive: z.boolean().default(true),
+  employmentType: z.enum(["fulltime", "parttime", "casual"]).default("casual"),
+  payLevel: z.number().min(1).max(4).default(1),
+  payPoint: z.number().min(1).max(4).default(1),
 });
 
 type CreateStaffFormData = z.infer<typeof createStaffSchema>;
@@ -40,6 +43,9 @@ const editStaffSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   isActive: z.boolean(),
+  employmentType: z.enum(["fulltime", "parttime", "casual"]),
+  payLevel: z.number().min(1).max(4),
+  payPoint: z.number().min(1).max(4),
 });
 
 type EditStaffFormData = z.infer<typeof editStaffSchema>;
@@ -356,6 +362,9 @@ function EditStaffForm({
     phone: staff.phone || "",
     address: staff.address || "",
     isActive: staff.isActive || false,
+    employmentType: staff.employmentType || "casual",
+    payLevel: staff.payLevel || 1,
+    payPoint: staff.payPoint || 1,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -410,6 +419,52 @@ function EditStaffForm({
             <SelectItem value="ConsoleManager">Console Manager</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="employmentType">Employment Type *</Label>
+          <Select value={formData.employmentType} onValueChange={(value) => setFormData({ ...formData, employmentType: value })}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fulltime">Full-time</SelectItem>
+              <SelectItem value="parttime">Part-time</SelectItem>
+              <SelectItem value="casual">Casual</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="payLevel">Pay Level *</Label>
+          <Select value={formData.payLevel.toString()} onValueChange={(value) => setFormData({ ...formData, payLevel: parseInt(value) })}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Level 1</SelectItem>
+              <SelectItem value="2">Level 2</SelectItem>
+              <SelectItem value="3">Level 3</SelectItem>
+              <SelectItem value="4">Level 4</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="payPoint">Pay Point *</Label>
+          <Select value={formData.payPoint.toString()} onValueChange={(value) => setFormData({ ...formData, payPoint: parseInt(value) })}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Point" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Point 1</SelectItem>
+              <SelectItem value="2">Point 2</SelectItem>
+              <SelectItem value="3">Point 3</SelectItem>
+              <SelectItem value="4">Point 4</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -483,6 +538,9 @@ export default function Staff() {
       phone: "",
       address: "",
       isActive: true,
+      employmentType: "casual",
+      payLevel: 1,
+      payPoint: 1,
     },
   });
 
