@@ -1715,7 +1715,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(shiftCancellations.createdAt));
       console.log(`[STORAGE] Found ${results.length} shift cancellations`);
       return results;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[STORAGE] Error fetching shift cancellations for tenant ${tenantId}:`, error);
       throw new Error(`Failed to fetch shift cancellations: ${error.message}`);
     }

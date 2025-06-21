@@ -964,6 +964,14 @@ export type InsertUserRoleAssignment = z.infer<typeof insertUserRoleAssignmentSc
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
+export type ShiftCancellation = typeof shiftCancellations.$inferSelect;
+export type InsertShiftCancellation = typeof shiftCancellations.$inferInsert;
+
+export type CancellationRequest = typeof cancellationRequests.$inferSelect;
+export type InsertCancellationRequest = typeof cancellationRequests.$inferInsert;
+
+
+
 // Relations for cancellation tables
 export const shiftCancellationsRelations = relations(shiftCancellations, ({ one }) => ({
   shift: one(shifts, {
@@ -1015,11 +1023,7 @@ export const insertCancellationRequestSchema = createInsertSchema(cancellationRe
   updatedAt: true,
 });
 
-export type ShiftCancellation = typeof shiftCancellations.$inferSelect;
-export type InsertShiftCancellation = z.infer<typeof insertShiftCancellationSchema>;
 
-export type CancellationRequest = typeof cancellationRequests.$inferSelect;
-export type InsertCancellationRequest = z.infer<typeof insertCancellationRequestSchema>;
 
 // Task Board Tasks table
 export const taskBoardTasks = pgTable("task_board_tasks", {
