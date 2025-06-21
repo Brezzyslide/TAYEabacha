@@ -2143,7 +2143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create staff member (Admin/ConsoleManager only)
   app.post("/api/users", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const { username, email, password, role, fullName, phone, address, isActive } = req.body;
+      const { username, email, password, role, fullName, phone, address, isActive, employmentType, payLevel, payPoint } = req.body;
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
@@ -2173,6 +2173,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: isActive !== undefined ? isActive : true,
         tenantId: req.user.tenantId,
         isFirstLogin: true,
+        employmentType: employmentType || "casual",
+        payLevel: payLevel || 1,
+        payPoint: payPoint || 1,
       };
 
       const newUser = await storage.createUser(userData);
