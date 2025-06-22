@@ -3,7 +3,7 @@ import { taxBrackets, payScales, leaveBalances, users } from "@shared/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 
 // Australian Tax Year 2024-25 rates
-const CURRENT_TAX_YEAR = "2024-25";
+const CURRENT_TAX_YEAR = 2025;
 const SUPER_RATE = 0.11; // 11% superannuation guarantee
 const MEDICARE_LEVY = 0.02; // 2% Medicare levy
 
