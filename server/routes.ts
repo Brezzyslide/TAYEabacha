@@ -1682,6 +1682,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Incident Reports PDF Export API
+  app.post("/api/incident-reports/export/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const { incidentIds } = req.body;
+      const tenantId = req.user.tenantId;
+      
+      // Get company information for header
+      const company = await storage.getCompanyByTenantId(tenantId);
+      const companyName = company?.name || `Company ${tenantId}`;
+      
+      // Fetch incident reports
+      const incidents = await Promise.all(
+        incidentIds.map((id: string) => storage.getIncidentReport(id, tenantId))
+      );
+      
+      const validIncidents = incidents.filter(incident => incident !== undefined);
+      
+      if (validIncidents.length === 0) {
+        return res.status(404).json({ message: "No incident reports found" });
+      }
+
+      // Get client names for the incidents
+      const incidentsWithClientInfo = await Promise.all(
+        validIncidents.map(async (incident) => {
+          const client = await storage.getClient(incident.clientId, tenantId);
+          return {
+            ...incident,
+            clientName: client ? `${client.firstName} ${client.lastName}` : "Unknown Client"
+          };
+        })
+      );
+      
+      // Import and use PDF utility
+      const jsPDF = (await import('jspdf')).default;
+      
+      const options = {
+        title: 'Incident Reports Export',
+        contentHtml: '',
+        companyName: companyName,
+        staffName: req.user.fullName || req.user.username,
+        submissionDate: new Date().toLocaleDateString('en-AU'),
+        filename: `incident-reports-export-${new Date().toISOString().split('T')[0]}.pdf`
+      };
+
+      // Create PDF manually using the same format as PDFExportUtility
+      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      
+      // Add centered header (first page only)
+      pdf.setFillColor(37, 99, 235); // Professional blue
+      pdf.rect(margin, 10, contentWidth, 40, 'F');
+      
+      // Add accent bar
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(margin, 45, contentWidth, 5, 'F');
+
+      // Company name - CENTERED
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      const companyNameWidth = pdf.getTextWidth(companyName);
+      const companyNameX = (pageWidth - companyNameWidth) / 2;
+      pdf.text(companyName, companyNameX, 23);
+      
+      // Document title - CENTERED
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(219, 234, 254);
+      const titleWidth = pdf.getTextWidth(options.title);
+      const titleX = (pageWidth - titleWidth) / 2;
+      pdf.text(options.title, titleX, 31);
+      
+      // Staff info
+      pdf.setFontSize(9);
+      pdf.setTextColor(191, 219, 254);
+      pdf.text(`Staff: ${options.staffName}`, margin + 8, 38);
+      pdf.text(`Generated: ${new Date().toLocaleString('en-AU')}`, pageWidth - margin - 80, 38);
+      
+      let currentY = 70;
+      
+      // Add sections for each incident
+      for (const incident of incidentsWithClientInfo) {
+        // Check if we need a new page
+        if (currentY > pageHeight - 100) {
+          pdf.addPage();
+          currentY = 30;
+        }
+        
+        // Section header
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY - 4, contentWidth, 16, 'F');
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(`Incident Report: ${incident.incidentId} - ${incident.clientName}`, margin + 5, currentY + 6);
+        currentY += 20;
+        
+        // Section content
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+        
+        const incidentData = {
+          "Incident ID": incident.incidentId,
+          "Client": incident.clientName,
+          "Date & Time": new Date(incident.dateTime).toLocaleString('en-AU'),
+          "Location": incident.location,
+          "Incident Types": incident.types?.join(", ") || "None specified",
+          "NDIS Reportable": incident.isNDISReportable ? "Yes" : "No",
+          "Intensity Rating": `${incident.intensityRating}/10`,
+          "Status": incident.status,
+          "Description": incident.description,
+          ...(incident.witnessName && {
+            "Witness Name": incident.witnessName
+          }),
+          ...(incident.witnessPhone && {
+            "Witness Phone": incident.witnessPhone
+          }),
+          ...(incident.externalRef && {
+            "External Reference": incident.externalRef
+          }),
+          ...(incident.triggers && incident.triggers.length > 0 && {
+            "Triggers": JSON.stringify(incident.triggers, null, 2).replace(/[{}",\[\]]/g, '').trim()
+          }),
+          ...(incident.staffResponses && incident.staffResponses.length > 0 && {
+            "Staff Responses": JSON.stringify(incident.staffResponses, null, 2).replace(/[{}",\[\]]/g, '').trim()
+          })
+        };
+        
+        for (const [key, value] of Object.entries(incidentData)) {
+          if (currentY > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
+          // Key
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`${key}:`, margin + 5, currentY);
+          
+          // Value with wrapping
+          pdf.setFont('helvetica', 'normal');
+          const lines = pdf.splitTextToSize(String(value), contentWidth - 90);
+          for (let i = 0; i < lines.length; i++) {
+            if (i > 0) {
+              currentY += 6;
+              if (currentY > pageHeight - 30) {
+                pdf.addPage();
+                currentY = 30;
+              }
+            }
+            pdf.text(lines[i], margin + 85, currentY);
+          }
+          currentY += 12;
+        }
+        currentY += 15; // Extra space between incidents
+      }
+      
+      // Add footer to all pages
+      const pageCount = pdf.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        const footerY = pageHeight - 15;
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`${companyName} | Generated: ${new Date().toLocaleDateString('en-AU')}`, margin + 5, footerY + 8);
+        pdf.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 20, footerY + 8);
+      }
+      
+      const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${options.filename}"`);
+      res.send(pdfBuffer);
+      
+    } catch (error: any) {
+      console.error("Incident reports PDF export error:", error);
+      res.status(500).json({ message: "Failed to export incident reports to PDF" });
+    }
+  });
+
   app.post("/api/case-notes", requireAuth, async (req: any, res) => {
     try {
       const caseNoteData = {

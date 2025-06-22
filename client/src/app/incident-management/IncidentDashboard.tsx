@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, AlertTriangle, Clock, CheckCircle, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Filter, AlertTriangle, Clock, CheckCircle, Eye, Edit, Trash2, Download } from "lucide-react";
 
 import { CreateIncidentModal } from "./components/CreateIncidentModal";
 import { ViewIncidentModal } from "./components/ViewIncidentModal";
@@ -183,6 +183,40 @@ export default function IncidentDashboard() {
   const handleCloseIncident = (incident: IncidentReport) => {
     setSelectedIncident(incident);
     setShowCloseModal(true);
+  };
+
+  // Export functions
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch("/api/incident-reports/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ incidentIds: filteredIncidents.map(i => i.report.incidentId) })
+      });
+      
+      if (!response.ok) throw new Error('Failed to export PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `incident-reports-export-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export successful",
+        description: "Incident reports have been exported to PDF"
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to export incident reports to PDF",
+        variant: "destructive"
+      });
+    }
   };
 
   const incidentStats = {
