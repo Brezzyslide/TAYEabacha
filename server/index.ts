@@ -3,6 +3,12 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { provisionAllExistingTenants } from "./tenant-provisioning";
 
+// Set timezone to Australian Eastern Standard Time
+process.env.TZ = 'Australia/Sydney';
+
+console.log(`[TIMEZONE] Server timezone set to: ${process.env.TZ}`);
+console.log(`[TIMEZONE] Current server time: ${new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}`);
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
