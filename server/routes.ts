@@ -1449,6 +1449,239 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Case Notes PDF Export API
+  app.post("/api/case-notes/export/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const { noteIds } = req.body;
+      const tenantId = req.user.tenantId;
+      
+      // Get company information for header
+      const company = await storage.getCompanyByTenantId(tenantId);
+      const companyName = company?.name || `Company ${tenantId}`;
+      
+      // Fetch case notes
+      const caseNotes = await Promise.all(
+        noteIds.map((id: number) => storage.getCaseNote(id, tenantId))
+      );
+      
+      const validNotes = caseNotes.filter(note => note !== undefined);
+      
+      if (validNotes.length === 0) {
+        return res.status(404).json({ message: "No case notes found" });
+      }
+
+      // Use the exportCaseNotesToPDF function from PDF utility
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Get client names for the notes
+      const notesWithClientInfo = await Promise.all(
+        validNotes.map(async (note) => {
+          const client = await storage.getClient(note.clientId, tenantId);
+          return {
+            ...note,
+            clientName: client ? `${client.firstName} ${client.lastName}` : "Unknown Client"
+          };
+        })
+      );
+      
+      // Prepare PDF sections with proper formatting
+      const sections = notesWithClientInfo.map(note => ({
+        title: `${note.title} - ${note.clientName}`,
+        content: {
+          "Client": note.clientName,
+          "Date Created": new Date(note.createdAt).toLocaleDateString('en-AU'),
+          "Category": note.category || "Progress Note",
+          "Priority": note.priority || "Normal",
+          "Content": note.content,
+          "Tags": note.tags?.join(", ") || "None",
+          ...(note.linkedShiftId && {
+            "Linked Shift": `Shift ID: ${note.linkedShiftId}`
+          }),
+          ...(note.incidentData && {
+            "Incident Information": JSON.stringify(note.incidentData, null, 2).replace(/[{}",]/g, '').trim()
+          }),
+          ...(note.medicationData && {
+            "Medication Information": JSON.stringify(note.medicationData, null, 2).replace(/[{}",]/g, '').trim()
+          })
+        },
+        type: 'table' as const
+      }));
+
+      // Import and use PDF utility
+      const jsPDF = (await import('jspdf')).default;
+      
+      const options = {
+        title: 'Case Notes Export',
+        contentHtml: '',
+        companyName: companyName,
+        staffName: req.user.fullName || req.user.username,
+        submissionDate: new Date().toLocaleDateString('en-AU'),
+        filename: `case-notes-export-${new Date().toISOString().split('T')[0]}.pdf`
+      };
+
+      // Create PDF manually using the same format as PDFExportUtility
+      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      
+      // Add centered header (first page only)
+      pdf.setFillColor(37, 99, 235); // Professional blue
+      pdf.rect(margin, 10, contentWidth, 40, 'F');
+      
+      // Add accent bar
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(margin, 45, contentWidth, 5, 'F');
+
+      // Company name - CENTERED
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      const companyNameWidth = pdf.getTextWidth(companyName);
+      const companyNameX = (pageWidth - companyNameWidth) / 2;
+      pdf.text(companyName, companyNameX, 23);
+      
+      // Document title - CENTERED
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(219, 234, 254);
+      const titleWidth = pdf.getTextWidth(options.title);
+      const titleX = (pageWidth - titleWidth) / 2;
+      pdf.text(options.title, titleX, 31);
+      
+      // Staff info
+      pdf.setFontSize(9);
+      pdf.setTextColor(191, 219, 254);
+      pdf.text(`Staff: ${options.staffName}`, margin + 8, 38);
+      pdf.text(`Generated: ${new Date().toLocaleString('en-AU')}`, pageWidth - margin - 80, 38);
+      
+      let currentY = 70;
+      
+      // Add sections
+      for (const section of sections) {
+        // Check if we need a new page
+        if (currentY > pageHeight - 50) {
+          pdf.addPage();
+          currentY = 30;
+        }
+        
+        // Section header
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY - 4, contentWidth, 16, 'F');
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(section.title, margin + 5, currentY + 6);
+        currentY += 20;
+        
+        // Section content
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+        
+        for (const [key, value] of Object.entries(section.content)) {
+          if (currentY > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
+          // Key
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`${key}:`, margin + 5, currentY);
+          
+          // Value with wrapping
+          pdf.setFont('helvetica', 'normal');
+          const lines = pdf.splitTextToSize(String(value), contentWidth - 90);
+          for (let i = 0; i < lines.length; i++) {
+            if (i > 0) {
+              currentY += 6;
+              if (currentY > pageHeight - 30) {
+                pdf.addPage();
+                currentY = 30;
+              }
+            }
+            pdf.text(lines[i], margin + 85, currentY);
+          }
+          currentY += 12;
+        }
+        currentY += 10;
+      }
+      
+      // Add footer to all pages
+      const pageCount = pdf.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        const footerY = pageHeight - 15;
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`${companyName} | Generated: ${new Date().toLocaleDateString('en-AU')}`, margin + 5, footerY + 8);
+        pdf.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 20, footerY + 8);
+      }
+      
+      const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${options.filename}"`);
+      res.send(pdfBuffer);
+      
+    } catch (error: any) {
+      console.error("Case notes PDF export error:", error);
+      res.status(500).json({ message: "Failed to export case notes to PDF" });
+    }
+  });
+
+  // Case Notes Excel Export API
+  app.post("/api/case-notes/export/excel", requireAuth, async (req: any, res) => {
+    try {
+      const { noteIds } = req.body;
+      const tenantId = req.user.tenantId;
+      
+      // Fetch case notes
+      const caseNotes = await Promise.all(
+        noteIds.map((id: number) => storage.getCaseNote(id, tenantId))
+      );
+      
+      const validNotes = caseNotes.filter(note => note !== undefined);
+      
+      if (validNotes.length === 0) {
+        return res.status(404).json({ message: "No case notes found" });
+      }
+
+      const XLSX = await import('xlsx');
+      
+      // Prepare Excel data
+      const excelData = validNotes.map(note => ({
+        "ID": note.id,
+        "Title": note.title,
+        "Client": note.clientName || "Unknown",
+        "Category": note.category || "Progress Note",
+        "Content": note.content,
+        "Tags": note.tags?.join(", ") || "None",
+        "Created Date": new Date(note.createdAt).toLocaleDateString(),
+        "Created By": note.createdByName || "Unknown",
+        "Incident Data": note.incidentData ? JSON.stringify(note.incidentData) : "",
+        "Medication Data": note.medicationData ? JSON.stringify(note.medicationData) : ""
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Case Notes");
+      
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="case-notes-export-${new Date().toISOString().split('T')[0]}.xlsx"`);
+      res.send(buffer);
+      
+    } catch (error: any) {
+      console.error("Case notes Excel export error:", error);
+      res.status(500).json({ message: "Failed to export case notes to Excel" });
+    }
+  });
+
   app.post("/api/case-notes", requireAuth, async (req: any, res) => {
     try {
       const caseNoteData = {

@@ -63,17 +63,21 @@ export class PDFExportUtility {
     this.pdf.setFillColor(59, 130, 246); // Lighter blue accent
     this.pdf.rect(this.margin, 10 + this.headerHeight - 5, this.contentWidth, 5, 'F');
 
-    // Company name with white text
+    // Company name with white text - CENTERED
     this.pdf.setFontSize(18);
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setTextColor(255, 255, 255);
-    this.pdf.text(options.companyName, this.margin + 8, 23);
+    const companyNameWidth = this.pdf.getTextWidth(options.companyName);
+    const companyNameX = (this.pageWidth - companyNameWidth) / 2;
+    this.pdf.text(options.companyName, companyNameX, 23);
     
-    // Document title
+    // Document title - CENTERED
     this.pdf.setFontSize(11);
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setTextColor(219, 234, 254); // Light blue text
-    this.pdf.text(options.title, this.margin + 8, 31);
+    const titleWidth = this.pdf.getTextWidth(options.title);
+    const titleX = (this.pageWidth - titleWidth) / 2;
+    this.pdf.text(options.title, titleX, 31);
     
     // Staff and dates with lighter text
     this.pdf.setFontSize(9);
