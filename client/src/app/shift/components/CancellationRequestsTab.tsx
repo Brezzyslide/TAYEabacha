@@ -167,6 +167,15 @@ export default function CancellationRequestsTab() {
                     >
                       {request.hoursNotice}h notice
                     </Badge>
+                    {request.hoursNotice >= 24 ? (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        Auto-Approved
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                        Admin Review
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardHeader>

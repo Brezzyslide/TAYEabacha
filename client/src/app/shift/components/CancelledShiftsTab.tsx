@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, Download, Search, Filter } from "lucide-react";
+import { Calendar, Clock, User, Download, Search, Filter, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +57,30 @@ export default function CancelledShiftsTab() {
 
     return matchesSearch && matchesStaff && matchesDate;
   });
+
+  // Calculate analytics for current filtered data
+  const analytics = {
+    total: filteredCancellations.length,
+    autoApproved: filteredCancellations.filter(c => c.hoursNotice >= 24).length,
+    adminApproved: filteredCancellations.filter(c => c.hoursNotice < 24).length,
+    averageNotice: filteredCancellations.length > 0 
+      ? Math.round(filteredCancellations.reduce((sum, c) => sum + c.hoursNotice, 0) / filteredCancellations.length)
+      : 0,
+    thisWeek: filteredCancellations.filter(c => {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      return new Date(c.createdAt) >= weekAgo;
+    }).length,
+    mostFrequentReason: (() => {
+      const reasons = filteredCancellations.map(c => c.cancellationReason).filter(Boolean);
+      const reasonCounts = reasons.reduce((acc, reason) => {
+        acc[reason!] = (acc[reason!] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      return Object.keys(reasonCounts).length > 0 
+        ? Object.entries(reasonCounts).sort(([,a], [,b]) => (b as number) - (a as number))[0][0]
+        : 'N/A';
+    })()
+  };
 
   const handleExport = async () => {
     try {
@@ -121,6 +145,69 @@ export default function CancelledShiftsTab() {
           <Download className="h-4 w-4" />
           Export CSV
         </Button>
+      </div>
+
+      {/* Analytics Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Total Cancelled
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {selectedStaff === "all" ? "Organization-wide" : "Staff member"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Auto-Approved
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{analytics.autoApproved}</div>
+            <p className="text-xs text-muted-foreground">
+              24+ hours notice
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              Admin Reviewed
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{analytics.adminApproved}</div>
+            <p className="text-xs text-muted-foreground">
+              &lt;24 hours notice
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Avg Notice
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.averageNotice}h</div>
+            <p className="text-xs text-muted-foreground">
+              {analytics.thisWeek} this week
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}

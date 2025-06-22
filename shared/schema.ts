@@ -1480,3 +1480,9 @@ export type LeaveBalance = typeof leaveBalances.$inferSelect;
 export type InsertLeaveBalance = z.infer<typeof insertLeaveBalanceSchema>;
 export type Payslip = typeof payslips.$inferSelect;
 export type InsertPayslip = z.infer<typeof insertPayslipSchema>;
+
+// Shift Cancellation Types
+export type ShiftCancellation = typeof shiftCancellations.$inferSelect;
+export type InsertShiftCancellation = z.infer<typeof insertShiftCancellationSchema>;
+export type CancellationRequest = typeof cancellationRequests.$inferSelect;
+export type InsertCancellationRequest = z.infer<typeof insertCancellationRequestSchema>;
