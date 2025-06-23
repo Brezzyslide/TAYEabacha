@@ -9,6 +9,7 @@ import { provisionScHADSRates } from './schads-provisioning';
 import { db } from './db';
 import * as schema from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { calculatePayPeriod } from './payroll-calculator';
 
 export interface TenantConsistencyReport {
   tenantId: number;
@@ -16,6 +17,7 @@ export interface TenantConsistencyReport {
   hasBudgets: boolean;
   hasShifts: boolean;
   hasPayScales: boolean;
+  hasTimesheets: boolean;
   isConsistent: boolean;
   fixes: string[];
 }
@@ -75,6 +77,7 @@ async function checkTenantConsistency(tenantId: number): Promise<TenantConsisten
     hasBudgets: false,
     hasShifts: false,
     hasPayScales: false,
+    hasTimesheets: false,
     isConsistent: false,
     fixes: []
   };
@@ -104,11 +107,18 @@ async function checkTenantConsistency(tenantId: number): Promise<TenantConsisten
       .limit(1);
     report.hasPayScales = payScales.length > 0;
     
+    // Check timesheets
+    const timesheets = await db.select().from(schema.timesheets)
+      .where(eq(schema.timesheets.tenantId, tenantId))
+      .limit(1);
+    report.hasTimesheets = timesheets.length > 0;
+    
     // Determine fixes needed
     if (!report.hasClients) report.fixes.push("clients");
     if (!report.hasBudgets) report.fixes.push("budgets");
     if (!report.hasShifts) report.fixes.push("shifts");
     if (!report.hasPayScales) report.fixes.push("pay_scales");
+    if (!report.hasTimesheets) report.fixes.push("timesheets");
     
     report.isConsistent = report.fixes.length === 0;
     
@@ -139,10 +149,64 @@ async function fixTenantInconsistencies(tenantId: number, report: TenantConsiste
       await provisionScHADSRates(tenantId);
     }
     
+    // Ensure timesheets exist
+    if (report.fixes.includes("timesheets")) {
+      console.log(`[TENANT FIX] Provisioning timesheets for tenant ${tenantId}`);
+      await provisionTimesheetsForTenant(tenantId);
+    }
+    
     console.log(`[TENANT FIX] Completed fixes for tenant ${tenantId}`);
     
   } catch (error) {
     console.error(`[TENANT FIX] Error fixing tenant ${tenantId}:`, error);
+  }
+}
+
+/**
+ * Provision timesheet data for a tenant
+ */
+async function provisionTimesheetsForTenant(tenantId: number): Promise<void> {
+  try {
+    // Get staff from this tenant
+    const staff = await db.select().from(schema.users)
+      .where(eq(schema.users.tenantId, tenantId))
+      .limit(3);
+    
+    if (staff.length === 0) {
+      console.log(`[TIMESHEET PROVISION] No staff found for tenant ${tenantId}`);
+      return;
+    }
+
+    // Calculate current pay period
+    const payPeriod = calculatePayPeriod(new Date());
+    
+    // Create sample timesheet for each staff member
+    for (const staffMember of staff) {
+      const existingTimesheet = await db.select().from(schema.timesheets)
+        .where(eq(schema.timesheets.userId, staffMember.id))
+        .limit(1);
+      
+      if (existingTimesheet.length === 0) {
+        await db.insert(schema.timesheets).values({
+          userId: staffMember.id,
+          tenantId: tenantId,
+          payPeriodStart: payPeriod.start,
+          payPeriodEnd: payPeriod.end,
+          status: 'draft' as const,
+          totalHours: 0,
+          grossPay: 0,
+          taxWithheld: 0,
+          netPay: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        console.log(`[TIMESHEET PROVISION] Created timesheet for staff ${staffMember.id} in tenant ${tenantId}`);
+      }
+    }
+    
+  } catch (error) {
+    console.error(`[TIMESHEET PROVISION] Error provisioning timesheets for tenant ${tenantId}:`, error);
   }
 }
 

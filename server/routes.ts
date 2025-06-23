@@ -5165,6 +5165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(users, eq(timesheetsTable.userId, users.id))
         .where(and(
           eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(users.tenantId, req.user.tenantId),
           gte(timesheetsTable.payPeriodStart, currentPeriod.start),
           lte(timesheetsTable.payPeriodEnd, currentPeriod.end)
         ))
