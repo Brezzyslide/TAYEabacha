@@ -159,37 +159,56 @@ export async function createTimesheetEntryFromShift(shiftId: number): Promise<vo
 }
 
 async function findOrCreateTimesheet(userId: number, tenantId: number, payPeriod: { start: Date; end: Date }) {
-  // Try to find existing timesheet
-  let timesheet = await db
-    .select()
-    .from(timesheets)
-    .where(and(
-      eq(timesheets.userId, userId),
-      eq(timesheets.tenantId, tenantId),
-      eq(timesheets.payPeriodStart, payPeriod.start),
-      eq(timesheets.payPeriodEnd, payPeriod.end)
-    ))
-    .limit(1);
+  try {
+    // Try to find existing timesheet with specific field selection
+    let timesheet = await db
+      .select({
+        id: timesheets.id,
+        userId: timesheets.userId,
+        tenantId: timesheets.tenantId,
+        payPeriodStart: timesheets.payPeriodStart,
+        payPeriodEnd: timesheets.payPeriodEnd,
+        status: timesheets.status,
+        totalHours: timesheets.totalHours,
+        totalEarnings: timesheets.totalEarnings,
+        totalTax: timesheets.totalTax,
+        totalSuper: timesheets.totalSuper,
+        netPay: timesheets.netPay,
+        createdAt: timesheets.createdAt,
+        updatedAt: timesheets.updatedAt
+      })
+      .from(timesheets)
+      .where(and(
+        eq(timesheets.userId, userId),
+        eq(timesheets.tenantId, tenantId),
+        eq(timesheets.payPeriodStart, payPeriod.start),
+        eq(timesheets.payPeriodEnd, payPeriod.end)
+      ))
+      .limit(1);
 
-  if (timesheet.length) {
-    return timesheet[0];
+    if (timesheet.length) {
+      return timesheet[0];
+    }
+
+    // Create new timesheet
+    const newTimesheet = await db.insert(timesheets).values({
+      userId,
+      tenantId,
+      payPeriodStart: payPeriod.start,
+      payPeriodEnd: payPeriod.end,
+      status: 'draft',
+      totalHours: '0',
+      totalEarnings: '0',
+      totalTax: '0',
+      totalSuper: '0',
+      netPay: '0'
+    }).returning();
+
+    return newTimesheet[0];
+  } catch (error) {
+    console.error('[TIMESHEET] Error in findOrCreateTimesheet:', error);
+    throw new Error('Failed to create or find timesheet');
   }
-
-  // Create new timesheet
-  const newTimesheet = await db.insert(timesheets).values({
-    userId,
-    tenantId,
-    payPeriodStart: payPeriod.start,
-    payPeriodEnd: payPeriod.end,
-    status: 'draft',
-    totalHours: '0',
-    totalEarnings: '0',
-    totalTax: '0',
-    totalSuper: '0',
-    netPay: '0'
-  }).returning();
-
-  return newTimesheet[0];
 }
 
 async function updateTimesheetTotals(timesheetId: number): Promise<void> {
@@ -237,15 +256,15 @@ async function getUserHourlyRate(userId: number, tenantId: number): Promise<numb
   // Get user's pay scale level and point
   const user = await db
     .select({
-      payLevel: users.payLevel,
-      payPoint: users.payPoint,
+      payScaleLevel: users.payScaleLevel,
+      payScalePoint: users.payScalePoint,
       employmentType: users.employmentType
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  if (!user.length || !user[0].payLevel || !user[0].payPoint) {
+  if (!user.length || !user[0].payScaleLevel || !user[0].payScalePoint) {
     // Return minimum wage if no pay scale configured
     return 23.23;
   }
@@ -256,8 +275,8 @@ async function getUserHourlyRate(userId: number, tenantId: number): Promise<numb
     .from(payScales)
     .where(and(
       eq(payScales.tenantId, tenantId),
-      eq(payScales.level, user[0].payLevel),
-      eq(payScales.payPoint, user[0].payPoint),
+      eq(payScales.level, user[0].payScaleLevel),
+      eq(payScales.payPoint, user[0].payScalePoint),
       eq(payScales.employmentType, user[0].employmentType || 'fulltime')
     ))
     .limit(1);
