@@ -5391,6 +5391,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test PDF Generation
+  app.get("/api/test-pdf", requireAuth, async (req: any, res) => {
+    try {
+      const jsPDF = (await import('jspdf')).default;
+      const doc = new jsPDF();
+      
+      doc.setFontSize(20);
+      doc.text('PDF Test - NeedsCareAI+', 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Tenant: ${req.user.tenantId}`, 20, 40);
+      doc.text(`User: ${req.user.username}`, 20, 50);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 60);
+
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="test.pdf"',
+        'Content-Length': pdfBuffer.length
+      });
+
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("[TEST PDF] Error:", error);
+      res.status(500).json({ message: "Failed to generate test PDF" });
+    }
+  });
+
   // Generate Payslip PDF
   app.post("/api/admin/timesheets/:id/generate-payslip-pdf", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
