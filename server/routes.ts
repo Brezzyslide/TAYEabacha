@@ -7,7 +7,7 @@ import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning";
 import { db, pool } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, lt, gte, lte } from "drizzle-orm";
-const { medicationRecords, medicationPlans, clients, users, shiftCancellations, timesheets: timesheetsTable, timesheetEntries } = schema;
+const { medicationRecords, medicationPlans, clients, users, shiftCancellations, timesheets: timesheetsTable, timesheetEntries, leaveBalances, companies, tenants } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";

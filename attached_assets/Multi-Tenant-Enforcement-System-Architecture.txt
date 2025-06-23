@@ -1,0 +1,483 @@
+MULTI-TENANT ENFORCEMENT SYSTEM ARCHITECTURE
+============================================
+
+## 1. CORE TENANT ISOLATION STRATEGY
+
+### Database Schema Design
+```sql
+-- Every major table includes tenantId for isolation
+CREATE TABLE shifts (
+  id SERIAL PRIMARY KEY,
+  tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  client_id INTEGER NOT NULL REFERENCES clients(id),
+  -- Data fields...
+);
+
+-- Consistent pattern across ALL tables:
+- users (tenant_id)
+- clients (tenant_id) 
+- shifts (tenant_id)
+- timesheets (tenant_id)
+- budgets (tenant_id)
+- leave_balances (tenant_id)
+- notifications (tenant_id)
+- case_notes (tenant_id)
+- medication_plans (tenant_id)
+- incidents (tenant_id)
+- care_plans (tenant_id)
+```
+
+### Authentication & Session Management
+```typescript
+// server/auth.ts - Session-based tenant binding
+interface SessionUser {
+  id: number;
+  username: string;
+  role: string;
+  tenantId: number;    // CRITICAL: Every user bound to ONE tenant
+  companyId: string;   // Company reference for branding
+}
+
+// Every API request validates tenant context
+function requireAuth(req: any, res: any, next: any) {
+  if (!req.user?.tenantId) {
+    return res.status(401).json({ message: "No tenant context" });
+  }
+  next();
+}
+```
+
+## 2. API ENDPOINT TENANT ENFORCEMENT
+
+### Standard Query Pattern
+```typescript
+// ALL database queries MUST include tenant filtering
+const shifts = await db
+  .select()
+  .from(shiftsTable)
+  .where(and(
+    eq(shiftsTable.tenantId, req.user.tenantId),  // MANDATORY
+    // Additional filters...
+  ));
+
+// Role-based exceptions for ConsoleManager (global access)
+function getTenantFilter(user: SessionUser) {
+  return user.role === 'ConsoleManager' 
+    ? undefined  // Global access
+    : eq(table.tenantId, user.tenantId);
+}
+```
+
+### Route Protection Examples
+```typescript
+// GET /api/shifts - Staff can only see own tenant's shifts
+app.get("/api/shifts", requireAuth, async (req: any, res) => {
+  const shifts = await db
+    .select()
+    .from(shiftsTable)
+    .where(eq(shiftsTable.tenantId, req.user.tenantId))
+    .orderBy(desc(shiftsTable.startTime));
+  res.json(shifts);
+});
+
+// POST /api/clients - New clients inherit user's tenant
+app.post("/api/clients", requireAuth, async (req: any, res) => {
+  const newClient = await db.insert(clientsTable).values({
+    ...req.body,
+    tenantId: req.user.tenantId,  // Auto-assign tenant
+    createdBy: req.user.id
+  });
+  res.json(newClient);
+});
+```
+
+## 3. PERMISSION SYSTEM WITH TENANT BOUNDARIES
+
+### Role Hierarchy
+```typescript
+// Permission levels with tenant respect
+enum Roles {
+  ConsoleManager = "ConsoleManager",  // Global access ALL tenants
+  Admin = "Admin",                    // Full access WITHIN tenant
+  Coordinator = "Coordinator",        // Limited admin WITHIN tenant  
+  TeamLeader = "TeamLeader",         // Team management WITHIN tenant
+  SupportWorker = "SupportWorker"    // Basic access WITHIN tenant
+}
+
+function hasPermission(user: SessionUser, requiredRoles: string[]): boolean {
+  // ConsoleManager bypasses ALL restrictions
+  if (user.role === 'ConsoleManager') return true;
+  
+  // All other roles respect tenant boundaries
+  return requiredRoles.includes(user.role);
+}
+```
+
+### Cross-Tenant Prevention
+```typescript
+// Prevent cross-tenant data access
+function validateTenantAccess(resourceTenantId: number, userTenantId: number, userRole: string): boolean {
+  // ConsoleManager can access any tenant
+  if (userRole === 'ConsoleManager') return true;
+  
+  // All other roles MUST match tenant
+  return resourceTenantId === userTenantId;
+}
+
+// Usage in API endpoints
+const client = await getClientById(clientId);
+if (!validateTenantAccess(client.tenantId, req.user.tenantId, req.user.role)) {
+  return res.status(403).json({ message: "Access denied - tenant boundary violation" });
+}
+```
+
+## 4. AUTOMATED TENANT PROVISIONING SYSTEM
+
+### New Tenant Auto-Setup
+```typescript
+// server/new-tenant-auto-provisioning.ts
+export async function autoProvisionNewTenant(
+  tenantId: number,
+  companyId: string,
+  adminUserId: number
+): Promise<NewTenantSetup> {
+  
+  // 1. Create NDIS pricing structure
+  await createNdisPricingForTenant(tenantId);
+  
+  // 2. Provision Australian tax brackets (system-wide)
+  await ensureTaxBrackets();
+  
+  // 3. Create default pay scales (ScHADS compliance)
+  await provisionPayScales(tenantId);
+  
+  // 4. Create sample clients with NDIS budgets
+  await provisionSampleClients(tenantId);
+  
+  // 5. Generate sample shifts for testing
+  await provisionSampleShifts(tenantId);
+  
+  // 6. Initialize hour allocations for staff
+  await createHourAllocationsForTenant(tenantId);
+  
+  // 7. Setup timesheet infrastructure
+  await createTimesheetsForTenant(tenantId);
+  
+  return {
+    tenantId,
+    companyId,
+    adminUserId,
+    features: ["complete_feature_set"]
+  };
+}
+```
+
+### Consistency Enforcement Engine
+```typescript
+// server/multi-tenant-consistency-fix.ts
+export async function enforceMultiTenantConsistency(): Promise<void> {
+  const tenants = await db.select({ id: tenants.id }).from(tenants);
+  
+  for (const tenant of tenants) {
+    await fixBudgetDeductionConsistency(tenant.id);
+    await fixTimesheetConsistency(tenant.id);
+    await fixCancellationConsistency(tenant.id);
+    await fixPayScaleConsistency(tenant.id);
+    await fixNdisPricingConsistency(tenant.id);
+  }
+}
+
+// Runs on server startup - ensures ALL tenants have identical features
+async function fixBudgetDeductionConsistency(tenantId: number) {
+  // Check if tenant has NDIS budgets
+  const budgets = await db
+    .select()
+    .from(ndisBudgets)
+    .where(eq(ndisBudgets.tenantId, tenantId));
+    
+  if (!budgets.length) {
+    // Provision missing NDIS budgets to match tenant 1
+    await createStandardNdisBudgets(tenantId);
+  }
+}
+```
+
+## 5. FRONTEND TENANT CONTEXT
+
+### React Query with Tenant Isolation
+```typescript
+// All API calls automatically include tenant context via session
+const { data: shifts } = useQuery({
+  queryKey: ['/api/shifts'],  // Tenant filtering happens server-side
+  enabled: !!user
+});
+
+// No explicit tenant passing needed - session handles it
+const createMutation = useMutation({
+  mutationFn: (data) => apiRequest('POST', '/api/shifts', data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+  }
+});
+```
+
+### Role-Based UI Rendering
+```typescript
+// components respect tenant boundaries automatically
+function ShiftManagement() {
+  const { user } = useAuth();
+  
+  return (
+    <>
+      {/* All users see their tenant's data */}
+      <ShiftCalendar />
+      
+      {/* Admin features within tenant */}
+      {hasPermission(user, ['Admin', 'ConsoleManager']) && (
+        <AdminShiftControls />
+      )}
+      
+      {/* ConsoleManager sees global controls */}
+      {user.role === 'ConsoleManager' && (
+        <GlobalTenantManagement />
+      )}
+    </>
+  );
+}
+```
+
+## 6. DATA MIGRATION & ARCHITECTURE FIXES
+
+### Schema Standardization (June 16, 2025 Fix)
+```typescript
+// Fixed inconsistent tenant references
+// BEFORE: Mixed tenantId (integer) and companyId (string)
+// AFTER: Standardized to tenantId (integer) everywhere
+
+// Migrated tables to consistent pattern:
+- task_board_tasks: companyId → tenantId
+- ndis_pricing: companyId → tenantId  
+- ndis_budgets: companyId → tenantId
+
+// Updated all storage methods and API endpoints
+class Storage {
+  async getTaskBoardTasks(tenantId: number) {  // Was: companyId
+    return db.select().from(taskBoardTasks)
+      .where(eq(taskBoardTasks.tenantId, tenantId));
+  }
+}
+```
+
+### Race Condition Prevention
+```typescript
+// Atomic operations for tenant-sensitive data
+async function processBudgetDeduction(shift: any, userId: number) {
+  return await db.transaction(async (tx) => {
+    // 1. Get current budget with row lock
+    const budget = await tx
+      .select()
+      .from(ndisBudgets)
+      .where(and(
+        eq(ndisBudgets.clientId, shift.clientId),
+        eq(ndisBudgets.tenantId, shift.tenantId)  // Tenant boundary
+      ))
+      .for('update')  // Row lock prevents race conditions
+      .limit(1);
+      
+    // 2. Calculate deduction with precision
+    const deductionAmount = calculatePreciseDeduction(shift);
+    
+    // 3. Update budget atomically
+    await tx
+      .update(ndisBudgets)
+      .set({
+        currentSpent: (parseFloat(budget[0].currentSpent) + deductionAmount).toString()
+      })
+      .where(eq(ndisBudgets.id, budget[0].id));
+      
+    // 4. Create transaction record
+    await tx.insert(budgetTransactions).values({
+      budgetId: budget[0].id,
+      shiftId: shift.id,
+      amount: deductionAmount.toString(),
+      tenantId: shift.tenantId  // Maintain tenant isolation
+    });
+  });
+}
+```
+
+## 7. COMPREHENSIVE TENANT VALIDATION
+
+### Runtime Checks
+```typescript
+// Middleware validates every request
+app.use((req: any, res: Response, next: NextFunction) => {
+  if (req.user && req.body) {
+    // Ensure no cross-tenant data injection
+    if (req.body.tenantId && req.body.tenantId !== req.user.tenantId) {
+      if (req.user.role !== 'ConsoleManager') {
+        return res.status(403).json({ 
+          message: "Tenant ID manipulation detected" 
+        });
+      }
+    }
+  }
+  next();
+});
+```
+
+### Database Constraints
+```sql
+-- Database-level tenant isolation enforcement
+ALTER TABLE shifts 
+ADD CONSTRAINT fk_shifts_tenant 
+FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT;
+
+-- Prevent orphaned records
+ALTER TABLE users 
+ADD CONSTRAINT fk_users_tenant 
+FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT;
+```
+
+## 8. MONITORING & AUDIT SYSTEM
+
+### Activity Logging with Tenant Context
+```typescript
+// Every action logs tenant context
+interface ActivityLog {
+  userId: number;
+  tenantId: number;  // ALWAYS included
+  action: string;
+  resourceType: string;
+  resourceId: number;
+  description: string;
+  timestamp: Date;
+}
+
+// Usage throughout system
+await storage.createActivityLog({
+  userId: req.user.id,
+  tenantId: req.user.tenantId,  // Automatic tenant tracking
+  action: "create_shift",
+  resourceType: "shift",
+  resourceId: newShift.id,
+  description: `Created shift for client ${clientId}`
+});
+```
+
+### Cross-Tenant Violation Detection
+```typescript
+// Audit script to detect tenant boundary violations
+export async function auditTenantIntegrity(): Promise<ViolationReport[]> {
+  const violations: ViolationReport[] = [];
+  
+  // Check for shifts with mismatched tenant/client
+  const shiftViolations = await db
+    .select({
+      shiftId: shifts.id,
+      shiftTenant: shifts.tenantId,
+      clientTenant: clients.tenantId
+    })
+    .from(shifts)
+    .innerJoin(clients, eq(shifts.clientId, clients.id))
+    .where(ne(shifts.tenantId, clients.tenantId));
+    
+  violations.push(...shiftViolations.map(v => ({
+    type: 'tenant_mismatch',
+    table: 'shifts',
+    record: v.shiftId,
+    issue: `Shift tenant ${v.shiftTenant} != client tenant ${v.clientTenant}`
+  })));
+  
+  return violations;
+}
+```
+
+## 9. FUTURE TENANT GUARANTEE SYSTEM
+
+### Automatic Feature Replication
+```typescript
+// server/startup.ts - Runs on every server start
+async function ensureAllTenantsConsistent() {
+  console.log("[MULTI-TENANT FIX] Running comprehensive consistency enforcement");
+  
+  const referenceFeatures = await getTenantFeatures(1); // Tenant 1 as template
+  const allTenants = await db.select().from(tenants);
+  
+  for (const tenant of allTenants) {
+    if (tenant.id === 1) continue; // Skip reference tenant
+    
+    const tenantFeatures = await getTenantFeatures(tenant.id);
+    const missingFeatures = findMissingFeatures(referenceFeatures, tenantFeatures);
+    
+    if (missingFeatures.length > 0) {
+      await replicateFeatures(tenant.id, missingFeatures);
+      console.log(`[MULTI-TENANT FIX] Provisioned ${missingFeatures.length} features for tenant ${tenant.id}`);
+    }
+  }
+}
+```
+
+### New Tenant Registration Hook
+```typescript
+// Automatic provisioning on company creation
+app.post("/api/register", async (req: any, res) => {
+  const transaction = await db.transaction(async (tx) => {
+    // 1. Create company
+    const company = await tx.insert(companies).values(companyData);
+    
+    // 2. Create tenant
+    const tenant = await tx.insert(tenants).values({
+      companyId: company.id,
+      name: companyData.name
+    });
+    
+    // 3. Create admin user
+    const adminUser = await tx.insert(users).values({
+      ...userData,
+      tenantId: tenant.id,
+      role: 'Admin'
+    });
+    
+    // 4. AUTO-PROVISION COMPLETE FEATURE SET
+    await autoProvisionNewTenant(tenant.id, company.id, adminUser.id);
+    
+    return { company, tenant, adminUser };
+  });
+  
+  res.json({ message: "Company registered with complete feature set" });
+});
+```
+
+## 10. CRITICAL ENFORCEMENT POINTS
+
+### Database Query Standards
+1. ✅ ALL queries MUST filter by tenantId (except ConsoleManager)
+2. ✅ ALL inserts MUST include tenantId from req.user.tenantId
+3. ✅ ALL joins MUST respect tenant boundaries
+4. ✅ ConsoleManager role bypasses tenant restrictions
+5. ✅ Atomic transactions prevent race conditions
+
+### API Endpoint Standards
+1. ✅ requireAuth middleware validates session
+2. ✅ requireRole middleware checks permissions
+3. ✅ Tenant validation in every data access
+4. ✅ Cross-tenant prevention for non-ConsoleManager
+5. ✅ Activity logging with tenant context
+
+### Frontend Standards
+1. ✅ No explicit tenant passing (session-based)
+2. ✅ Role-based UI rendering
+3. ✅ TanStack Query with automatic tenant context
+4. ✅ Navigation respects permission boundaries
+5. ✅ Error handling for tenant violations
+
+### Data Integrity Standards
+1. ✅ Foreign key constraints to tenants table
+2. ✅ No orphaned records across tenants
+3. ✅ Audit logging for all tenant actions
+4. ✅ Regular integrity checks
+5. ✅ Violation detection and alerts
+
+This architecture ensures bulletproof tenant isolation while maintaining identical functionality across ALL current and future tenants, with automatic provisioning and consistency enforcement.
