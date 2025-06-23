@@ -202,9 +202,11 @@ export default function CancellationRequestsTab() {
                   {request.requestReason && (
                     <div className="space-y-1">
                       <p className="font-medium text-gray-900 dark:text-gray-100">Reason</p>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        {request.requestReason}
-                      </p>
+                      <div className="max-h-20 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+                        <p className="text-gray-600 dark:text-gray-400 pr-2">
+                          {request.requestReason}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -322,7 +324,10 @@ export default function CancellationRequestsTab() {
                   <div>Notice: {selectedRequest.hoursNotice} hours</div>
                   {selectedRequest.requestReason && (
                     <div className="mt-2 p-2 bg-white dark:bg-slate-700 rounded">
-                      <strong>Reason:</strong> {selectedRequest.requestReason}
+                      <strong>Reason:</strong>
+                      <div className="mt-1 max-h-16 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+                        <span className="pr-2">{selectedRequest.requestReason}</span>
+                      </div>
                     </div>
                   )}
                 </div>
