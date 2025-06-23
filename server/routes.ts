@@ -5860,6 +5860,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get staff leave balances
+  app.get("/api/leave-balances", requireAuth, async (req: any, res) => {
+    try {
+      // Only non-casual staff have leave entitlements
+      if (req.user.employmentType === 'casual') {
+        return res.json(null);
+      }
+
+      const balance = await db
+        .select()
+        .from(leaveBalances)
+        .where(and(
+          eq(leaveBalances.userId, req.user.id),
+          eq(leaveBalances.tenantId, req.user.tenantId)
+        ))
+        .limit(1);
+
+      if (!balance.length) {
+        // Create initial leave balance record if it doesn't exist
+        await db.insert(leaveBalances).values({
+          userId: req.user.id,
+          tenantId: req.user.tenantId,
+          annualLeave: "0",
+          sickLeave: "0",
+          personalLeave: "0",
+          longServiceLeave: "0"
+        });
+
+        return res.json({
+          annualLeave: 0,
+          sickLeave: 0,
+          personalLeave: 0,
+          longServiceLeave: 0,
+          lastUpdated: new Date()
+        });
+      }
+
+      const leaveData = balance[0];
+      res.json({
+        annualLeave: parseFloat(leaveData.annualLeave || "0"),
+        sickLeave: parseFloat(leaveData.sickLeave || "0"),
+        personalLeave: parseFloat(leaveData.personalLeave || "0"),
+        longServiceLeave: parseFloat(leaveData.longServiceLeave || "0"),
+        lastUpdated: leaveData.lastUpdated
+      });
+    } catch (error: any) {
+      console.error("Get leave balances error:", error);
+      res.status(500).json({ message: "Failed to get leave balances" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
