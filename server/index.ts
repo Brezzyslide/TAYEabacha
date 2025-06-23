@@ -47,8 +47,14 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Auto-provision all existing tenants with ScHADS pay scales (disabled during debugging)
-  console.log("[TENANT PROVISIONING] Skipping provisioning during startup to debug connection issues");
+  // Run comprehensive multi-tenant consistency enforcement on startup
+  console.log("[MULTI-TENANT FIX] Running comprehensive consistency enforcement for ALL tenants");
+  try {
+    await runMultiTenantConsistencyCheck();
+    console.log("[MULTI-TENANT FIX] Consistency enforcement completed successfully");
+  } catch (error) {
+    console.error("[MULTI-TENANT FIX] Consistency enforcement failed:", error);
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
