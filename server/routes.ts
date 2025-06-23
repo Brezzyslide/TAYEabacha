@@ -5131,6 +5131,260 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Timesheet Management - Current Period
+  app.get("/api/admin/timesheets/current", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { calculatePayPeriod } = await import("./payroll-calculator");
+      const currentPeriod = calculatePayPeriod(new Date());
+      
+      const timesheets = await db
+        .select({
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          staffName: users.fullName,
+          staffUsername: users.username,
+          staffEmail: users.email,
+          employmentType: users.employmentType,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          submittedAt: timesheetsTable.submittedAt,
+          approvedAt: timesheetsTable.approvedAt,
+          createdAt: timesheetsTable.createdAt,
+          annualLeave: users.annualLeave,
+          sickLeave: users.sickLeave,
+          personalLeave: users.personalLeave,
+          longServiceLeave: users.longServiceLeave
+        })
+        .from(timesheetsTable)
+        .innerJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(and(
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          gte(timesheetsTable.payPeriodStart, currentPeriod.start),
+          lte(timesheetsTable.payPeriodEnd, currentPeriod.end)
+        ))
+        .orderBy(desc(timesheetsTable.createdAt));
+
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("[ADMIN TIMESHEETS CURRENT] Error:", error);
+      res.status(500).json({ message: "Failed to fetch current timesheets" });
+    }
+  });
+
+  // Admin Timesheet Management - History
+  app.get("/api/admin/timesheets/history", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { calculatePayPeriod } = await import("./payroll-calculator");
+      const currentPeriod = calculatePayPeriod(new Date());
+      
+      const timesheets = await db
+        .select({
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          staffName: users.fullName,
+          staffUsername: users.username,
+          staffEmail: users.email,
+          employmentType: users.employmentType,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          submittedAt: timesheetsTable.submittedAt,
+          approvedAt: timesheetsTable.approvedAt,
+          createdAt: timesheetsTable.createdAt,
+          annualLeave: users.annualLeave,
+          sickLeave: users.sickLeave,
+          personalLeave: users.personalLeave,
+          longServiceLeave: users.longServiceLeave
+        })
+        .from(timesheetsTable)
+        .innerJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(and(
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          lt(timesheetsTable.payPeriodEnd, currentPeriod.start)
+        ))
+        .orderBy(desc(timesheetsTable.payPeriodEnd));
+
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("[ADMIN TIMESHEETS HISTORY] Error:", error);
+      res.status(500).json({ message: "Failed to fetch historical timesheets" });
+    }
+  });
+
+  // Admin Timesheet Analytics
+  app.get("/api/admin/timesheet-analytics", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const analytics = await db
+        .select({
+          status: timesheetsTable.status,
+          totalTimesheets: sql<number>`count(*)`,
+          totalHours: sql<number>`sum(cast(${timesheetsTable.totalHours} as decimal))`,
+          totalEarnings: sql<number>`sum(cast(${timesheetsTable.totalEarnings} as decimal))`,
+          uniqueStaff: sql<number>`count(distinct ${timesheetsTable.userId})`
+        })
+        .from(timesheetsTable)
+        .where(eq(timesheetsTable.tenantId, req.user.tenantId))
+        .groupBy(timesheetsTable.status);
+
+      res.json(analytics);
+    } catch (error: any) {
+      console.error("[ADMIN ANALYTICS] Error:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Admin Timesheet Entry Management
+  app.get("/api/admin/timesheet-entries/:timesheetId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.timesheetId);
+      
+      const entries = await db
+        .select()
+        .from(timesheetEntries)
+        .innerJoin(timesheetsTable, eq(timesheetEntries.timesheetId, timesheetsTable.id))
+        .where(and(
+          eq(timesheetEntries.timesheetId, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ))
+        .orderBy(timesheetEntries.entryDate);
+
+      res.json(entries.map(entry => entry.timesheet_entries));
+    } catch (error: any) {
+      console.error("[ADMIN TIMESHEET ENTRIES] Error:", error);
+      res.status(500).json({ message: "Failed to fetch timesheet entries" });
+    }
+  });
+
+  // Update Timesheet Entry
+  app.patch("/api/admin/timesheet-entries/:entryId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const entryId = parseInt(req.params.entryId);
+      const { startTime, endTime, totalHours, grossPay, notes } = req.body;
+
+      // Verify entry belongs to admin's tenant
+      const entryCheck = await db
+        .select({ timesheetId: timesheetEntries.timesheetId })
+        .from(timesheetEntries)
+        .innerJoin(timesheetsTable, eq(timesheetEntries.timesheetId, timesheetsTable.id))
+        .where(and(
+          eq(timesheetEntries.id, entryId),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ))
+        .limit(1);
+
+      if (!entryCheck.length) {
+        return res.status(404).json({ message: "Entry not found" });
+      }
+
+      // Update entry
+      await db
+        .update(timesheetEntries)
+        .set({
+          startTime: startTime ? new Date(startTime) : undefined,
+          endTime: endTime ? new Date(endTime) : undefined,
+          totalHours: totalHours?.toString(),
+          grossPay: grossPay?.toString(),
+          notes,
+          updatedAt: new Date()
+        })
+        .where(eq(timesheetEntries.id, entryId));
+
+      // Recalculate timesheet totals
+      const { updateTimesheetTotals } = await import("./timesheet-service");
+      await updateTimesheetTotals(entryCheck[0].timesheetId);
+
+      res.json({ message: "Entry updated successfully" });
+    } catch (error: any) {
+      console.error("[UPDATE ENTRY] Error:", error);
+      res.status(500).json({ message: "Failed to update entry" });
+    }
+  });
+
+  // Generate Payslip PDF
+  app.post("/api/admin/timesheets/:id/generate-payslip-pdf", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      
+      // Get timesheet with staff details
+      const timesheet = await db
+        .select({
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          staffName: users.fullName,
+          staffEmail: users.email,
+          employmentType: users.employmentType,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          annualLeave: users.annualLeave,
+          sickLeave: users.sickLeave
+        })
+        .from(timesheetsTable)
+        .innerJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ))
+        .limit(1);
+
+      if (!timesheet.length) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      // Get company details
+      const company = await db
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.tenantId, req.user.tenantId))
+        .limit(1);
+
+      // Generate PDF using our existing PDF utility
+      const { PDFExportUtility } = await import("./pdf-export-utility");
+      const pdfUtil = new PDFExportUtility();
+
+      const payslipData = {
+        companyName: company[0]?.name || "NeedsCareAI+",
+        staffName: timesheet[0].staffName,
+        staffEmail: timesheet[0].staffEmail,
+        employmentType: timesheet[0].employmentType,
+        payPeriod: `${new Date(timesheet[0].payPeriodStart).toLocaleDateString()} - ${new Date(timesheet[0].payPeriodEnd).toLocaleDateString()}`,
+        totalHours: timesheet[0].totalHours,
+        grossPay: timesheet[0].totalEarnings,
+        taxWithheld: timesheet[0].totalTax,
+        superContribution: timesheet[0].totalSuper,
+        netPay: timesheet[0].netPay,
+        leaveBalances: timesheet[0].employmentType !== 'casual' ? {
+          annual: timesheet[0].annualLeave || 0,
+          sick: timesheet[0].sickLeave || 0
+        } : null
+      };
+
+      const pdfBuffer = await pdfUtil.generatePayslipPDF(payslipData);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="payslip-${timesheet[0].staffName}-${new Date().toISOString().split('T')[0]}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("[GENERATE PAYSLIP PDF] Error:", error);
+      res.status(500).json({ message: "Failed to generate payslip PDF" });
+    }
+  });
+
   app.post("/api/admin/timesheets/:id/approve", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const timesheetId = parseInt(req.params.id);
