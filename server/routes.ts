@@ -900,32 +900,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (effectiveRate > 0) {
                 const shiftCost = effectiveRate * shiftHours;
                 
-                // Determine which budget category to deduct from based on shift type
+                // Use the shift's actual funding category instead of defaulting based on shift type
+                const category = shift.fundingCategory || shift.funding_category || 
+                  ((shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL");
+                
+                // Determine which budget category to deduct from based on actual funding category
                 let budgetUpdate: any = {};
-                if (shiftType === "AM" || shiftType === "PM") {
-                  // Community Access for day shifts
-                  const currentRemaining = parseFloat(budget.communityAccessRemaining.toString());
-                  if (currentRemaining >= shiftCost) {
-                    budgetUpdate = {
-                      communityAccessRemaining: (currentRemaining - shiftCost).toString()
-                    };
-                  }
-                } else {
-                  // SIL for overnight shifts
-                  const currentRemaining = parseFloat(budget.silRemaining.toString());
-                  if (currentRemaining >= shiftCost) {
-                    budgetUpdate = {
-                      silRemaining: (currentRemaining - shiftCost).toString()
-                    };
-                  }
+                let currentRemaining = 0;
+                
+                switch (category) {
+                  case "CommunityAccess":
+                    currentRemaining = parseFloat(budget.communityAccessRemaining.toString());
+                    if (currentRemaining >= shiftCost) {
+                      budgetUpdate = {
+                        communityAccessRemaining: (currentRemaining - shiftCost).toString()
+                      };
+                    }
+                    break;
+                  case "SIL":
+                    currentRemaining = parseFloat(budget.silRemaining.toString());
+                    if (currentRemaining >= shiftCost) {
+                      budgetUpdate = {
+                        silRemaining: (currentRemaining - shiftCost).toString()
+                      };
+                    }
+                    break;
+                  case "CapacityBuilding":
+                    currentRemaining = parseFloat(budget.capacityBuildingRemaining.toString());
+                    if (currentRemaining >= shiftCost) {
+                      budgetUpdate = {
+                        capacityBuildingRemaining: (currentRemaining - shiftCost).toString()
+                      };
+                    }
+                    break;
                 }
                 
                 // Update budget if deduction is possible
                 if (Object.keys(budgetUpdate).length > 0) {
                   await storage.updateNdisBudget(budget.id, budgetUpdate, req.user.tenantId);
-                  
-                  // Create budget transaction record
-                  const category = (shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL";
                   
                   // Get the tenant's company ID, fallback to default if null
                   const tenant = await storage.getTenant(req.user.tenantId);
