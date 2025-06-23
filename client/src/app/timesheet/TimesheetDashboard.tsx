@@ -106,13 +106,27 @@ export default function TimesheetDashboard() {
     enabled: !!user
   });
 
+  // Admin queries
+  const { data: adminTimesheets = [], isLoading: isLoadingAdminTimesheets } = useQuery({
+    queryKey: ['/api/admin/timesheets', statusFilter, staffFilter, searchTerm],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (staffFilter !== 'all') params.append('staffId', staffFilter);
+      if (searchTerm) params.append('search', searchTerm);
+      
+      return apiRequest('GET', `/api/admin/timesheets?${params.toString()}`);
+    },
+    enabled: (user?.role === 'Admin' || user?.role === 'ConsoleManager')
+  });
+
   // Submit timesheet mutation
   const submitMutation = useMutation({
     mutationFn: async (timesheetId: number) => {
       return apiRequest('POST', `/api/timesheet/${timesheetId}/submit`);
     },
-    onSuccess: (data) => {
-      const wasAutoApproved = data.autoApproved;
+    onSuccess: (data: any) => {
+      const wasAutoApproved = data?.autoApproved;
       toast({
         title: "Timesheet Submitted",
         description: wasAutoApproved 
@@ -127,6 +141,35 @@ export default function TimesheetDashboard() {
         title: "Submission Failed",
         description: "Failed to submit timesheet. Please try again.",
         variant: "destructive"
+      });
+    }
+  });
+
+  // Admin approval mutation
+  const approveMutation = useMutation({
+    mutationFn: (timesheetId: number) => 
+      apiRequest('POST', `/api/admin/timesheets/${timesheetId}/approve`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/timesheets'] });
+      setSelectedTimesheet(null);
+      toast({
+        title: "Timesheet Approved",
+        description: "The timesheet has been successfully approved.",
+      });
+    }
+  });
+
+  // Admin rejection mutation
+  const rejectMutation = useMutation({
+    mutationFn: ({ timesheetId, reason }: { timesheetId: number; reason: string }) => 
+      apiRequest('POST', `/api/admin/timesheets/${timesheetId}/reject`, { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/timesheets'] });
+      setSelectedTimesheet(null);
+      setRejectionReason('');
+      toast({
+        title: "Timesheet Rejected",
+        description: "The timesheet has been rejected and staff will be notified.",
       });
     }
   });
@@ -165,6 +208,63 @@ export default function TimesheetDashboard() {
   const formatHours = (hours: number | string) => {
     const h = typeof hours === 'string' ? parseFloat(hours) : hours;
     return `${h.toFixed(2)}h`;
+  };
+
+  // Admin helper functions
+  const getAdminStatusBadge = (status: string) => {
+    const colors = {
+      draft: 'bg-slate-100 text-slate-700 border-slate-300',
+      submitted: 'bg-amber-100 text-amber-800 border-amber-300',
+      approved: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+      rejected: 'bg-red-100 text-red-800 border-red-300'
+    };
+
+    return (
+      <Badge className={`${colors[status as keyof typeof colors]} font-medium`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-AU', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Export timesheets
+  const handleExport = (format: 'csv' | 'excel') => {
+    const params = new URLSearchParams();
+    if (statusFilter !== 'all') params.append('status', statusFilter);
+    if (staffFilter !== 'all') params.append('staffId', staffFilter);
+    params.append('format', format);
+    
+    window.open(`/api/admin/timesheets/export?${params.toString()}`, '_blank');
+  };
+
+  // Get unique staff members for filter
+  const staffMembers = Array.isArray(adminTimesheets) ? Array.from(
+    new Map(adminTimesheets.map((ts: AdminTimesheet) => [ts.userId, { id: ts.userId, name: ts.staffName }]))
+      .values()
+  ) : [];
+
+  // Filter timesheets based on search
+  const filteredTimesheets = Array.isArray(adminTimesheets) ? adminTimesheets.filter((timesheet: AdminTimesheet) => {
+    const matchesSearch = timesheet.staffName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         timesheet.staffEmail?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  }) : [];
+
+  // Analytics calculations
+  const adminAnalytics = {
+    total: filteredTimesheets.length,
+    submitted: filteredTimesheets.filter((ts: AdminTimesheet) => ts.status === 'submitted').length,
+    approved: filteredTimesheets.filter((ts: AdminTimesheet) => ts.status === 'approved').length,
+    rejected: filteredTimesheets.filter((ts: AdminTimesheet) => ts.status === 'rejected').length,
+    totalHours: filteredTimesheets.reduce((sum: number, ts: AdminTimesheet) => sum + parseFloat(ts.totalHours || '0'), 0),
+    totalEarnings: filteredTimesheets.reduce((sum: number, ts: AdminTimesheet) => sum + parseFloat(ts.totalEarnings || '0'), 0)
   };
 
   if (isLoading) {
@@ -269,12 +369,15 @@ export default function TimesheetDashboard() {
       )}
 
       <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod} className="w-full">
-        <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-5' : 'grid-cols-3'}`}>
           <TabsTrigger value="current">Current Period</TabsTrigger>
           <TabsTrigger value="history">Timesheet History</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
           {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
-            <TabsTrigger value="pay-scales">Pay Scales</TabsTrigger>
+            <>
+              <TabsTrigger value="admin-review">Staff Timesheets</TabsTrigger>
+              <TabsTrigger value="pay-scales">Pay Scales</TabsTrigger>
+            </>
           )}
         </TabsList>
 
@@ -446,9 +549,295 @@ export default function TimesheetDashboard() {
         </TabsContent>
 
         {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
-          <TabsContent value="pay-scales" className="space-y-4">
-            <PayScaleManagement />
-          </TabsContent>
+          <>
+            <TabsContent value="admin-review" className="space-y-6">
+              {/* Header */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Staff Timesheet Management</h2>
+                  <p className="text-slate-600">Review and approve staff timesheets for your organization</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    onClick={() => handleExport('csv')} 
+                    variant="outline"
+                    size="sm"
+                    className="bg-white"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                  <Button 
+                    onClick={() => handleExport('excel')} 
+                    variant="outline"
+                    size="sm"
+                    className="bg-white"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Excel
+                  </Button>
+                </div>
+              </div>
+
+              {/* Analytics Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Total Timesheets</p>
+                        <p className="text-xl font-bold text-slate-900">{adminAnalytics.total}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-100 rounded-lg">
+                        <Clock className="h-4 w-4 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Pending Review</p>
+                        <p className="text-xl font-bold text-amber-600">{adminAnalytics.submitted}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <CheckCircle className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Approved</p>
+                        <p className="text-xl font-bold text-emerald-600">{adminAnalytics.approved}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-red-100 rounded-lg">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Rejected</p>
+                        <p className="text-xl font-bold text-red-600">{adminAnalytics.rejected}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <Clock className="h-4 w-4 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Total Hours</p>
+                        <p className="text-xl font-bold text-indigo-600">{adminAnalytics.totalHours.toFixed(1)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600">Total Earnings</p>
+                        <p className="text-xl font-bold text-green-600">{formatCurrency(adminAnalytics.totalEarnings.toString())}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Filters */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                          placeholder="Search by staff name or email..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="submitted">Pending Review</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={staffFilter} onValueChange={setStaffFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <User className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filter by staff" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Staff</SelectItem>
+                        {Array.isArray(adminTimesheets) && staffMembers.map((staff: any) => (
+                          <SelectItem key={staff.id} value={staff.id.toString()}>
+                            {staff.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Timesheets List */}
+              <div className="space-y-4">
+                {isLoadingAdminTimesheets ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-slate-600 mt-2">Loading timesheets...</p>
+                    </CardContent>
+                  </Card>
+                ) : Array.isArray(adminTimesheets) && filteredTimesheets.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Clock className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-slate-900 mb-2">No timesheets found</h3>
+                      <p className="text-slate-600">No timesheets match your current filters.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  Array.isArray(adminTimesheets) && filteredTimesheets.map((timesheet: AdminTimesheet) => (
+                    <Card key={timesheet.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-lg font-semibold text-slate-900">
+                                {timesheet.staffName || 'Unknown Staff'}
+                              </h3>
+                              {getAdminStatusBadge(timesheet.status)}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+                              <div>
+                                <p><strong>Pay Period:</strong></p>
+                                <p>{formatDate(timesheet.payPeriodStart)} - {formatDate(timesheet.payPeriodEnd)}</p>
+                              </div>
+                              <div>
+                                <p><strong>Hours:</strong> {timesheet.totalHours}</p>
+                                <p><strong>Earnings:</strong> {formatCurrency(timesheet.totalEarnings)}</p>
+                              </div>
+                              <div>
+                                {timesheet.submittedAt && (
+                                  <p><strong>Submitted:</strong> {formatDate(timesheet.submittedAt)}</p>
+                                )}
+                                {timesheet.approvedAt && (
+                                  <p><strong>Approved:</strong> {formatDate(timesheet.approvedAt)}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {timesheet.status === 'submitted' && (
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button
+                                onClick={() => approveMutation.mutate(timesheet.id)}
+                                disabled={approveMutation.isPending}
+                                className="bg-emerald-600 hover:bg-emerald-700"
+                                size="sm"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setSelectedTimesheet(timesheet)}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Reject
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Reject Timesheet</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <p className="text-sm text-slate-600">
+                                      Please provide a reason for rejecting this timesheet:
+                                    </p>
+                                    <Textarea
+                                      value={rejectionReason}
+                                      onChange={(e) => setRejectionReason(e.target.value)}
+                                      placeholder="Enter rejection reason..."
+                                      rows={3}
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedTimesheet(null);
+                                          setRejectionReason('');
+                                        }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => 
+                                          selectedTimesheet && 
+                                          rejectMutation.mutate({ 
+                                            timesheetId: selectedTimesheet.id, 
+                                            reason: rejectionReason 
+                                          })
+                                        }
+                                        disabled={!rejectionReason.trim() || rejectMutation.isPending}
+                                      >
+                                        Reject Timesheet
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="pay-scales" className="space-y-4">
+              <PayScaleManagement />
+            </TabsContent>
+          </>
         )}
       </Tabs>
     </div>
