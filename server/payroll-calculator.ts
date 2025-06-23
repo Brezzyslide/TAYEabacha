@@ -109,7 +109,7 @@ async function calculateTaxWithholding(annualIncome: number, payPeriodGross: num
     const minIncome = parseFloat(bracket.minIncome);
     const maxIncome = bracket.maxIncome ? parseFloat(bracket.maxIncome) : Infinity;
     const taxRate = parseFloat(bracket.taxRate);
-    const baseTax = parseFloat(bracket.baseTax);
+    const baseTax = parseFloat(bracket.baseTax ?? "0");
 
     if (annualIncome > minIncome) {
       const taxableInThisBracket = Math.min(annualIncome, maxIncome) - minIncome;
@@ -187,10 +187,10 @@ export async function updateLeaveBalances(
     await db
       .update(leaveBalances)
       .set({
-        annualLeave: String(parseFloat(existing[0].annualLeave) + leaveAccrued.annual),
-        sickLeave: String(parseFloat(existing[0].sickLeave) + leaveAccrued.sick),
-        personalLeave: String(parseFloat(existing[0].personalLeave) + leaveAccrued.personal),
-        longServiceLeave: String(parseFloat(existing[0].longServiceLeave) + leaveAccrued.longService),
+        annualLeave: String(parseFloat(existing[0].annualLeave || "0") + leaveAccrued.annual),
+        sickLeave: String(parseFloat(existing[0].sickLeave || "0") + leaveAccrued.sick),
+        personalLeave: String(parseFloat(existing[0].personalLeave || "0") + leaveAccrued.personal),
+        longServiceLeave: String(parseFloat(existing[0].longServiceLeave || "0") + leaveAccrued.longService),
         lastUpdated: new Date()
       })
       .where(eq(leaveBalances.id, existing[0].id));
