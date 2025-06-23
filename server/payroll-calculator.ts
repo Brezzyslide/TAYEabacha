@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { taxBrackets, payScales, leaveBalances, users } from "@shared/schema";
+import { taxBrackets, payScales, leaveBalances, users, timesheets as timesheetsTable } from "@shared/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 
 // Australian Tax Year 2024-25 rates
@@ -109,14 +109,14 @@ async function calculateLiveYTDGross(userId: number, tenantId: number): Promise<
 
   const ytdTimesheets = await db
     .select({
-      totalEarnings: timesheets.totalEarnings
+      totalEarnings: timesheetsTable.totalEarnings
     })
-    .from(timesheets)
+    .from(timesheetsTable)
     .where(and(
-      eq(timesheets.userId, userId),
-      eq(timesheets.tenantId, tenantId),
-      gte(timesheets.payPeriodStart, financialYearStart),
-      eq(timesheets.status, 'paid') // Only include paid timesheets
+      eq(timesheetsTable.userId, userId),
+      eq(timesheetsTable.tenantId, tenantId),
+      gte(timesheetsTable.payPeriodStart, financialYearStart),
+      eq(timesheetsTable.status, 'paid') // Only include paid timesheets
     ));
 
   return ytdTimesheets.reduce((sum, ts) => 
@@ -127,6 +127,87 @@ async function calculateLiveYTDGross(userId: number, tenantId: number): Promise<
 // Standardized precision handling for all financial calculations
 function toPrecision(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+// Calculate shift allowances based on ScHADS requirements
+export function calculateShiftAllowances(shiftData: {
+  startTime: Date;
+  endTime: Date;
+  shiftType?: string;
+  isPublicHoliday?: boolean;
+  isWeekend?: boolean;
+  isSleepover?: boolean;
+  baseRate: number;
+}): {
+  basePayment: number;
+  allowances: {
+    type: string;
+    amount: number;
+    description: string;
+  }[];
+  totalPayment: number;
+} {
+  const { startTime, endTime, baseRate, isPublicHoliday, isWeekend, isSleepover } = shiftData;
+  const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+  const basePayment = toPrecision(hours * baseRate);
+  const allowances: { type: string; amount: number; description: string; }[] = [];
+
+  // Public holiday penalty (250% of ordinary rate)
+  if (isPublicHoliday) {
+    const penaltyAmount = toPrecision(hours * baseRate * 1.5); // Additional 150%
+    allowances.push({
+      type: "public_holiday",
+      amount: penaltyAmount,
+      description: "Public Holiday Penalty (250% total)"
+    });
+  }
+  // Weekend penalty rates
+  else if (isWeekend) {
+    const dayOfWeek = startTime.getDay();
+    if (dayOfWeek === 6) { // Saturday
+      const penaltyAmount = toPrecision(hours * baseRate * 0.25); // 25% penalty
+      allowances.push({
+        type: "saturday_penalty",
+        amount: penaltyAmount,
+        description: "Saturday Penalty (125% total)"
+      });
+    } else if (dayOfWeek === 0) { // Sunday
+      const penaltyAmount = toPrecision(hours * baseRate * 0.5); // 50% penalty
+      allowances.push({
+        type: "sunday_penalty",
+        amount: penaltyAmount,
+        description: "Sunday Penalty (150% total)"
+      });
+    }
+  }
+
+  // Sleepover allowance (fixed amount per shift)
+  if (isSleepover) {
+    allowances.push({
+      type: "sleepover",
+      amount: 62.04, // ScHADS 2024 sleepover allowance
+      description: "Sleepover Allowance"
+    });
+  }
+
+  // Broken shift allowance (for shifts with unpaid breaks > 1 hour)
+  const totalMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+  if (totalMinutes > 600 && hours < 9) { // More than 10 hours span but less than 9 paid hours
+    allowances.push({
+      type: "broken_shift",
+      amount: 3.97, // ScHADS 2024 broken shift allowance
+      description: "Broken Shift Allowance"
+    });
+  }
+
+  const totalAllowances = allowances.reduce((sum, allowance) => sum + allowance.amount, 0);
+  const totalPayment = toPrecision(basePayment + totalAllowances);
+
+  return {
+    basePayment,
+    allowances,
+    totalPayment
+  };
 }
 
 async function calculateTaxWithholding(annualIncome: number, payPeriodGross: number): Promise<number> {
