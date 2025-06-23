@@ -430,18 +430,20 @@ export default function TimesheetDashboard() {
       )}
 
       <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod} className="w-full">
-        <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-6' : 'grid-cols-3'}`}>
-          <TabsTrigger value="current">Current Period</TabsTrigger>
-          <TabsTrigger value="history">Timesheet History</TabsTrigger>
-          <TabsTrigger value="payslips">Payslips</TabsTrigger>
-          {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
-            <>
-              <TabsTrigger value="admin-review">Staff Timesheets</TabsTrigger>
-              <TabsTrigger value="admin-payslips">Staff Payslips</TabsTrigger>
-              <TabsTrigger value="pay-scales">Pay Scales</TabsTrigger>
-            </>
-          )}
-        </TabsList>
+        <div className="flex flex-col space-y-2">
+          <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-3 md:grid-cols-6' : 'grid-cols-3'}`}>
+            <TabsTrigger value="current" className="text-xs md:text-sm">Current Period</TabsTrigger>
+            <TabsTrigger value="history" className="text-xs md:text-sm">History</TabsTrigger>
+            <TabsTrigger value="payslips" className="text-xs md:text-sm">Payslips</TabsTrigger>
+            {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
+              <>
+                <TabsTrigger value="admin-review" className="text-xs md:text-sm">Staff Timesheets</TabsTrigger>
+                <TabsTrigger value="admin-payslips" className="text-xs md:text-sm">Staff Payslips</TabsTrigger>
+                <TabsTrigger value="pay-scales" className="text-xs md:text-sm">Pay Scales</TabsTrigger>
+              </>
+            )}
+          </TabsList>
+        </div>
 
         <TabsContent value="current" className="space-y-4">
           {currentTimesheet ? (
