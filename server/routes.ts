@@ -673,10 +673,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Shift not found" });
       }
       
-      // Permission check: SupportWorker can only update their own shifts, others need coordinator+ role
+      // Permission check: SupportWorker can only update their own shifts, TeamLeader+ can update assigned shifts
       if (req.user.role === "SupportWorker" && existingShift.userId !== req.user.id) {
         return res.status(403).json({ message: "You can only update your own assigned shifts" });
-      } else if (req.user.role !== "SupportWorker" && !["Coordinator", "Admin", "ConsoleManager"].includes(req.user.role)) {
+      } else if (req.user.role !== "SupportWorker" && !["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(req.user.role)) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
       
