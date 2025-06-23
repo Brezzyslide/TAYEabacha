@@ -5239,6 +5239,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin payslip management endpoints
+  app.get("/api/admin/payslips", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { status, staffId, search, payPeriod } = req.query;
+      
+      // Get all approved timesheets that can be processed for payslips
+      const payslipData = await db
+        .select({
+          timesheetId: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          staffName: users.fullName,
+          staffUsername: users.username,
+          staffEmail: users.email,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          approvedAt: timesheetsTable.approvedAt,
+          createdAt: timesheetsTable.createdAt
+        })
+        .from(timesheetsTable)
+        .leftJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(and(
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'approved'), // Only approved timesheets can become payslips
+          staffId ? eq(timesheetsTable.userId, parseInt(staffId)) : undefined,
+          search ? or(
+            ilike(users.fullName, `%${search}%`),
+            ilike(users.username, `%${search}%`),
+            ilike(users.email, `%${search}%`)
+          ) : undefined
+        ))
+        .orderBy(desc(timesheetsTable.approvedAt));
+      
+      res.json(payslipData);
+    } catch (error: any) {
+      console.error("Get admin payslips error:", error);
+      res.status(500).json({ message: "Failed to fetch payslips" });
+    }
+  });
+
+  app.post("/api/admin/payslips/:timesheetId/generate", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.timesheetId);
+      
+      // Mark timesheet as paid and record payslip generation
+      await db
+        .update(timesheetsTable)
+        .set({
+          status: 'paid',
+          paidAt: new Date(),
+          paidBy: req.user.id,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'approved') // Only approved timesheets can be paid
+        ));
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "generate_payslip",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Generated payslip for timesheet ${timesheetId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Payslip generated successfully" });
+    } catch (error: any) {
+      console.error("Generate payslip error:", error);
+      res.status(500).json({ message: "Failed to generate payslip" });
+    }
+  });
+
+  app.get("/api/admin/payslips/export", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { status, staffId, format } = req.query;
+      
+      // Get payslip data for export
+      const exportData = await db
+        .select({
+          timesheetId: timesheetsTable.id,
+          staffName: users.fullName,
+          staffEmail: users.email,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          approvedAt: timesheetsTable.approvedAt,
+          paidAt: timesheetsTable.paidAt
+        })
+        .from(timesheetsTable)
+        .leftJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(and(
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'approved'),
+          staffId ? eq(timesheetsTable.userId, parseInt(staffId)) : undefined
+        ))
+        .orderBy(desc(timesheetsTable.approvedAt));
+      
+      if (format === 'excel') {
+        // Excel export
+        const workbookData = [
+          ["Payslip Export", "", "", "", "", "", "", "", "", ""],
+          ["Generated:", new Date().toLocaleString(), "", "", "", "", "", "", "", ""],
+          ["", "", "", "", "", "", "", "", "", ""],
+          ["Staff Name", "Email", "Pay Period Start", "Pay Period End", "Status", "Total Hours", "Gross Pay", "Tax", "Super", "Net Pay"],
+          ...exportData.map((ts: any) => [
+            ts.staffName || "Unknown",
+            ts.staffEmail || "",
+            new Date(ts.payPeriodStart).toLocaleDateString(),
+            new Date(ts.payPeriodEnd).toLocaleDateString(),
+            ts.status,
+            ts.totalHours,
+            `$${ts.totalEarnings}`,
+            `$${ts.totalTax}`,
+            `$${ts.totalSuper}`,
+            `$${ts.netPay}`
+          ])
+        ];
+        
+        const csvContent = workbookData.map(row => 
+          row.map((cell: any) => `"${cell}"`).join(',')
+        ).join('\n');
+        
+        res.setHeader('Content-Type', 'application/vnd.ms-excel');
+        res.setHeader('Content-Disposition', `attachment; filename="payslips-export-${new Date().toISOString().split('T')[0]}.xlsx"`);
+        res.send(csvContent);
+      } else {
+        // CSV export
+        const headers = ["Staff Name", "Email", "Pay Period Start", "Pay Period End", "Status", "Total Hours", "Gross Pay", "Tax", "Super", "Net Pay"];
+        const csvContent = [
+          headers.join(','),
+          ...exportData.map((ts: any) => [
+            ts.staffName || "Unknown",
+            ts.staffEmail || "",
+            new Date(ts.payPeriodStart).toLocaleDateString(),
+            new Date(ts.payPeriodEnd).toLocaleDateString(),
+            ts.status,
+            ts.totalHours,
+            `$${ts.totalEarnings}`,
+            `$${ts.totalTax}`,
+            `$${ts.totalSuper}`,
+            `$${ts.netPay}`
+          ].join(','))
+        ].join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="payslips-export-${new Date().toISOString().split('T')[0]}.csv"`);
+        res.send(csvContent);
+      }
+    } catch (error: any) {
+      console.error("Export payslips error:", error);
+      res.status(500).json({ message: "Failed to export payslips" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

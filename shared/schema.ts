@@ -1315,6 +1315,8 @@ export const timesheets = pgTable("timesheets", {
   submittedAt: timestamp("submitted_at"),
   approvedAt: timestamp("approved_at"),
   approvedBy: integer("approved_by").references(() => users.id),
+  paidAt: timestamp("paid_at"),
+  paidBy: integer("paid_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

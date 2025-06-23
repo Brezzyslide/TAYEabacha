@@ -73,6 +73,24 @@ interface AdminTimesheet {
   createdAt: string;
 }
 
+interface AdminPayslip {
+  timesheetId: number;
+  userId: number;
+  staffName: string;
+  staffUsername: string;
+  staffEmail: string;
+  payPeriodStart: string;
+  payPeriodEnd: string;
+  status: 'approved' | 'paid';
+  totalHours: string;
+  totalEarnings: string;
+  totalTax: string;
+  totalSuper: string;
+  netPay: string;
+  approvedAt: string;
+  createdAt: string;
+}
+
 interface TimesheetSummary {
   timesheet: Timesheet;
   entries: TimesheetEntry[];
@@ -369,13 +387,14 @@ export default function TimesheetDashboard() {
       )}
 
       <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod} className="w-full">
-        <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-5' : 'grid-cols-3'}`}>
+        <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-6' : 'grid-cols-3'}`}>
           <TabsTrigger value="current">Current Period</TabsTrigger>
           <TabsTrigger value="history">Timesheet History</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
           {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
             <>
               <TabsTrigger value="admin-review">Staff Timesheets</TabsTrigger>
+              <TabsTrigger value="admin-payslips">Staff Payslips</TabsTrigger>
               <TabsTrigger value="pay-scales">Pay Scales</TabsTrigger>
             </>
           )}
