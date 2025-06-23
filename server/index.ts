@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { provisionAllExistingTenants } from "./tenant-provisioning";
+import { runMultiTenantConsistencyCheck } from "./multi-tenant-consistency-fix";
 
 // Set timezone to Australian Eastern Standard Time
 process.env.TZ = 'Australia/Sydney';
