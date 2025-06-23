@@ -102,8 +102,10 @@ export async function createTimesheetEntryFromShift(shiftId: number): Promise<vo
   const startTime = new Date(startTimeValue);
   const endTime = new Date(endTimeValue);
   const totalMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-  const breakMinutes = 30; // Standard break time
-  const workedMinutes = totalMinutes - breakMinutes;
+  
+  // Only deduct break time for shifts longer than 4 hours (Australian award requirement)
+  const breakMinutes = totalMinutes > 240 ? 30 : 0;
+  const workedMinutes = Math.max(0, totalMinutes - breakMinutes);
   const totalHours = Math.round((workedMinutes / 60) * 100) / 100;
 
   // Get hourly rate for the user
