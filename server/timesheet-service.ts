@@ -244,8 +244,8 @@ async function updateTimesheetTotals(timesheetId: number): Promise<void> {
   const payrollCalculation = await calculatePayroll(
     timesheet[0].userId,
     timesheet[0].tenantId,
-    totalHours,
-    totalGrossPay
+    totalGrossPay,
+    0  // ytdGross - starting fresh for each timesheet
   );
 
   // Update timesheet totals
