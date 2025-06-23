@@ -4054,7 +4054,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get cancelled shifts for admin view
   app.get("/api/shifts/cancelled", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      console.log(`[CANCELLED SHIFTS] Fetching for tenant ${req.user.tenantId}`);
+      console.log(`[CANCELLED SHIFTS] Starting request for tenant ${req.user.tenantId}`);
+      
+      if (!pool) {
+        console.error("[CANCELLED SHIFTS] Database pool not available");
+        return res.status(500).json({ message: "Database connection unavailable" });
+      }
+      
+      // Test basic connection first
+      await pool.query('SELECT 1');
+      console.log(`[CANCELLED SHIFTS] Database connection verified`);
       
       // Direct pool query for reliability
       const result = await pool.query(
@@ -4073,10 +4082,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [req.user.tenantId]
       );
       
-      console.log(`[CANCELLED SHIFTS] Found ${result.rows.length} cancellations`);
+      console.log(`[CANCELLED SHIFTS] Query successful - found ${result.rows.length} cancellations`);
       res.json(result.rows);
     } catch (error: any) {
-      console.error("[CANCELLED SHIFTS] Error:", error.message);
+      console.error("[CANCELLED SHIFTS] Detailed error:", {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        stack: error.stack?.substring(0, 500)
+      });
       res.status(500).json({ message: "Failed to fetch shift cancellations", error: error.message });
     }
   });
