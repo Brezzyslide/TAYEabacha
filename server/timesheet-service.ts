@@ -91,9 +91,16 @@ export async function createTimesheetEntryFromShift(shiftId: number): Promise<vo
     throw new Error("Shift has no assigned user");
   }
 
-  // Calculate hours worked
-  const startTime = new Date(shiftData.startTime);
-  const endTime = new Date(shiftData.endTime);
+  // Calculate hours worked - handle null values properly
+  const startTimeValue = shiftData.startTime;
+  const endTimeValue = shiftData.endTime;
+  
+  if (!startTimeValue || !endTimeValue) {
+    throw new Error("Shift start and end times are required for timesheet calculation");
+  }
+  
+  const startTime = new Date(startTimeValue);
+  const endTime = new Date(endTimeValue);
   const totalMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
   const breakMinutes = 30; // Standard break time
   const workedMinutes = totalMinutes - breakMinutes;
@@ -230,15 +237,15 @@ async function getUserHourlyRate(userId: number, tenantId: number): Promise<numb
   // Get user's pay scale level and point
   const user = await db
     .select({
-      payScaleLevel: users.payScaleLevel,
-      payScalePoint: users.payScalePoint,
+      payLevel: users.payLevel,
+      payPoint: users.payPoint,
       employmentType: users.employmentType
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  if (!user.length || !user[0].payScaleLevel || !user[0].payScalePoint) {
+  if (!user.length || !user[0].payLevel || !user[0].payPoint) {
     // Return minimum wage if no pay scale configured
     return 23.23;
   }
@@ -249,8 +256,8 @@ async function getUserHourlyRate(userId: number, tenantId: number): Promise<numb
     .from(payScales)
     .where(and(
       eq(payScales.tenantId, tenantId),
-      eq(payScales.level, user[0].payScaleLevel),
-      eq(payScales.payPoint, user[0].payScalePoint),
+      eq(payScales.level, user[0].payLevel),
+      eq(payScales.payPoint, user[0].payPoint),
       eq(payScales.employmentType, user[0].employmentType || 'fulltime')
     ))
     .limit(1);
