@@ -192,6 +192,38 @@ export default function TimesheetDashboard() {
     }
   });
 
+  // Admin payslip queries and state
+  const [payslipSearchTerm, setPayslipSearchTerm] = useState('');
+  const [payslipStatusFilter, setPayslipStatusFilter] = useState('all');
+  const [payslipStaffFilter, setPayslipStaffFilter] = useState('all');
+
+  const { data: adminPayslips, isLoading: isLoadingAdminPayslips } = useQuery({
+    queryKey: ['/api/admin/payslips', payslipSearchTerm, payslipStatusFilter, payslipStaffFilter],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (payslipStatusFilter !== 'all') params.append('status', payslipStatusFilter);
+      if (payslipStaffFilter !== 'all') params.append('staffId', payslipStaffFilter);
+      if (payslipSearchTerm) params.append('search', payslipSearchTerm);
+      
+      return apiRequest('GET', `/api/admin/payslips?${params.toString()}`);
+    },
+    enabled: (user?.role === 'Admin' || user?.role === 'ConsoleManager')
+  });
+
+  // Generate payslip mutation
+  const generatePayslipMutation = useMutation({
+    mutationFn: (timesheetId: number) => 
+      apiRequest('POST', `/api/admin/payslips/${timesheetId}/generate`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/payslips'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/timesheets'] });
+      toast({
+        title: "Payslip Generated",
+        description: "The payslip has been successfully generated and marked as paid.",
+      });
+    }
+  });
+
   const getStatusBadge = (status: string) => {
     const variants = {
       draft: "secondary",
@@ -260,6 +292,17 @@ export default function TimesheetDashboard() {
     params.append('format', format);
     
     window.open(`/api/admin/timesheets/export?${params.toString()}`, '_blank');
+  };
+
+  // Export payslips
+  const handlePayslipExport = (format: 'csv' | 'excel') => {
+    const params = new URLSearchParams();
+    if (payslipStatusFilter !== 'all') params.append('status', payslipStatusFilter);
+    if (payslipStaffFilter !== 'all') params.append('staffId', payslipStaffFilter);
+    if (payslipSearchTerm) params.append('search', payslipSearchTerm);
+    params.append('format', format);
+    
+    window.open(`/api/admin/payslips/export?${params.toString()}`, '_blank');
   };
 
   // Get unique staff members for filter
@@ -843,6 +886,225 @@ export default function TimesheetDashboard() {
                                   </div>
                                 </DialogContent>
                               </Dialog>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="admin-payslips" className="space-y-6">
+              {/* Header */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Staff Payslip Management</h2>
+                  <p className="text-slate-600">Generate and manage payslips for approved timesheets</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    onClick={() => handlePayslipExport('csv')} 
+                    variant="outline"
+                    size="sm"
+                    className="bg-white"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                  <Button 
+                    onClick={() => handlePayslipExport('excel')} 
+                    variant="outline"
+                    size="sm"
+                    className="bg-white"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Excel
+                  </Button>
+                </div>
+              </div>
+
+              {/* Analytics Cards */}
+              {Array.isArray(adminPayslips) && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Ready for Payment</p>
+                          <p className="text-xl font-bold text-slate-900">
+                            {adminPayslips.filter((p: AdminPayslip) => p.status === 'approved').length}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-100 rounded-lg">
+                          <CheckCircle className="h-4 w-4 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Paid</p>
+                          <p className="text-xl font-bold text-emerald-600">
+                            {adminPayslips.filter((p: AdminPayslip) => p.status === 'paid').length}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-100 rounded-lg">
+                          <Clock className="h-4 w-4 text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Total Hours</p>
+                          <p className="text-xl font-bold text-indigo-600">
+                            {adminPayslips.reduce((sum: number, p: AdminPayslip) => sum + parseFloat(p.totalHours || '0'), 0).toFixed(1)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-600">Total Payroll</p>
+                          <p className="text-xl font-bold text-green-600">
+                            {formatCurrency(adminPayslips.reduce((sum: number, p: AdminPayslip) => sum + parseFloat(p.netPay || '0'), 0).toString())}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Filters */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                          placeholder="Search by staff name or email..."
+                          value={payslipSearchTerm}
+                          onChange={(e) => setPayslipSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <Select value={payslipStatusFilter} onValueChange={setPayslipStatusFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="approved">Ready for Payment</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={payslipStaffFilter} onValueChange={setPayslipStaffFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <User className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filter by staff" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Staff</SelectItem>
+                        {Array.isArray(adminPayslips) && Array.from(
+                          new Map(adminPayslips.map((p: AdminPayslip) => [p.userId, { id: p.userId, name: p.staffName }]))
+                            .values()
+                        ).map((staff: any) => (
+                          <SelectItem key={staff.id} value={staff.id.toString()}>
+                            {staff.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Payslips List */}
+              <div className="space-y-4">
+                {isLoadingAdminPayslips ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-slate-600 mt-2">Loading payslips...</p>
+                    </CardContent>
+                  </Card>
+                ) : Array.isArray(adminPayslips) && adminPayslips.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-slate-900 mb-2">No payslips available</h3>
+                      <p className="text-slate-600">Approved timesheets will appear here for payslip generation.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  Array.isArray(adminPayslips) && adminPayslips
+                    .filter((payslip: AdminPayslip) => {
+                      const matchesSearch = payslip.staffName?.toLowerCase().includes(payslipSearchTerm.toLowerCase()) ||
+                                           payslip.staffEmail?.toLowerCase().includes(payslipSearchTerm.toLowerCase());
+                      const matchesStatus = payslipStatusFilter === 'all' || payslip.status === payslipStatusFilter;
+                      const matchesStaff = payslipStaffFilter === 'all' || payslip.userId.toString() === payslipStaffFilter;
+                      return matchesSearch && matchesStatus && matchesStaff;
+                    })
+                    .map((payslip: AdminPayslip) => (
+                    <Card key={payslip.timesheetId} className="border-l-4 border-l-green-500">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-lg font-semibold text-slate-900">
+                                {payslip.staffName || 'Unknown Staff'}
+                              </h3>
+                              {getStatusBadge(payslip.status)}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+                              <div>
+                                <p><strong>Pay Period:</strong></p>
+                                <p>{formatDate(payslip.payPeriodStart)} - {formatDate(payslip.payPeriodEnd)}</p>
+                              </div>
+                              <div>
+                                <p><strong>Hours:</strong> {payslip.totalHours}</p>
+                                <p><strong>Gross:</strong> {formatCurrency(payslip.totalEarnings)}</p>
+                              </div>
+                              <div>
+                                <p><strong>Tax:</strong> {formatCurrency(payslip.totalTax)}</p>
+                                <p><strong>Net Pay:</strong> {formatCurrency(payslip.netPay)}</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {payslip.status === 'approved' && (
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button
+                                onClick={() => generatePayslipMutation.mutate(payslip.timesheetId)}
+                                disabled={generatePayslipMutation.isPending}
+                                className="bg-emerald-600 hover:bg-emerald-700"
+                                size="sm"
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Generate Payslip
+                              </Button>
                             </div>
                           )}
                         </div>
