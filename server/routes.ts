@@ -4073,10 +4073,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       console.log(`[CANCELLED SHIFTS] Found ${result.rows.length} cancellations`);
-      res.json(result.rows);
+      
+      // Process rows to ensure safe data handling
+      const processedRows = result.rows.map(row => ({
+        ...row,
+        cancellationReason: row.cancellationReason ? String(row.cancellationReason).substring(0, 500) : 'No reason provided'
+      }));
+      
+      res.json(processedRows);
     } catch (error: any) {
       console.error("[CANCELLED SHIFTS] Direct query error:", error);
-      res.status(500).json({ message: "Failed to fetch cancelled shifts", error: error.message });
+      res.status(500).json({ message: "Failed to fetch shift cancellations", error: error.message });
     }
   });
 
