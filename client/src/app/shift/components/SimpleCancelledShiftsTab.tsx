@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Download, Search, Calendar, Clock, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { Download, FileSpreadsheet, Search, Calendar, Clock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Mock data for demonstration - replace with real API later
@@ -72,7 +72,7 @@ export default function SimpleCancelledShiftsTab() {
     averageNotice: Math.round(filteredCancellations.reduce((sum, c) => sum + c.hoursNotice, 0) / filteredCancellations.length || 0)
   };
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     // Create CSV content
     const headers = ["Date", "Staff", "Shift", "Client", "Hours Notice", "Approval Type", "Reason"];
     const csvContent = [
@@ -96,6 +96,37 @@ export default function SimpleCancelledShiftsTab() {
     link.click();
   };
 
+  const handleExportExcel = () => {
+    // Create Excel workbook data
+    const workbookData = [
+      ["Cancellation Records Export", "", "", "", "", "", ""],
+      ["Generated:", new Date().toLocaleString(), "", "", "", "", ""],
+      ["", "", "", "", "", "", ""],
+      ["Date", "Staff Member", "Shift Title", "Client Name", "Hours Notice", "Approval Type", "Cancellation Reason"],
+      ...filteredCancellations.map(c => [
+        new Date(c.createdAt).toLocaleDateString(),
+        c.cancelledByUserName,
+        c.shiftTitle,
+        c.clientName,
+        c.hoursNotice,
+        c.approvalType,
+        c.cancellationReason
+      ])
+    ];
+
+    // Convert to CSV format (Excel can read CSV)
+    const csvContent = workbookData.map(row => 
+      row.map(cell => `"${cell}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cancellation-records-${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -109,10 +140,16 @@ export default function SimpleCancelledShiftsTab() {
           </p>
         </div>
         
-        <Button onClick={handleExport} className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleExportCSV} variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button onClick={handleExportExcel} className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" />
+            Export Excel
+          </Button>
+        </div>
       </div>
 
       {/* Analytics Dashboard */}
