@@ -4054,13 +4054,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get cancelled shifts for admin view
   app.get("/api/shifts/cancelled", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      console.log(`[CANCELLED SHIFTS] Fetching cancellations for tenant ${req.user.tenantId}, user: ${req.user.username}`);
+      console.log(`[CANCELLED SHIFTS] Starting request for tenant ${req.user.tenantId}, user: ${req.user.username}`);
+      console.log(`[CANCELLED SHIFTS] User object:`, JSON.stringify(req.user, null, 2));
       
       const cancellations = await storage.getShiftCancellations(req.user.tenantId);
-      console.log(`[CANCELLED SHIFTS] Found ${cancellations.length} cancellations`);
+      console.log(`[CANCELLED SHIFTS] Successfully fetched ${cancellations.length} cancellations`);
       res.json(cancellations);
     } catch (error: any) {
-      console.error("Get cancelled shifts error:", error);
+      console.error("[CANCELLED SHIFTS] Detailed error:", {
+        message: error.message,
+        stack: error.stack,
+        tenantId: req.user?.tenantId,
+        user: req.user?.username
+      });
       res.status(500).json({ message: "Failed to fetch cancelled shifts", error: error.message });
     }
   });
