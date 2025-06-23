@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { 
   Clock, 
   DollarSign, 
@@ -14,7 +19,12 @@ import {
   Download,
   Calendar,
   TrendingUp,
-  Settings
+  Settings,
+  XCircle,
+  Search,
+  Filter,
+  User,
+  Users
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +57,22 @@ interface Timesheet {
   approvedAt?: string;
 }
 
+interface AdminTimesheet {
+  id: number;
+  userId: number;
+  staffName: string;
+  staffUsername: string;
+  staffEmail: string;
+  payPeriodStart: string;
+  payPeriodEnd: string;
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
+  totalHours: string;
+  totalEarnings: string;
+  submittedAt?: string;
+  approvedAt?: string;
+  createdAt: string;
+}
+
 interface TimesheetSummary {
   timesheet: Timesheet;
   entries: TimesheetEntry[];
@@ -59,6 +85,13 @@ export default function TimesheetDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Admin timesheet management state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [staffFilter, setStaffFilter] = useState('all');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedTimesheet, setSelectedTimesheet] = useState<AdminTimesheet | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<string>('current');
 
   // Get current timesheet
