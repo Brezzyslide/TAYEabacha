@@ -6,7 +6,7 @@ import { provisionAllExistingTenants, provisionTenant } from "./tenant-provision
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
-const { medicationRecords, medicationPlans, clients, users } = schema;
+const { medicationRecords, medicationPlans, clients, users, shiftCancellations } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";
@@ -4055,7 +4055,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/shifts/cancelled", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       console.log(`[CANCELLED SHIFTS] Fetching cancellations for tenant ${req.user.tenantId}`);
-      const cancellations = await storage.getShiftCancellations(req.user.tenantId);
+      
+      // Direct database query to bypass storage layer issues
+      const cancellations = await db.select().from(schema.shiftCancellations)
+        .where(eq(schema.shiftCancellations.tenantId, req.user.tenantId))
+        .orderBy(desc(schema.shiftCancellations.createdAt));
+      
       console.log(`[CANCELLED SHIFTS] Found ${cancellations.length} cancellations`);
       res.json(cancellations);
     } catch (error: any) {
