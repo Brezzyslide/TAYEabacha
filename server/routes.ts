@@ -4056,14 +4056,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`[CANCELLED SHIFTS] Fetching cancellations for tenant ${req.user.tenantId}, user: ${req.user.username}`);
       
-      // Simple direct database query
-      const result = await pool.query(
-        'SELECT * FROM shift_cancellations WHERE tenant_id = $1 ORDER BY created_at DESC',
-        [req.user.tenantId]
-      );
-      
-      console.log(`[CANCELLED SHIFTS] Found ${result.rows.length} cancellations`);
-      res.json(result.rows);
+      const cancellations = await storage.getCancelledShifts(req.user.tenantId);
+      console.log(`[CANCELLED SHIFTS] Found ${cancellations.length} cancellations`);
+      res.json(cancellations);
     } catch (error: any) {
       console.error("Get cancelled shifts error:", error);
       res.status(500).json({ message: "Failed to fetch cancelled shifts", error: error.message });
