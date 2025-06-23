@@ -104,9 +104,9 @@ export const hasPermission = (user: any, capability: string): boolean => {
       const pricingRoles = ["Admin", "ConsoleManager"];
       return pricingRoles.some(role => role.toLowerCase() === user.role.toLowerCase());
     case "canManageBudgets":
-      return ["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(user.role);
+      return ["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].some(role => role.toLowerCase() === user.role.toLowerCase());
     case "canViewBudgets":
-      return ["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(user.role);
+      return ["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"].some(role => role.toLowerCase() === user.role.toLowerCase());
     default:
       return false;
   }
