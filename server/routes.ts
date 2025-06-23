@@ -4060,7 +4060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(cancellations);
     } catch (error: any) {
       console.error("Get cancelled shifts error:", error);
-      res.status(500).json({ message: "Failed to fetch cancelled shifts" });
+      res.status(500).json({ message: "Failed to fetch cancelled shifts", error: error.message });
     }
   });
 
