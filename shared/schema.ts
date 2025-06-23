@@ -1339,11 +1339,11 @@ export const timesheetEntries = pgTable("timesheet_entries", {
 // Australian Tax Brackets (updated annually)
 export const taxBrackets = pgTable("tax_brackets", {
   id: serial("id").primaryKey(),
-  taxYear: text("tax_year").notNull(), // e.g., "2024-25"
-  minIncome: decimal("min_income", { precision: 10, scale: 2 }).notNull(),
-  maxIncome: decimal("max_income", { precision: 10, scale: 2 }),
-  taxRate: decimal("tax_rate", { precision: 5, scale: 4 }).notNull(), // as decimal (e.g., 0.19 for 19%)
-  baseTax: decimal("base_tax", { precision: 10, scale: 2 }).default("0"),
+  taxYear: integer("tax_year").notNull(), // e.g., 2025 for 2024-25 tax year
+  minIncome: text("min_income").notNull(),
+  maxIncome: text("max_income"),
+  taxRate: text("tax_rate").notNull(), // as decimal string (e.g., "0.19" for 19%)
+  baseTax: text("base_tax").default("0"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -154,8 +154,13 @@ async function getHourlyRate(userId: number, tenantId: number): Promise<number> 
   return parseFloat(payScale[0].hourlyRate);
 }
 
-function calculateLeaveAccrual(employmentType: string, hoursWorked: number) {
-  const rates = LEAVE_ACCRUAL_RATES[employmentType as keyof typeof LEAVE_ACCRUAL_RATES];
+function calculateLeaveAccrual(employmentType: string | null, hoursWorked: number) {
+  // Default to 'casual' if employmentType is undefined, null, or invalid
+  const type = employmentType && LEAVE_ACCRUAL_RATES[employmentType as keyof typeof LEAVE_ACCRUAL_RATES] 
+    ? employmentType as keyof typeof LEAVE_ACCRUAL_RATES
+    : 'casual';
+  
+  const rates = LEAVE_ACCRUAL_RATES[type];
   
   return {
     annual: hoursWorked * rates.annual,
