@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import PayScaleManagement from "@/app/admin/PayScaleManagement";
+import AdminTimesheetTabs from "./AdminTimesheetTabs";
 
 interface TimesheetEntry {
   id: number;
@@ -620,6 +621,10 @@ export default function TimesheetDashboard() {
         {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
           <>
             <TabsContent value="admin-review" className="space-y-6">
+              <AdminTimesheetTabs />
+            </TabsContent>
+            
+            <TabsContent value="admin-original" className="space-y-6">
               {/* Header */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
