@@ -908,7 +908,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               
               if (effectiveRate > 0) {
-                const shiftCost = effectiveRate * shiftHours;
+                // Calculate shift cost with precision handling (convert to cents for calculation)
+                const shiftCostCents = Math.round(effectiveRate * shiftHours * 100);
+                const shiftCost = shiftCostCents / 100;
+                
+                console.log(`[BUDGET DEDUCTION] Calculated cost: $${shiftCost.toFixed(2)} (${shiftHours.toFixed(2)}h × $${effectiveRate.toFixed(2)}/h)`);
                 
                 // Use the shift's actual funding category instead of defaulting based on shift type
                 const category = shift.fundingCategory || 
@@ -916,34 +920,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 console.log(`[BUDGET DEDUCTION] Shift ${shift.id}: fundingCategory="${shift.fundingCategory}", calculated category="${category}", shiftType="${shiftType}"`);
                 
-                // Validate funding category and get current remaining amount
+                // Validate funding category and get current remaining amount with precision handling
+                const validCategories = ["CommunityAccess", "SIL", "CapacityBuilding"];
+                if (!validCategories.includes(category)) {
+                  console.error(`[BUDGET DEDUCTION] Invalid funding category: ${category} for shift ${shift.id}`);
+                  await storage.createActivityLog({
+                    userId: req.user.id,
+                    action: "budget_deduction_error",
+                    resourceType: "ndis_budget",
+                    resourceId: budget.id,
+                    description: `Failed deduction - Invalid category "${category}" for shift: ${shift.title}`,
+                    tenantId: req.user.tenantId,
+                  });
+                  return;
+                }
+
                 let currentRemaining = 0;
                 let budgetField = "";
                 
                 switch (category) {
                   case "CommunityAccess":
-                    currentRemaining = parseFloat(budget.communityAccessRemaining.toString());
-                    budgetField = "communityAccessRemaining";
+                    currentRemaining = Math.round(parseFloat(budget.communityAccessRemaining.toString()) * 100) / 100;
+                    budgetField = "community_access_remaining";
                     break;
                   case "SIL":
-                    currentRemaining = parseFloat(budget.silRemaining.toString());
-                    budgetField = "silRemaining";
+                    currentRemaining = Math.round(parseFloat(budget.silRemaining.toString()) * 100) / 100;
+                    budgetField = "sil_remaining";
                     break;
                   case "CapacityBuilding":
-                    currentRemaining = parseFloat(budget.capacityBuildingRemaining.toString());
-                    budgetField = "capacityBuildingRemaining";
+                    currentRemaining = Math.round(parseFloat(budget.capacityBuildingRemaining.toString()) * 100) / 100;
+                    budgetField = "capacity_building_remaining";
                     break;
-                  default:
-                    console.error(`[BUDGET DEDUCTION] Invalid funding category: ${category} for shift ${shift.id}`);
-                    await storage.createActivityLog({
-                      userId: req.user.id,
-                      action: "budget_deduction_error",
-                      resourceType: "ndis_budget",
-                      resourceId: budget.id,
-                      description: `Failed deduction - Invalid category "${category}" for shift: ${shift.title}`,
-                      tenantId: req.user.tenantId,
-                    });
-                    return; // Exit early for invalid categories
                 }
                 
                 console.log(`[BUDGET DEDUCTION] Category: ${category}, Current: $${currentRemaining}, Required: $${shiftCost}`);
