@@ -90,6 +90,11 @@ export async function calculatePayroll(
 }
 
 async function calculateTaxWithholding(annualIncome: number, payPeriodGross: number): Promise<number> {
+  // Australian tax-free threshold is $18,200
+  if (annualIncome <= 18200) {
+    return 0; // No tax withheld below tax-free threshold
+  }
+
   // Get current tax brackets
   const brackets = await db
     .select()
@@ -114,6 +119,7 @@ async function calculateTaxWithholding(annualIncome: number, payPeriodGross: num
     if (annualIncome > minIncome) {
       const taxableInThisBracket = Math.min(annualIncome, maxIncome) - minIncome;
       annualTax = baseTax + (taxableInThisBracket * taxRate);
+      break; // Only apply the highest applicable bracket
     }
   }
 
