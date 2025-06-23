@@ -19,7 +19,9 @@ import {
   TrendingUp,
   User,
   Briefcase,
-  Coffee
+  Coffee,
+  Eye,
+  Download
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -112,6 +114,45 @@ export default function StaffTimesheetView() {
       toast({
         title: "Submission Failed",
         description: "Failed to submit timesheet. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Download payslip mutation
+  const downloadPayslipMutation = useMutation({
+    mutationFn: async (timesheetId: number) => {
+      const response = await fetch(`/api/payslips/${timesheetId}/pdf`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate payslip');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `payslip-${timesheetId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "Payslip Downloaded", 
+        description: "Your payslip PDF has been downloaded successfully." 
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download payslip. Please try again.",
         variant: "destructive"
       });
     }
