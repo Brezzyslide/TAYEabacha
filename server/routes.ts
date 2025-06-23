@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
 import { db, pool } from "./db";
 import * as schema from "@shared/schema";
-import { eq, desc, and, or, ilike } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users, shiftCancellations, timesheets: timesheetsTable, timesheetEntries } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
@@ -5041,6 +5041,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status, staffId, search } = req.query;
       
+      console.log(`[ADMIN TIMESHEETS] User: ${req.user.id}, Tenant: ${req.user.tenantId}, Status filter: ${status}, Staff filter: ${staffId}`);
+      
+      // Build filter conditions
+      const whereConditions = [eq(timesheetsTable.tenantId, req.user.tenantId)];
+      
+      if (status && status !== 'all') {
+        whereConditions.push(eq(timesheetsTable.status, status));
+      }
+      
+      if (staffId && staffId !== 'all') {
+        whereConditions.push(eq(timesheetsTable.userId, parseInt(staffId)));
+      }
+      
+      if (search) {
+        whereConditions.push(or(
+          ilike(users.fullName, `%${search}%`),
+          ilike(users.username, `%${search}%`),
+          ilike(users.email, `%${search}%`)
+        ));
+      }
+      
       // Get all timesheets for tenant with user information
       const timesheetData = await db
         .select({
@@ -5060,18 +5081,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .from(timesheetsTable)
         .leftJoin(users, eq(timesheetsTable.userId, users.id))
-        .where(and(
-          eq(timesheetsTable.tenantId, req.user.tenantId),
-          status ? eq(timesheetsTable.status, status) : undefined,
-          staffId ? eq(timesheetsTable.userId, parseInt(staffId)) : undefined,
-          search ? or(
-            ilike(users.fullName, `%${search}%`),
-            ilike(users.username, `%${search}%`),
-            ilike(users.email, `%${search}%`)
-          ) : undefined
-        ))
+        .where(and(...whereConditions))
         .orderBy(desc(timesheetsTable.createdAt));
       
+      console.log(`[ADMIN TIMESHEETS] Found ${timesheetData.length} timesheets`);
       res.json(timesheetData);
     } catch (error: any) {
       console.error("Get admin timesheets error:", error);
