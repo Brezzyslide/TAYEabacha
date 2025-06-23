@@ -5,8 +5,8 @@ import { storage } from "./storage";
 import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
 import { db, pool } from "./db";
 import * as schema from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
-const { medicationRecords, medicationPlans, clients, users, shiftCancellations } = schema;
+import { eq, desc, and, or, ilike } from "drizzle-orm";
+const { medicationRecords, medicationPlans, clients, users, shiftCancellations, timesheets: timesheetsTable, timesheetEntries } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";
@@ -5017,6 +5017,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Get timesheet history error:", error);
       res.status(500).json({ message: "Failed to fetch timesheet history" });
+    }
+  });
+
+  // Admin timesheet management endpoints
+  app.get("/api/admin/timesheets", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { status, staffId, search } = req.query;
+      
+      // Get all timesheets for tenant with user information
+      const timesheetData = await db
+        .select({
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          submittedAt: timesheetsTable.submittedAt,
+          approvedAt: timesheetsTable.approvedAt,
+          createdAt: timesheetsTable.createdAt,
+          staffName: users.fullName,
+          staffUsername: users.username,
+          staffEmail: users.email
+        })
+        .from(timesheetsTable)
+        .leftJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(and(
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          status ? eq(timesheetsTable.status, status) : undefined,
+          staffId ? eq(timesheetsTable.userId, parseInt(staffId)) : undefined,
+          search ? or(
+            ilike(users.fullName, `%${search}%`),
+            ilike(users.username, `%${search}%`),
+            ilike(users.email, `%${search}%`)
+          ) : undefined
+        ))
+        .orderBy(desc(timesheetsTable.createdAt));
+      
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("Get admin timesheets error:", error);
+      res.status(500).json({ message: "Failed to fetch timesheets" });
+    }
+  });
+
+  app.post("/api/timesheet/:id/submit", requireAuth, async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      const { submitTimesheet } = await import("./timesheet-service");
+      
+      const autoApproved = await submitTimesheet(timesheetId, req.user.id);
+      
+      // Notify admins about timesheet submission if not auto-approved
+      if (!autoApproved) {
+        const { NotificationService } = await import("./notification-service");
+        await NotificationService.notifyAdminsAboutTimesheetSubmission(
+          req.user.tenantId,
+          req.user.id,
+          timesheetId
+        );
+      }
+      
+      res.json({ 
+        message: autoApproved ? "Timesheet auto-approved" : "Timesheet submitted for approval",
+        autoApproved 
+      });
+    } catch (error: any) {
+      console.error("Submit timesheet error:", error);
+      res.status(500).json({ message: error.message || "Failed to submit timesheet" });
+    }
+  });
+
+  app.post("/api/admin/timesheets/:id/approve", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      
+      // Update timesheet status to approved
+      await db
+        .update(timesheets)
+        .set({
+          status: 'approved',
+          approvedAt: new Date(),
+          approvedBy: req.user.id,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(timesheets.id, timesheetId),
+          eq(timesheets.tenantId, req.user.tenantId)
+        ));
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "approve_timesheet",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Approved timesheet ${timesheetId}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Timesheet approved successfully" });
+    } catch (error: any) {
+      console.error("Approve timesheet error:", error);
+      res.status(500).json({ message: "Failed to approve timesheet" });
+    }
+  });
+
+  app.post("/api/admin/timesheets/:id/reject", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      // Update timesheet status to rejected
+      await db
+        .update(timesheets)
+        .set({
+          status: 'rejected',
+          rejectedAt: new Date(),
+          rejectedBy: req.user.id,
+          rejectionReason: reason,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(timesheets.id, timesheetId),
+          eq(timesheets.tenantId, req.user.tenantId)
+        ));
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "reject_timesheet",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Rejected timesheet ${timesheetId}: ${reason}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ message: "Timesheet rejected successfully" });
+    } catch (error: any) {
+      console.error("Reject timesheet error:", error);
+      res.status(500).json({ message: "Failed to reject timesheet" });
+    }
+  });
+
+  app.get("/api/admin/timesheets/export", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { status, staffId, format } = req.query;
+      
+      // Get timesheets data for export
+      const timesheets = await db
+        .select({
+          id: timesheets.id,
+          staffName: users.fullName,
+          staffEmail: users.email,
+          payPeriodStart: timesheets.payPeriodStart,
+          payPeriodEnd: timesheets.payPeriodEnd,
+          status: timesheets.status,
+          totalHours: timesheets.totalHours,
+          totalEarnings: timesheets.totalEarnings,
+          submittedAt: timesheets.submittedAt,
+          approvedAt: timesheets.approvedAt
+        })
+        .from(timesheets)
+        .leftJoin(users, eq(timesheets.userId, users.id))
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          status ? eq(timesheets.status, status) : undefined,
+          staffId ? eq(timesheets.userId, parseInt(staffId)) : undefined
+        ))
+        .orderBy(desc(timesheets.createdAt));
+      
+      if (format === 'excel') {
+        // Excel export
+        const workbookData = [
+          ["Timesheet Export", "", "", "", "", "", "", ""],
+          ["Generated:", new Date().toLocaleString(), "", "", "", "", "", ""],
+          ["", "", "", "", "", "", "", ""],
+          ["Staff Name", "Email", "Pay Period Start", "Pay Period End", "Status", "Total Hours", "Total Earnings", "Submitted Date"],
+          ...timesheets.map(ts => [
+            ts.staffName || "Unknown",
+            ts.staffEmail || "",
+            new Date(ts.payPeriodStart).toLocaleDateString(),
+            new Date(ts.payPeriodEnd).toLocaleDateString(),
+            ts.status,
+            ts.totalHours,
+            `$${ts.totalEarnings}`,
+            ts.submittedAt ? new Date(ts.submittedAt).toLocaleDateString() : ""
+          ])
+        ];
+        
+        const csvContent = workbookData.map(row => 
+          row.map(cell => `"${cell}"`).join(',')
+        ).join('\n');
+        
+        res.setHeader('Content-Type', 'application/vnd.ms-excel');
+        res.setHeader('Content-Disposition', `attachment; filename="timesheets-export-${new Date().toISOString().split('T')[0]}.xlsx"`);
+        res.send(csvContent);
+      } else {
+        // CSV export
+        const headers = ["Staff Name", "Email", "Pay Period Start", "Pay Period End", "Status", "Total Hours", "Total Earnings", "Submitted Date"];
+        const csvContent = [
+          headers.join(','),
+          ...timesheets.map(ts => [
+            ts.staffName || "Unknown",
+            ts.staffEmail || "",
+            new Date(ts.payPeriodStart).toLocaleDateString(),
+            new Date(ts.payPeriodEnd).toLocaleDateString(),
+            ts.status,
+            ts.totalHours,
+            `$${ts.totalEarnings}`,
+            ts.submittedAt ? new Date(ts.submittedAt).toLocaleDateString() : ""
+          ].join(','))
+        ].join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="timesheets-export-${new Date().toISOString().split('T')[0]}.csv"`);
+        res.send(csvContent);
+      }
+    } catch (error: any) {
+      console.error("Export timesheets error:", error);
+      res.status(500).json({ message: "Failed to export timesheets" });
     }
   });
 
