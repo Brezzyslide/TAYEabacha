@@ -313,7 +313,7 @@ async function provisionHourlyObservations(tenantId: number): Promise<void> {
       updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
     };
     
-    await storage.createHourlyObservation(observationData);
+    await storage.createObservation(observationData);
   }
   
   console.log(`[TENANT PROVISIONING] Created hourly observations for tenant ${tenantId}`);
@@ -389,24 +389,55 @@ export async function provisionAllExistingTenants(): Promise<void> {
   console.log(`[TENANT PROVISIONING] Starting automatic provisioning for all existing tenants`);
   
   try {
-    // Get all existing tenants
-    const tenants = await storage.getAllTenants();
+    // Test database connection first
+    await storage.getAllTenants();
+    
+    // Get all existing tenants with retry logic
+    const tenants = await withRetry(() => storage.getAllTenants(), 3);
     
     for (const tenant of tenants) {
-      const clientCount = await storage.getClientCountByTenant(tenant.id);
-      
-      // Only provision if tenant has fewer than 3 clients (indicating incomplete setup)
-      if (clientCount < 3) {
-        console.log(`[TENANT PROVISIONING] Tenant ${tenant.id} needs provisioning (${clientCount} clients)`);
-        await provisionTenant(tenant.id, tenant.companyId || `company-${tenant.id}`);
-      } else {
-        console.log(`[TENANT PROVISIONING] Tenant ${tenant.id} already has comprehensive data (${clientCount} clients)`);
+      try {
+        const clientCount = await withRetry(() => storage.getClientCountByTenant(tenant.id), 2);
+        
+        // Only provision if tenant has fewer than 3 clients (indicating incomplete setup)
+        if (clientCount < 3) {
+          console.log(`[TENANT PROVISIONING] Tenant ${tenant.id} needs provisioning (${clientCount} clients)`);
+          await provisionTenant(tenant.id, tenant.companyId || `company-${tenant.id}`);
+        } else {
+          console.log(`[TENANT PROVISIONING] Tenant ${tenant.id} already has comprehensive data (${clientCount} clients)`);
+        }
+      } catch (tenantError) {
+        console.error(`[TENANT PROVISIONING] Error provisioning tenant ${tenant.id}:`, tenantError);
+        // Continue with other tenants
       }
     }
     
     console.log(`[TENANT PROVISIONING] Completed automatic provisioning for all existing tenants`);
   } catch (error) {
-    console.error(`[TENANT PROVISIONING] Error in automatic provisioning:`, error);
+    console.error(`[TENANT PROVISIONING] Critical error in automatic provisioning:`, error);
     throw error;
   }
+}
+
+/**
+ * Retry helper function for database operations
+ */
+async function withRetry<T>(operation: () => Promise<T>, maxRetries: number): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      console.log(`[RETRY] Attempt ${attempt}/${maxRetries} failed:`, error);
+      
+      if (attempt < maxRetries) {
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+  
+  throw lastError!;
 }
