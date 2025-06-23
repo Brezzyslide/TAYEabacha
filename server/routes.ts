@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
+import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning";
 import { db, pool } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
@@ -230,10 +231,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Automatically provision comprehensive features for new tenant
       try {
-        await provisionTenant(tenant.id, company.id);
-        console.log(`[TENANT PROVISIONING] Successfully provisioned tenant ${tenant.id} with comprehensive features`);
+        await autoProvisionNewTenant(tenant.id, company.id, adminUser.id);
+        console.log(`[NEW TENANT SETUP] Successfully auto-provisioned tenant ${tenant.id} with complete feature set`);
       } catch (error) {
-        console.error(`[TENANT PROVISIONING] Error provisioning tenant ${tenant.id}:`, error);
+        console.error(`[NEW TENANT SETUP] Error auto-provisioning tenant ${tenant.id}:`, error);
+        // Fallback to basic provisioning
+        try {
+          await provisionTenant(tenant.id, company.id);
+          console.log(`[TENANT PROVISIONING] Fallback provisioning completed for tenant ${tenant.id}`);
+        } catch (fallbackError) {
+          console.error(`[TENANT PROVISIONING] Fallback provisioning failed:`, fallbackError);
+        }
       }
 
       // Log to console as requested

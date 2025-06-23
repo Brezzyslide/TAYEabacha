@@ -48,7 +48,7 @@ export async function autoProvisionNewTenant(
     await createHourAllocationsForTenant(tenantId);
     
     // 6. Activity logging
-    await storage.createActivity({
+    await storage.createActivityLog({
       tenantId,
       userId: adminUserId,
       type: 'tenant_provisioned',

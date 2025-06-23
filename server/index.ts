@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { provisionAllExistingTenants } from "./tenant-provisioning";
-import { runMultiTenantConsistencyCheck } from "./multi-tenant-consistency-fix";
+import { runCompleteConsistencyCheck } from "./simplified-multi-tenant-fix";
 
 // Set timezone to Australian Eastern Standard Time
 process.env.TZ = 'Australia/Sydney';
@@ -50,7 +50,7 @@ app.use((req, res, next) => {
   // Run comprehensive multi-tenant consistency enforcement on startup
   console.log("[MULTI-TENANT FIX] Running comprehensive consistency enforcement for ALL tenants");
   try {
-    await runMultiTenantConsistencyCheck();
+    await runCompleteConsistencyCheck();
     console.log("[MULTI-TENANT FIX] Consistency enforcement completed successfully");
   } catch (error) {
     console.error("[MULTI-TENANT FIX] Consistency enforcement failed:", error);
