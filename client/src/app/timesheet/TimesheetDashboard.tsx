@@ -104,6 +104,12 @@ export default function TimesheetDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Debug user role
+  console.log('TimesheetDashboard - User:', user);
+  console.log('TimesheetDashboard - User Role:', user?.role);
+  console.log('TimesheetDashboard - Is Admin?', user?.role === 'Admin');
+  console.log('TimesheetDashboard - Is ConsoleManager?', user?.role === 'ConsoleManager');
+  
   // Admin timesheet management state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -431,16 +437,20 @@ export default function TimesheetDashboard() {
 
       <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod} className="w-full">
         <div className="flex flex-col space-y-2">
-          <TabsList className={`grid w-full ${user?.role === 'Admin' || user?.role === 'ConsoleManager' ? 'grid-cols-3 md:grid-cols-6' : 'grid-cols-3'}`}>
+          <TabsList className="flex flex-wrap w-full gap-1 h-auto p-1">
             <TabsTrigger value="current" className="text-xs md:text-sm">Current Period</TabsTrigger>
             <TabsTrigger value="history" className="text-xs md:text-sm">History</TabsTrigger>
             <TabsTrigger value="payslips" className="text-xs md:text-sm">Payslips</TabsTrigger>
             {(user?.role === 'Admin' || user?.role === 'ConsoleManager') && (
               <>
-                <TabsTrigger value="admin-review" className="text-xs md:text-sm">Staff Timesheets</TabsTrigger>
-                <TabsTrigger value="admin-payslips" className="text-xs md:text-sm">Staff Payslips</TabsTrigger>
-                <TabsTrigger value="pay-scales" className="text-xs md:text-sm">Pay Scales</TabsTrigger>
+                <TabsTrigger value="admin-review" className="text-xs md:text-sm bg-green-100">Staff Timesheets</TabsTrigger>
+                <TabsTrigger value="admin-payslips" className="text-xs md:text-sm bg-blue-100">Staff Payslips</TabsTrigger>
+                <TabsTrigger value="pay-scales" className="text-xs md:text-sm bg-yellow-100">Pay Scales</TabsTrigger>
               </>
+            )}
+            {/* Debug: Force show admin tabs */}
+            {user?.role === 'Admin' && (
+              <div className="text-xs text-red-500 p-1">Admin tabs should be visible</div>
             )}
           </TabsList>
         </div>
