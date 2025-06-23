@@ -9,7 +9,7 @@ import { eq, desc, and } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import { createTimesheetEntryFromShift } from "./timesheet-service";
+import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -4965,6 +4965,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error resetting pay scales:", error);
       res.status(500).json({ message: "Failed to reset pay scales" });
+    }
+  });
+
+  // Timesheet API endpoints
+  app.get("/api/timesheet/current", requireAuth, async (req: any, res) => {
+    try {
+      const currentTimesheet = await getCurrentTimesheet(req.user.id, req.user.tenantId);
+      res.json(currentTimesheet);
+    } catch (error: any) {
+      console.error("Get current timesheet error:", error);
+      res.status(500).json({ message: "Failed to fetch current timesheet" });
+    }
+  });
+
+  app.get("/api/timesheet/history", requireAuth, async (req: any, res) => {
+    try {
+      const history = await getTimesheetHistory(req.user.id, req.user.tenantId);
+      res.json(history);
+    } catch (error: any) {
+      console.error("Get timesheet history error:", error);
+      res.status(500).json({ message: "Failed to fetch timesheet history" });
     }
   });
 
