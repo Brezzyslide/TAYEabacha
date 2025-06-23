@@ -62,7 +62,7 @@ export default function ShiftDashboard() {
               )}
               {isAdmin && (
                 <TabsTrigger value="cancelled-shifts" className="flex items-center gap-2 text-xs lg:text-sm">
-                  ❌ Cancelled
+                  📊 Records
                 </TabsTrigger>
               )}
             </TabsList>

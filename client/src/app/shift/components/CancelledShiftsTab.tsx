@@ -11,10 +11,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import type { ShiftCancellation } from "@shared/schema";
 
-export default function CancelledShiftsTab() {
+export default function CancellationRecordsTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStaff, setSelectedStaff] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
+  const [approvalFilter, setApprovalFilter] = useState<string>("all");
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -37,6 +38,10 @@ export default function CancelledShiftsTab() {
     const matchesStaff = selectedStaff === "all" || 
       cancellation.cancelledByUserId === parseInt(selectedStaff);
 
+    const matchesApproval = approvalFilter === "all" || 
+      (approvalFilter === "auto" && cancellation.hoursNotice >= 24) ||
+      (approvalFilter === "admin" && cancellation.hoursNotice < 24);
+
     const matchesDate = dateFilter === "all" || (() => {
       const cancellationDate = new Date(cancellation.createdAt);
       const now = new Date();
@@ -55,7 +60,7 @@ export default function CancelledShiftsTab() {
       }
     })();
 
-    return matchesSearch && matchesStaff && matchesDate;
+    return matchesSearch && matchesStaff && matchesDate && matchesApproval;
   });
 
   // Calculate analytics for current filtered data
@@ -219,7 +224,7 @@ export default function CancelledShiftsTab() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
@@ -246,6 +251,20 @@ export default function CancelledShiftsTab() {
                       {member.fullName}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Approval Type</label>
+              <Select value={approvalFilter} onValueChange={setApprovalFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="auto">Auto-Approved (24+ hours)</SelectItem>
+                  <SelectItem value="admin">Admin-Approved (&lt;24 hours)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
