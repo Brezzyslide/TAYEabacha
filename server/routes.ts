@@ -5426,15 +5426,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Timesheet not found" });
       }
 
-      // Get company details
+      // Get company details by matching tenant ID to company
       const company = await db
         .select({ name: companies.name })
         .from(companies)
-        .where(eq(companies.tenantId, req.user.tenantId))
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, req.user.tenantId))
         .limit(1);
 
       // Generate PDF using our existing PDF utility
-      const { PDFExportUtility } = await import("./pdf-export-utility");
+      const PDFExportUtility = (await import("./pdf-export-utility")).PDFExportUtility;
       const pdfUtil = new PDFExportUtility();
 
       const payslipData = {
