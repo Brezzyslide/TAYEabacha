@@ -313,11 +313,14 @@ export default function TimesheetDashboard() {
       .values()
   ) : [];
 
-  // Filter timesheets based on search
+  // Filter timesheets based on search, status, and staff
   const filteredTimesheets = Array.isArray(adminTimesheets) ? adminTimesheets.filter((timesheet: AdminTimesheet) => {
     const matchesSearch = timesheet.staffName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          timesheet.staffEmail?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    const matchesStatus = statusFilter === 'all' || timesheet.status === statusFilter;
+    const matchesStaff = staffFilter === 'all' || timesheet.userId.toString() === staffFilter;
+    
+    return matchesSearch && matchesStatus && matchesStaff;
   }) : [];
 
   // Analytics calculations
