@@ -10,7 +10,7 @@ import PendingRequestsTab from "./components/PendingRequestsTab";
 import RequestedShiftsTab from "./components/RequestedShiftsTab";
 import ShiftRequestsTab from "./components/ShiftRequestsTab";
 import AllShiftsTab from "./components/AllShiftsTab";
-import CancelledShiftsTab from "./components/CancelledShiftsTab";
+import SimpleCancelledShiftsTab from "./components/SimpleCancelledShiftsTab";
 import CancellationRequestsTab from "./components/CancellationRequestsTab";
 
 export default function ShiftDashboard() {
@@ -106,7 +106,7 @@ export default function ShiftDashboard() {
 
           {isAdmin && (
             <TabsContent value="cancelled-shifts" className="space-y-4">
-              <CancelledShiftsTab />
+              <SimpleCancelledShiftsTab />
             </TabsContent>
           )}
         </div>
