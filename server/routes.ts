@@ -4056,7 +4056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`[CANCELLED SHIFTS] Fetching cancellations for tenant ${req.user.tenantId}, user: ${req.user.username}`);
       
-      const cancellations = await storage.getCancelledShifts(req.user.tenantId);
+      const cancellations = await storage.getShiftCancellations(req.user.tenantId);
       console.log(`[CANCELLED SHIFTS] Found ${cancellations.length} cancellations`);
       res.json(cancellations);
     } catch (error: any) {
