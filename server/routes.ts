@@ -5312,6 +5312,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff payslip download endpoint
+  app.get("/api/payslips/:id/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      
+      // Get timesheet with staff details - staff can only access their own payslips
+      const timesheet = await db
+        .select({
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          staffName: users.fullName,
+          staffEmail: users.email,
+          employmentType: users.employmentType,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          status: timesheetsTable.status
+        })
+        .from(timesheetsTable)
+        .innerJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          // Staff can only access their own payslips unless they're admin
+          req.user.role === "Admin" || req.user.role === "ConsoleManager" 
+            ? sql`true` 
+            : eq(timesheetsTable.userId, req.user.id)
+        ))
+        .limit(1);
+
+      if (!timesheet.length) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      // Only allow download for approved or paid timesheets
+      if (!['approved', 'paid'].includes(timesheet[0].status)) {
+        return res.status(400).json({ message: "Payslip not available for this timesheet status" });
+      }
+
+      // Get company details
+      const { companies } = await import("@shared/schema");
+      const company = await db
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.tenantId, req.user.tenantId))
+        .limit(1);
+
+      // Generate PDF using our existing PDF utility
+      const { PDFExportUtility } = await import("./pdf-export-utility");
+      const pdfUtil = new PDFExportUtility();
+
+      const payslipData = {
+        companyName: company[0]?.name || "NeedsCareAI+",
+        staffName: timesheet[0].staffName,
+        staffEmail: timesheet[0].staffEmail,
+        employmentType: timesheet[0].employmentType,
+        payPeriod: `${new Date(timesheet[0].payPeriodStart).toLocaleDateString()} - ${new Date(timesheet[0].payPeriodEnd).toLocaleDateString()}`,
+        totalHours: timesheet[0].totalHours,
+        grossPay: timesheet[0].totalEarnings,
+        taxWithheld: timesheet[0].totalTax,
+        superContribution: timesheet[0].totalSuper,
+        netPay: timesheet[0].netPay,
+        leaveBalances: timesheet[0].employmentType !== 'casual' ? {
+          annual: 0, // Leave balances would come from leave_balances table
+          sick: 0
+        } : null
+      };
+
+      const pdfBuffer = await pdfUtil.generatePayslipPDF(payslipData);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="payslip-${timesheet[0].staffName}-${new Date().toISOString().split('T')[0]}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("[STAFF PAYSLIP PDF] Error:", error);
+      res.status(500).json({ message: "Failed to generate payslip PDF" });
+    }
+  });
+
   // Generate Payslip PDF
   app.post("/api/admin/timesheets/:id/generate-payslip-pdf", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {

@@ -425,6 +425,56 @@ export default function StaffTimesheetView() {
                                   <p className="font-medium">Net: {formatCurrency(timesheet.netPay)}</p>
                                 </div>
                               </div>
+                              
+                              {/* Leave Accrual for non-casual staff */}
+                              {user?.employmentType !== 'casual' && (timesheet.annualLeaveAccrued || timesheet.sickLeaveAccrued) && (
+                                <div className="mt-3 pt-3 border-t border-slate-200">
+                                  <p className="text-sm text-slate-600 mb-1">Leave Accrued This Period:</p>
+                                  <div className="flex gap-4 text-sm">
+                                    {timesheet.annualLeaveAccrued && (
+                                      <span className="text-emerald-600 font-medium">
+                                        Annual: {timesheet.annualLeaveAccrued}h
+                                      </span>
+                                    )}
+                                    {timesheet.sickLeaveAccrued && (
+                                      <span className="text-blue-600 font-medium">
+                                        Sick: {timesheet.sickLeaveAccrued}h
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  // View timesheet details functionality
+                                  toast({
+                                    title: "Timesheet Details",
+                                    description: `Viewing timesheet for ${formatDate(timesheet.payPeriodStart)} - ${formatDate(timesheet.payPeriodEnd)}`
+                                  });
+                                }}
+                                className="flex items-center gap-2"
+                              >
+                                <Eye className="h-4 w-4" />
+                                View
+                              </Button>
+                              
+                              {(timesheet.status === 'approved' || timesheet.status === 'paid') && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => downloadPayslipMutation.mutate(timesheet.id)}
+                                  disabled={downloadPayslipMutation.isPending}
+                                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                                >
+                                  <Download className="h-4 w-4" />
+                                  {downloadPayslipMutation.isPending ? 'Downloading...' : 'Payslip'}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </CardContent>
