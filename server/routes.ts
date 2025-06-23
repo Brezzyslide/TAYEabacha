@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
-import { db } from "./db";
+import { db, pool } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users, shiftCancellations } = schema;
@@ -4054,15 +4054,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get cancelled shifts for admin view
   app.get("/api/shifts/cancelled", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      console.log(`[CANCELLED SHIFTS] Fetching cancellations for tenant ${req.user.tenantId}`);
+      console.log(`[CANCELLED SHIFTS] Fetching cancellations for tenant ${req.user.tenantId}, user: ${req.user.username}`);
       
-      // Direct database query to bypass storage layer issues
-      const cancellations = await db.select().from(schema.shiftCancellations)
-        .where(eq(schema.shiftCancellations.tenantId, req.user.tenantId))
-        .orderBy(desc(schema.shiftCancellations.createdAt));
+      // Simple direct database query
+      const result = await pool.query(
+        'SELECT * FROM shift_cancellations WHERE tenant_id = $1 ORDER BY created_at DESC',
+        [req.user.tenantId]
+      );
       
-      console.log(`[CANCELLED SHIFTS] Found ${cancellations.length} cancellations`);
-      res.json(cancellations);
+      console.log(`[CANCELLED SHIFTS] Found ${result.rows.length} cancellations`);
+      res.json(result.rows);
     } catch (error: any) {
       console.error("Get cancelled shifts error:", error);
       res.status(500).json({ message: "Failed to fetch cancelled shifts", error: error.message });
