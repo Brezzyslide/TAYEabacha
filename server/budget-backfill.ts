@@ -81,8 +81,10 @@ async function processShiftBudgetDeduction(shift: any) {
   const shiftCost = effectiveRate * shiftHours;
   
   // Use the shift's actual funding category instead of defaulting based on shift type
-  const category = shift.fundingCategory || shift.funding_category || 
+  const category = shift.fundingCategory || 
     ((shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL");
+  
+  console.log(`[BUDGET BACKFILL] Shift ${shift.id}: fundingCategory="${shift.fundingCategory}", calculated category="${category}", shiftType="${shiftType}"`);
 
   // Check if sufficient funds available
   let currentRemaining = 0;

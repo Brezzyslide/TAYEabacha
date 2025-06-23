@@ -901,8 +901,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const shiftCost = effectiveRate * shiftHours;
                 
                 // Use the shift's actual funding category instead of defaulting based on shift type
-                const category = shift.fundingCategory || shift.funding_category || 
+                const category = shift.fundingCategory || 
                   ((shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL");
+                
+                console.log(`[BUDGET DEDUCTION] Shift ${shift.id}: fundingCategory="${shift.fundingCategory}", calculated category="${category}", shiftType="${shiftType}"`);
                 
                 // Determine which budget category to deduct from based on actual funding category
                 let budgetUpdate: any = {};
