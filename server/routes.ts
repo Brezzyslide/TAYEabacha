@@ -5056,7 +5056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .orderBy(desc(timesheetsTable.createdAt));
       
-      res.json(timesheets);
+      res.json(timesheetData);
     } catch (error: any) {
       console.error("Get admin timesheets error:", error);
       res.status(500).json({ message: "Failed to fetch timesheets" });
@@ -5096,7 +5096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update timesheet status to approved
       await db
-        .update(timesheets)
+        .update(timesheetsTable)
         .set({
           status: 'approved',
           approvedAt: new Date(),
@@ -5104,8 +5104,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: new Date()
         })
         .where(and(
-          eq(timesheets.id, timesheetId),
-          eq(timesheets.tenantId, req.user.tenantId)
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
         ));
       
       // Log activity
@@ -5132,17 +5132,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update timesheet status to rejected
       await db
-        .update(timesheets)
+        .update(timesheetsTable)
         .set({
           status: 'rejected',
-          rejectedAt: new Date(),
-          rejectedBy: req.user.id,
-          rejectionReason: reason,
           updatedAt: new Date()
         })
         .where(and(
-          eq(timesheets.id, timesheetId),
-          eq(timesheets.tenantId, req.user.tenantId)
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
         ));
       
       // Log activity
@@ -5167,27 +5164,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status, staffId, format } = req.query;
       
       // Get timesheets data for export
-      const timesheets = await db
+      const exportData = await db
         .select({
-          id: timesheets.id,
+          id: timesheetsTable.id,
           staffName: users.fullName,
           staffEmail: users.email,
-          payPeriodStart: timesheets.payPeriodStart,
-          payPeriodEnd: timesheets.payPeriodEnd,
-          status: timesheets.status,
-          totalHours: timesheets.totalHours,
-          totalEarnings: timesheets.totalEarnings,
-          submittedAt: timesheets.submittedAt,
-          approvedAt: timesheets.approvedAt
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          submittedAt: timesheetsTable.submittedAt,
+          approvedAt: timesheetsTable.approvedAt
         })
-        .from(timesheets)
-        .leftJoin(users, eq(timesheets.userId, users.id))
+        .from(timesheetsTable)
+        .leftJoin(users, eq(timesheetsTable.userId, users.id))
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          status ? eq(timesheets.status, status) : undefined,
-          staffId ? eq(timesheets.userId, parseInt(staffId)) : undefined
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          status ? eq(timesheetsTable.status, status) : undefined,
+          staffId ? eq(timesheetsTable.userId, parseInt(staffId)) : undefined
         ))
-        .orderBy(desc(timesheets.createdAt));
+        .orderBy(desc(timesheetsTable.createdAt));
       
       if (format === 'excel') {
         // Excel export
@@ -5196,7 +5193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ["Generated:", new Date().toLocaleString(), "", "", "", "", "", ""],
           ["", "", "", "", "", "", "", ""],
           ["Staff Name", "Email", "Pay Period Start", "Pay Period End", "Status", "Total Hours", "Total Earnings", "Submitted Date"],
-          ...timesheets.map(ts => [
+          ...exportData.map((ts: any) => [
             ts.staffName || "Unknown",
             ts.staffEmail || "",
             new Date(ts.payPeriodStart).toLocaleDateString(),
@@ -5209,7 +5206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ];
         
         const csvContent = workbookData.map(row => 
-          row.map(cell => `"${cell}"`).join(',')
+          row.map((cell: any) => `"${cell}"`).join(',')
         ).join('\n');
         
         res.setHeader('Content-Type', 'application/vnd.ms-excel');
@@ -5220,7 +5217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const headers = ["Staff Name", "Email", "Pay Period Start", "Pay Period End", "Status", "Total Hours", "Total Earnings", "Submitted Date"];
         const csvContent = [
           headers.join(','),
-          ...timesheets.map(ts => [
+          ...exportData.map((ts: any) => [
             ts.staffName || "Unknown",
             ts.staffEmail || "",
             new Date(ts.payPeriodStart).toLocaleDateString(),
