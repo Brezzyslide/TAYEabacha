@@ -62,31 +62,71 @@ export async function calculatePayroll(
 
   const employmentType = user[0].employmentType || "casual";
 
-  // Calculate tax withholding
-  const annualizedGross = (ytdGross + grossPay) * 26; // Assume fortnightly pay
-  const taxWithheld = await calculateTaxWithholding(annualizedGross, grossPay);
+  // Calculate live YTD from approved timesheets (not trusting passed parameter)
+  const actualYTDGross = await calculateLiveYTDGross(userId, tenantId);
   
-  // Calculate Medicare levy
-  const medicareLevy = grossPay * MEDICARE_LEVY;
+  // Use integer math for all financial calculations (convert to cents)
+  const grossPayCents = Math.round(grossPay * 100);
+  const ytdCents = Math.round(actualYTDGross * 100);
+  const totalYTDCents = ytdCents + grossPayCents;
   
-  // Calculate superannuation
-  const superContribution = grossPay * SUPER_RATE;
+  // Calculate tax withholding using accurate YTD
+  const taxWithheld = await calculateTaxWithholding(totalYTDCents / 100, grossPay);
   
-  // Calculate net pay
-  const netPay = grossPay - taxWithheld - medicareLevy;
+  // Calculate Medicare levy (only on Ordinary Time Earnings)
+  const medicareLevy = toPrecision(grossPay * MEDICARE_LEVY);
   
-  // Calculate leave accrual based on hours worked (assume 38 hour week for calculation)
+  // Calculate superannuation (only on OTE - Ordinary Time Earnings)
+  const ordinaryTimeEarnings = grossPay; // For now, all earnings are OTE
+  const superContribution = toPrecision(ordinaryTimeEarnings * SUPER_RATE);
+  
+  // Calculate net pay with precision
+  const netPay = toPrecision(grossPay - taxWithheld - medicareLevy);
+  
+  // Calculate leave accrual based on actual hours worked
   const hoursWorked = (grossPay / await getHourlyRate(userId, tenantId)) || 0;
   const leaveAccrued = calculateLeaveAccrual(employmentType, hoursWorked);
 
   return {
-    grossPay,
-    taxWithheld,
+    grossPay: toPrecision(grossPay),
+    taxWithheld: toPrecision(taxWithheld),
     medicareLevy,
     superContribution,
     netPay,
     leaveAccrued
   };
+}
+
+// Calculate live YTD gross from approved/paid timesheets
+async function calculateLiveYTDGross(userId: number, tenantId: number): Promise<number> {
+  const currentDate = new Date();
+  // Australian financial year starts July 1
+  const financialYearStart = new Date(
+    currentDate.getMonth() >= 6 ? currentDate.getFullYear() : currentDate.getFullYear() - 1,
+    6, // July (0-indexed)
+    1
+  );
+
+  const ytdTimesheets = await db
+    .select({
+      totalEarnings: timesheets.totalEarnings
+    })
+    .from(timesheets)
+    .where(and(
+      eq(timesheets.userId, userId),
+      eq(timesheets.tenantId, tenantId),
+      gte(timesheets.payPeriodStart, financialYearStart),
+      eq(timesheets.status, 'paid') // Only include paid timesheets
+    ));
+
+  return ytdTimesheets.reduce((sum, ts) => 
+    sum + parseFloat(ts.totalEarnings || '0'), 0
+  );
+}
+
+// Standardized precision handling for all financial calculations
+function toPrecision(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 async function calculateTaxWithholding(annualIncome: number, payPeriodGross: number): Promise<number> {

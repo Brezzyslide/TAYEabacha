@@ -1,0 +1,107 @@
+⚠️ Weaknesses / Gaps / Bugs to Investigate
+1. Break Time Deduction Logic May Be Too Rigid
+ts
+Copy
+Edit
+const breakMinutes = totalMinutes > 240 ? 30 : 0;
+✅ Simple and Aware of Award
+
+❌ But: Some awards permit different breaks for 6+ hour shifts or night work.
+
+🛠️ Solution: Allow break duration override from shift metadata or staff contract profile. Also future-proof for enterprise agreement customisation.
+
+2. Floating-Point Rounding Risk in Pay Calculations
+ts
+Copy
+Edit
+grossPay = hours × hourlyRate
+This is fine on paper, but floats will kill you at scale (e.g. 1c errors × 3000 shifts).
+
+🛠️ Fix: Convert hours * rate to cents (integer math) early:
+
+ts
+Copy
+Edit
+const grossPayCents = Math.round(hours * hourlyRate * 100);
+const grossPay = grossPayCents / 100;
+3. YTD Gross Assumption Might Be Off
+ts
+Copy
+Edit
+calculatePayroll(userId, tenantId, grossPay, ytdGross)
+YTD needs to be recalculated live, not trusted from prior state (in case of reversals or retro approvals).
+
+🛠️ Solution: Always query SUM(grossPay) from approved/published timesheets up to that date rather than storing a ytdGross snapshot.
+
+4. No Explicit Mention of Shift Allowances
+SCHADS includes:
+
+Sleepover allowance
+
+Broken shift allowance
+
+Saturday/Sunday/Public Holiday penalty rates
+
+❌ If not already in pay_scales, this is a major gap.
+
+🛠️ Patch:
+
+Add shift metadata: { isPublicHoliday, isWeekend, isSleepover }
+
+Add support for baseRate + allowance stacks
+
+5. Super Contribution Source Not Specified
+The logic adds 11%, but is that:
+
+On ordinary time earnings (OTE)?
+
+Excluding leave loading?
+
+🛠️ Fix: Document your base, and ensure only eligible payments are used for super:
+
+ts
+Copy
+Edit
+superContribution = ordinaryTimeEarnings × 0.11
+6. No Reverse Deduction or Timesheet Update Flow
+What happens if:
+
+A shift is “un-completed”?
+
+Timesheet is rejected after submission?
+
+❌ No clear undo logic for:
+
+Removing auto-generated entries
+
+Recalculating tax and leave
+
+🛠️ Patch: Add a reversal flow:
+
+ts
+Copy
+Edit
+await removeTimesheetEntryByShiftId(shiftId)
+recalculateTimesheetTotal(timesheetId)
+7. Payslip PDF Path May Not Cache Branding Correctly
+ts
+Copy
+Edit
+GET /api/payslips/:id/pdf
+❓Does it:
+
+Pull company name, logo, footer from tenant metadata?
+
+Or hardcoded?
+
+🛠️ Fix: Cache branding + ABN inside each payslip record on generation for audit permanence.
+
+🧰 Fix Summary & Rewrite Plan
+Area	Fix / Patch
+Break deduction	Make flexible by role/contract; not hardcoded
+Rounding errors	Use integer math for all financials (convert to cents)
+YTD gross	Always calculate live from approved records
+Allowances	Add metadata and dynamic allowance logic
+Super base	Restrict to OTE-only if you're not already
+Reversal flow	Add removeTimesheetEntryFromShiftId() + recalc
+Payslip branding	Lock in ABN, company name, and logo on PDF gen time
