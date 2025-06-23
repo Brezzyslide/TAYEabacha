@@ -5156,10 +5156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           submittedAt: timesheetsTable.submittedAt,
           approvedAt: timesheetsTable.approvedAt,
           createdAt: timesheetsTable.createdAt,
-          annualLeave: users.annualLeave,
-          sickLeave: users.sickLeave,
-          personalLeave: users.personalLeave,
-          longServiceLeave: users.longServiceLeave
+          annualLeave: sql`0`.as('annualLeave'),
+          sickLeave: sql`0`.as('sickLeave')
         })
         .from(timesheetsTable)
         .innerJoin(users, eq(timesheetsTable.userId, users.id))
@@ -5203,10 +5201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           submittedAt: timesheetsTable.submittedAt,
           approvedAt: timesheetsTable.approvedAt,
           createdAt: timesheetsTable.createdAt,
-          annualLeave: users.annualLeave,
-          sickLeave: users.sickLeave,
-          personalLeave: users.personalLeave,
-          longServiceLeave: users.longServiceLeave
+          annualLeave: sql`0`.as('annualLeave'),
+          sickLeave: sql`0`.as('sickLeave')
         })
         .from(timesheetsTable)
         .innerJoin(users, eq(timesheetsTable.userId, users.id))
@@ -5415,8 +5411,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalTax: timesheetsTable.totalTax,
           totalSuper: timesheetsTable.totalSuper,
           netPay: timesheetsTable.netPay,
-          annualLeave: users.annualLeave,
-          sickLeave: users.sickLeave
+          annualLeave: sql`0`.as('annualLeave'),
+          sickLeave: sql`0`.as('sickLeave')
         })
         .from(timesheetsTable)
         .innerJoin(users, eq(timesheetsTable.userId, users.id))

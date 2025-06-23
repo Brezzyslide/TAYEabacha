@@ -5,8 +5,8 @@ import StaffTimesheetView from "./StaffTimesheetView";
 export default function TimesheetDashboard() {
   const { user } = useAuth();
   
-  // Check if user is admin - if so, show AdminTimesheetTabs
-  if (user?.role === 'Admin' || user?.role === 'ConsoleManager') {
+  // Check if user is admin - if so, show AdminTimesheetTabs (case insensitive)
+  if (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'consolemanager') {
     return <AdminTimesheetTabs />;
   }
   
