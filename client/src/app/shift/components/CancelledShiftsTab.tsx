@@ -139,10 +139,10 @@ export default function CancellationRecordsTab() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Staff Cancelled Shifts
+            Cancellation Records
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            View and export cancelled shift records ({filteredCancellations.length} total)
+            View and export all cancellation records with filtering and analytics ({filteredCancellations.length} total)
           </p>
         </div>
         
