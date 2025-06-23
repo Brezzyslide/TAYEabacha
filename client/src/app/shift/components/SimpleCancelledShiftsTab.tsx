@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,62 +7,48 @@ import { Badge } from '@/components/ui/badge';
 import { Download, FileSpreadsheet, Search, Calendar, Clock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Mock data for demonstration - replace with real API later
-const mockCancellations = [
-  {
-    id: 1,
-    shiftTitle: "Morning Support - Oliver",
-    clientName: "Oliver Thompson",
-    cancelledByUserName: "Joe Bloke",
-    createdAt: "2025-06-23T00:49:38Z",
-    shiftStartTime: "2025-07-03T23:00:00Z",
-    hoursNotice: 262,
-    cancellationType: "immediate",
-    cancellationReason: "Personal reasons",
-    approvalType: "Auto-Approved"
-  },
-  {
-    id: 2,
-    shiftTitle: "Evening Care - Sarah",
-    clientName: "Sarah Johnson",
-    cancelledByUserName: "Joe Bloke", 
-    createdAt: "2025-06-23T00:49:33Z",
-    shiftStartTime: "2025-07-04T23:00:00Z",
-    hoursNotice: 286,
-    cancellationType: "immediate",
-    cancellationReason: "Personal reasons",
-    approvalType: "Auto-Approved"
-  },
-  {
-    id: 3,
-    shiftTitle: "Weekend Support",
-    clientName: "Michael Chen",
-    cancelledByUserName: "Sarah Mitchell",
-    createdAt: "2025-06-22T10:30:00Z",
-    shiftStartTime: "2025-06-25T08:00:00Z",
-    hoursNotice: 18,
-    cancellationType: "urgent",
-    cancellationReason: "Family emergency",
-    approvalType: "Admin Review"
-  }
-];
-
 export default function SimpleCancelledShiftsTab() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStaff, setSelectedStaff] = useState("all");
-  const [selectedApprovalType, setSelectedApprovalType] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStaff, setSelectedStaff] = useState('all');
+  const [selectedApprovalType, setSelectedApprovalType] = useState('all');
+
+  // Fetch real cancellation data
+  const { data: cancellationData = [], isLoading } = useQuery({
+    queryKey: ["/api/cancellation-requests"],
+    select: (data: any[]) => {
+      // Transform cancellation requests to match our display format
+      return data
+        .filter(request => request.status !== 'pending') // Only show completed reviews
+        .map(request => ({
+          id: request.id,
+          shiftTitle: request.shiftTitle || "Untitled Shift",
+          clientName: request.clientName || "Unknown Client",
+          cancelledByUserName: request.requestedByUserName,
+          createdAt: request.reviewedAt || request.createdAt,
+          shiftStartTime: request.shiftStartTime,
+          hoursNotice: request.hoursNotice,
+          cancellationType: request.hoursNotice >= 24 ? "advance" : "urgent",
+          cancellationReason: request.requestReason || "No reason provided",
+          approvalType: request.hoursNotice >= 24 ? "Auto-Approved" : "Admin Review",
+          status: request.status
+        }));
+    }
+  });
 
   // Filter data
-  const filteredCancellations = mockCancellations.filter(cancellation => {
+  const filteredCancellations = cancellationData.filter((cancellation: any) => {
     const matchesSearch = 
       cancellation.shiftTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cancellation.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cancellation.cancelledByUserName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStaff = selectedStaff === "all" || cancellation.cancelledByUserName === selectedStaff;
-    const matchesApproval = selectedApprovalType === "all" || cancellation.approvalType === selectedApprovalType;
-    
-    return matchesSearch && matchesStaff && matchesApproval;
+
+    const matchesStaff = selectedStaff === "all" || 
+      cancellation.cancelledByUserName === selectedStaff;
+
+    const matchesApprovalType = selectedApprovalType === "all" || 
+      cancellation.approvalType === selectedApprovalType;
+
+    return matchesSearch && matchesStaff && matchesApprovalType;
   });
 
   // Analytics
@@ -127,6 +114,14 @@ export default function SimpleCancelledShiftsTab() {
     link.click();
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -155,84 +150,91 @@ export default function SimpleCancelledShiftsTab() {
       {/* Analytics Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              Total Cancelled
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.total}</div>
-            <p className="text-xs text-muted-foreground">Total records</p>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Cancelled</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.total}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Auto-Approved
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{analytics.autoApproved}</div>
-            <p className="text-xs text-muted-foreground">24+ hours notice</p>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-300" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Auto-Approved</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.autoApproved}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Admin Review
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{analytics.adminReview}</div>
-            <p className="text-xs text-muted-foreground">&lt;24 hours notice</p>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                <User className="h-6 w-6 text-amber-600 dark:text-amber-300" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admin Review</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.adminReview}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Avg Notice
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.averageNotice}h</div>
-            <p className="text-xs text-muted-foreground">Average hours</p>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                <Clock className="h-6 w-6 text-purple-600 dark:text-purple-300" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Notice</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.averageNotice}h</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search shifts, clients, or staff..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search by shift, client, or staff member..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-        
+
         <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All Staff" />
+          <SelectTrigger className="w-full lg:w-48">
+            <SelectValue placeholder="Filter by staff" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Staff</SelectItem>
-            <SelectItem value="Joe Bloke">Joe Bloke</SelectItem>
-            <SelectItem value="Sarah Mitchell">Sarah Mitchell</SelectItem>
+            {Array.from(new Set(cancellationData.map(c => c.cancelledByUserName))).map(staff => (
+              <SelectItem key={staff} value={staff}>{staff}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
         <Select value={selectedApprovalType} onValueChange={setSelectedApprovalType}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All Types" />
+          <SelectTrigger className="w-full lg:w-48">
+            <SelectValue placeholder="Filter by approval" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
@@ -242,66 +244,83 @@ export default function SimpleCancelledShiftsTab() {
         </Select>
       </div>
 
-      {/* Records List */}
-      <div className="space-y-4">
-        {filteredCancellations.map((cancellation) => (
-          <Card key={cancellation.id} className="border-l-4 border-l-red-500">
-            <CardContent className="p-4">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-lg">{cancellation.shiftTitle}</h3>
-                    <Badge variant={cancellation.approvalType === "Auto-Approved" ? "default" : "secondary"}>
-                      {cancellation.approvalType}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>Client: {cancellation.clientName}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>Cancelled by: {cancellation.cancelledByUserName}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>Date: {new Date(cancellation.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span className={cancellation.hoursNotice >= 24 ? "text-green-600" : "text-red-600"}>
-                        {cancellation.hoursNotice}h notice
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-2">
-                    <span className="text-sm font-medium">Reason: </span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {cancellation.cancellationReason}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Results Counter */}
+      <div className="text-sm text-gray-600 dark:text-gray-400">
+        Showing {filteredCancellations.length} of {cancellationData.length} cancellation records
       </div>
 
-      {filteredCancellations.length === 0 && (
+      {/* Cancellation Records */}
+      {filteredCancellations.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No cancellation records found
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Try adjusting your search filters to see more results.
-            </p>
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="text-center">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+              <p className="text-gray-500 dark:text-gray-400">
+                {cancellationData.length === 0 ? "No cancellation records found" : "No records match your filters"}
+              </p>
+            </div>
           </CardContent>
         </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredCancellations.map((cancellation: any) => (
+            <Card key={cancellation.id} className="border-l-4 border-l-blue-500">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          {cancellation.shiftTitle}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Client: {cancellation.clientName}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant={cancellation.approvalType === "Auto-Approved" ? "default" : "secondary"}>
+                          {cancellation.approvalType}
+                        </Badge>
+                        <Badge 
+                          variant="outline" 
+                          className={cancellation.hoursNotice >= 24 ? "text-green-600" : "text-red-600"}
+                        >
+                          {cancellation.hoursNotice}h notice
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>Cancelled by: {cancellation.cancelledByUserName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>Date: {new Date(cancellation.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Shift: {new Date(cancellation.shiftStartTime).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    {cancellation.cancellationReason && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Reason:</p>
+                        <div className="max-h-20 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+                          <p className="text-gray-600 dark:text-gray-400 pr-2">
+                            {cancellation.cancellationReason}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
