@@ -5059,7 +5059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ilike(users.fullName, `%${search}%`),
           ilike(users.username, `%${search}%`),
           ilike(users.email, `%${search}%`)
-        ));
+        )!);
       }
       
       // Get all timesheets for tenant with user information
