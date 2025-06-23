@@ -72,8 +72,9 @@ async function processBudgetDeduction(shift: any, userId: number) {
   const shiftCost = effectiveRate * shiftHours;
   console.log(`[BUDGET DEDUCTION] Calculated cost: $${shiftCost} (${shiftHours}h × $${effectiveRate})`);
 
-  // Determine budget category based on shift type
-  const category = (shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL";
+  // Use the shift's actual funding category instead of defaulting based on shift type
+  const category = shift.fundingCategory || shift.funding_category || 
+    ((shiftType === "AM" || shiftType === "PM") ? "CommunityAccess" : "SIL");
   
   // Check if sufficient funds available
   let currentRemaining = 0;
@@ -83,6 +84,9 @@ async function processBudgetDeduction(shift: any, userId: number) {
       break;
     case "SIL":
       currentRemaining = parseFloat(budget.silRemaining.toString());
+      break;
+    case "CapacityBuilding":
+      currentRemaining = parseFloat(budget.capacityBuildingRemaining.toString());
       break;
   }
   
