@@ -7,6 +7,10 @@
 import { storage } from './storage';
 import { provisionTenant } from './tenant-provisioning';
 import { provisionScHADSRates } from './schads-provisioning';
+import { db } from './db';
+import * as schema from '@shared/schema';
+import { eq } from 'drizzle-orm';
+import { calculatePayPeriod } from './payroll-calculator';
 
 export interface NewTenantSetup {
   tenantId: number;
@@ -47,7 +51,11 @@ export async function autoProvisionNewTenant(
     console.log(`[NEW TENANT SETUP] Creating hour allocations`);
     await createHourAllocationsForTenant(tenantId);
     
-    // 6. Activity logging
+    // 6. Timesheet provisioning for all staff
+    console.log(`[NEW TENANT SETUP] Provisioning timesheets`);
+    await createTimesheetsForTenant(tenantId);
+    
+    // 7. Activity logging
     await storage.createActivityLog({
       tenantId,
       userId: adminUserId,
@@ -131,6 +139,47 @@ async function ensureTaxBrackets(): Promise<void> {
     }
   } catch (error) {
     console.error('[NEW TENANT SETUP] Failed to ensure tax brackets:', error);
+  }
+}
+
+/**
+ * Creates timesheet data for new tenant
+ */
+async function createTimesheetsForTenant(tenantId: number): Promise<void> {
+  try {
+    // Get all staff from this tenant
+    const staff = await db.select().from(schema.users)
+      .where(eq(schema.users.tenantId, tenantId));
+    
+    if (staff.length === 0) {
+      console.log(`[NEW TENANT SETUP] No staff found for tenant ${tenantId} - skipping timesheet creation`);
+      return;
+    }
+
+    // Calculate current pay period
+    const payPeriod = calculatePayPeriod(new Date());
+    
+    // Create initial timesheet for each staff member
+    for (const staffMember of staff) {
+      await db.insert(schema.timesheets).values({
+        staffId: staffMember.id,
+        tenantId: tenantId,
+        payPeriodStart: payPeriod.start,
+        payPeriodEnd: payPeriod.end,
+        status: 'draft' as const,
+        totalHours: 0,
+        grossPay: 0,
+        taxWithheld: 0,
+        netPay: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      console.log(`[NEW TENANT SETUP] Created timesheet for staff ${staffMember.id} in tenant ${tenantId}`);
+    }
+    
+  } catch (error) {
+    console.error(`[NEW TENANT SETUP] Error creating timesheets for tenant ${tenantId}:`, error);
   }
 }
 
