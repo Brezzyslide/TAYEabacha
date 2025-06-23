@@ -4,6 +4,7 @@ import { provisionScHADSRates } from "./schads-provisioning";
 /**
  * Automatic Tenant Provisioning System
  * Ensures all tenants have consistent access to comprehensive features
+ * CRITICAL: All new features must be automatically provisioned to ALL tenants
  */
 
 export interface TenantProvisioningData {
