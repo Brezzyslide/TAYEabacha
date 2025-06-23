@@ -1868,6 +1868,88 @@ export class DatabaseStorage implements IStorage {
     const created = await db.insert(notifications).values(notificationList).returning();
     return created;
   }
+
+  // Atomic budget deduction to prevent race conditions
+  async atomicBudgetDeduction(params: {
+    budgetId: number;
+    budgetField: string;
+    deductionAmount: number;
+    tenantId: number;
+    transactionData: {
+      budgetId: number;
+      category: string;
+      shiftType: string;
+      ratio: string;
+      hours: number;
+      rate: number;
+      amount: number;
+      shiftId?: number;
+      description?: string;
+      companyId: string;
+      createdByUserId: number;
+    }
+  }): Promise<{ success: boolean; error?: string; updatedBudget?: NdisBudget; transaction?: BudgetTransaction }> {
+    return await db.transaction(async (tx) => {
+      try {
+        // Step 1: Atomic budget update with fund validation
+        const updateSql = sql`
+          UPDATE ${ndisBudgets} 
+          SET ${sql.raw(params.budgetField)} = ${sql.raw(params.budgetField)} - ${params.deductionAmount},
+              updated_at = NOW()
+          WHERE id = ${params.budgetId} 
+            AND tenant_id = ${params.tenantId}
+            AND ${sql.raw(params.budgetField)} >= ${params.deductionAmount}
+          RETURNING *
+        `;
+        
+        const updateResult = await tx.execute(updateSql);
+        
+        if (updateResult.rowCount === 0) {
+          return { 
+            success: false, 
+            error: "Insufficient funds or budget not found" 
+          };
+        }
+
+        // Step 2: Create transaction record
+        const [transaction] = await tx.insert(budgetTransactions).values({
+          budgetId: params.transactionData.budgetId,
+          shiftId: params.transactionData.shiftId,
+          companyId: params.transactionData.companyId,
+          category: params.transactionData.category,
+          shiftType: params.transactionData.shiftType,
+          ratio: params.transactionData.ratio,
+          hours: params.transactionData.hours.toString(),
+          rate: params.transactionData.rate.toString(),
+          amount: params.transactionData.amount.toString(),
+          description: params.transactionData.description,
+          transactionType: "deduction",
+          createdByUserId: params.transactionData.createdByUserId,
+        }).returning();
+
+        // Step 3: Get updated budget
+        const [updatedBudget] = await tx.select()
+          .from(ndisBudgets)
+          .where(and(
+            eq(ndisBudgets.id, params.budgetId),
+            eq(ndisBudgets.tenantId, params.tenantId)
+          ));
+
+        return {
+          success: true,
+          updatedBudget,
+          transaction
+        };
+
+      } catch (error) {
+        console.error("[ATOMIC BUDGET DEDUCTION] Transaction failed:", error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown database error"
+        };
+      }
+    });
+  }
 }
 
 export const storage = new DatabaseStorage();

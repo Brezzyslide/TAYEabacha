@@ -916,67 +916,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 console.log(`[BUDGET DEDUCTION] Shift ${shift.id}: fundingCategory="${shift.fundingCategory}", calculated category="${category}", shiftType="${shiftType}"`);
                 
-                // Determine which budget category to deduct from based on actual funding category
-                let budgetUpdate: any = {};
+                // Validate funding category and get current remaining amount
                 let currentRemaining = 0;
+                let budgetField = "";
                 
                 switch (category) {
                   case "CommunityAccess":
                     currentRemaining = parseFloat(budget.communityAccessRemaining.toString());
-                    if (currentRemaining >= shiftCost) {
-                      budgetUpdate = {
-                        communityAccessRemaining: (currentRemaining - shiftCost).toString()
-                      };
-                    }
+                    budgetField = "communityAccessRemaining";
                     break;
                   case "SIL":
                     currentRemaining = parseFloat(budget.silRemaining.toString());
-                    if (currentRemaining >= shiftCost) {
-                      budgetUpdate = {
-                        silRemaining: (currentRemaining - shiftCost).toString()
-                      };
-                    }
+                    budgetField = "silRemaining";
                     break;
                   case "CapacityBuilding":
                     currentRemaining = parseFloat(budget.capacityBuildingRemaining.toString());
-                    if (currentRemaining >= shiftCost) {
-                      budgetUpdate = {
-                        capacityBuildingRemaining: (currentRemaining - shiftCost).toString()
-                      };
-                    }
+                    budgetField = "capacityBuildingRemaining";
                     break;
+                  default:
+                    console.error(`[BUDGET DEDUCTION] Invalid funding category: ${category} for shift ${shift.id}`);
+                    await storage.createActivityLog({
+                      userId: req.user.id,
+                      action: "budget_deduction_error",
+                      resourceType: "ndis_budget",
+                      resourceId: budget.id,
+                      description: `Failed deduction - Invalid category "${category}" for shift: ${shift.title}`,
+                      tenantId: req.user.tenantId,
+                    });
+                    return; // Exit early for invalid categories
                 }
                 
-                // Update budget if deduction is possible
-                if (Object.keys(budgetUpdate).length > 0) {
-                  await storage.updateNdisBudget(budget.id, budgetUpdate, req.user.tenantId);
-                  
-                  // Get the tenant's company ID, fallback to default if null
-                  const tenant = await storage.getTenant(req.user.tenantId);
-                  const companyId = tenant?.companyId || "5b3d3a66-ef3d-4e48-9399-ee580c64e303";
-                  
-                  await storage.processBudgetDeduction({
-                    budgetId: budget.id,
-                    category,
-                    shiftType,
-                    ratio: staffRatio,
-                    hours: shiftHours,
-                    rate: effectiveRate,
-                    amount: shiftCost,
-                    shiftId: shift.id,
-                    description: `Shift completion: ${shift.title}`,
-                    companyId,
-                    createdByUserId: req.user.id,
-                    tenantId: req.user.tenantId,
-                  });
-                  
-                  // Log the budget deduction
+                console.log(`[BUDGET DEDUCTION] Category: ${category}, Current: $${currentRemaining}, Required: $${shiftCost}`);
+                
+                // Check sufficient funds before attempting atomic update
+                if (currentRemaining < shiftCost) {
+                  console.warn(`[BUDGET DEDUCTION] Insufficient funds for shift ${shift.id}: Available $${currentRemaining}, Required $${shiftCost}`);
                   await storage.createActivityLog({
                     userId: req.user.id,
-                    action: "budget_deduction",
+                    action: "budget_deduction_failed",
                     resourceType: "ndis_budget",
                     resourceId: budget.id,
-                    description: `Deducted $${shiftCost.toFixed(2)} for completed shift: ${shift.title} (${shiftHours.toFixed(1)}h @ $${effectiveRate}/h)`,
+                    description: `Insufficient funds - Required $${shiftCost.toFixed(2)}, Available $${currentRemaining.toFixed(2)} in ${category}`,
+                    tenantId: req.user.tenantId,
+                  });
+                  return;
+                }
+                
+                // Get tenant's company ID for transaction record
+                const tenant = await storage.getTenant(req.user.tenantId);
+                const companyId = tenant?.companyId || "5b3d3a66-ef3d-4e48-9399-ee580c64e303";
+                
+                // Use atomic database update to prevent race conditions
+                try {
+                  const atomicResult = await storage.atomicBudgetDeduction({
+                    budgetId: budget.id,
+                    budgetField,
+                    deductionAmount: shiftCost,
+                    tenantId: req.user.tenantId,
+                    transactionData: {
+                      budgetId: budget.id,
+                      category,
+                      shiftType,
+                      ratio: staffRatio,
+                      hours: shiftHours,
+                      rate: effectiveRate,
+                      amount: shiftCost,
+                      shiftId: shift.id,
+                      description: `Shift completion: ${shift.title}`,
+                      companyId,
+                      createdByUserId: req.user.id,
+                    }
+                  });
+                  
+                  if (atomicResult.success) {
+                    console.log(`[BUDGET DEDUCTION] Successfully processed $${shiftCost.toFixed(2)} deduction for shift ${shift.id}`);
+                    
+                    // Log successful deduction
+                    await storage.createActivityLog({
+                      userId: req.user.id,
+                      action: "budget_deduction",
+                      resourceType: "ndis_budget",
+                      resourceId: budget.id,
+                      description: `Deducted $${shiftCost.toFixed(2)} for completed shift: ${shift.title} (${shiftHours.toFixed(1)}h @ $${effectiveRate}/h)`,
+                      tenantId: req.user.tenantId,
+                    });
+                  } else {
+                    console.error(`[BUDGET DEDUCTION] Atomic update failed: ${atomicResult.error}`);
+                    await storage.createActivityLog({
+                      userId: req.user.id,
+                      action: "budget_deduction_failed",
+                      resourceType: "ndis_budget",
+                      resourceId: budget.id,
+                      description: `Failed deduction due to: ${atomicResult.error}`,
+                      tenantId: req.user.tenantId,
+                    });
+                  }
+                } catch (atomicError) {
+                  console.error(`[BUDGET DEDUCTION] Atomic operation error:`, atomicError);
+                  await storage.createActivityLog({
+                    userId: req.user.id,
+                    action: "budget_deduction_error",
+                    resourceType: "ndis_budget",
+                    resourceId: budget.id,
+                    description: `System error during budget deduction: ${shift.title}`,
                     tenantId: req.user.tenantId,
                   });
                 }
