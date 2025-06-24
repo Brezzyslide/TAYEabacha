@@ -6871,25 +6871,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
-        }
-      }
-
-      // Update user status and billing
-      const { updateStaffBillingStatus } = await import('./billing-system');
-      await updateStaffBillingStatus(parseInt(userId), false);
-
-      res.json({ 
-        message: 'Staff member deactivated successfully',
-        userId: parseInt(userId),
-        billingActive: false
-      });
-    } catch (error) {
-      console.error('[DEACTIVATE STAFF] Error:', error);
-      res.status(500).json({ message: 'Failed to deactivate staff member' });
-    }
-  });
-
-  // Create new billing cycle endpoint
   app.post('/api/billing/create-cycle', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
     try {
       const { calculateCompanyBilling } = await import('./billing-system');
