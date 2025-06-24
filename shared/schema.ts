@@ -1287,6 +1287,39 @@ export const insertCareSupportPlanSchema = createInsertSchema(careSupportPlans).
 export type InsertCareSupportPlan = z.infer<typeof insertCareSupportPlanSchema>;
 export type CareSupportPlan = typeof careSupportPlans.$inferSelect;
 
+// Feature Flags table for multi-tenant feature management
+export const featureFlags = pgTable("feature_flags", {
+  id: serial("id").primaryKey(),
+  feature: text("feature").notNull(),
+  isEnabled: boolean("is_enabled").notNull().default(false),
+  tenantId: text("tenant_id").notNull(), // 'all' for global flags, or specific tenant ID
+  description: text("description"),
+  rolloutPercentage: integer("rollout_percentage").default(100),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const featureFlagsRelations = relations(featureFlags, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [featureFlags.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  feature: z.string().min(1, "Feature name is required"),
+  isEnabled: z.boolean(),
+  tenantId: z.string().min(1, "Tenant ID is required"),
+  rolloutPercentage: z.number().min(0).max(100).optional(),
+});
+
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type InsertFeatureFlag = z.infer<typeof insertFeatureFlagSchema>;
+
 // Pay Scale Management
 export const payScales = pgTable("pay_scales", {
   id: serial("id").primaryKey(),

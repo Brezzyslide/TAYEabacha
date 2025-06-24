@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { provisionAllExistingTenants } from "./tenant-provisioning";
 import { runCompleteConsistencyCheck } from "./simplified-multi-tenant-fix";
+import { runStartupSecurityChecks } from "./enhanced-tenant-security";
 
 // Set timezone to Australian Eastern Standard Time
 process.env.TZ = 'Australia/Sydney';
@@ -54,6 +55,15 @@ app.use((req, res, next) => {
     console.log("[MULTI-TENANT FIX] Consistency enforcement completed successfully");
   } catch (error) {
     console.error("[MULTI-TENANT FIX] Consistency enforcement failed:", error);
+  }
+
+  // Run enhanced security validation
+  console.log("[SECURITY] Running enhanced tenant security checks");
+  try {
+    await runStartupSecurityChecks();
+    console.log("[SECURITY] Enhanced security validation completed successfully");
+  } catch (error) {
+    console.error("[SECURITY] Enhanced security validation failed:", error);
   }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
