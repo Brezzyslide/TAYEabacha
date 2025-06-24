@@ -271,7 +271,7 @@ export function CarePlanWizard({ open, onClose, existingPlan }: CarePlanWizardPr
                     disabled={!planData.clientId || savePlanMutation.isPending}
                     className="bg-green-600 hover:bg-green-700 text-white text-sm"
                   >
-                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <Save className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Complete Plan</span>
                     <span className="sm:hidden">Complete</span>
                   </Button>

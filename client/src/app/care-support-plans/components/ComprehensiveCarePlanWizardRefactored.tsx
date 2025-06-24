@@ -330,6 +330,6 @@ export function ComprehensiveCarePlanWizardRefactored({
           </CarePlanProvider>
         </DialogContent>
       </Dialog>
-    </>;
+    </>
   );
 }
