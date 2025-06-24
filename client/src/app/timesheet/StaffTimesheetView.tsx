@@ -77,13 +77,13 @@ export default function StaffTimesheetView() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Get current timesheet
-  const { data: currentTimesheet, isLoading } = useQuery<TimesheetSummary>({
+  const { data: currentTimesheet, isLoading } = useQuery({
     queryKey: ['/api/timesheet/current'],
     enabled: !!user
   });
 
   // Get timesheet history
-  const { data: timesheetHistory = [] } = useQuery<Timesheet[]>({
+  const { data: timesheetHistory = [] } = useQuery({
     queryKey: ['/api/timesheet/history'],
     enabled: !!user
   });
@@ -189,11 +189,27 @@ export default function StaffTimesheetView() {
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yyyy');
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return format(date, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error('Date formatting error:', error, 'for dateString:', dateString);
+      return '-';
+    }
   };
 
   const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return format(date, 'dd/MM/yyyy HH:mm');
+    } catch (error) {
+      console.error('DateTime formatting error:', error, 'for dateString:', dateString);
+      return '-';
+    }
   };
 
   if (isLoading) {
@@ -237,7 +253,7 @@ export default function StaffTimesheetView() {
           </TabsList>
 
           <TabsContent value="current" className="space-y-6">
-            {!currentTimesheet?.timesheet ? (
+            {!currentTimesheet ? (
               <Card className="border-2 border-slate-200 shadow-sm">
                 <CardContent className="p-8 text-center">
                   <Clock className="h-12 w-12 text-slate-400 mx-auto mb-4" />
@@ -255,7 +271,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-blue-600">Period Status</p>
                           <div className="mt-2">
-                            {getStatusBadge(currentTimesheet.timesheet.status)}
+                            {getStatusBadge(currentTimesheet.status)}
                           </div>
                         </div>
                         <FileText className="h-8 w-8 text-blue-500" />
@@ -283,7 +299,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-amber-600">Gross Pay</p>
                           <p className="text-2xl font-bold text-amber-700 mt-1">
-                            {formatCurrency(currentTimesheet.timesheet.totalEarnings || 0)}
+                            {formatCurrency(currentTimesheet.totalEarnings || 0)}
                           </p>
                         </div>
                         <DollarSign className="h-8 w-8 text-amber-500" />
@@ -297,7 +313,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-purple-600">Net Pay</p>
                           <p className="text-2xl font-bold text-purple-700 mt-1">
-                            {formatCurrency(currentTimesheet.timesheet.netPay || 0)}
+                            {formatCurrency(currentTimesheet.netPay || 0)}
                           </p>
                         </div>
                         <TrendingUp className="h-8 w-8 text-purple-500" />
@@ -311,29 +327,29 @@ export default function StaffTimesheetView() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
-                      Pay Period: {formatDate(currentTimesheet.timesheet.payPeriodStart)} - {formatDate(currentTimesheet.timesheet.payPeriodEnd)}
+                      Pay Period: {formatDate(currentTimesheet.payPeriodStart)} - {formatDate(currentTimesheet.payPeriodEnd)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <p className="font-medium text-slate-700">Gross Pay</p>
-                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet.timesheet.totalEarnings)}</p>
+                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet.totalEarnings)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-slate-700">Tax Withheld</p>
-                        <p className="text-lg font-bold text-red-600">-{formatCurrency(currentTimesheet.timesheet.totalTax)}</p>
+                        <p className="text-lg font-bold text-red-600">-{formatCurrency(currentTimesheet.totalTax)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-slate-700">Net Pay</p>
-                        <p className="text-lg font-bold text-emerald-600">{formatCurrency(currentTimesheet.timesheet.netPay)}</p>
+                        <p className="text-lg font-bold text-emerald-600">{formatCurrency(currentTimesheet.netPay)}</p>
                       </div>
                     </div>
                     
-                    {currentTimesheet.timesheet.status === 'draft' && (
+                    {currentTimesheet.status === 'draft' && (
                       <div className="mt-6 pt-4 border-t border-slate-200">
                         <Button
-                          onClick={() => submitMutation.mutate(currentTimesheet.timesheet.id)}
+                          onClick={() => submitMutation.mutate(currentTimesheet.id)}
                           disabled={submitMutation.isPending}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
@@ -366,11 +382,11 @@ export default function StaffTimesheetView() {
                           <TableBody>
                             {currentTimesheet.entries.map((entry) => (
                               <TableRow key={entry.id}>
-                                <TableCell>{formatDate(entry.shiftDate)}</TableCell>
+                                <TableCell>{entry.shiftDate ? formatDate(entry.shiftDate) : '-'}</TableCell>
                                 <TableCell>{entry.shiftTitle || 'General Shift'}</TableCell>
                                 <TableCell>{entry.clientName || '-'}</TableCell>
-                                <TableCell>{entry.totalHours}h</TableCell>
-                                <TableCell>{formatDateTime(entry.createdAt)}</TableCell>
+                                <TableCell>{entry.totalHours || 0}h</TableCell>
+                                <TableCell>{entry.createdAt ? formatDateTime(entry.createdAt) : '-'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
