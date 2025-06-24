@@ -4984,62 +4984,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }
 
-        // Empty Content Detection
-        if (content.length < 30 || content.toLowerCase().includes("no information available") || content.toLowerCase().includes("not applicable")) {
-          return {
-            isValid: false,
-            fallbackMessage: "No meaningful content was generated. If this field is not yet known for the participant, please leave it blank or return later when more information is gathered from care or intake notes."
+        // ADL-specific validation rules
+        if (section === "adl") {
+          // ADL Vagueness Detection
+          const adlVaguePatterns = [
+            "may need some support",
+            "can do most tasks with help",
+            "often struggles with daily routines",
+            "requires general assistance"
+          ];
+          
+          const hasAdlVagueContent = adlVaguePatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          // Count ADL vague qualifiers (stricter for ADL)
+          const adlVagueWords = ["may", "sometimes", "often", "might", "usually"];
+          const adlVagueWordCount = adlVagueWords.reduce((count, word) => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            const matches = content.match(regex);
+            return count + (matches ? matches.length : 0);
+          }, 0);
+
+          // ADL minimum content check (40 words minimum)
+          if (content.length < 40 || hasAdlVagueContent || adlVagueWordCount > 2) {
+            return {
+              isValid: false,
+              fallbackMessage: "The response was too vague for use. Please rephrase the input or add details about specific tasks, support levels, routines, or tools. Avoid general statements — include what staff need to know to provide safe, consistent support."
+            };
+          }
+
+          // ADL Empty or Non-Actionable Response
+          const nonActionablePatterns = [
+            "not applicable",
+            "none at this time",
+            "unknown",
+            "requires support as needed"
+          ];
+          
+          const hasNonActionableContent = nonActionablePatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          // Check for verbs (action content)
+          const hasVerbs = /\b(requires?|needs?|can|able|uses?|manages?|performs?|completes?|assists?|supports?|helps?|does|is|has)\b/i.test(content);
+
+          if (hasNonActionableContent || !hasVerbs) {
+            return {
+              isValid: false,
+              fallbackMessage: "This field returned a non-actionable result. If the information isn't yet available, leave the section blank until more data is gathered during intake or support planning. Do not submit vague content to the care plan."
+            };
+          }
+
+          // ADL Assumption Rule - Check for invented technology or behaviors
+          const adlAssumptionPatterns = [
+            "uses a communication ipad",
+            "communication device",
+            "walking frame",
+            "wheelchair",
+            "hearing aid"
+          ];
+          
+          // Only flag if these appear without context suggesting they were in input
+          const hasInventedContent = adlAssumptionPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasInventedContent) {
+            return {
+              isValid: false,
+              fallbackMessage: "This response included unsupported assumptions or content not present in the original input. Please revise the bullet points to reflect only what is known about the participant. The system cannot generate placeholder examples or guess."
+            };
+          }
+
+          // ADL Cross-Field Contamination Check
+          const crossFieldPatterns = {
+            personalCare: ["travels independently", "can cook"],
+            mobility: ["brushes teeth", "showering"],
+            household: ["road safety", "emergency response"],
+            community: ["dressing", "hygiene"],
+            safety: ["cooking", "cleaning", "laundry"],
+            independence: ["mobility aid", "transfer"],
+            assistiveTechnology: ["personal care", "household tasks"],
+            recommendations: [] // Recommendations can reference other fields
           };
-        }
 
-        // Vagueness Catch Rule
-        const vaguePatterns = [
-          "enjoys spending time with others",
-          "has some difficulties with communication",
-          "may become overwhelmed in certain situations",
-          "requires staff support"
-        ];
-        
-        const hasVagueContent = vaguePatterns.some(pattern => 
-          content.toLowerCase().includes(pattern.toLowerCase())
-        );
+          if (targetField && crossFieldPatterns[targetField as keyof typeof crossFieldPatterns]) {
+            const inappropriatePatterns = crossFieldPatterns[targetField as keyof typeof crossFieldPatterns];
+            const hasCrossFieldContent = inappropriatePatterns.some(pattern => 
+              content.toLowerCase().includes(pattern.toLowerCase())
+            );
 
-        // Count vague qualifiers
-        const vagueWords = ["may", "can", "often", "sometimes", "likes", "dislikes"];
-        const vagueWordCount = vagueWords.reduce((count, word) => {
-          const regex = new RegExp(`\\b${word}\\b`, 'gi');
-          const matches = content.match(regex);
-          return count + (matches ? matches.length : 0);
-        }, 0);
+            if (hasCrossFieldContent) {
+              return {
+                isValid: false,
+                fallbackMessage: "The content overlapped with another ADL field. Please ensure each section is focused on its specific topic only. Adjust inputs if needed to avoid duplication across care documentation."
+              };
+            }
+          }
+        } else {
+          // General validation for other sections (About Me, Goals, etc.)
+          // Empty Content Detection
+          if (content.length < 30 || content.toLowerCase().includes("no information available") || content.toLowerCase().includes("not applicable")) {
+            return {
+              isValid: false,
+              fallbackMessage: "No meaningful content was generated. If this field is not yet known for the participant, please leave it blank or return later when more information is gathered from care or intake notes."
+            };
+          }
 
-        if (hasVagueContent || vagueWordCount > 3) {
-          return {
-            isValid: false,
-            fallbackMessage: "The generated content was too vague or generic. Please provide more specific input or concrete examples based on your experience with the participant. For example, include triggers, observed behaviours, preferred routines, or phrases the participant responds to."
-          };
-        }
+          // General Vagueness Catch Rule
+          const vaguePatterns = [
+            "enjoys spending time with others",
+            "has some difficulties with communication",
+            "may become overwhelmed in certain situations",
+            "requires staff support"
+          ];
+          
+          const hasVagueContent = vaguePatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
 
-        // No Assumptions Rule - Check for made-up names and fictional content
-        const hasAssumedNames = /\b[A-Z][a-z]+\s+(enjoys|likes|prefers|has|requires|needs)\b/.test(content) && 
-                               !content.toLowerCase().includes("client") && 
-                               !content.toLowerCase().includes("participant");
-        
-        const assumptionPatterns = [
-          "is highly independent",
-          "enjoys music therapy",
-          "responds well to",
-          "family visits regularly"
-        ];
-        
-        const hasAssumptions = assumptionPatterns.some(pattern => 
-          content.toLowerCase().includes(pattern.toLowerCase())
-        );
+          // Count vague qualifiers
+          const vagueWords = ["may", "can", "often", "sometimes", "likes", "dislikes"];
+          const vagueWordCount = vagueWords.reduce((count, word) => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            const matches = content.match(regex);
+            return count + (matches ? matches.length : 0);
+          }, 0);
 
-        if (hasAssumedNames || hasAssumptions) {
-          return {
-            isValid: false,
-            fallbackMessage: "Unable to generate content. The input did not include enough real information, and system rules prevent adding assumptions or placeholder details. Please enter actual support-relevant notes or leave this section blank until more information is available."
-          };
+          if (hasVagueContent || vagueWordCount > 3) {
+            return {
+              isValid: false,
+              fallbackMessage: "The generated content was too vague or generic. Please provide more specific input or concrete examples based on your experience with the participant. For example, include triggers, observed behaviours, preferred routines, or phrases the participant responds to."
+            };
+          }
+
+          // General No Assumptions Rule
+          const hasAssumedNames = /\b[A-Z][a-z]+\s+(enjoys|likes|prefers|has|requires|needs)\b/.test(content) && 
+                                 !content.toLowerCase().includes("client") && 
+                                 !content.toLowerCase().includes("participant");
+          
+          const assumptionPatterns = [
+            "is highly independent",
+            "enjoys music therapy",
+            "responds well to",
+            "family visits regularly"
+          ];
+          
+          const hasAssumptions = assumptionPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasAssumedNames || hasAssumptions) {
+            return {
+              isValid: false,
+              fallbackMessage: "Unable to generate content. The input did not include enough real information, and system rules prevent adding assumptions or placeholder details. Please enter actual support-relevant notes or leave this section blank until more information is available."
+            };
+          }
         }
 
         return { isValid: true, fallbackMessage: null };

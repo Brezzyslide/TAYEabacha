@@ -1,0 +1,71 @@
+❌ 1. Vagueness Detection Rule
+Trigger if GPT returns:
+
+Phrases like:
+
+“May need some support”
+
+“Can do most tasks with help”
+
+“Often struggles with daily routines”
+
+“Requires general assistance”
+
+Output under 40 words
+
+More than 2 uses of: may, sometimes, often, might, usually
+
+Fallback Response:
+
+plaintext
+Copy
+Edit
+The response was too vague for use. Please rephrase the input or add details about specific tasks, support levels, routines, or tools. Avoid general statements — include what staff need to know to provide safe, consistent support.
+🚫 2. Assumption Rule
+Trigger if GPT invents or assumes:
+
+Any technology, behaviour, or task without input
+
+Example: “Uses a communication iPad” when no tech is mentioned
+
+Refusal Output:
+
+plaintext
+Copy
+Edit
+This response included unsupported assumptions or content not present in the original input. Please revise the bullet points to reflect only what is known about the participant. The system cannot generate placeholder examples or guess.
+🧯 3. Cross-Field Contamination
+Trigger if GPT includes content clearly tied to another ADL field, e.g.:
+
+“Travels independently to community” (in Personal Care)
+
+“Can cook simple meals” (in Safety Awareness)
+
+System Warning:
+
+plaintext
+Copy
+Edit
+The content overlapped with another ADL field. Please ensure each section is focused on its specific topic only. Adjust inputs if needed to avoid duplication across care documentation.
+🕳️ 4. Empty or Non-Actionable Response
+Trigger if:
+
+Output includes: “Not applicable,” “None at this time,” “Unknown”
+
+No verbs (i.e., no action content)
+
+Only generic phrases like “Requires support as needed”
+
+System Fallback:
+
+plaintext
+Copy
+Edit
+This field returned a non-actionable result. If the information isn’t yet available, leave the section blank until more data is gathered during intake or support planning. Do not submit vague content to the care plan.
+🔁 5. Retry Instruction (Internal GPT Retry Cue)
+When retrying the same prompt internally, inject this instruction:
+
+plaintext
+Copy
+Edit
+Retry the ADL content using only the provided bullet points and diagnosis. Do not assume or invent any routines, behaviours, or support tools. Keep the tone professional and clear. Do not use filler words or generalities.
