@@ -174,21 +174,29 @@ export function CarePlanWizard({ open, onClose, existingPlan }: CarePlanWizardPr
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="w-[98vw] max-w-[1400px] h-[96vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-4 lg:px-6 py-3 lg:py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <DialogTitle className="flex items-center justify-between">
-            <span>
-              {existingPlan ? 'Edit' : 'Create'} Care Support Plan
-              {planData.clientData && ` - ${planData.clientData.fullName}`}
-            </span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleSave} disabled={savePlanMutation.isPending}>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg lg:text-xl font-bold text-slate-900 truncate">
+                {existingPlan ? 'Edit' : 'Create'} Care Support Plan
+              </h2>
+              {planData.clientData && (
+                <p className="text-sm text-slate-600 mt-1">
+                  {planData.clientData.fullName}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button variant="outline" size="sm" onClick={handleSave} disabled={savePlanMutation.isPending} className="text-xs lg:text-sm">
                 <Save className="h-4 w-4 mr-1" />
-                Save Draft
+                <span className="hidden sm:inline">Save Draft</span>
+                <span className="sm:hidden">Save</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportPDF}>
+              <Button variant="outline" size="sm" onClick={handleExportPDF} className="text-xs lg:text-sm">
                 <FileDown className="h-4 w-4 mr-1" />
-                Export PDF
+                <span className="hidden sm:inline">Export PDF</span>
+                <span className="sm:hidden">Export</span>
               </Button>
             </div>
           </DialogTitle>
@@ -196,8 +204,8 @@ export function CarePlanWizard({ open, onClose, existingPlan }: CarePlanWizardPr
 
         <div className="flex-1 flex flex-col min-h-0">
           {/* Progress Bar */}
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-muted-foreground mb-2">
+          <div className="px-4 lg:px-6 py-3 bg-white border-b">
+            <div className="flex justify-between text-xs lg:text-sm text-muted-foreground mb-2">
               <span>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
               <span>{Math.round(progress)}% Complete</span>
             </div>
@@ -205,55 +213,79 @@ export function CarePlanWizard({ open, onClose, existingPlan }: CarePlanWizardPr
           </div>
 
           {/* Step Navigation */}
-          <div className="flex gap-2 mb-4 overflow-x-auto">
-            {WIZARD_STEPS.map((step, index) => (
-              <Button
-                key={step.id}
-                variant={index === currentStep ? "default" : index < currentStep ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setCurrentStep(index)}
-                className="whitespace-nowrap text-xs"
-              >
-                {index + 1}. {step.title}
-              </Button>
-            ))}
+          <div className="px-4 lg:px-6 py-2 bg-slate-50 border-b">
+            <div className="flex gap-1 lg:gap-2 overflow-x-auto scrollbar-hide">
+              {WIZARD_STEPS.map((step, index) => (
+                <Button
+                  key={step.id}
+                  variant={index === currentStep ? "default" : index < currentStep ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setCurrentStep(index)}
+                  className="whitespace-nowrap text-xs flex-shrink-0 min-w-fit px-2 lg:px-3"
+                >
+                  <span className="font-medium">{index + 1}</span>
+                  <span className="hidden sm:inline ml-1">{step.title}</span>
+                </Button>
+              ))}
+            </div>
           </div>
 
           {/* Current Step Content */}
-          <Card className="flex-1 min-h-0">
-            <CardHeader>
-              <CardTitle>{WIZARD_STEPS[currentStep].title}</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-y-auto max-h-[50vh]">
-              <CurrentStepComponent
-                data={planData}
-                updateData={updatePlanData}
-                clients={clients}
-              />
-            </CardContent>
-          </Card>
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full p-4 lg:p-6 overflow-y-auto">
+              <Card className="w-full bg-white shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg lg:text-xl">{WIZARD_STEPS[currentStep].title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CurrentStepComponent
+                    data={planData}
+                    updateData={updatePlanData}
+                    clients={clients}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-4">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentStep === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
+          <div className="px-4 lg:px-6 py-3 lg:py-4 bg-white border-t">
+            <div className="flex justify-between items-center">
               <Button
-                onClick={handleNext}
-                disabled={currentStep === WIZARD_STEPS.length - 1}
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentStep === 0}
+                className="text-sm"
               >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
               </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={onClose} className="text-sm">
+                  Cancel
+                </Button>
+                {currentStep === WIZARD_STEPS.length - 1 ? (
+                  <Button
+                    onClick={handleSave}
+                    disabled={!planData.clientId || savePlanMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white text-sm"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Complete Plan</span>
+                    <span className="sm:hidden">Complete</span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNext}
+                    className="text-sm"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <span className="sm:hidden">Next</span>
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>

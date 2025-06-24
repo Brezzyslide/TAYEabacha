@@ -314,19 +314,22 @@ export function ComprehensiveCarePlanWizardRefactored({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-[95vw] sm:w-full h-[95vh] sm:h-[90vh] p-0 overflow-hidden">
-        <DialogHeader className="sr-only">
-          <DialogTitle>Care Support Plan Wizard</DialogTitle>
-          <DialogDescription>
-            Create a comprehensive care support plan with step-by-step guidance
-          </DialogDescription>
-        </DialogHeader>
-        
-        <CarePlanProvider existingPlan={existingPlan} clients={clients}>
-          <WizardContent onClose={onClose} />
-        </CarePlanProvider>
-      </DialogContent>
-    </Dialog>
+    <>
+      <style>{scrollbarStyles}</style>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="w-[98vw] max-w-[1400px] h-[96vh] p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Care Support Plan Wizard</DialogTitle>
+            <DialogDescription>
+              Create a comprehensive care support plan with step-by-step guidance
+            </DialogDescription>
+          </DialogHeader>
+          
+          <CarePlanProvider existingPlan={existingPlan} clients={clients}>
+            <WizardContent onClose={onClose} />
+          </CarePlanProvider>
+        </DialogContent>
+      </Dialog>
+    </>;
   );
 }
