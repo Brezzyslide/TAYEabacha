@@ -288,8 +288,4 @@ Company: ${company.companyName} (${company.companyId})
   return report;
 }
 
-// Export for use in API routes
-export {
-  BILLING_RATES,
-  BILLING_CYCLE_DAYS
-};
+// Exports already declared above - no need to re-export

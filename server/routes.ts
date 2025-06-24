@@ -6760,6 +6760,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Update user status and billing (billing continues for current cycle)
+      const { updateStaffBillingStatus } = await import('./billing-system');
+      await updateStaffBillingStatus(parseInt(userId), false);
+
+      res.json({ 
+        message: 'Staff member deactivated successfully. Billing continues for current cycle.',
+        userId: parseInt(userId),
+        billingActive: false
+      });
+    } catch (error) {
+      console.error('[DEACTIVATE STAFF] Error:', error);
+      res.status(500).json({ message: 'Failed to deactivate staff member' });
+    }
+  });
+
+  // Admin: Get staff billing overview with individual billing details
+  app.get('/api/staff/billing-overview', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      // Get all staff for the tenant
+      const staff = await storage.getUsersByTenant(req.user.tenantId);
+      
+      // Get billing rates and company information
+      const { BILLING_RATES, calculateCompanyBilling } = await import('./billing-system');
+      const company = await storage.getCompanyByTenantId(req.user.tenantId);
+      const companyBilling = company ? await calculateCompanyBilling(company.id) : null;
+
+      // Calculate individual staff billing with next billing date
+      const now = new Date();
+      const currentCycleStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() < 15 ? 1 : 15);
+      const nextBillingDate = new Date(currentCycleStart);
+      nextBillingDate.setDate(nextBillingDate.getDate() + 28);
+
+      const staffBilling = staff.map(user => {
+        const monthlyRate = BILLING_RATES[user.role as keyof typeof BILLING_RATES] || 0;
+        return {
+          id: user.id,
+          fullName: user.fullName,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          billingStatus: user.billingStatus || 'active',
+          monthlyRate,
+          nextBillingDate: nextBillingDate.toISOString().split('T')[0],
+          lastBillingSync: user.lastBillingSync,
+          createdAt: user.createdAt
+        };
+      });
+
+      const activeStaff = staffBilling.filter(s => s.isActive);
+      const totalMonthlyBilling = activeStaff.reduce((sum, s) => sum + s.monthlyRate, 0);
+
+      res.json({
+        staff: staffBilling,
+        companyBilling,
+        totalMonthlyBilling,
+        activeStaffCount: activeStaff.length,
+        nextBillingDate: nextBillingDate.toISOString().split('T')[0],
+        billingCycleInfo: {
+          currentCycleStart: currentCycleStart.toISOString().split('T')[0],
+          nextBillingDate: nextBillingDate.toISOString().split('T')[0],
+          daysUntilBilling: Math.ceil((nextBillingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        }
+      });
+    } catch (error) {
+      console.error('Staff billing overview error:', error);
+      res.status(500).json({ message: 'Failed to fetch staff billing overview' });
+    }
+  });
+
+  return server;
+      if (req.user.role === 'Admin') {
+        const staffUser = await db
+          .select({ tenantId: users.tenantId })
+          .from(users)
+          .where(eq(users.id, parseInt(userId)))
+          .limit(1);
+
+        if (!staffUser.length || staffUser[0].tenantId !== req.user.tenantId) {
+          return res.status(403).json({ message: 'Access denied to manage this staff member' });
+        }
+      }
+
       // Update user status and billing
       const { updateStaffBillingStatus } = await import('./billing-system');
       await updateStaffBillingStatus(parseInt(userId), false);
