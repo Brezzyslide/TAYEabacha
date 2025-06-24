@@ -5440,6 +5440,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff Timesheet Endpoints
+  // Get current timesheet for logged-in staff member
+  app.get("/api/timesheet/current", requireAuth, async (req: any, res) => {
+    try {
+      const { calculatePayPeriod } = await import("./payroll-calculator");
+      const currentPeriod = calculatePayPeriod(new Date());
+      
+      // Get or create current timesheet for the user
+      let timesheet = await db
+        .select({
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          submittedAt: timesheetsTable.submittedAt,
+          approvedAt: timesheetsTable.approvedAt,
+          createdAt: timesheetsTable.createdAt
+        })
+        .from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          gte(timesheetsTable.payPeriodStart, currentPeriod.start),
+          lte(timesheetsTable.payPeriodEnd, currentPeriod.end)
+        ))
+        .limit(1);
+
+      if (!timesheet.length) {
+        // Create a new timesheet for current period if none exists
+        const { createTimesheetForUser } = await import("./timesheet-service");
+        const newTimesheet = await createTimesheetForUser(req.user.id, req.user.tenantId);
+        
+        timesheet = [{
+          id: newTimesheet.id,
+          userId: newTimesheet.userId,
+          payPeriodStart: newTimesheet.payPeriodStart,
+          payPeriodEnd: newTimesheet.payPeriodEnd,
+          status: newTimesheet.status,
+          totalHours: newTimesheet.totalHours,
+          totalEarnings: newTimesheet.totalEarnings,
+          totalTax: newTimesheet.totalTax,
+          totalSuper: newTimesheet.totalSuper,
+          netPay: newTimesheet.netPay,
+          submittedAt: newTimesheet.submittedAt,
+          approvedAt: newTimesheet.approvedAt,
+          createdAt: newTimesheet.createdAt
+        }];
+      }
+
+      // Get timesheet entries for this timesheet
+      const entries = await db
+        .select({
+          id: timesheetEntries.id,
+          shiftId: timesheetEntries.shiftId,
+          totalHours: timesheetEntries.totalHours,
+          createdAt: timesheetEntries.createdAt,
+          shiftTitle: shifts.title,
+          shiftDate: shifts.startTime,
+          clientName: sql<string>`CONCAT(${clients.firstName}, ' ', ${clients.lastName})`.as('clientName')
+        })
+        .from(timesheetEntries)
+        .leftJoin(shifts, eq(timesheetEntries.shiftId, shifts.id))
+        .leftJoin(clients, eq(shifts.clientId, clients.id))
+        .where(eq(timesheetEntries.timesheetId, timesheet[0].id))
+        .orderBy(desc(timesheetEntries.createdAt));
+
+      const response = {
+        ...timesheet[0],
+        entries
+      };
+
+      console.log(`[STAFF TIMESHEET] Current timesheet for user ${req.user.id}: ${timesheet[0].id} with ${entries.length} entries`);
+      res.json(response);
+    } catch (error: any) {
+      console.error("[STAFF TIMESHEET CURRENT] Error:", error);
+      res.status(500).json({ message: "Failed to fetch current timesheet" });
+    }
+  });
+
+  // Get timesheet history for logged-in staff member
+  app.get("/api/timesheet/history", requireAuth, async (req: any, res) => {
+    try {
+      const { calculatePayPeriod } = await import("./payroll-calculator");
+      const currentPeriod = calculatePayPeriod(new Date());
+      
+      const timesheets = await db
+        .select({
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          submittedAt: timesheetsTable.submittedAt,
+          approvedAt: timesheetsTable.approvedAt,
+          createdAt: timesheetsTable.createdAt
+        })
+        .from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          lt(timesheetsTable.payPeriodEnd, currentPeriod.start)
+        ))
+        .orderBy(desc(timesheetsTable.payPeriodEnd));
+
+      console.log(`[STAFF TIMESHEET HISTORY] Found ${timesheets.length} historical timesheets for user ${req.user.id}`);
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("[STAFF TIMESHEET HISTORY] Error:", error);
+      res.status(500).json({ message: "Failed to fetch timesheet history" });
+    }
+  });
+
+  // Get leave balances for logged-in staff member
+  app.get("/api/leave-balances", requireAuth, async (req: any, res) => {
+    try {
+      // Only applicable for non-casual employees
+      if (req.user.employmentType === 'casual') {
+        return res.json({ message: "Leave balances not applicable for casual employees" });
+      }
+
+      const leaveBalances = await db
+        .select({
+          annualLeave: leaveBalancesTable.annualLeave,
+          sickLeave: leaveBalancesTable.sickLeave,
+          personalLeave: leaveBalancesTable.personalLeave,
+          longServiceLeave: leaveBalancesTable.longServiceLeave
+        })
+        .from(leaveBalancesTable)
+        .where(and(
+          eq(leaveBalancesTable.userId, req.user.id),
+          eq(leaveBalancesTable.tenantId, req.user.tenantId)
+        ))
+        .limit(1);
+
+      if (!leaveBalances.length) {
+        // Return default balances if none exist
+        return res.json({
+          annualLeave: 0,
+          sickLeave: 0,
+          personalLeave: 0,
+          longServiceLeave: 0
+        });
+      }
+
+      res.json(leaveBalances[0]);
+    } catch (error: any) {
+      console.error("[LEAVE BALANCES] Error:", error);
+      res.status(500).json({ message: "Failed to fetch leave balances" });
+    }
+  });
+
   // Test PDF Generation
   app.get("/api/test-pdf", requireAuth, async (req: any, res) => {
     try {
