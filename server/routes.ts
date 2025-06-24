@@ -4946,23 +4946,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
 
         case "mealtime":
-          if (targetField) {
-            // Field-specific prompts for Mealtime section
-            const fieldPrompts: { [key: string]: string } = {
-              "dietaryRequirements": `Staff need to understand: Specific dietary needs, restrictions, allergies, cultural requirements, medical dietary considerations. Include clear dietary guidelines. Example: 'Client requires gluten-free diet', 'No dairy due to lactose intolerance'. Max ${maxWords} words.`,
-              "textureModifications": `Staff must know: Food texture requirements, fluid consistency needs, preparation methods, safety considerations for modified textures. Include specific texture instructions. Example: 'All foods minced to 5mm pieces', 'Fluids thickened to Level 2 consistency'. Max ${maxWords} words.`,
-              "assistanceLevel": `Staff need to know: Required mealtime assistance, positioning needs, cueing requirements, independence promotion strategies. Include specific assistance techniques. Example: 'Client needs setup but feeds independently', 'Verbal prompts for pacing required'. Max ${maxWords} words.`,
-              "emergencyProcedures": `Staff must understand: Emergency response for choking, aspiration, allergic reactions, medical incidents during meals. Include step-by-step emergency protocols. Example: 'Call 000 immediately for severe choking', 'EpiPen location and usage steps'. Max ${maxWords} words.`,
-              "staffGuidance": `Staff guidance: Specific mealtime support implementation, safety protocols, monitoring requirements staff must follow. Include practical mealtime instructions. Max ${maxWords} words.`,
-              "monitoringRequirements": `Staff must monitor: Specific indicators, warning signs, assessment requirements, documentation needs during mealtimes. Include monitoring protocols. Example: 'Watch for signs of fatigue during eating', 'Document fluid intake hourly'. Max ${maxWords} words.`
-            };
-            
-            systemPrompt = fieldPrompts[targetField] || `Generate practical mealtime support guidance for staff. Max ${maxWords} words.`;
-            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
-          } else {
-            systemPrompt = `Generate comprehensive mealtime risk management content focusing on practical staff guidance. Include dietary requirements, texture modifications, assistance needs, and safety protocols. Avoid generic care plan language - provide actionable mealtime information for support workers. Max ${maxWords} words.`;
-            userPrompt = `${contextualInfo}${existingContext}\nMealtime assessment information: ${userInput}`;
-          }
+          systemPrompt = `Write a clear, practical mealtime risk summary based only on the provided input. Describe support needs around eating, drinking, supervision, positioning, pacing, communication, and safety. Include dietary requirements, allergies, choking risks, texture modifications, utensils, or environmental setup. This content is for support workers — focus on what they need to do or watch for during meals. Do not generalise. Do not include standardised care plan language or invented risks. Do not repeat unrelated ADL content. No formatting symbols. No names unless provided. Start with the content. Max ${maxWords} words.`;
+          userPrompt = `${contextualInfo}${existingContext}\nMealtime assessment information: ${userInput}`;
           break;
         
         default:
@@ -5362,6 +5347,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 fallbackMessage: "The content was too general. Disaster strategies must include specific support details relevant to the participant's communication, mobility, or behavioural needs. Please revise and resubmit."
               };
             }
+          }
+        } else if (section === "mealtime") {
+          // Mealtime-specific validation rules
+          // Mealtime Assumption Rule
+          const mealtimeAssumptionPatterns = [
+            "uses a soft diet",
+            "requires feeding support",
+            "may choke on hard foods",
+            "needs thickened fluids",
+            "requires supervision"
+          ];
+          
+          const hasMealtimeAssumptions = mealtimeAssumptionPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasMealtimeAssumptions && content.length < 100) {
+            return {
+              isValid: false,
+              fallbackMessage: "The content included unsupported assumptions. Mealtime risk guidance must reflect actual input. Please revise your notes with confirmed dietary or support details."
+            };
+          }
+
+          // Mealtime Generic or Clinical Language
+          const mealtimeGenericPatterns = [
+            "staff to monitor food intake and ensure safety",
+            "follow standard dietary guidelines",
+            "provide general support during meals",
+            "ensure adequate nutrition",
+            "maintain safe eating environment"
+          ];
+          
+          const hasMealtimeGenericContent = mealtimeGenericPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasMealtimeGenericContent) {
+            return {
+              isValid: false,
+              fallbackMessage: "The response was too generic. Please include practical mealtime instructions staff can act on — such as texture changes, assistance level, utensils used, or specific risks to monitor."
+            };
+          }
+
+          // Mealtime Non-Actionable or Vague Output
+          const mealtimeVaguePatterns = [
+            "client may need some assistance",
+            "provide support as needed",
+            "monitor during meals",
+            "ensure safety"
+          ];
+          
+          const hasMealtimeVagueContent = mealtimeVaguePatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          // Check for verbs/directives (mealtime-specific)
+          const hasMealtimeVerbs = /\b(requires?|needs?|must|should|provide|monitor|watch|ensure|position|cut|serve|assist|supervise)\b/i.test(content);
+
+          // Mealtime minimum content check (40 words minimum)
+          if (content.length < 40 || hasMealtimeVagueContent || !hasMealtimeVerbs) {
+            return {
+              isValid: false,
+              fallbackMessage: "This content was too vague to support staff during meals. If no details are available yet, leave this section blank until relevant risk notes can be collected."
+            };
+          }
+
+          // Check for ADL content contamination in mealtime section
+          const adlContaminationPatterns = [
+            "mobility assistance",
+            "personal care",
+            "dressing",
+            "toileting",
+            "showering"
+          ];
+          
+          const hasAdlContamination = adlContaminationPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasAdlContamination) {
+            return {
+              isValid: false,
+              fallbackMessage: "The response was too generic. Please include practical mealtime instructions staff can act on — such as texture changes, assistance level, utensils used, or specific risks to monitor."
+            };
           }
         } else {
           // General validation for other sections (About Me, Goals, etc.)
