@@ -1,0 +1,81 @@
+General ADL Prompt (Fallback / Unified Use)
+plaintext
+Copy
+Edit
+Write a clear description of the participant’s support needs across daily living tasks. Focus on practical care strategies across personal care, mobility, household, community access, and safety. Only use the information provided. If input is limited, respond with common support approaches for the diagnosis — without exaggerating or assuming.
+
+Do not use a name unless one is provided. Do not repeat information from other sections. No formatting symbols or headings. Begin with the content.
+
+Max 200 words.
+🟨 Personal Care
+plaintext
+Copy
+Edit
+Describe how the participant manages personal care tasks like showering, grooming, dressing, and hygiene. Specify what they do independently, what they need prompting for, and what requires full support. Include temperature checks, product setup, and safety awareness as needed.
+
+Avoid filler phrases or made-up strengths. Only use provided details. No name unless given. No formatting.
+
+Start directly. Max 200 words.
+🟩 Mobility
+plaintext
+Copy
+Edit
+Write a clear summary of how the participant moves around, both at home and in the community. Include mobility aids used, transfer support needs, and staff guidance for safety. Mention when one-person vs. two-person assist is required.
+
+Don’t generalise. No placeholders. No names unless given. Do not repeat information already logged in other ADL fields.
+
+Begin with the relevant content. Max 200 words.
+🟧 Household Tasks
+plaintext
+Copy
+Edit
+Explain the participant’s ability to manage tasks like cooking, cleaning, and laundry. Mention supervision levels, safety risks (e.g. with chemicals or appliances), and which tasks they can attempt independently with setup.
+
+Keep the tone practical and task-oriented. No names unless provided. No formatting, no generalities, no repeats from other fields.
+
+Start with usable content. Max 200 words.
+🟥 Community Access
+plaintext
+Copy
+Edit
+Describe the participant’s ability to access the community. Include support required for transport, social interaction, and navigating new or busy environments. Mention whether they travel independently, with support, or require familiar routines.
+
+Avoid assumptions. Use only the facts provided. No placeholder examples. No formatting.
+
+Start with clean, useful information. Max 200 words.
+🟫 Safety Awareness
+plaintext
+Copy
+Edit
+Summarise how the participant manages safety at home and in the community. Mention their understanding of danger, need for supervision, and ability to respond in emergencies (e.g. fire, traffic, unknown persons). Include risks specific to their diagnosis if known.
+
+Do not use made-up safety notes. No name unless passed. No duplication. No formatting.
+
+Begin directly. Max 200 words.
+🟪 Independence
+plaintext
+Copy
+Edit
+Describe the participant’s level of independence in daily decision-making, choice-making, and self-advocacy. Mention where they take initiative and where they need support or structure. Include areas being developed (e.g., money handling, self-regulation, communication).
+
+Be practical. No placeholders. No names unless given. No format or summary.
+
+Start with what matters for staff. Max 200 words.
+🟫 Assistive Technology
+plaintext
+Copy
+Edit
+Outline any assistive technologies the participant uses. Include communication devices, mobility aids, hearing or vision tools, and what support is required for use or maintenance. Mention if training or troubleshooting is needed.
+
+Do not invent tools. Only use supplied input. No names unless provided. No formatting symbols. No filler.
+
+Start with facts staff can act on. Max 200 words.
+🟫 ADL Recommendations
+plaintext
+Copy
+Edit
+List targeted strategies or support methods to improve the participant’s daily functioning. Include routines, environmental changes, or prompts staff should use. These should relate to actual needs mentioned in other ADL fields.
+
+No assumptions. No invented routines. Don’t repeat previous content. No formatting or stars. No names unless supplied.
+
+Begin with clean, directive content. Max 200 words.

@@ -4811,8 +4811,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         
         case "adl":
-          systemPrompt = `Generate comprehensive ADL (Activities of Daily Living) support strategies. If specific input is limited, provide evidence-based recommendations typical for the given diagnosis. Focus on practical support approaches. Max ${maxWords} words. Professional care plan language.`;
-          userPrompt = `${contextualInfo}${existingContext}\nADL assessment notes: ${userInput}`;
+          if (targetField) {
+            // Field-specific prompts for ADL section
+            const adlFieldPrompts: { [key: string]: string } = {
+              "personalCare": `Describe how the participant manages personal care tasks like showering, grooming, dressing, and hygiene. Specify what they do independently, what they need prompting for, and what requires full support. Include temperature checks, product setup, and safety awareness as needed. Avoid filler phrases or made-up strengths. Only use provided details. No name unless given. No formatting. Start directly. Max ${maxWords} words.`,
+              "mobility": `Write a clear summary of how the participant moves around, both at home and in the community. Include mobility aids used, transfer support needs, and staff guidance for safety. Mention when one-person vs. two-person assist is required. Don't generalise. No placeholders. No names unless given. Do not repeat information already logged in other ADL fields. Begin with the relevant content. Max ${maxWords} words.`,
+              "household": `Explain the participant's ability to manage tasks like cooking, cleaning, and laundry. Mention supervision levels, safety risks (e.g. with chemicals or appliances), and which tasks they can attempt independently with setup. Keep the tone practical and task-oriented. No names unless provided. No formatting, no generalities, no repeats from other fields. Start with usable content. Max ${maxWords} words.`,
+              "community": `Describe the participant's ability to access the community. Include support required for transport, social interaction, and navigating new or busy environments. Mention whether they travel independently, with support, or require familiar routines. Avoid assumptions. Use only the facts provided. No placeholder examples. No formatting. Start with clean, useful information. Max ${maxWords} words.`,
+              "safety": `Summarise how the participant manages safety at home and in the community. Mention their understanding of danger, need for supervision, and ability to respond in emergencies (e.g. fire, traffic, unknown persons). Include risks specific to their diagnosis if known. Do not use made-up safety notes. No name unless passed. No duplication. No formatting. Begin directly. Max ${maxWords} words.`,
+              "independence": `Describe the participant's level of independence in daily decision-making, choice-making, and self-advocacy. Mention where they take initiative and where they need support or structure. Include areas being developed (e.g., money handling, self-regulation, communication). Be practical. No placeholders. No names unless given. No format or summary. Start with what matters for staff. Max ${maxWords} words.`,
+              "assistiveTechnology": `Outline any assistive technologies the participant uses. Include communication devices, mobility aids, hearing or vision tools, and what support is required for use or maintenance. Mention if training or troubleshooting is needed. Do not invent tools. Only use supplied input. No names unless provided. No formatting symbols. No filler. Start with facts staff can act on. Max ${maxWords} words.`,
+              "recommendations": `List targeted strategies or support methods to improve the participant's daily functioning. Include routines, environmental changes, or prompts staff should use. These should relate to actual needs mentioned in other ADL fields. No assumptions. No invented routines. Don't repeat previous content. No formatting or stars. No names unless supplied. Begin with clean, directive content. Max ${maxWords} words.`
+            };
+            systemPrompt = adlFieldPrompts[targetField] || `Generate practical ADL support guidance for staff. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
+          } else {
+            systemPrompt = `Write a clear description of the participant's support needs across daily living tasks. Focus on practical care strategies across personal care, mobility, household, community access, and safety. Only use the information provided. If input is limited, respond with common support approaches for the diagnosis — without exaggerating or assuming. Do not use a name unless one is provided. Do not repeat information from other sections. No formatting symbols or headings. Begin with the content. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nADL assessment notes: ${userInput}`;
+          }
           break;
         
         case "communication":
@@ -4840,27 +4856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userPrompt = `${contextualInfo}${existingContext}\nDisaster scenario: ${userInput}`;
           break;
         
-        case "adl":
-          if (targetField) {
-            // Field-specific prompts for ADL section
-            const fieldPrompts: { [key: string]: string } = {
-              "personalCare": `Staff need to understand: Client's personal care abilities, hygiene support needs, prompting requirements. Include specific assistance levels and independence skills. Example: 'Client requires verbal prompts for teeth brushing', 'Independent with showering but needs temperature check'. Max ${maxWords} words.`,
-              "mobility": `Staff need to know: Client's mobility abilities, transfer requirements, safety considerations. Include specific techniques and equipment needs. Example: 'Client uses walking frame for distances over 10 meters', 'Requires two-person assist for bed transfers'. Max ${maxWords} words.`,
-              "household": `Staff must understand: Client's household task abilities, supervision needs, safety considerations. Include specific support strategies. Example: 'Client can prepare simple meals with supervision', 'Requires assistance with cleaning products due to chemical sensitivity'. Max ${maxWords} words.`,
-              "community": `Staff need to know: Client's community access abilities, transport needs, social support requirements. Include specific strategies for community participation. Example: 'Client travels independently on familiar bus routes', 'Requires support worker for new environments'. Max ${maxWords} words.`,
-              "safety": `Staff must be aware: Client's safety awareness, risk recognition abilities, emergency response capabilities. Include specific safety considerations and intervention strategies. Example: 'Client has limited road safety awareness', 'Understands basic fire safety procedures'. Max ${maxWords} words.`,
-              "independence": `Staff should recognize: Client's independent living skills, decision-making abilities, self-advocacy strengths. Include specific areas for skill development. Example: 'Client advocates well for preferred activities', 'Developing budgeting skills with support'. Max ${maxWords} words.`,
-              "assistiveTechnology": `Staff need to know: Client's assistive technology needs, current equipment, training requirements. Include specific technology support strategies. Example: 'Client uses communication app on tablet', 'Requires support with hearing aid maintenance'. Max ${maxWords} words.`,
-              "recommendations": `Staff guidance: Specific ADL support strategies, environmental modifications, skill development goals. Include practical recommendations for daily support. Example: 'Use visual schedules for morning routine', 'Encourage independence while ensuring safety'. Max ${maxWords} words.`
-            };
-            
-            systemPrompt = fieldPrompts[targetField] || `Generate practical ADL support guidance for staff. Max ${maxWords} words.`;
-            userPrompt = `${contextualInfo}${existingContext}\nProvided information: ${userInput}`;
-          } else {
-            systemPrompt = `Generate comprehensive ADL (Activities of Daily Living) assessment content focusing on practical staff guidance. Include specific abilities, support needs, and intervention strategies. Avoid generic care plan language - provide actionable information for support workers. Max ${maxWords} words.`;
-            userPrompt = `${contextualInfo}${existingContext}\nADL assessment information: ${userInput}`;
-          }
-          break;
+
 
         case "structure":
           if (targetField) {
