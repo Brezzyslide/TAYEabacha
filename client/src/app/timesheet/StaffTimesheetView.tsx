@@ -30,13 +30,12 @@ import { format } from "date-fns";
 
 interface TimesheetEntry {
   id: number;
-  entryDate: string;
-  startTime: string;
-  endTime: string;
+  shiftId: number;
   totalHours: number;
-  grossPay: number;
-  notes?: string;
+  createdAt: string;
   shiftTitle?: string;
+  shiftDate: string;
+  clientName?: string;
 }
 
 interface Timesheet {
@@ -45,8 +44,9 @@ interface Timesheet {
   payPeriodEnd: string;
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
   totalHours: number;
-  grossPay: number;
-  taxWithheld: number;
+  totalEarnings: number;
+  totalTax: number;
+  totalSuper: number;
   netPay: number;
   createdAt: string;
   updatedAt: string;
@@ -283,7 +283,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-amber-600">Gross Pay</p>
                           <p className="text-2xl font-bold text-amber-700 mt-1">
-                            {formatCurrency(currentTimesheet.timesheet.grossPay || 0)}
+                            {formatCurrency(currentTimesheet.timesheet.totalEarnings || 0)}
                           </p>
                         </div>
                         <DollarSign className="h-8 w-8 text-amber-500" />
@@ -318,11 +318,11 @@ export default function StaffTimesheetView() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <p className="font-medium text-slate-700">Gross Pay</p>
-                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet.timesheet.grossPay)}</p>
+                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet.timesheet.totalEarnings)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-slate-700">Tax Withheld</p>
-                        <p className="text-lg font-bold text-red-600">-{formatCurrency(currentTimesheet.timesheet.taxWithheld)}</p>
+                        <p className="text-lg font-bold text-red-600">-{formatCurrency(currentTimesheet.timesheet.totalTax)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-slate-700">Net Pay</p>
@@ -358,23 +358,19 @@ export default function StaffTimesheetView() {
                             <TableRow>
                               <TableHead>Date</TableHead>
                               <TableHead>Shift</TableHead>
-                              <TableHead>Start Time</TableHead>
-                              <TableHead>End Time</TableHead>
+                              <TableHead>Client</TableHead>
                               <TableHead>Hours</TableHead>
-                              <TableHead>Earnings</TableHead>
-                              <TableHead>Notes</TableHead>
+                              <TableHead>Created</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {currentTimesheet.entries.map((entry) => (
                               <TableRow key={entry.id}>
-                                <TableCell>{formatDate(entry.entryDate)}</TableCell>
+                                <TableCell>{formatDate(entry.shiftDate)}</TableCell>
                                 <TableCell>{entry.shiftTitle || 'General Shift'}</TableCell>
-                                <TableCell>{entry.startTime}</TableCell>
-                                <TableCell>{entry.endTime}</TableCell>
+                                <TableCell>{entry.clientName || '-'}</TableCell>
                                 <TableCell>{entry.totalHours}h</TableCell>
-                                <TableCell>{formatCurrency(entry.grossPay)}</TableCell>
-                                <TableCell>{entry.notes || '-'}</TableCell>
+                                <TableCell>{formatDateTime(entry.createdAt)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -416,10 +412,10 @@ export default function StaffTimesheetView() {
                                   <p className="font-medium">Hours: {timesheet.totalHours}</p>
                                 </div>
                                 <div>
-                                  <p className="font-medium">Gross: {formatCurrency(timesheet.grossPay)}</p>
+                                  <p className="font-medium">Gross: {formatCurrency(timesheet.totalEarnings)}</p>
                                 </div>
                                 <div>
-                                  <p className="font-medium">Tax: {formatCurrency(timesheet.taxWithheld)}</p>
+                                  <p className="font-medium">Tax: {formatCurrency(timesheet.totalTax)}</p>
                                 </div>
                                 <div>
                                   <p className="font-medium">Net: {formatCurrency(timesheet.netPay)}</p>
