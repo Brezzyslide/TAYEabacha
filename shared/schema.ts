@@ -47,6 +47,10 @@ export const users = pgTable("users", {
   tfn: text("tfn"), // Tax File Number
   superFund: text("super_fund"), // Superannuation fund
   superMemberNumber: text("super_member_number"),
+  // Billing tracking
+  billingStatus: text("billing_status").default("active"), // active, suspended, cancelled
+  billingRate: decimal("billing_rate", { precision: 10, scale: 2 }),
+  lastBillingSync: timestamp("last_billing_sync"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
