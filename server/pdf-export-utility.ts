@@ -1,11 +1,9 @@
-import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 
 export class PDFExportUtility {
-  private doc: jsPDF;
-
+  
   constructor() {
-    this.doc = new jsPDF('landscape', 'mm', 'a4');
+    // No initialization needed - we'll create docs per method
   }
 
   async generatePayslipPDF(payslipData: {
@@ -25,12 +23,14 @@ export class PDFExportUtility {
     } | null;
   }): Promise<Buffer> {
     
+    // Dynamic import for ES module compatibility
+    const jsPDF = (await import('jspdf')).default;
     const doc = new jsPDF('portrait', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
     // Header with company branding
-    this.addHeader(doc, payslipData.companyName, 'PAYSLIP', pageWidth);
+    this.addPayslipHeader(doc, payslipData.companyName, 'PAYSLIP', pageWidth);
     
     let yPosition = 40;
     
@@ -95,12 +95,38 @@ export class PDFExportUtility {
     }
     
     // Footer
-    this.addFooter(doc, pageHeight);
+    this.addPayslipFooter(doc, pageWidth, pageHeight);
     
     return Buffer.from(doc.output('arraybuffer'));
   }
+
+  private addPayslipHeader(doc: any, companyName: string, title: string, pageWidth: number) {
+    // Blue gradient header background (TUSK Deep Navy)
+    doc.setFillColor(43, 75, 115); // Deep navy
+    doc.rect(0, 0, pageWidth, 25, 'F');
+    
+    // Company name and document title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(companyName, pageWidth / 2, 12, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.text(title, pageWidth / 2, 20, { align: 'center' });
+    
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
+  }
+
+  private addPayslipFooter(doc: any, pageWidth: number, pageHeight: number) {
+    const yPos = pageHeight - 15;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} - NeedsCareAI+ Payroll System`, pageWidth / 2, yPos, { align: 'center' });
+  }
   
-  private addHeader(doc: jsPDF, companyName: string, documentTitle: string, pageWidth: number): void {
+  private addHeader(doc: any, companyName: string, documentTitle: string, pageWidth: number): void {
     // Blue gradient header background
     doc.setFillColor(43, 75, 115); // Deep navy
     doc.rect(0, 0, pageWidth, 25, 'F');
@@ -118,7 +144,7 @@ export class PDFExportUtility {
     doc.setTextColor(0, 0, 0);
   }
   
-  private addFooter(doc: jsPDF, pageHeight: number): void {
+  private addFooter(doc: any, pageHeight: number): void {
     const yPos = pageHeight - 15;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
@@ -126,7 +152,7 @@ export class PDFExportUtility {
     doc.text(`Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} - NeedsCareAI+ Payroll System`, 105, yPos, { align: 'center' });
   }
   
-  private createTable(doc: jsPDF, data: string[][], x: number, y: number, width: number): void {
+  private createTable(doc: any, data: string[][], x: number, y: number, width: number): void {
     const cellHeight = 8;
     const colWidth = width / data[0].length;
     
