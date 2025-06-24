@@ -14,6 +14,63 @@ import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
+// Function to update hour allocations when shifts are assigned
+async function updateStaffHourAllocation(shiftId: number, userId: number, tenantId: number, action: 'allocate' | 'deallocate') {
+  try {
+    console.log(`[HOUR ALLOCATION] ${action} hours for shift ${shiftId}, user ${userId}, tenant ${tenantId}`);
+    
+    // Get shift details
+    const shift = await storage.getShift(shiftId, tenantId);
+    if (!shift || !shift.startTime || !shift.endTime) {
+      console.log(`[HOUR ALLOCATION] Skip - invalid shift data`);
+      return;
+    }
+
+    // Calculate shift duration in hours
+    const startTime = new Date(shift.startTime);
+    const endTime = new Date(shift.endTime);
+    const shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+    
+    if (shiftHours <= 0 || shiftHours > 24) {
+      console.log(`[HOUR ALLOCATION] Skip - invalid duration: ${shiftHours} hours`);
+      return;
+    }
+
+    // Get staff hour allocation
+    const allocations = await storage.getHourAllocations(tenantId);
+    const staffAllocation = allocations.find(alloc => alloc.staffId === userId && alloc.isActive);
+    
+    if (!staffAllocation) {
+      console.log(`[HOUR ALLOCATION] No active allocation found for staff ${userId}`);
+      return;
+    }
+
+    const currentUsed = parseFloat(staffAllocation.hoursUsed);
+    const maxHours = parseFloat(staffAllocation.maxHours);
+    
+    let newUsedHours: number;
+    if (action === 'allocate') {
+      newUsedHours = currentUsed + shiftHours;
+    } else {
+      newUsedHours = Math.max(0, currentUsed - shiftHours);
+    }
+    
+    const newRemainingHours = maxHours - newUsedHours;
+    
+    console.log(`[HOUR ALLOCATION] Updating allocation ${staffAllocation.id}: used ${currentUsed} -> ${newUsedHours}, remaining: ${newRemainingHours}`);
+    
+    // Update the hour allocation
+    await storage.updateHourAllocation(staffAllocation.id, {
+      hoursUsed: newUsedHours.toString(),
+      remainingHours: newRemainingHours.toString()
+    }, tenantId);
+    
+    console.log(`[HOUR ALLOCATION] Successfully ${action}d ${shiftHours} hours for staff ${userId}`);
+  } catch (error) {
+    console.error(`[HOUR ALLOCATION] Error ${action}ing hours:`, error);
+  }
+}
+
 async function processBudgetDeduction(shift: any, userId: number) {
   console.log(`[BUDGET DEDUCTION] Processing for shift ${shift.id}, client ${shift.clientId}`);
   
@@ -615,6 +672,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const shiftData = insertShiftSchema.parse(processedBody);
       
       const shift = await storage.createShift(shiftData);
+      
+      // Update hour allocation if shift has assigned user and is approved/assigned status
+      if (shift.userId && (shift.status === 'assigned' || shift.status === 'approved')) {
+        await updateStaffHourAllocation(shift.id, shift.userId, req.user.tenantId, 'allocate');
+      }
       
       // Log activity
       await storage.createActivityLog({
