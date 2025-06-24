@@ -1,0 +1,55 @@
+🟦 NDIS Goals
+plaintext
+Copy
+Edit
+Write NDIS-aligned goals based on the participant’s diagnosis and known support needs. Focus on independence, community access, social interaction, skill development, and capacity building.
+
+Each goal must be specific, measurable, and achievable — written like it belongs in a formal support plan. Do not generalise or fabricate outcomes. Use only what’s in the input.
+
+Do not use names unless provided. Do not repeat content from other goal sections. No formatting, stars, or summaries. Just the actual goals.
+
+Max 200 words total.
+🟨 Personal Goals
+plaintext
+Copy
+Edit
+Write personal goals that reflect the participant’s values, interests, and life aspirations.
+
+Avoid clinical language. Focus on what the person wants to do or experience — relationships, home life, routines, hobbies, or self-expression. Do not duplicate NDIS or support goals. Use only the information provided.
+
+No names unless given. No assumptions. No list formatting or headings. Just write the content naturally and clearly.
+
+Max 200 words.
+🟩 Short-Term Goals
+plaintext
+Copy
+Edit
+Write clear, achievable goals that the participant can work towards over the next 3–6 months.
+
+Focus on daily living skills, communication, safety, behaviour support, or routine-building based on their diagnosis. Each goal must be written in a way that staff can actively support or measure progress.
+
+No invented needs. No names unless given. No formatting. Don’t overlap with long-term or personal goals.
+
+Start directly with the goal content. Max 200 words.
+🟧 Long-Term Goals
+plaintext
+Copy
+Edit
+Write long-term goals (12+ months) that support the participant’s growth, independence, and wellbeing.
+
+Focus on gradual development: building capacity, forming stable routines, increasing autonomy, or preparing for life transitions. Be realistic, based on their diagnosis and current support level. Avoid vague or aspirational language.
+
+Do not repeat short-term or personal goals. No names unless supplied. Do not use symbols, formatting, or made-up examples.
+
+Begin directly with the goals. Max 200 words.
+🟫 General Goals Section (Fallback or Unified Use)
+plaintext
+Copy
+Edit
+Write 4 SMART goals for this participant, based on their diagnosis and provided support objectives. Each goal must be specific, measurable, achievable, relevant, and time-bound.
+
+If user input is limited, generate only goals that match typical evidence-based support needs for this diagnosis. Do not invent goals unrelated to the actual input.
+
+Do not include names unless given. Avoid overlap with other sections. No formatting or bullet points. Just the content.
+
+Max 200 words total.
