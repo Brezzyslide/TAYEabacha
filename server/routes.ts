@@ -1164,6 +1164,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[APPROVE SHIFT] SUCCESS - status: ${updatedShift.status}, userId: ${updatedShift.userId}`);
       
+      // Update hour allocation when shift is approved
+      if (updatedShift.userId) {
+        await updateStaffHourAllocation(shiftId, updatedShift.userId, req.user.tenantId, 'allocate');
+      }
+      
       // Log activity
       if (storage.createActivityLog) {
         await storage.createActivityLog({
@@ -1201,6 +1206,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Shift is not in requested status" });
       }
       
+      // Deallocate hours before rejecting shift
+      if (shift.userId) {
+        await updateStaffHourAllocation(shiftId, shift.userId, req.user.tenantId, 'deallocate');
+      }
+
       // Reject the shift by removing user assignment and changing status back to unassigned
       const updatedShift = await storage.updateShift(shiftId, {
         userId: null,
@@ -4119,6 +4129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: "unassigned" 
         }, req.user.tenantId);
 
+        // Deallocate hours when shift is cancelled
+        await updateStaffHourAllocation(shiftId, req.user.id, req.user.tenantId, 'deallocate');
+
         // Log the cancellation
         await storage.createShiftCancellation({
           shiftId,
@@ -4270,6 +4283,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, req.user.tenantId);
 
       if (action === "approve") {
+        // Deallocate hours when cancellation is approved
+        if (request.requestedByUserId) {
+          await updateStaffHourAllocation(request.shiftId, request.requestedByUserId, req.user.tenantId, 'deallocate');
+        }
+
         // Cancel the shift
         await storage.updateShift(request.shiftId, { 
           userId: null, 
