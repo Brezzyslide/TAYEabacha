@@ -1,0 +1,91 @@
+Behaviour Strategy Builder – Per Behaviour Prompt
+Used when user adds a behaviour like “verbal refusal” or “property damage”
+
+plaintext
+Copy
+Edit
+Write Behaviour Support strategies for the behaviour listed. Use only the participant’s diagnosis and observed behaviour input. Do not fabricate reasons, triggers, or responses. Focus on Positive Behaviour Support (PBS) principles.
+
+Respond in this structure (no formatting, no symbols):
+
+Trigger:
+[Describe what typically leads to the behaviour. Keep it factual.]
+
+Proactive Strategy:
+[Describe how staff can prevent or reduce the chance of this behaviour occurring.]
+
+Reactive Strategy:
+[Describe what staff should do during the behaviour to reduce harm and regain safety.]
+
+Protective Strategy:
+[Describe what is done if there is a risk to the participant or others — clear, safe, and within ethical boundaries.]
+
+Keep each section to 2–3 lines. No names unless provided. No duplication from other behaviours. Do not offer general PBS tips here — only strategies linked to this behaviour.
+🧠 Global BSP Centre – General AI Tips Prompt
+This supports your Global AI Centre — used for de-escalation techniques, staff reminders, or sample frameworks when no behaviour is entered yet.
+
+plaintext
+Copy
+Edit
+Write a short set of behaviour support practice tips for staff supporting participants with complex behaviours.
+
+Use plain, shift-ready language. Avoid therapeutic jargon. Focus on de-escalation, early warning signs, and trauma-informed staff responses.
+
+Respond in paragraph form — not bullet points or examples.
+
+Do not mention participant names or give generic advice. Frame it like a briefing for support workers who want to handle behaviour with calm, ethical, consistent action.
+
+Keep the tone steady and professional. Max 200 words.
+🧯 Fallback / Assumption Rules for Behaviour Support
+❌ 1. Assumption Rule
+Trigger if GPT includes:
+
+Diagnoses or behaviours not listed in user input
+
+Made-up triggers like “when feeling overwhelmed” without source
+
+Generalisations: “This behaviour may occur when…”
+
+System Output:
+
+plaintext
+Copy
+Edit
+The response included assumptions or behaviours not provided in the input. Please only use real behavioural observations from the participant's profile.
+⚠️ 2. Over-Generalisation or Empty Content
+Trigger if GPT says:
+
+“Support with empathy and patience”
+
+“Use clear boundaries” without relating to actual behaviour
+
+Outputs under 40 words
+
+System Output:
+
+plaintext
+Copy
+Edit
+This response was too general to be used in a behaviour plan. Please include specific triggers or strategies relevant to the observed behaviour. General PBS principles should be handled in the Global AI Centre.
+🔄 3. Behaviour Strategy Overlap Rule
+Trigger if GPT repeats the same strategy across different behaviours
+
+System Output:
+
+plaintext
+Copy
+Edit
+The strategies appear duplicated across behaviours. Each behaviour should have tailored triggers and responses. Please revise the input to reflect the unique context for each behaviour observed.
+🧰 Optional: Behaviour Strategy JSON Return Format (Internal Use)
+For future integration:
+
+json
+Copy
+Edit
+{
+  "behaviour": "Refusing to attend day program",
+  "trigger": "Occurs when schedule changes are made without notice.",
+  "proactive": "Provide visual schedule updates 30 minutes in advance. Confirm understanding calmly.",
+  "reactive": "Offer the option to delay or reschedule the task. Avoid confrontation or forced redirection.",
+  "protective": "If refusal escalates, allow space and notify team lead. Maintain supervision while reducing verbal prompts."
+}

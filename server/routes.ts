@@ -4847,8 +4847,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         
         case "behaviour":
-          systemPrompt = `Generate behavior support strategies with proactive, reactive, and protective approaches. If specific behaviors aren't detailed, provide evidence-based strategies typical for the given diagnosis. Each strategy should be max 3 lines. Focus on PBS approaches. Consider information from other sections to avoid duplication.`;
-          userPrompt = `${contextualInfo}${existingContext}\nBehavior observations: ${userInput}`;
+          if (targetField === "globalTips") {
+            // Global BSP Centre prompt
+            systemPrompt = `Write a short set of behaviour support practice tips for staff supporting participants with complex behaviours. Use plain, shift-ready language. Avoid therapeutic jargon. Focus on de-escalation, early warning signs, and trauma-informed staff responses. Respond in paragraph form — not bullet points or examples. Do not mention participant names or give generic advice. Frame it like a briefing for support workers who want to handle behaviour with calm, ethical, consistent action. Keep the tone steady and professional. Max ${maxWords} words.`;
+            userPrompt = `${contextualInfo}${existingContext}\nBehaviour support context: ${userInput}`;
+          } else {
+            // Individual behaviour strategy builder
+            systemPrompt = `Write Behaviour Support strategies for the behaviour listed. Use only the participant's diagnosis and observed behaviour input. Do not fabricate reasons, triggers, or responses. Focus on Positive Behaviour Support (PBS) principles. Respond in this structure (no formatting, no symbols): Trigger: [Describe what typically leads to the behaviour. Keep it factual.] Proactive Strategy: [Describe how staff can prevent or reduce the chance of this behaviour occurring.] Reactive Strategy: [Describe what staff should do during the behaviour to reduce harm and regain safety.] Protective Strategy: [Describe what is done if there is a risk to the participant or others — clear, safe, and within ethical boundaries.] Keep each section to 2–3 lines. No names unless provided. No duplication from other behaviours. Do not offer general PBS tips here — only strategies linked to this behaviour.`;
+            userPrompt = `${contextualInfo}${existingContext}\nBehaviour observations: ${userInput}`;
+          }
           break;
         
         case "disaster":
@@ -5206,6 +5213,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return {
                 isValid: false,
                 fallbackMessage: "The output did not match the required format. Communication summaries must include structured JSON with receptive and expressive strategies separated. Please retry using only provided input and valid strategy descriptions."
+              };
+            }
+          }
+        } else if (section === "behaviour") {
+          // Behaviour-specific validation rules
+          // Behaviour Assumption Rule - Check for made-up diagnoses or behaviours
+          const behaviourAssumptionPatterns = [
+            "when feeling overwhelmed",
+            "this behaviour may occur when",
+            "typically occurs during",
+            "anxiety-related",
+            "stress-induced"
+          ];
+          
+          const hasBehaviourAssumptions = behaviourAssumptionPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasBehaviourAssumptions) {
+            return {
+              isValid: false,
+              fallbackMessage: "The response included assumptions or behaviours not provided in the input. Please only use real behavioural observations from the participant's profile."
+            };
+          }
+
+          // Behaviour Over-Generalisation or Empty Content
+          const behaviourGeneralPatterns = [
+            "support with empathy and patience",
+            "use clear boundaries",
+            "remain calm",
+            "provide consistent responses"
+          ];
+          
+          const hasBehaviourGeneralContent = behaviourGeneralPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          // Behaviour minimum content check (40 words minimum)
+          if (content.length < 40 || hasBehaviourGeneralContent) {
+            return {
+              isValid: false,
+              fallbackMessage: "This response was too general to be used in a behaviour plan. Please include specific triggers or strategies relevant to the observed behaviour. General PBS principles should be handled in the Global AI Centre."
+            };
+          }
+
+          // Check for required structure in individual behaviour responses (if not globalTips)
+          if (targetField !== "globalTips") {
+            const hasRequiredStructure = content.includes("Trigger:") && 
+                                       content.includes("Proactive Strategy:") && 
+                                       content.includes("Reactive Strategy:") && 
+                                       content.includes("Protective Strategy:");
+            
+            if (!hasRequiredStructure) {
+              return {
+                isValid: false,
+                fallbackMessage: "This response was too general to be used in a behaviour plan. Please include specific triggers or strategies relevant to the observed behaviour. General PBS principles should be handled in the Global AI Centre."
+              };
+            }
+          }
+
+          // Global Tips specific validation
+          if (targetField === "globalTips") {
+            // Check that it's paragraph form, not bullet points
+            if (content.includes("•") || content.includes("-") || content.includes("*") || content.includes("1.") || content.includes("2.")) {
+              return {
+                isValid: false,
+                fallbackMessage: "This response was too general to be used in a behaviour plan. Please include specific triggers or strategies relevant to the observed behaviour. General PBS principles should be handled in the Global AI Centre."
+              };
+            }
+
+            // Check for participant names or generic advice
+            if (content.toLowerCase().includes("participant") || content.toLowerCase().includes("client") || content.toLowerCase().includes("for example")) {
+              return {
+                isValid: false,
+                fallbackMessage: "This response was too general to be used in a behaviour plan. Please include specific triggers or strategies relevant to the observed behaviour. General PBS principles should be handled in the Global AI Centre."
               };
             }
           }
