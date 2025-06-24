@@ -1,0 +1,73 @@
+1. Vagueness Detection Rule
+Trigger if output includes:
+
+“May use some gestures”
+
+“Can sometimes understand instructions”
+
+“Often communicates in their own way”
+
+“Supportive communication is helpful”
+
+Phrases like “may”, “usually”, “can be” used more than twice
+
+Output is under 40 words
+
+Fallback Message (to user):
+
+plaintext
+Copy
+Edit
+The content was too vague. Please provide clearer input about how the participant expresses and receives communication. Include examples such as: uses gestures, prefers short sentences, needs repeated prompts, or uses a device.
+🚫 2. Assumption Rule
+Trigger if GPT generates:
+
+Tools, apps, or devices not mentioned in input (e.g. “communication iPad”, “Proloquo2Go app”)
+
+Signing systems not confirmed (e.g. “uses Auslan” without prompt)
+
+Strategies not linked to diagnosis or user input
+
+Refusal Output:
+
+plaintext
+Copy
+Edit
+The system detected unsupported content. The communication output included tools or strategies not provided in the input. Please remove any assumptions and supply real examples used with this participant.
+🔄 3. Field Overlap Rule
+Trigger if GPT repeats expressive content in receptive field, or vice versa
+
+System Warning:
+
+plaintext
+Copy
+Edit
+This output repeated content from another communication field. Please ensure each section is focused only on its specific purpose — either how the participant expresses or how they receive and process communication.
+📉 4. Non-Actionable or Empty Content
+Trigger if:
+
+GPT returns only one or two sentences without verbs or strategies
+
+Output includes: “Not applicable”, “None known”, “To be determined”
+
+Fallback:
+
+plaintext
+Copy
+Edit
+The communication field returned no meaningful content. If this information is not yet known, please leave the section blank or revisit after gathering more support observations.
+⚙️ 5. JSON Enforcement for General Prompt
+Trigger if response from General Communication prompt:
+
+Does not include keys: "generatedContent", "receptiveStrategies", "expressiveStrategies"
+
+Exceeds 200 words
+
+Inserts placeholder text or summaries
+
+System Response:
+
+plaintext
+Copy
+Edit
+The output did not match the required format. Communication summaries must include structured JSON with receptive and expressive strategies separated. Please retry using only provided input and valid strategy descriptions.

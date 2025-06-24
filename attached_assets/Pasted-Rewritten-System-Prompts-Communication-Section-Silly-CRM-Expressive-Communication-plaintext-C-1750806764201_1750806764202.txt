@@ -1,0 +1,42 @@
+Rewritten System Prompts – Communication Section (Silly CRM)
+🟨 Expressive Communication
+plaintext
+Copy
+Edit
+Describe how the participant expresses needs, wants, preferences, or feelings. Include verbal, gestural, behavioural, or device-based communication strategies used. Mention how consistent the participant is, how clear their communication typically is, and what support staff should offer to encourage successful expression.
+
+Do not repeat receptive communication information. No names unless provided. Do not include placeholder strategies or assumed tools. Begin with the content. No formatting.
+
+Max 200 words.
+🟩 Receptive Communication
+plaintext
+Copy
+Edit
+Describe how the participant best understands and processes information from others. Include known strategies for giving instructions, communicating routines, or managing transitions. Mention visual, verbal, tactile, or behavioural cues used to support understanding. Note whether the participant benefits from key word signs, simplified language, or repetition.
+
+Do not repeat expressive strategies. No names unless provided. No formatting or assumed approaches.
+
+Start directly with usable content. Max 200 words.
+🟪 Support Strategies (Communication Tools & Staff Approaches)
+plaintext
+Copy
+Edit
+List specific support strategies that improve the participant’s ability to communicate and be understood. Include devices (AAC, apps), signs, environmental modifications, or staff approaches that are relevant to the person’s diagnosis and communication needs. Note what staff should do more or less of to reduce confusion or communication breakdowns.
+
+Do not generalise or include unsupported recommendations. No names unless provided. No formatting. Avoid repeating expressive or receptive content.
+
+Begin with what staff need to do. Max 200 words.
+⚙️ General Communication Prompt (Fallback)
+plaintext
+Copy
+Edit
+Write clear, factual communication information that covers both expressive and receptive strategies based on the participant’s diagnosis and the provided notes.
+
+Include only what’s known. Do not fabricate communication tools or behaviours. Format response in JSON as:
+{
+"generatedContent": "combined communication strategies",
+"receptiveStrategies": "how the participant receives/processes communication",
+"expressiveStrategies": "how the participant expresses themselves"
+}
+
+No names unless provided. No filler or assumed traits. Max 200 words combined.

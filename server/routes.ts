@@ -4835,13 +4835,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (targetField) {
             // Field-specific prompts for Communication section
             const commFieldPrompts: { [key: string]: string } = {
-              "expressive": `Generate expressive communication strategies for this client based on their diagnosis and abilities. Focus on how they communicate needs, wants, and feelings. Include verbal and non-verbal methods. Avoid duplicating receptive strategies. Max ${maxWords} words.`,
-              "receptive": `Generate receptive communication strategies for this client based on their diagnosis and abilities. Focus on how they best understand and process information from others. Include visual, auditory, and tactile approaches. Avoid duplicating expressive strategies. Max ${maxWords} words.`,
-              "supportStrategies": `Generate communication support strategies and tools for this client. Focus on assistive technologies, environmental modifications, and staff communication approaches. Consider their specific diagnosis needs. Max ${maxWords} words.`
+              "expressive": `Describe how the participant expresses needs, wants, preferences, or feelings. Include verbal, gestural, behavioural, or device-based communication strategies used. Mention how consistent the participant is, how clear their communication typically is, and what support staff should offer to encourage successful expression. Do not repeat receptive communication information. No names unless provided. Do not include placeholder strategies or assumed tools. Begin with the content. No formatting. Max ${maxWords} words.`,
+              "receptive": `Describe how the participant best understands and processes information from others. Include known strategies for giving instructions, communicating routines, or managing transitions. Mention visual, verbal, tactile, or behavioural cues used to support understanding. Note whether the participant benefits from key word signs, simplified language, or repetition. Do not repeat expressive strategies. No names unless provided. No formatting or assumed approaches. Start directly with usable content. Max ${maxWords} words.`,
+              "supportStrategies": `List specific support strategies that improve the participant's ability to communicate and be understood. Include devices (AAC, apps), signs, environmental modifications, or staff approaches that are relevant to the person's diagnosis and communication needs. Note what staff should do more or less of to reduce confusion or communication breakdowns. Do not generalise or include unsupported recommendations. No names unless provided. No formatting. Avoid repeating expressive or receptive content. Begin with what staff need to do. Max ${maxWords} words.`
             };
             systemPrompt = commFieldPrompts[targetField] || `Generate focused ${targetField} communication content for this client. Avoid repeating information from other communication fields. Max ${maxWords} words.`;
           } else {
-            systemPrompt = `Generate comprehensive communication strategies for both RECEPTIVE and EXPRESSIVE communication. If specific client information is limited, provide evidence-based recommendations for the given diagnosis. Return JSON format: {"generatedContent": "overall strategy", "receptiveStrategies": "receptive specific strategies", "expressiveStrategies": "expressive specific strategies"}. Max ${maxWords} words total.`;
+            systemPrompt = `Write clear, factual communication information that covers both expressive and receptive strategies based on the participant's diagnosis and the provided notes. Include only what's known. Do not fabricate communication tools or behaviours. Format response in JSON as: {"generatedContent": "combined communication strategies", "receptiveStrategies": "how the participant receives/processes communication", "expressiveStrategies": "how the participant expresses themselves"}. No names unless provided. No filler or assumed traits. Max ${maxWords} words combined.`;
           }
           userPrompt = `${contextualInfo}${existingContext}\nCommunication Assessment: ${userInput}`;
           break;
@@ -5079,6 +5079,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return {
                 isValid: false,
                 fallbackMessage: "The content overlapped with another ADL field. Please ensure each section is focused on its specific topic only. Adjust inputs if needed to avoid duplication across care documentation."
+              };
+            }
+          }
+        } else if (section === "communication") {
+          // Communication-specific validation rules
+          // Communication Vagueness Detection
+          const commVaguePatterns = [
+            "may use some gestures",
+            "can sometimes understand instructions",
+            "often communicates in their own way",
+            "supportive communication is helpful"
+          ];
+          
+          const hasCommVagueContent = commVaguePatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          // Count communication vague qualifiers (stricter for Communication)
+          const commVagueWords = ["may", "usually", "can be"];
+          const commVagueWordCount = commVagueWords.reduce((count, word) => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            const matches = content.match(regex);
+            return count + (matches ? matches.length : 0);
+          }, 0);
+
+          // Communication minimum content check (40 words minimum)
+          if (content.length < 40 || hasCommVagueContent || commVagueWordCount > 2) {
+            return {
+              isValid: false,
+              fallbackMessage: "The content was too vague. Please provide clearer input about how the participant expresses and receives communication. Include examples such as: uses gestures, prefers short sentences, needs repeated prompts, or uses a device."
+            };
+          }
+
+          // Communication Assumption Rule - Check for unsupported tools/apps/devices
+          const commAssumptionPatterns = [
+            "communication ipad",
+            "proloquo2go app",
+            "uses auslan",
+            "communication device",
+            "aac app"
+          ];
+          
+          const hasCommInventedContent = commAssumptionPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasCommInventedContent) {
+            return {
+              isValid: false,
+              fallbackMessage: "The system detected unsupported content. The communication output included tools or strategies not provided in the input. Please remove any assumptions and supply real examples used with this participant."
+            };
+          }
+
+          // Communication Field Overlap Rule
+          if (targetField === "expressive" && content.toLowerCase().includes("understand")) {
+            return {
+              isValid: false,
+              fallbackMessage: "This output repeated content from another communication field. Please ensure each section is focused only on its specific purpose — either how the participant expresses or how they receive and process communication."
+            };
+          }
+          
+          if (targetField === "receptive" && (content.toLowerCase().includes("express") || content.toLowerCase().includes("communicate needs"))) {
+            return {
+              isValid: false,
+              fallbackMessage: "This output repeated content from another communication field. Please ensure each section is focused only on its specific purpose — either how the participant expresses or how they receive and process communication."
+            };
+          }
+
+          // Communication Non-Actionable Response
+          const commNonActionablePatterns = [
+            "not applicable",
+            "none known",
+            "to be determined"
+          ];
+          
+          const hasCommNonActionableContent = commNonActionablePatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          // Check for verbs/strategies (communication-specific)
+          const hasCommVerbs = /\b(uses?|communicates?|expresses?|understands?|responds?|benefits?|requires?|prefers?|needs?|shows?|indicates?)\b/i.test(content);
+
+          // Check for very short responses (1-2 sentences)
+          const sentenceCount = content.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+
+          if (hasCommNonActionableContent || !hasCommVerbs || sentenceCount < 3) {
+            return {
+              isValid: false,
+              fallbackMessage: "The communication field returned no meaningful content. If this information is not yet known, please leave the section blank or revisit after gathering more support observations."
+            };
+          }
+
+          // JSON Enforcement for General Communication Prompt
+          if (!targetField) {
+            try {
+              const jsonContent = JSON.parse(content);
+              const requiredKeys = ["generatedContent", "receptiveStrategies", "expressiveStrategies"];
+              const hasAllKeys = requiredKeys.every(key => key in jsonContent);
+              
+              if (!hasAllKeys) {
+                return {
+                  isValid: false,
+                  fallbackMessage: "The output did not match the required format. Communication summaries must include structured JSON with receptive and expressive strategies separated. Please retry using only provided input and valid strategy descriptions."
+                };
+              }
+
+              // Check total word count across all JSON fields
+              const totalWords = Object.values(jsonContent).join(' ').split(/\s+/).length;
+              if (totalWords > 200) {
+                return {
+                  isValid: false,
+                  fallbackMessage: "The output did not match the required format. Communication summaries must include structured JSON with receptive and expressive strategies separated. Please retry using only provided input and valid strategy descriptions."
+                };
+              }
+
+              // Check for placeholder text
+              const allText = Object.values(jsonContent).join(' ').toLowerCase();
+              if (allText.includes("placeholder") || allText.includes("summary") || allText.includes("to be determined")) {
+                return {
+                  isValid: false,
+                  fallbackMessage: "The output did not match the required format. Communication summaries must include structured JSON with receptive and expressive strategies separated. Please retry using only provided input and valid strategy descriptions."
+                };
+              }
+            } catch (e) {
+              return {
+                isValid: false,
+                fallbackMessage: "The output did not match the required format. Communication summaries must include structured JSON with receptive and expressive strategies separated. Please retry using only provided input and valid strategy descriptions."
               };
             }
           }
