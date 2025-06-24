@@ -6830,16 +6830,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  return server;
-      if (req.user.role === 'Admin') {
-        const staffUser = await db
-          .select({ tenantId: users.tenantId })
-          .from(users)
-          .where(eq(users.id, parseInt(userId)))
-          .limit(1);
+  // Create new billing cycle endpoint
+  app.post('/api/billing/create-cycle', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const { calculateCompanyBilling } = await import('./billing-system');
+      
+      // Get company information
+      const company = await storage.getCompanyByTenantId(req.user.tenantId);
+      if (!company) {
+        return res.status(404).json({ message: 'Company not found' });
+      }
 
-        if (!staffUser.length || staffUser[0].tenantId !== req.user.tenantId) {
-          return res.status(403).json({ message: 'Access denied to manage this staff member' });
+      // Calculate current billing for the company
+      const billing = await calculateCompanyBilling(company.id);
+      if (!billing) {
+        return res.status(404).json({ message: 'Unable to calculate billing for company' });
+      }
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: 'create_billing_cycle',
+        resourceType: 'billing',
+        description: `Created new billing cycle for ${billing.activeStaff.length} active staff members`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ 
+        message: 'Billing cycle created successfully',
+        billing,
+        totalStaff: billing.activeStaff.length,
+        totalAmount: billing.totalMonthlyRevenue
+      });
+    } catch (error) {
+      console.error('Create billing cycle error:', error);
+      res.status(500).json({ message: 'Failed to create billing cycle' });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
         }
       }
 

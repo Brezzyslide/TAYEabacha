@@ -1005,44 +1005,53 @@ export default function Staff() {
         </Card>
       </div>
       
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <CardTitle className="text-lg sm:text-xl">Staff Directory</CardTitle>
-            <div className="flex items-center space-x-2">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search staff..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 text-sm"
-                />
+      <Tabs defaultValue="staff-directory" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="staff-directory">Staff Directory</TabsTrigger>
+          {(hasPermission("Admin") || hasPermission("ConsoleManager")) && (
+            <TabsTrigger value="billing-management">Billing Management</TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="staff-directory" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <CardTitle className="text-lg sm:text-xl">Staff Directory</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search staff..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 text-sm"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading staff...</div>
-          ) : filteredStaff && filteredStaff.length > 0 ? (
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden lg:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Address</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead className="w-32">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-              <TableBody>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-8">Loading staff...</div>
+              ) : filteredStaff && filteredStaff.length > 0 ? (
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Joined</TableHead>
+                          <TableHead className="w-32">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                 {filteredStaff.map((member) => (
                   <TableRow key={member.id}>
                     <TableCell className="font-medium">
@@ -1188,8 +1197,198 @@ export default function Staff() {
           ) : (
             <div className="text-center py-8 text-gray-500">No staff members found</div>
           )}
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="billing-management" className="space-y-4">
+            {(hasPermission("Admin") || hasPermission("ConsoleManager")) && (
+              <>
+                {/* Billing Overview Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Monthly Billing</p>
+                          <p className="text-3xl font-bold text-gray-900">
+                            ${billingOverview?.totalMonthlyBilling || 0}
+                          </p>
+                        </div>
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <DollarSign className="h-6 w-6 text-blue-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Active Staff</p>
+                          <p className="text-3xl font-bold text-gray-900">
+                            {billingOverview?.activeStaffCount || 0}
+                          </p>
+                        </div>
+                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                          <UserCheck className="h-6 w-6 text-green-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Next Billing</p>
+                          <p className="text-3xl font-bold text-gray-900">
+                            {billingOverview?.billingCycleInfo?.daysUntilBilling || 0} days
+                          </p>
+                        </div>
+                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <Calendar className="h-6 w-6 text-orange-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Staff Billing Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Staff Billing Management</CardTitle>
+                    <p className="text-sm text-gray-600">
+                      Manage staff activation and view billing details. Next billing: {billingOverview?.nextBillingDate}
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <tr>
+                            <TableHead>Staff Member</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Monthly Rate</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </tr>
+                        </TableHeader>
+                        <TableBody>
+                          {billingOverview?.staff?.map((member: any) => (
+                            <tr key={member.id} className="border-b">
+                              <TableCell>
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span className="text-sm font-medium text-blue-600">
+                                      {member.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-gray-900">{member.fullName}</p>
+                                    <p className="text-sm text-gray-500">@{member.username}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  member.role === 'Admin' ? 'destructive' :
+                                  member.role === 'TeamLeader' ? 'default' : 
+                                  'secondary'
+                                }>
+                                  {member.role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-1">
+                                  <DollarSign className="h-4 w-4 text-gray-400" />
+                                  <span className="font-medium">${member.monthlyRate}/month</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={member.isActive ? "default" : "secondary"}>
+                                  {member.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  {member.isActive ? (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="text-red-600 hover:text-red-700"
+                                        >
+                                          <UserX className="h-4 w-4 mr-1" />
+                                          Deactivate
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Deactivate Staff Member</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will deactivate {member.fullName} and remove their system access. 
+                                            Billing will continue for the current cycle but stop in the next billing period.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => toggleStaffStatusMutation.mutate({ userId: member.id, activate: false })}
+                                            className="bg-red-600 hover:bg-red-700"
+                                          >
+                                            Deactivate
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  ) : (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="text-green-600 hover:text-green-700"
+                                        >
+                                          <UserCheck className="h-4 w-4 mr-1" />
+                                          Activate
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Activate Staff Member</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will reactivate {member.fullName} and restore their system access. 
+                                            Billing will start immediately and continue for subsequent cycles.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => toggleStaffStatusMutation.mutate({ userId: member.id, activate: true })}
+                                            className="bg-green-600 hover:bg-green-700"
+                                          >
+                                            Activate
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </tr>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
 
       {/* Edit Staff Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
