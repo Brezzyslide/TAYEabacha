@@ -57,6 +57,17 @@ app.use((req, res, next) => {
     console.error("[MULTI-TENANT FIX] Consistency enforcement failed:", error);
   }
 
+  // Apply composite foreign key constraints for database-level tenant isolation
+  console.log("[COMPOSITE FK] Applying database-level tenant isolation constraints");
+  try {
+    const { applyCompositeForeignKeys } = await import('./apply-composite-foreign-keys');
+    await applyCompositeForeignKeys();
+    console.log("[COMPOSITE FK] Database-level tenant isolation enabled successfully");
+  } catch (error) {
+    console.error("[COMPOSITE FK] Failed to apply composite foreign keys:", error);
+    // Don't fail startup - continue with application-level protection
+  }
+
   // Run enhanced security validation
   console.log("[SECURITY] Running enhanced tenant security checks");
   try {
