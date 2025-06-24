@@ -4859,7 +4859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         
         case "disaster":
-          systemPrompt = `Generate disaster management procedures for the specified scenario. If scenario details are limited, provide comprehensive strategies based on diagnosis considerations. Provide preparation, evacuation, and post-event care strategies. Max 5 lines each section. Consider client's abilities and support needs from other sections.`;
+          systemPrompt = `Write a disaster response guide for the scenario provided. Use only the diagnosis and bullet-point input given. The response must be based on the participant's actual support needs, not assumptions. Return 3 clear sections: Preparation: [Describe what staff must do in advance to prepare this participant for the scenario.] Evacuation: [Describe what support this participant needs to evacuate safely, including communication, mobility, or behaviour support.] Post-Event Care: [Describe what the participant may need after the event — emotional support, communication adjustments, routine restoration.] Each section should be no more than 5 lines. Do not invent responses. Do not use names unless provided. Do not repeat content from other disaster plans. No formatting or summaries. Begin directly with the 3 section labels followed by the content.`;
           userPrompt = `${contextualInfo}${existingContext}\nDisaster scenario: ${userInput}`;
           break;
         
@@ -5288,6 +5288,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return {
                 isValid: false,
                 fallbackMessage: "This response was too general to be used in a behaviour plan. Please include specific triggers or strategies relevant to the observed behaviour. General PBS principles should be handled in the Global AI Centre."
+              };
+            }
+          }
+        } else if (section === "disaster") {
+          // Disaster-specific validation rules
+          // Disaster Assumed Response Rule
+          const disasterAssumptionPatterns = [
+            "client may feel anxious",
+            "participant may feel anxious",
+            "staff should remain calm and supportive",
+            "if the participant is non-verbal"
+          ];
+          
+          const hasDisasterAssumptions = disasterAssumptionPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasDisasterAssumptions) {
+            return {
+              isValid: false,
+              fallbackMessage: "The disaster response included assumptions not based on input. Please revise the bullet points with real support needs and diagnosis-specific considerations."
+            };
+          }
+
+          // Disaster Too Generic or Vague
+          const disasterGenericPatterns = [
+            "have an emergency bag ready",
+            "evacuate safely",
+            "follow emergency procedures",
+            "ensure safety"
+          ];
+          
+          const hasDisasterGenericContent = disasterGenericPatterns.some(pattern => 
+            content.toLowerCase().includes(pattern.toLowerCase())
+          );
+
+          if (hasDisasterGenericContent) {
+            return {
+              isValid: false,
+              fallbackMessage: "The content was too general. Disaster strategies must include specific support details relevant to the participant's communication, mobility, or behavioural needs. Please revise and resubmit."
+            };
+          }
+
+          // Disaster Section Structure Check
+          const hasRequiredSections = content.includes("Preparation:") && 
+                                    content.includes("Evacuation:") && 
+                                    content.includes("Post-Event Care:");
+          
+          // Check for incorrect headings
+          const hasIncorrectHeadings = content.includes("Before") || 
+                                     content.includes("After") || 
+                                     content.includes("During");
+
+          if (!hasRequiredSections || hasIncorrectHeadings) {
+            return {
+              isValid: false,
+              fallbackMessage: "The output did not follow the required section format. Please return strategies clearly under Preparation, Evacuation, and Post-Event Care, with no extra headings or summaries."
+            };
+          }
+
+          // Check section length (max 5 lines each)
+          const sections = content.split(/Preparation:|Evacuation:|Post-Event Care:/).filter(s => s.trim());
+          if (sections.length >= 3) {
+            const tooLongSections = sections.some(section => {
+              const lines = section.trim().split('\n').filter(line => line.trim());
+              return lines.length > 5;
+            });
+
+            if (tooLongSections) {
+              return {
+                isValid: false,
+                fallbackMessage: "The content was too general. Disaster strategies must include specific support details relevant to the participant's communication, mobility, or behavioural needs. Please revise and resubmit."
               };
             }
           }

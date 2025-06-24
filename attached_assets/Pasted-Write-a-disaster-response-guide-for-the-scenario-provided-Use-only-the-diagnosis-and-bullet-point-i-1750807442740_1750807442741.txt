@@ -1,0 +1,72 @@
+Write a disaster response guide for the scenario provided. Use only the diagnosis and bullet-point input given. The response must be based on the participant’s actual support needs, not assumptions.
+
+Return 3 clear sections:
+
+Preparation:
+[Describe what staff must do in advance to prepare this participant for the scenario.]
+
+Evacuation:
+[Describe what support this participant needs to evacuate safely, including communication, mobility, or behaviour support.]
+
+Post-Event Care:
+[Describe what the participant may need after the event — emotional support, communication adjustments, routine restoration.]
+
+Each section should be no more than 5 lines. Do not invent responses. Do not use names unless provided. Do not repeat content from other disaster plans. No formatting or summaries.
+
+Begin directly with the 3 section labels followed by the content.
+🛡️ Fallback & Guardrails – Disaster Management Section
+❌ 1. Assumed Response Rule
+Trigger if GPT says:
+
+“Client may feel anxious” without being told so
+
+“Staff should remain calm and supportive” as generic filler
+
+“If the participant is non-verbal...” (not based on provided input)
+
+System Output:
+
+plaintext
+Copy
+Edit
+The disaster response included assumptions not based on input. Please revise the bullet points with real support needs and diagnosis-specific considerations.
+⚠️ 2. Too Generic or Vague
+Trigger if GPT gives generic planning like:
+
+“Have an emergency bag ready”
+
+“Evacuate safely” with no detail
+
+No direct link to the participant’s support needs
+
+System Output:
+
+plaintext
+Copy
+Edit
+The content was too general. Disaster strategies must include specific support details relevant to the participant’s communication, mobility, or behavioural needs. Please revise and resubmit.
+🔁 3. Section Structure Broken
+Trigger if GPT fails to format the response into all three sections:
+
+Missing one of: Preparation, Evacuation, Post-Event Care
+
+Uses headings like “Before” or “After” instead of labels
+
+System Output:
+
+plaintext
+Copy
+Edit
+The output did not follow the required section format. Please return strategies clearly under Preparation, Evacuation, and Post-Event Care, with no extra headings or summaries.
+🧰 Optional: JSON Format (Internal Only)
+For future data structure:
+
+json
+Copy
+Edit
+{
+  "disasterScenario": "Fire evacuation",
+  "preparation": "Practice drills monthly. Prepare a visual sequence. Staff to pack medication and documents in go-bag.",
+  "evacuation": "Requires two-person support for safe transfers. Responds to clear, short verbal instructions. Avoid loud group movement.",
+  "postEventCare": "Needs quiet re-entry space and access to comfort item. Reinforce routine and allow visual unpacking of event."
+}
