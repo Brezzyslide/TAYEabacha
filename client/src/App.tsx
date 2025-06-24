@@ -40,6 +40,7 @@ import WorkflowDashboard from "@/app/workflow-dashboard/WorkflowDashboard";
 import BudgetDashboard from "@/app/budget-management/BudgetDashboard";
 import { CareSupportPlans } from "@/app/care-support-plans/CareSupportPlans";
 import TimesheetDashboard from "@/app/timesheet/TimesheetDashboard";
+import BillingDashboard from "@/app/billing/BillingDashboard";
 import LandingPage from "@/pages/LandingPage";
 import { ProtectedRoute } from "./lib/protected-route";
 
