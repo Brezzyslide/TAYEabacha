@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import CreateBillingButton from "@/components/billing/CreateBillingButton";
 
 interface BillingAnalytics {
   totalCompanies: number;
@@ -218,6 +219,7 @@ export default function BillingDashboard() {
               <Download className="h-4 w-4" />
               {downloadSummaryMutation.isPending ? 'Generating...' : 'Download Report'}
             </Button>
+            <CreateBillingButton />
           </div>
         </div>
 

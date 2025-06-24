@@ -7,8 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { User } from "@shared/schema";
-import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin, Upload, ImageIcon, FileText, FileSpreadsheet } from "lucide-react";
+import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin, Upload, ImageIcon, FileText, FileSpreadsheet, DollarSign, UserCheck, UserX, Calendar } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +19,9 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { useAuth } from "@/hooks/use-auth";
 import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
 
 const createStaffSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
@@ -680,7 +684,7 @@ export default function Staff() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Staff Management</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">View and manage your team members</p>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">View and manage your team members with billing controls</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
