@@ -4779,13 +4779,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (targetField) {
             // Field-specific prompts for About Me section
             const fieldPrompts: { [key: string]: string } = {
-              "personalHistory": `Staff need to understand: Client's background, living situation, significant life events. Include specific details about diagnosis impact on daily life. State practical facts staff should know. Max ${maxWords} words.`,
-              "interests": `Staff need to know: What activities client enjoys, preferred entertainment, hobbies they can participate in. Include specific examples: "Client enjoys music therapy sessions", "Responds well to art activities". Max ${maxWords} words.`,
-              "preferences": `Staff must understand: Daily preferences, routines client prefers, dislikes to avoid. Example: "Client prefers morning showers", "Dislikes loud environments", "Needs 30 minutes between activities". Max ${maxWords} words.`,
-              "strengths": `Staff should recognize: Client's abilities, skills they can use, positive behaviors to encourage. Example: "Client has excellent memory for faces", "Communicates well through gestures". Max ${maxWords} words.`,
-              "challenges": `Staff must be aware: Specific difficulties client faces, behaviors that may occur, triggers to avoid. Example: "Client becomes anxious in crowded spaces", "Requires prompting for hygiene tasks". Max ${maxWords} words.`,
-              "familyBackground": `Staff need to know: Family involvement, cultural background affecting care, important family dynamics. Include contact preferences and family support role. Max ${maxWords} words.`,
-              "culturalConsiderations": `Staff must understand: Religious practices, cultural needs, dietary requirements, communication customs. Example: "Client observes halal diet", "Family involvement expected in decisions". Max ${maxWords} words.`
+              "personalHistory": `This field helps staff understand the participant's background and how that affects daily support. Include upbringing, current living situation, and any major life events that shape behaviour or communication. Mention how the participant's diagnosis impacts daily life, trust, routines, or social habits. Write clearly and practically, as if handing over to another support worker. Do not include a name unless one is provided. Do not repeat info from other fields. Do not use stars, formatting, or summaries. Start directly with the content. Max ${maxWords} words.`,
+              "interests": `Help staff understand what the participant enjoys or connects with. Include specific activities, sensory preferences, or entertainment styles that are meaningful to the person. Only mention what's directly useful to staff during daily engagement. Be clear, respectful, and grounded. Do not include names unless provided. Avoid repetition from other fields. No decoration or formatting. Begin with the actual note. Max ${maxWords} words.`,
+              "preferences": `This section guides staff on routines, comforts, and what to avoid. Mention practical preferences around daily living: hygiene routines, room setup, noise sensitivity, activity timing, or social preferences. Be specific and useful for day-to-day care. Do not use placeholder names. Write plainly. No intros, stars, or symbols. Don't repeat content from other fields. Go straight into the content. Max ${maxWords} words.`,
+              "strengths": `Write about the participant's abilities, skills, or positive traits that can be encouraged. Describe what the person manages well, how they communicate effectively, or where they show independence. This helps staff build trust and support with dignity. Avoid names unless explicitly provided. No made-up strengths. No formatting. No duplicated info. Start with the core content. Max ${maxWords} words.`,
+              "challenges": `Staff need to know what difficulties may arise during support. List any behaviours, sensitivities, or risks the participant faces. Describe how challenges usually appear, and what helps. Keep the tone respectful and actionable. Do not invent triggers or exaggerate. No names unless given. Don't repeat from other fields. Write clearly and without formatting. Begin directly. Max ${maxWords} words.`,
+              "familyBackground": `Provide staff with insight into family involvement and dynamics. Mention how often family interact, who's legally involved, and if any cultural or relational factors affect care. Include contact preferences only if relevant. No names unless supplied. Avoid generalisations. Keep it fact-based, short, and useful. Start with the information. No formatting. Max ${maxWords} words.`,
+              "culturalConsiderations": `Help staff deliver culturally respectful support. Include any relevant religious, dietary, communication, or cultural needs that affect how support should be provided. Only include what has been shared. No name unless specified. No imagined practices. No examples. Be direct and precise. Begin with the content. No formatting or summary. Max ${maxWords} words.`
             };
             systemPrompt = fieldPrompts[targetField] || `Generate focused ${targetField} content for this client's care plan. Avoid repeating information from other populated fields. Max ${maxWords} words, professional tone.`;
           } else {
@@ -4978,6 +4978,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const generatedContent = response.choices[0].message.content;
+      
+      // Implement fallback guard rails validation
+      const validateContentQuality = (content: string, section: string, targetField: string | null) => {
+        if (!content || content.trim().length === 0) {
+          return {
+            isValid: false,
+            fallbackMessage: "No meaningful content was generated. If this field is not yet known for the participant, please leave it blank or return later when more information is gathered from care or intake notes."
+          };
+        }
+
+        // Empty Content Detection
+        if (content.length < 30 || content.toLowerCase().includes("no information available") || content.toLowerCase().includes("not applicable")) {
+          return {
+            isValid: false,
+            fallbackMessage: "No meaningful content was generated. If this field is not yet known for the participant, please leave it blank or return later when more information is gathered from care or intake notes."
+          };
+        }
+
+        // Vagueness Catch Rule
+        const vaguePatterns = [
+          "enjoys spending time with others",
+          "has some difficulties with communication",
+          "may become overwhelmed in certain situations",
+          "requires staff support"
+        ];
+        
+        const hasVagueContent = vaguePatterns.some(pattern => 
+          content.toLowerCase().includes(pattern.toLowerCase())
+        );
+
+        // Count vague qualifiers
+        const vagueWords = ["may", "can", "often", "sometimes", "likes", "dislikes"];
+        const vagueWordCount = vagueWords.reduce((count, word) => {
+          const regex = new RegExp(`\\b${word}\\b`, 'gi');
+          const matches = content.match(regex);
+          return count + (matches ? matches.length : 0);
+        }, 0);
+
+        if (hasVagueContent || vagueWordCount > 3) {
+          return {
+            isValid: false,
+            fallbackMessage: "The generated content was too vague or generic. Please provide more specific input or concrete examples based on your experience with the participant. For example, include triggers, observed behaviours, preferred routines, or phrases the participant responds to."
+          };
+        }
+
+        // No Assumptions Rule - Check for made-up names and fictional content
+        const hasAssumedNames = /\b[A-Z][a-z]+\s+(enjoys|likes|prefers|has|requires|needs)\b/.test(content) && 
+                               !content.toLowerCase().includes("client") && 
+                               !content.toLowerCase().includes("participant");
+        
+        const assumptionPatterns = [
+          "is highly independent",
+          "enjoys music therapy",
+          "responds well to",
+          "family visits regularly"
+        ];
+        
+        const hasAssumptions = assumptionPatterns.some(pattern => 
+          content.toLowerCase().includes(pattern.toLowerCase())
+        );
+
+        if (hasAssumedNames || hasAssumptions) {
+          return {
+            isValid: false,
+            fallbackMessage: "Unable to generate content. The input did not include enough real information, and system rules prevent adding assumptions or placeholder details. Please enter actual support-relevant notes or leave this section blank until more information is available."
+          };
+        }
+
+        return { isValid: true, fallbackMessage: null };
+      };
+
+      // Validate the generated content
+      const validation = validateContentQuality(generatedContent || "", section, targetField);
+      
+      // If validation fails, return the fallback message
+      if (!validation.isValid) {
+        return res.json({
+          section,
+          generatedContent: validation.fallbackMessage,
+          userInput,
+          clientName,
+          clientDiagnosis,
+          validationFailed: true
+        });
+      }
       
       // Handle special parsing for communication section
       if (section === "communication") {

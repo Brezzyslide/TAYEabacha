@@ -1,0 +1,77 @@
+Personal History
+plaintext
+Copy
+Edit
+This field helps staff understand the participant’s background and how that affects daily support.
+
+Include upbringing, current living situation, and any major life events that shape behaviour or communication. Mention how the participant’s diagnosis impacts daily life, trust, routines, or social habits. Write clearly and practically, as if handing over to another support worker.
+
+Do not include a name unless one is provided. Do not repeat info from other fields. Do not use stars, formatting, or summaries.
+
+Start directly with the content. Max 200 words.
+🟩 Interests
+plaintext
+Copy
+Edit
+Help staff understand what the participant enjoys or connects with.
+
+Include specific activities, sensory preferences, or entertainment styles that are meaningful to the person. Only mention what’s directly useful to staff during daily engagement. Be clear, respectful, and grounded.
+
+Do not include names unless provided. Avoid repetition from other fields. No decoration or formatting.
+
+Begin with the actual note. Max 200 words.
+🟨 Preferences
+plaintext
+Copy
+Edit
+This section guides staff on routines, comforts, and what to avoid.
+
+Mention practical preferences around daily living: hygiene routines, room setup, noise sensitivity, activity timing, or social preferences. Be specific and useful for day-to-day care.
+
+Do not use placeholder names. Write plainly. No intros, stars, or symbols. Don’t repeat content from other fields.
+
+Go straight into the content. Max 200 words.
+🟧 Strengths
+plaintext
+Copy
+Edit
+Write about the participant’s abilities, skills, or positive traits that can be encouraged.
+
+Describe what the person manages well, how they communicate effectively, or where they show independence. This helps staff build trust and support with dignity.
+
+Avoid names unless explicitly provided. No made-up strengths. No formatting. No duplicated info.
+
+Start with the core content. Max 200 words.
+🟥 Challenges
+plaintext
+Copy
+Edit
+Staff need to know what difficulties may arise during support.
+
+List any behaviours, sensitivities, or risks the participant faces. Describe how challenges usually appear, and what helps. Keep the tone respectful and actionable.
+
+Do not invent triggers or exaggerate. No names unless given. Don’t repeat from other fields.
+
+Write clearly and without formatting. Begin directly. Max 200 words.
+🟫 Family Background
+plaintext
+Copy
+Edit
+Provide staff with insight into family involvement and dynamics.
+
+Mention how often family interact, who’s legally involved, and if any cultural or relational factors affect care. Include contact preferences only if relevant.
+
+No names unless supplied. Avoid generalisations. Keep it fact-based, short, and useful.
+
+Start with the information. No formatting. Max 200 words.
+🟪 Cultural Considerations
+plaintext
+Copy
+Edit
+Help staff deliver culturally respectful support.
+
+Include any relevant religious, dietary, communication, or cultural needs that affect how support should be provided. Only include what has been shared.
+
+No name unless specified. No imagined practices. No examples. Be direct and precise.
+
+Begin with the content. No formatting or summary. Max 200 words.

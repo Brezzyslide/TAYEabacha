@@ -1,0 +1,67 @@
+Vagueness Catch Rule
+Trigger if GPT returns any of the following:
+
+“Enjoys spending time with others”
+
+“Has some difficulties with communication”
+
+“May become overwhelmed in certain situations”
+
+“Requires staff support”
+
+Any output with more than 3 uses of: “may”, “can”, “often”, “sometimes”, “likes”, “dislikes” without specifics
+
+Fallback response:
+
+plaintext
+Copy
+Edit
+The generated content was too vague or generic. Please provide more specific input or concrete examples based on your experience with the participant. For example, include triggers, observed behaviours, preferred routines, or phrases the participant responds to.
+🚫 2. No Assumptions Rule
+Trigger if GPT includes:
+
+Made-up names (e.g., “Sarah enjoys music” when no name was provided)
+
+Assumed strengths/challenges without evidence (e.g., “Is highly independent” when not stated)
+
+Fictional family dynamics
+
+Refusal output:
+
+plaintext
+Copy
+Edit
+Unable to generate content. The input did not include enough real information, and system rules prevent adding assumptions or placeholder details. Please enter actual support-relevant notes or leave this section blank until more information is available.
+❌ 3. Field Contamination Rule
+Trigger if GPT includes:
+
+Information clearly from another section (e.g., listing hobbies in the “Challenges” field)
+
+Repeats content from a populated field
+
+Output:
+
+plaintext
+Copy
+Edit
+The response overlaps with content already provided in another section. Please check that each field focuses only on its target topic (e.g., Challenges, Preferences, Interests) and revise input if needed.
+🧠 4. Empty Content Detection
+Trigger if:
+
+Output is under 30 words
+
+Output includes phrases like “No information available” or “Not applicable”
+
+Fallback:
+
+plaintext
+Copy
+Edit
+No meaningful content was generated. If this field is not yet known for the participant, please leave it blank or return later when more information is gathered from care or intake notes.
+🧰 Add-On: Optional GPT Retry Instruction (Internal)
+You can automatically instruct GPT to retry using this internal loop if vagueness is detected:
+
+plaintext
+Copy
+Edit
+The output lacked specificity. Rewrite the content using only concrete details from the use
