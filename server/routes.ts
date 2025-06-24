@@ -6073,6 +6073,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== BILLING MANAGEMENT ENDPOINTS =====
+
+  // Get billing analytics (ConsoleManager only)
+  app.get('/api/billing/analytics', requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const { calculateAllCompanyBilling } = await import('./billing-system');
+      const analytics = await calculateAllCompanyBilling();
+      res.json(analytics);
+    } catch (error) {
+      console.error('[BILLING ANALYTICS] Error:', error);
+      res.status(500).json({ message: 'Failed to fetch billing analytics' });
+    }
+  });
+
+  // Get billing rates configuration
+  app.get('/api/billing/rates', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const { BILLING_RATES } = await import('./billing-system');
+      res.json(BILLING_RATES);
+    } catch (error) {
+      console.error('[BILLING RATES] Error:', error);
+      res.status(500).json({ message: 'Failed to fetch billing rates' });
+    }
+  });
+
+  // Enhanced staff management with billing integration
+  app.post('/api/staff/:userId/activate', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+
+      // Verify admin can only manage their tenant's staff
+      if (req.user.role === 'Admin') {
+        const staffUser = await db
+          .select({ tenantId: users.tenantId })
+          .from(users)
+          .where(eq(users.id, parseInt(userId)))
+          .limit(1);
+
+        if (!staffUser.length || staffUser[0].tenantId !== req.user.tenantId) {
+          return res.status(403).json({ message: 'Access denied to manage this staff member' });
+        }
+      }
+
+      // Update user status and billing
+      const { updateStaffBillingStatus } = await import('./billing-system');
+      await updateStaffBillingStatus(parseInt(userId), true);
+
+      res.json({ 
+        message: 'Staff member activated successfully',
+        userId: parseInt(userId),
+        billingActive: true
+      });
+    } catch (error) {
+      console.error('[ACTIVATE STAFF] Error:', error);
+      res.status(500).json({ message: 'Failed to activate staff member' });
+    }
+  });
+
+  app.post('/api/staff/:userId/deactivate', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+
+      // Verify admin can only manage their tenant's staff
+      if (req.user.role === 'Admin') {
+        const staffUser = await db
+          .select({ tenantId: users.tenantId })
+          .from(users)
+          .where(eq(users.id, parseInt(userId)))
+          .limit(1);
+
+        if (!staffUser.length || staffUser[0].tenantId !== req.user.tenantId) {
+          return res.status(403).json({ message: 'Access denied to manage this staff member' });
+        }
+      }
+
+      // Update user status and billing
+      const { updateStaffBillingStatus } = await import('./billing-system');
+      await updateStaffBillingStatus(parseInt(userId), false);
+
+      res.json({ 
+        message: 'Staff member deactivated successfully',
+        userId: parseInt(userId),
+        billingActive: false
+      });
+    } catch (error) {
+      console.error('[DEACTIVATE STAFF] Error:', error);
+      res.status(500).json({ message: 'Failed to deactivate staff member' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

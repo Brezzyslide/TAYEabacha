@@ -20,7 +20,8 @@ import {
   Plus,
   Play,
   DollarSign,
-  Receipt
+  Receipt,
+  CreditCard
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ const staffManagementNavigation = [
 const companyManagementNavigation = [
   { name: "Company List", href: "/admin/companies", icon: Building },
   { name: "Create Company", href: "/admin/create-company", icon: Plus },
+  { name: "Billing Management", href: "/billing-management", icon: CreditCard },
 ];
 
 export default function Sidebar() {

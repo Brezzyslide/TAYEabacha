@@ -71,6 +71,7 @@ function Router() {
       <ProtectedRoute path="/budget-management" component={BudgetDashboard} />
       <ProtectedRoute path="/care-support-plans" component={CareSupportPlans} />
       <ProtectedRoute path="/timesheet" component={TimesheetDashboard} />
+      <ProtectedRoute path="/billing-management" component={BillingDashboard} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
