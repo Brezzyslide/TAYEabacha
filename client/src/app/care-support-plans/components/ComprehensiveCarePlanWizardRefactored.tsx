@@ -9,6 +9,16 @@ import { ChevronLeft, ChevronRight, Save, FileDown, CheckCircle } from "lucide-r
 
 // Import context and components
 import { CarePlanProvider, useCarePlan } from "../contexts/CarePlanContext";
+
+const scrollbarStyles = `
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
 import { SaveStatusIndicator } from "./SaveStatusIndicator";
 import { ClientLockSectionRefactored } from "./sections/ClientLockSectionRefactored";
 import { AboutMeSectionRefactored } from "./sections/AboutMeSectionRefactored";
