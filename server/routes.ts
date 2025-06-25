@@ -6781,19 +6781,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all staff for the tenant
       const staff = await storage.getUsersByTenant(req.user.tenantId);
       
-      // Get billing rates and company information
-      const { BILLING_RATES, calculateCompanyBilling } = await import('./billing-system');
+      // Get billing configuration and company information
+      const { getBillingConfiguration, calculateCompanyBilling } = await import('./billing-system');
+      const billingConfig = await getBillingConfiguration();
       const company = await storage.getCompanyByTenantId(req.user.tenantId);
       const companyBilling = company ? await calculateCompanyBilling(company.id) : null;
 
-      // Calculate individual staff billing with next billing date
-      const now = new Date();
-      const currentCycleStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() < 15 ? 1 : 15);
-      const nextBillingDate = new Date(currentCycleStart);
-      nextBillingDate.setDate(nextBillingDate.getDate() + 28);
-
+      // Calculate individual staff billing with real rates from database
       const staffBilling = staff.map(user => {
-        const monthlyRate = BILLING_RATES[user.role as keyof typeof BILLING_RATES] || 0;
+        const monthlyRate = billingConfig.rates[user.role] || 0;
         return {
           id: user.id,
           fullName: user.fullName,
@@ -6803,7 +6799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isActive: user.isActive,
           billingStatus: user.billingStatus || 'active',
           monthlyRate,
-          nextBillingDate: nextBillingDate.toISOString().split('T')[0],
+          nextBillingDate: billingConfig.nextBillingDate.toISOString().split('T')[0],
           lastBillingSync: user.lastBillingSync,
           createdAt: user.createdAt
         };
@@ -6812,16 +6808,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeStaff = staffBilling.filter(s => s.isActive);
       const totalMonthlyBilling = activeStaff.reduce((sum, s) => sum + s.monthlyRate, 0);
 
+      const now = new Date();
+      const daysUntilBilling = Math.ceil((billingConfig.nextBillingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
       res.json({
         staff: staffBilling,
         companyBilling,
         totalMonthlyBilling,
         activeStaffCount: activeStaff.length,
-        nextBillingDate: nextBillingDate.toISOString().split('T')[0],
+        nextBillingDate: billingConfig.nextBillingDate.toISOString().split('T')[0],
+        billingConfiguration: billingConfig,
         billingCycleInfo: {
-          currentCycleStart: currentCycleStart.toISOString().split('T')[0],
-          nextBillingDate: nextBillingDate.toISOString().split('T')[0],
-          daysUntilBilling: Math.ceil((nextBillingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          cycleDays: billingConfig.cycleDays,
+          nextBillingDate: billingConfig.nextBillingDate.toISOString().split('T')[0],
+          daysUntilBilling,
+          isActive: billingConfig.isActive
         }
       });
     } catch (error) {
