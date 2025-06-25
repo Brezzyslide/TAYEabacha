@@ -539,6 +539,13 @@ export default function Staff() {
     return user.role === requiredRole;
   };
 
+  // Permission helper function
+  const hasPermission = (requiredRole: string) => {
+    if (!user) return false;
+    if (user.role === "ConsoleManager") return true;
+    return user.role === requiredRole;
+  };
+
   const form = useForm<CreateStaffFormData>({
     resolver: zodResolver(createStaffSchema),
     defaultValues: {
@@ -1222,7 +1229,7 @@ export default function Staff() {
                         <div>
                           <p className="text-sm font-medium text-gray-600">Monthly Billing</p>
                           <p className="text-3xl font-bold text-gray-900">
-                            ${billingOverview?.totalMonthlyBilling || 0}
+                            $0
                           </p>
                         </div>
                         <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -1238,7 +1245,7 @@ export default function Staff() {
                         <div>
                           <p className="text-sm font-medium text-gray-600">Active Staff</p>
                           <p className="text-3xl font-bold text-gray-900">
-                            {billingOverview?.activeStaffCount || 0}
+                            {staff?.filter(s => s.isActive).length || 0}
                           </p>
                         </div>
                         <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -1254,7 +1261,7 @@ export default function Staff() {
                         <div>
                           <p className="text-sm font-medium text-gray-600">Next Billing</p>
                           <p className="text-3xl font-bold text-gray-900">
-                            {billingOverview?.billingCycleInfo?.daysUntilBilling || 0} days
+                            28 days
                           </p>
                         </div>
                         <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -1270,7 +1277,7 @@ export default function Staff() {
                   <CardHeader>
                     <CardTitle>Staff Billing Management</CardTitle>
                     <p className="text-sm text-gray-600">
-                      Manage staff activation and view billing details. Next billing: {billingOverview?.nextBillingDate}
+                      Manage staff activation and view billing details.
                     </p>
                   </CardHeader>
                   <CardContent>
@@ -1286,7 +1293,7 @@ export default function Staff() {
                           </tr>
                         </TableHeader>
                         <TableBody>
-                          {billingOverview?.staff?.map((member: any) => (
+                          {staff?.map((member) => (
                             <tr key={member.id} className="border-b">
                               <TableCell>
                                 <div className="flex items-center space-x-3">
