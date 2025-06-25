@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -34,15 +35,17 @@ export default function BillingConfigurationDialog() {
   const { data: config, isLoading } = useQuery<BillingConfiguration>({
     queryKey: ["/api/billing/configuration"],
     enabled: isOpen,
-    onSuccess: (data) => {
-      if (data) {
-        setRates(data.rates || {});
-        setCycleDays(data.cycleDays || 28);
-        setNextBillingDate(data.nextBillingDate || "");
-        setIsActive(data.isActive ?? true);
-      }
-    }
   });
+
+  // Update local state when config loads
+  React.useEffect(() => {
+    if (config && isOpen) {
+      setRates(config.rates || {});
+      setCycleDays(config.cycleDays || 28);
+      setNextBillingDate(config.nextBillingDate || "");
+      setIsActive(config.isActive ?? true);
+    }
+  }, [config, isOpen]);
 
   // Update billing configuration
   const updateConfigMutation = useMutation({
