@@ -246,17 +246,17 @@ export class PDFExportUtility {
           this.currentY += 5;
         }
         
-        // Add colored strategy boxes
+        // Add colored strategy boxes with enhanced visual separation
         if (behavior.proactiveStrategies) {
-          this.addColoredStrategyBox('Proactive Strategies', behavior.proactiveStrategies, 'proactive');
+          this.addColoredStrategyBox('🟢 PROACTIVE STRATEGIES - Prevention & Early Intervention', behavior.proactiveStrategies, 'proactive');
         }
         
         if (behavior.reactiveStrategies) {
-          this.addColoredStrategyBox('Reactive Strategies', behavior.reactiveStrategies, 'reactive');
+          this.addColoredStrategyBox('🔴 REACTIVE STRATEGIES - Immediate Response During Behavior', behavior.reactiveStrategies, 'reactive');
         }
         
         if (behavior.protectiveStrategies) {
-          this.addColoredStrategyBox('Protective Strategies', behavior.protectiveStrategies, 'protective');
+          this.addColoredStrategyBox('🔵 PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategies, 'protective');
         }
         
         this.currentY += 10; // Extra spacing between behaviors
