@@ -527,9 +527,17 @@ export default function Staff() {
   const [newPassword, setNewPassword] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { data: staff, isLoading } = useQuery<User[]>({
     queryKey: ["/api/staff"],
   });
+
+  // Permission helper function
+  const hasPermission = (requiredRole: string) => {
+    if (!user) return false;
+    if (user.role === "ConsoleManager") return true;
+    return user.role === requiredRole;
+  };
 
   const form = useForm<CreateStaffFormData>({
     resolver: zodResolver(createStaffSchema),
