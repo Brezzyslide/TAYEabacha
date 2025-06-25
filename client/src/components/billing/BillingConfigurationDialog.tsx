@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Settings, DollarSign, Calendar, Save, Plus, Trash2 } from "lucide-react";
+import { Settings, DollarSign, Calendar, Save, Plus, Trash2, Building } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
@@ -27,6 +28,7 @@ export default function BillingConfigurationDialog() {
   const [isActive, setIsActive] = useState(true);
   const [newRoleType, setNewRoleType] = useState("");
   const [newRoleRate, setNewRoleRate] = useState("");
+  const [selectedStaffType, setSelectedStaffType] = useState("");
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -39,6 +41,18 @@ export default function BillingConfigurationDialog() {
 
   // Get all staff types across tenants
   const { data: staffTypes = [] } = useQuery<string[]>({
+    queryKey: ["/api/billing/staff-types"],
+    enabled: isOpen,
+  });
+
+  // Get staff statistics by tenant
+  const { data: staffStats = [] } = useQuery<any[]>({
+    queryKey: ["/api/billing/staff-statistics"],
+    enabled: isOpen,
+  });
+
+  // Get all staff types across tenants
+  const { data: allStaffTypes = [] } = useQuery<string[]>({
     queryKey: ["/api/billing/staff-types"],
     enabled: isOpen,
   });

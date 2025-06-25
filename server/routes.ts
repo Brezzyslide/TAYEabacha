@@ -6702,11 +6702,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get billing rates configuration
   app.get('/api/billing/rates', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
     try {
-      const { BILLING_RATES } = await import('./billing-system');
-      res.json(BILLING_RATES);
+      const { getBillingConfiguration } = await import('./billing-system');
+      const config = await getBillingConfiguration();
+      res.json(config.rates);
     } catch (error) {
       console.error('[BILLING RATES] Error:', error);
       res.status(500).json({ message: 'Failed to fetch billing rates' });
+    }
+  });
+
+  // Get all staff types across all tenants
+  app.get('/api/billing/staff-types', requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      // Get all unique roles from users table across all tenants
+      const staffTypes = await db
+        .selectDistinct({ role: users.role })
+        .from(users)
+        .where(eq(users.isActive, true));
+
+      // Also get any custom rates from billing configurations
+      const { getBillingConfiguration } = await import('./billing-system');
+      const config = await getBillingConfiguration();
+      const configuredRoles = Object.keys(config.rates || {});
+
+      // Combine and deduplicate
+      const allStaffTypes = new Set([
+        ...staffTypes.map(s => s.role).filter(Boolean),
+        ...configuredRoles
+      ]);
+
+      res.json(Array.from(allStaffTypes).sort());
+    } catch (error) {
+      console.error('Get staff types error:', error);
+      res.status(500).json({ message: 'Failed to get staff types' });
+    }
+  });
+
+  // Get staff statistics by tenant and type
+  app.get('/api/billing/staff-statistics', requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const stats = await db
+        .select({
+          tenantId: users.tenantId,
+          companyName: companies.name,
+          role: users.role,
+          activeCount: count(sql`CASE WHEN ${users.isActive} = true THEN 1 END`),
+          inactiveCount: count(sql`CASE WHEN ${users.isActive} = false THEN 1 END`),
+          totalCount: count(users.id)
+        })
+        .from(users)
+        .leftJoin(companies, eq(users.companyId, companies.id))
+        .groupBy(users.tenantId, companies.name, users.role)
+        .orderBy(users.tenantId, users.role);
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Get staff statistics error:', error);
+      res.status(500).json({ message: 'Failed to get staff statistics' });
     }
   });
 

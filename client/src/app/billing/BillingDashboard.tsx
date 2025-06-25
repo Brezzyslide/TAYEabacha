@@ -26,6 +26,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import CreateBillingButton from "@/components/billing/CreateBillingButton";
 import BillingConfigurationDialog from "@/components/billing/BillingConfigurationDialog";
+import TenantStaffOverview from "@/components/billing/TenantStaffOverview";
 
 interface BillingAnalytics {
   totalCompanies: number;

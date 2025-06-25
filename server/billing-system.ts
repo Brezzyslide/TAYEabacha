@@ -72,7 +72,7 @@ export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {
       const now = new Date();
       const currentCycleStart = getCurrentCycleStart(now);
       const nextBillingDate = new Date(currentCycleStart);
-      nextBillingDate.setDate(nextBillingDate.getDate() + BILLING_CYCLE_DAYS);
+      nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
 
       companyMap.set(row.companyId, {
         companyId: row.companyId,
@@ -87,7 +87,7 @@ export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {
     }
 
     const company = companyMap.get(row.companyId)!;
-    const monthlyRate = BILLING_RATES[row.role as keyof typeof BILLING_RATES] || 0;
+    const monthlyRate = billingConfig.rates[row.role || 'Unknown'] || 0;
     const totalMonthly = monthlyRate * row.userCount;
 
     company.activeStaff.push({
