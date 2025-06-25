@@ -40,18 +40,6 @@ export default function BillingConfigurationDialog() {
   });
 
   // Get all staff types across tenants
-  const { data: staffTypes = [] } = useQuery<string[]>({
-    queryKey: ["/api/billing/staff-types"],
-    enabled: isOpen,
-  });
-
-  // Get staff statistics by tenant
-  const { data: staffStats = [] } = useQuery<any[]>({
-    queryKey: ["/api/billing/staff-statistics"],
-    enabled: isOpen,
-  });
-
-  // Get all staff types across tenants
   const { data: allStaffTypes = [] } = useQuery<string[]>({
     queryKey: ["/api/billing/staff-types"],
     enabled: isOpen,
@@ -96,6 +84,41 @@ export default function BillingConfigurationDialog() {
       });
     },
   });
+
+  // Add existing staff type from dropdown
+  const addExistingStaffType = () => {
+    if (selectedStaffType && !rates[selectedStaffType]) {
+      setRates(prev => ({
+        ...prev,
+        [selectedStaffType]: 0
+      }));
+      setSelectedStaffType("");
+    }
+  };
+
+  // Add new role type
+  const addNewRole = () => {
+    if (newRoleType.trim() && newRoleRate.trim()) {
+      const rate = parseFloat(newRoleRate);
+      if (!isNaN(rate) && rate >= 0) {
+        setRates(prev => ({
+          ...prev,
+          [newRoleType.trim()]: rate
+        }));
+        setNewRoleType("");
+        setNewRoleRate("");
+      }
+    }
+  };
+
+  // Remove role
+  const removeRole = (role: string) => {
+    setRates(prev => {
+      const newRates = { ...prev };
+      delete newRates[role];
+      return newRates;
+    });
+  };
 
   const handleSave = () => {
     updateConfigMutation.mutate({
