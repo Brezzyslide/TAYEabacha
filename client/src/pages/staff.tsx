@@ -539,13 +539,6 @@ export default function Staff() {
     return user.role === requiredRole;
   };
 
-  // Permission helper function
-  const hasPermission = (requiredRole: string) => {
-    if (!user) return false;
-    if (user.role === "ConsoleManager") return true;
-    return user.role === requiredRole;
-  };
-
   const form = useForm<CreateStaffFormData>({
     resolver: zodResolver(createStaffSchema),
     defaultValues: {
@@ -1003,7 +996,7 @@ export default function Staff() {
           </CardContent>
         </Card>
 
-        {hasPermission("ConsoleManager") && (
+        {user?.role === "ConsoleManager" && (
           <Card>
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
@@ -1219,7 +1212,7 @@ export default function Staff() {
           </TabsContent>
 
           <TabsContent value="billing-management" className="space-y-4">
-            {(hasPermission("Admin") || hasPermission("ConsoleManager")) && (
+            {(user?.role === "Admin" || user?.role === "ConsoleManager") && (
               <>
                 {/* Billing Overview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
