@@ -69,19 +69,20 @@ export function BehaviourSectionRefactored() {
         section: "behaviour",
         userInput: `Behaviour: ${description}\nTriggers: ${triggers}`,
         targetField: "behaviour_strategies",
+        planId: planId,
         existingContent: {
           description,
           triggers
         },
-        promptOverride: `Generate staff instructions for managing this specific behaviour in three states. Provide clean, flowing text without asterisks, bullet points, or section headers.
+        promptOverride: `Based on the client's specific diagnosis and the behaviour described (${description}) with triggers (${triggers}), generate three detailed staff instruction paragraphs. Use the diagnosis to inform evidence-based strategies specific to their condition.
 
-For PROACTIVE STRATEGIES write a paragraph about preventing the behaviour including early warning signs to watch for, environmental modifications, preventative interventions, and routine adjustments.
+PROACTIVE STRATEGIES: Write a detailed paragraph about preventing this behaviour based on their diagnosis. Include specific early warning signs related to their condition, evidence-based environmental modifications, targeted preventative interventions that work for their diagnosis, and routine adjustments that support their specific needs.
 
-For REACTIVE STRATEGIES write a paragraph about immediate response during the behaviour including immediate response protocols, safety considerations, communication approaches, and de-escalation steps.
+REACTIVE STRATEGIES: Write a detailed paragraph about immediate response during the behaviour, considering their diagnosis. Include specific response protocols that work for their condition, safety considerations relevant to their diagnosis, evidence-based communication approaches for their specific needs, and de-escalation steps that are effective for their condition.
 
-For PROTECTIVE STRATEGIES write a paragraph about post-behaviour procedures including safety assessment procedures, recovery support methods, documentation requirements, and follow-up actions.
+PROTECTIVE STRATEGIES: Write a detailed paragraph about post-behaviour procedures based on their diagnosis. Include specific safety assessment procedures relevant to their condition, recovery support methods that work for their diagnosis, documentation requirements, and follow-up actions that address their specific needs.
 
-Format as three clear paragraphs of flowing text. Keep each paragraph under 200 words. Do not use asterisks, bullet points, or bold headers.`
+Format as three clear paragraphs of flowing text. Each paragraph should be 150-250 words and directly reference their diagnosis and condition-specific strategies.`
       });
 
       return await response.json();
