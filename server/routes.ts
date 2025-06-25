@@ -4959,7 +4959,7 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
             const plan = planResult[0];
             const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
             if (clientResult.length > 0) {
-              clientDiagnosis = clientResult[0].medicalConditions || 'Not specified';
+              clientDiagnosis = clientResult[0].primaryDiagnosis || 'Not specified';
             }
           }
         } catch (dbError) {
