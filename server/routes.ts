@@ -6702,8 +6702,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get billing rates configuration
   app.get('/api/billing/rates', requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
     try {
-      const { getBillingConfiguration } = await import('./billing-system');
-      const config = await getBillingConfiguration();
+      const billingSystem = await import('./billing-system');
+      const config = await billingSystem.getBillingConfiguration();
       res.json(config.rates);
     } catch (error) {
       console.error('[BILLING RATES] Error:', error);
@@ -6721,8 +6721,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(users.isActive, true));
 
       // Also get any custom rates from billing configurations
-      const { getBillingConfiguration } = await import('./billing-system');
-      const config = await getBillingConfiguration();
+      const billingSystem = await import('./billing-system');
+      const config = await billingSystem.getBillingConfiguration();
       const configuredRoles = Object.keys(config.rates || {});
 
       // Combine and deduplicate
