@@ -115,7 +115,7 @@ export function MealtimeSectionRefactored() {
       });
 
       const responseData = await response.json();
-      const generatedText = responseData.generatedContent || "";
+      const generatedText = responseData.content || "";
 
       // Update the generated content in mealtimeData for preview
       handleInputChange('generatedContent', generatedText);

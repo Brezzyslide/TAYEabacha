@@ -171,7 +171,7 @@ export function DisasterSectionRefactored() {
       return await response.json();
     },
     onSuccess: (responseData, { targetField }) => {
-      const generatedText = responseData.generatedContent || "";
+      const generatedText = responseData.content || "";
       
       if (targetField === 'preview') {
         handleInputChange('generatedContent', generatedText);
@@ -242,7 +242,7 @@ export function DisasterSectionRefactored() {
       return await response.json();
     },
     onSuccess: (responseData, { targetField }) => {
-      const generatedText = responseData.generatedContent || "";
+      const generatedText = responseData.content || "";
       handleInputChange(targetField, generatedText);
       
       const fieldLabels: { [key: string]: string } = {
