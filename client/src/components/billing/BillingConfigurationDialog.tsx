@@ -37,6 +37,18 @@ export default function BillingConfigurationDialog() {
     enabled: isOpen,
   });
 
+  // Get all staff types across tenants
+  const { data: staffTypes = [] } = useQuery<string[]>({
+    queryKey: ["/api/billing/staff-types"],
+    enabled: isOpen,
+  });
+
+  // Get staff statistics by tenant
+  const { data: staffStats = [] } = useQuery<any[]>({
+    queryKey: ["/api/billing/staff-statistics"],
+    enabled: isOpen,
+  });
+
   // Update local state when config loads
   React.useEffect(() => {
     if (config && isOpen) {
