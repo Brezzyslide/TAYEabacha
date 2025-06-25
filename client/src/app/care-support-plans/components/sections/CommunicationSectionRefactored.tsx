@@ -117,7 +117,7 @@ export function CommunicationSectionRefactored() {
       return await response.json();
     },
     onSuccess: (responseData, { targetField }) => {
-      const generatedText = responseData.generatedContent || "";
+      const generatedText = responseData.content || "";
       
       if (targetField === 'preview') {
         handleInputChange('generatedContent', generatedText);

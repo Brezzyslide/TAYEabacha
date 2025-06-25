@@ -67,7 +67,7 @@ export function ADLSectionRefactored() {
       return await response.json();
     },
     onSuccess: (responseData, { targetField }) => {
-      const generatedText = responseData.generatedContent || "";
+      const generatedText = responseData.content || "";
       
       if (targetField === 'preview') {
         // Store content for preview and field selection

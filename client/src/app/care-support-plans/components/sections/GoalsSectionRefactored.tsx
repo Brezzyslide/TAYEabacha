@@ -84,7 +84,7 @@ export function GoalsSectionRefactored() {
       return await response.json();
     },
     onSuccess: (responseData) => {
-      const generatedText = responseData.generatedContent || "";
+      const generatedText = responseData.content || "";
       
       // Store generated content for targeted application
       handleInputChange('generatedGoals', generatedText);
