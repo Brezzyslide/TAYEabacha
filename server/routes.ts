@@ -4809,54 +4809,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Generation API for Care Support Plans
+  // AI Content Generation for Care Support Plans
   app.post("/api/care-support-plans/generate-ai", requireAuth, async (req: any, res) => {
     try {
-      const { section, userInput, clientDiagnosis, clientName, maxWords = 300, previousSections = {}, targetField = null, existingContent = {} } = req.body;
+      const { section, userInput, targetField, existingContent, promptOverride, planId } = req.body;
       
-      if (!section || !userInput) {
-        return res.status(400).json({ message: "Section and user input are required" });
+      // Check if OpenAI API key is available
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ 
+          error: "AI service not configured. Please contact administrator to set up OpenAI integration." 
+        });
       }
 
       const OpenAI = (await import('openai')).default;
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
 
-      // Build contextual information with existing content awareness
-      const contextualInfo = `Client: ${clientName || 'Client'}, Diagnosis: ${clientDiagnosis || 'Not specified'}`;
+      // Get complete care plan context including diagnosis and all existing sections
+      let planContext = "";
+      let clientDiagnosis = "Not specified";
+      let clientName = "Client";
       
-      // Create context-aware content summary
-      const buildExistingContentContext = (existingContent: any, targetField: string | null) => {
-        const populated = [];
-        const empty = [];
-        
-        for (const [field, content] of Object.entries(existingContent)) {
-          if (content && content.toString().trim()) {
-            populated.push(`${field}: ${content.toString().slice(0, 100)}${content.toString().length > 100 ? '...' : ''}`);
-          } else {
-            empty.push(field);
+      if (planId) {
+        try {
+          const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
+          if (planResult.length > 0) {
+            const plan = planResult[0];
+            const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
+            if (clientResult.length > 0) {
+              const client = clientResult[0];
+              clientDiagnosis = client.medicalConditions || 'Not specified';
+              clientName = `${client.firstName} ${client.lastName}`;
+              planContext = `
+CLIENT INFORMATION:
+- Name: ${clientName}
+- Diagnosis: ${clientDiagnosis}
+
+EXISTING CARE PLAN SECTIONS:
+${plan.aboutMeData ? `About Me: ${JSON.stringify(plan.aboutMeData, null, 2)}` : ''}
+${plan.goalsData ? `Goals: ${JSON.stringify(plan.goalsData, null, 2)}` : ''}
+${plan.adlData ? `ADL Support: ${JSON.stringify(plan.adlData, null, 2)}` : ''}
+${plan.communicationData ? `Communication: ${JSON.stringify(plan.communicationData, null, 2)}` : ''}
+${plan.structureData ? `Structure & Routine: ${JSON.stringify(plan.structureData, null, 2)}` : ''}
+${plan.behaviourData ? `Behaviour Support: ${JSON.stringify(plan.behaviourData, null, 2)}` : ''}
+${plan.disasterData ? `Disaster Management: ${JSON.stringify(plan.disasterData, null, 2)}` : ''}
+${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, null, 2)}` : ''}
+`;
+            }
           }
+        } catch (error) {
+          console.error("Error fetching plan context:", error);
         }
-        
-        let context = "";
-        if (populated.length > 0) {
-          context += `\nAlready populated fields: ${populated.join('; ')}`;
-        }
-        if (targetField) {
-          context += `\nTarget field to populate: ${targetField}`;
-          context += `\nFocus specifically on ${targetField} content, avoid repeating information already covered in other fields.`;
-        }
-        
-        return context;
-      };
-      
-      const existingContext = buildExistingContentContext(existingContent, targetField);
+      }
 
+      // Simplified diagnosis-driven AI generation system
+      // ALWAYS generate content using diagnosis as foundation with scaffolding for weak input
+      
       let systemPrompt = "";
       let userPrompt = "";
 
+      // Build comprehensive context from diagnosis and existing plan data
+      const contextualInfo = `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
+      const existingContext = planContext || "No existing plan context available.";
+      
+      // Create diagnosis-driven prompts that ALWAYS generate content
       switch (section) {
         case "aboutMe":
-          if (targetField) {
+          systemPrompt = `Generate professional "About Me" content for a care support plan. Focus on the client's diagnosis and create evidence-based content that supports daily care. Even if user input is minimal, use the diagnosis to create appropriate, practical content for support workers. Write in third person, professional tone. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate content based on diagnosis'}`;
+          break;
+        
+        case "goals":
+          systemPrompt = `Generate NDIS-aligned goals based on the client's diagnosis. Create specific, measurable, achievable goals that address independence, community access, skill development, and capacity building appropriate for the diagnosis. Always generate content even if user input is minimal - use diagnosis-specific evidence-based goals. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate goals based on diagnosis'}`;
+          break;
+        
+        case "adl":
+          systemPrompt = `Generate Activities of Daily Living support content based on the client's diagnosis. Create practical guidance for support workers covering personal care, mobility, household tasks, community access, and safety considerations typical for this diagnosis. Always generate content using diagnosis-specific support needs. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate ADL support based on diagnosis'}`;
+          break;
+        
+        case "structure":
+          systemPrompt = `Generate structure and routine content based on the client's diagnosis. Create practical guidance for daily structure, routine management, transitions, and environmental considerations typical for this diagnosis. Always generate content using diagnosis-specific structure needs. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate structure guidance based on diagnosis'}`;
+          break;
+        
+        case "communication":
+          systemPrompt = `Generate communication support content based on the client's diagnosis. Create practical guidance for receptive and expressive communication strategies, AAC tools, and staff approaches typical for this diagnosis. Always generate content using diagnosis-specific communication needs. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate communication strategies based on diagnosis'}`;
+          break;
+        
+        case "behaviour":
+          systemPrompt = `Generate behavior support content based on the client's diagnosis. Create PBS-aligned strategies including proactive approaches, de-escalation techniques, and positive behavior support methods typical for this diagnosis. Always generate content using diagnosis-specific behavior support needs. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate behavior support based on diagnosis'}`;
+          break;
+        
+        case "disaster":
+          systemPrompt = `Generate disaster management content based on the client's diagnosis. Create emergency preparedness, evacuation procedures, communication plans, and recovery support strategies considering the specific needs of this diagnosis. Always generate content using diagnosis-specific emergency needs. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate disaster management based on diagnosis'}`;
+          break;
+        
+        case "mealtime":
+          systemPrompt = `Generate mealtime management content based on the client's diagnosis. Create practical guidance for eating support, dietary considerations, safety protocols, and mealtime strategies typical for this diagnosis. Always generate content using diagnosis-specific mealtime needs. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate mealtime management based on diagnosis'}`;
+          break;
+        
+        default:
+          systemPrompt = `Generate professional care support content for the specified section based on the client's diagnosis. Create evidence-based, practical content for support workers. Always generate content even with minimal input using diagnosis-specific considerations. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate content based on diagnosis'}`;
+      }
+
+      // Generate AI content with diagnosis-driven approach (temperature 0.3 for consistency)
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 800,
+      });
+
+      const generatedContent = response.choices[0].message.content;
+      
+      // Always return content - no guard rails or validation that could block generation
+      if (!generatedContent || generatedContent.trim().length === 0) {
+        // Fallback scaffolding if AI somehow returns empty (should never happen with diagnosis-driven prompts)
+        const fallbackContent = `Based on the diagnosis of ${clientDiagnosis}, appropriate ${section} support strategies should be developed to address the specific needs and requirements typical for this condition. Please consult with healthcare professionals to develop comprehensive care approaches.`;
+        res.json({ content: fallbackContent });
+      } else {
+        res.json({ content: generatedContent.trim() });
+      }
+
+    } catch (error) {
+      console.error("AI generation error:", error);
+      
+      // Provide diagnosis-based fallback even on error
+      const { section, planId } = req.body;
+      let clientDiagnosis = "Not specified";
+      
+      if (planId) {
+        try {
+          const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
+          if (planResult.length > 0) {
+            const plan = planResult[0];
+            const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
+            if (clientResult.length > 0) {
+              clientDiagnosis = clientResult[0].medicalConditions || 'Not specified';
+            }
+          }
+        } catch (dbError) {
+          console.error("Error fetching diagnosis for fallback:", dbError);
+        }
+      }
+      
+      const fallbackContent = `Based on the diagnosis of ${clientDiagnosis}, appropriate ${section || 'care support'} strategies should be developed to address the specific needs and requirements typical for this condition. Please consult with healthcare professionals to develop comprehensive care approaches.`;
+      
+      res.json({ 
+        content: fallbackContent,
+        warning: "AI service temporarily unavailable - diagnosis-based template provided"
+      });
+    }
+  });
             // Field-specific prompts for About Me section
             const fieldPrompts: { [key: string]: string } = {
               "personalHistory": `This field helps staff understand the participant's background and how that affects daily support. Include upbringing, current living situation, and any major life events that shape behaviour or communication. Mention how the participant's diagnosis impacts daily life, trust, routines, or social habits. Write clearly and practically, as if handing over to another support worker. Do not include a name unless one is provided. Do not repeat info from other fields. Do not use stars, formatting, or summaries. Start directly with the content. Max ${maxWords} words.`,
