@@ -8,16 +8,13 @@ import { db } from './db';
 import { companies, tenants, users } from '../shared/schema';
 import { eq, and, gte, lte, count } from 'drizzle-orm';
 
-// Billing configuration
-export const BILLING_RATES = {
-  SupportWorker: 25,
-  TeamLeader: 35,
-  Coordinator: 45,
-  Admin: 60,
-  ConsoleManager: 0 // Platform access, not billable
-} as const;
-
-export const BILLING_CYCLE_DAYS = 28;
+// Dynamic billing rates and cycles - will be fetched from database
+export interface BillingConfiguration {
+  rates: Record<string, number>;
+  cycleDays: number;
+  nextBillingDate: Date;
+  isActive: boolean;
+}
 
 export interface CompanyBilling {
   companyId: string;
