@@ -48,6 +48,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={LandingPage} />
+      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
       <ProtectedRoute path="/clients/create" component={() => <SimpleCreateClientForm />} />
@@ -71,12 +72,12 @@ function Router() {
       <ProtectedRoute path="/budget-management" component={BudgetDashboard} />
       <ProtectedRoute path="/care-support-plans" component={CareSupportPlans} />
       <ProtectedRoute path="/timesheet" component={TimesheetDashboard} />
+      <ProtectedRoute path="/billing" component={BillingDashboard} />
       <ProtectedRoute path="/billing-management" component={BillingDashboard} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/export" component={Export} />
-      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/admin/companies" component={CompanyListPage} />
       <Route path="/admin/create-company" component={CreateCompanyPage} />
       <Route path="/admin/company-summary" component={CompanySummaryPage} />
