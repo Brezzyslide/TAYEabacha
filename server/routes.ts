@@ -4771,6 +4771,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff Timesheet API Endpoints
+  app.get("/api/timesheet/current", requireAuth, async (req: any, res) => {
+    try {
+      const currentTimesheet = await getCurrentTimesheet(req.user.id, req.user.tenantId);
+      res.json(currentTimesheet);
+    } catch (error: any) {
+      console.error("Get current timesheet error:", error);
+      res.status(500).json({ message: "Failed to get current timesheet" });
+    }
+  });
+
+  app.get("/api/timesheet/history", requireAuth, async (req: any, res) => {
+    try {
+      const timesheetHistory = await getTimesheetHistory(req.user.id, req.user.tenantId);
+      res.json(timesheetHistory);
+    } catch (error: any) {
+      console.error("Get timesheet history error:", error);
+      res.status(500).json({ message: "Failed to get timesheet history" });
+    }
+  });
+
+  app.get("/api/leave-balances", requireAuth, async (req: any, res) => {
+    try {
+      const leaveBalances = await db.select()
+        .from(leaveBalances)
+        .where(and(
+          eq(leaveBalances.userId, req.user.id),
+          eq(leaveBalances.tenantId, req.user.tenantId)
+        ));
+      
+      // If no leave balances exist, create default ones
+      if (leaveBalances.length === 0) {
+        const defaultBalances = [
+          { userId: req.user.id, tenantId: req.user.tenantId, leaveType: 'annual', balance: 20 },
+          { userId: req.user.id, tenantId: req.user.tenantId, leaveType: 'sick', balance: 10 },
+          { userId: req.user.id, tenantId: req.user.tenantId, leaveType: 'personal', balance: 2 },
+          { userId: req.user.id, tenantId: req.user.tenantId, leaveType: 'long_service', balance: 0 }
+        ];
+        
+        await db.insert(leaveBalances).values(defaultBalances);
+        
+        const newBalances = await db.select()
+          .from(leaveBalances)
+          .where(and(
+            eq(leaveBalances.userId, req.user.id),
+            eq(leaveBalances.tenantId, req.user.tenantId)
+          ));
+        
+        res.json(newBalances);
+      } else {
+        res.json(leaveBalances);
+      }
+    } catch (error: any) {
+      console.error("Get leave balances error:", error);
+      res.status(500).json({ message: "Failed to get leave balances" });
+    }
+  });
+
   // PDF Export API for Care Support Plans
   app.get("/api/care-support-plans/:id/export/pdf", requireAuth, async (req: any, res) => {
     try {
