@@ -4596,6 +4596,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Timesheet Management APIs
+  
+  // Get current timesheets (submitted) for admin approval
+  app.get("/api/admin/timesheets/current", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheets = await storage.getAdminTimesheets(req.user.tenantId, 'submitted');
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("Get admin current timesheets error:", error);
+      res.status(500).json({ message: "Failed to fetch current timesheets" });
+    }
+  });
+
+  // Get historical timesheets for admin view
+  app.get("/api/admin/timesheets/history", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheets = await storage.getAdminTimesheets(req.user.tenantId, ['approved', 'rejected', 'paid']);
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("Get admin timesheet history error:", error);
+      res.status(500).json({ message: "Failed to fetch timesheet history" });
+    }
+  });
+
+  // Get payslip-ready timesheets (approved)
+  app.get("/api/admin/payslips", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheets = await storage.getAdminTimesheets(req.user.tenantId, 'approved');
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("Get admin payslips error:", error);
+      res.status(500).json({ message: "Failed to fetch payslips" });
+    }
+  });
+
+  // Approve timesheet
+  app.post("/api/admin/timesheets/:id/approve", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      const approvedTimesheet = await storage.approveTimesheet(timesheetId, req.user.id, req.user.tenantId);
+      
+      if (!approvedTimesheet) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "approve_timesheet",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Approved timesheet for staff member`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ message: "Timesheet approved successfully", timesheet: approvedTimesheet });
+    } catch (error: any) {
+      console.error("Approve timesheet error:", error);
+      res.status(500).json({ message: "Failed to approve timesheet" });
+    }
+  });
+
+  // Reject timesheet
+  app.post("/api/admin/timesheets/:id/reject", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      const { reason } = req.body;
+      const rejectedTimesheet = await storage.rejectTimesheet(timesheetId, req.user.id, req.user.tenantId, reason);
+      
+      if (!rejectedTimesheet) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "reject_timesheet",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Rejected timesheet for staff member: ${reason || 'No reason provided'}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ message: "Timesheet rejected successfully", timesheet: rejectedTimesheet });
+    } catch (error: any) {
+      console.error("Reject timesheet error:", error);
+      res.status(500).json({ message: "Failed to reject timesheet" });
+    }
+  });
+
+  // Get timesheet entries for editing
+  app.get("/api/admin/timesheet-entries/:timesheetId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.timesheetId);
+      const entries = await storage.getTimesheetEntries(timesheetId, req.user.tenantId);
+      res.json(entries);
+    } catch (error: any) {
+      console.error("Get timesheet entries error:", error);
+      res.status(500).json({ message: "Failed to fetch timesheet entries" });
+    }
+  });
+
+  // Update timesheet entry
+  app.patch("/api/admin/timesheet-entries/:entryId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const entryId = parseInt(req.params.entryId);
+      const updateData = req.body;
+      const updatedEntry = await storage.updateTimesheetEntry(entryId, updateData, req.user.tenantId);
+      
+      if (!updatedEntry) {
+        return res.status(404).json({ message: "Timesheet entry not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_timesheet_entry",
+        resourceType: "timesheet_entry",
+        resourceId: entryId,
+        description: `Updated timesheet entry`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ message: "Timesheet entry updated successfully", entry: updatedEntry });
+    } catch (error: any) {
+      console.error("Update timesheet entry error:", error);
+      res.status(500).json({ message: "Failed to update timesheet entry" });
+    }
+  });
+
+  // Generate payslip PDF
+  app.post("/api/admin/timesheets/:id/generate-payslip-pdf", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      const timesheet = await storage.getTimesheetById(timesheetId, req.user.tenantId);
+      
+      if (!timesheet || timesheet.status !== 'approved') {
+        return res.status(400).json({ message: "Only approved timesheets can generate payslips" });
+      }
+
+      // Mark as paid and generate PDF
+      await storage.markTimesheetAsPaid(timesheetId, req.user.id, req.user.tenantId);
+      
+      // Import PDF generation utility
+      const { generatePayslipPDF } = await import('./payslip-pdf-generator');
+      const pdfBuffer = await generatePayslipPDF(timesheet, req.user.tenantId);
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "generate_payslip",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Generated payslip PDF for approved timesheet`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=payslip-${timesheet.staffName}-${new Date().toISOString().split('T')[0]}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Generate payslip PDF error:", error);
+      res.status(500).json({ message: "Failed to generate payslip PDF" });
+    }
+  });
+
   // Care Support Plans API
   app.get("/api/care-support-plans", requireAuth, async (req: any, res) => {
     try {

@@ -2,7 +2,7 @@ import {
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
-  shiftCancellations, cancellationRequests, payScales, notifications,
+  shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -198,6 +198,15 @@ export interface IStorage {
   markNotificationAsRead(id: number, userId: number, tenantId: number): Promise<boolean>;
   markAllNotificationsAsRead(userId: number, tenantId: number): Promise<boolean>;
   deleteNotification(id: number, userId: number, tenantId: number): Promise<boolean>;
+
+  // Admin Timesheet Management
+  getAdminTimesheets(tenantId: number, status: string | string[]): Promise<any[]>;
+  approveTimesheet(timesheetId: number, adminUserId: number, tenantId: number): Promise<any>;
+  rejectTimesheet(timesheetId: number, adminUserId: number, tenantId: number, reason?: string): Promise<any>;
+  getTimesheetById(timesheetId: number, tenantId: number): Promise<any>;
+  getTimesheetEntries(timesheetId: number, tenantId: number): Promise<any[]>;
+  updateTimesheetEntry(entryId: number, updateData: any, tenantId: number): Promise<any>;
+  markTimesheetAsPaid(timesheetId: number, adminUserId: number, tenantId: number): Promise<any>;
   createBulkNotifications(notifications: InsertNotification[]): Promise<Notification[]>;
 
   // Session store
@@ -1949,6 +1958,140 @@ export class DatabaseStorage implements IStorage {
         };
       }
     });
+  }
+
+  // Admin Timesheet Management Methods
+  async getAdminTimesheets(tenantId: number, status: string | string[]): Promise<any[]> {
+    const statusArray = Array.isArray(status) ? status : [status];
+    
+    const query = sql`
+      SELECT 
+        t.id,
+        t.user_id as "userId",
+        u.full_name as "staffName",
+        u.username as "staffUsername", 
+        u.email as "staffEmail",
+        t.pay_period_start as "payPeriodStart",
+        t.pay_period_end as "payPeriodEnd",
+        t.status,
+        t.total_hours as "totalHours",
+        t.total_earnings as "totalEarnings",
+        t.total_tax as "totalTax",
+        t.total_super as "totalSuper",
+        t.net_pay as "netPay",
+        t.submitted_at as "submittedAt",
+        t.approved_at as "approvedAt",
+        t.created_at as "createdAt",
+        lb.annual_leave as "annualLeave",
+        lb.sick_leave as "sickLeave",
+        lb.personal_leave as "personalLeave",
+        lb.long_service_leave as "longServiceLeave"
+      FROM timesheets t
+      INNER JOIN users u ON t.user_id = u.id AND t.tenant_id = u.tenant_id
+      LEFT JOIN leave_balances lb ON u.id = lb.user_id AND u.tenant_id = lb.tenant_id
+      WHERE t.tenant_id = ${tenantId}
+        AND t.status = ANY(${statusArray})
+      ORDER BY t.created_at DESC
+    `;
+    
+    const result = await db.execute(query);
+    return result.rows as any[];
+  }
+
+  async approveTimesheet(timesheetId: number, adminUserId: number, tenantId: number): Promise<any> {
+    const [updated] = await db.update(timesheets)
+      .set({
+        status: 'approved',
+        approvedAt: new Date(),
+        approvedByUserId: adminUserId,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timesheets.id, timesheetId),
+        eq(timesheets.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return updated;
+  }
+
+  async rejectTimesheet(timesheetId: number, adminUserId: number, tenantId: number, reason?: string): Promise<any> {
+    const [updated] = await db.update(timesheets)
+      .set({
+        status: 'rejected',
+        rejectedAt: new Date(),
+        rejectedByUserId: adminUserId,
+        rejectionReason: reason,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timesheets.id, timesheetId),
+        eq(timesheets.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return updated;
+  }
+
+  async getTimesheetById(timesheetId: number, tenantId: number): Promise<any> {
+    const query = sql`
+      SELECT 
+        t.*,
+        u.full_name as "staffName",
+        u.username as "staffUsername",
+        u.email as "staffEmail"
+      FROM timesheets t
+      INNER JOIN users u ON t.user_id = u.id AND t.tenant_id = u.tenant_id
+      WHERE t.id = ${timesheetId} AND t.tenant_id = ${tenantId}
+    `;
+    
+    const result = await db.execute(query);
+    return result.rows[0] as any;
+  }
+
+  async getTimesheetEntries(timesheetId: number, tenantId: number): Promise<any[]> {
+    const query = sql`
+      SELECT te.*, s.client_name, s.shift_date, s.start_time, s.end_time
+      FROM timesheet_entries te
+      LEFT JOIN shifts s ON te.shift_id = s.id
+      WHERE te.timesheet_id = ${timesheetId} AND te.tenant_id = ${tenantId}
+      ORDER BY te.created_at DESC
+    `;
+    
+    const result = await db.execute(query);
+    return result.rows as any[];
+  }
+
+  async updateTimesheetEntry(entryId: number, updateData: any, tenantId: number): Promise<any> {
+    const [updated] = await db.update(timesheetEntries)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timesheetEntries.id, entryId),
+        eq(timesheetEntries.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return updated;
+  }
+
+  async markTimesheetAsPaid(timesheetId: number, adminUserId: number, tenantId: number): Promise<any> {
+    const [updated] = await db.update(timesheets)
+      .set({
+        status: 'paid',
+        paidAt: new Date(),
+        paidByUserId: adminUserId,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timesheets.id, timesheetId),
+        eq(timesheets.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return updated;
   }
 }
 
