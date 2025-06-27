@@ -4829,6 +4829,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/timesheet/:timesheetId/submit", requireAuth, async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.timesheetId);
+      
+      // Get timesheet and verify ownership
+      const timesheet = await db.select()
+        .from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ));
+
+      if (timesheet.length === 0) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      if (timesheet[0].status !== 'draft') {
+        return res.status(400).json({ message: "Only draft timesheets can be submitted" });
+      }
+
+      // Update timesheet status to submitted
+      const updatedTimesheet = await db.update(timesheetsTable)
+        .set({ 
+          status: 'submitted',
+          submittedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(timesheetsTable.id, timesheetId))
+        .returning();
+
+      // Create activity log
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "submit_timesheet",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Submitted timesheet for approval`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({
+        timesheet: updatedTimesheet[0],
+        autoApproved: false, // Timesheets require manual approval
+        message: "Timesheet submitted for approval"
+      });
+    } catch (error: any) {
+      console.error("Submit timesheet error:", error);
+      res.status(500).json({ message: "Failed to submit timesheet" });
+    }
+  });
+
   // PDF Export API for Care Support Plans
   app.get("/api/care-support-plans/:id/export/pdf", requireAuth, async (req: any, res) => {
     try {
