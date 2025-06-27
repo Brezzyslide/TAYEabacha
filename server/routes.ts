@@ -4794,7 +4794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/leave-balances", requireAuth, async (req: any, res) => {
     try {
-      const leaveBalances = await db.select()
+      const userLeaveBalances = await db.select()
         .from(leaveBalances)
         .where(and(
           eq(leaveBalances.userId, req.user.id),
@@ -4802,7 +4802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ));
       
       // If no leave balances exist, create default ones
-      if (leaveBalances.length === 0) {
+      if (userLeaveBalances.length === 0) {
         const defaultBalances = [
           { userId: req.user.id, tenantId: req.user.tenantId, leaveType: 'annual', balance: 20 },
           { userId: req.user.id, tenantId: req.user.tenantId, leaveType: 'sick', balance: 10 },
@@ -4821,7 +4821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.json(newBalances);
       } else {
-        res.json(leaveBalances);
+        res.json(userLeaveBalances);
       }
     } catch (error: any) {
       console.error("Get leave balances error:", error);
