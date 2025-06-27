@@ -108,6 +108,9 @@ export default function StaffTimesheetView() {
           : "Your timesheet has been submitted for approval.",
         variant: wasAutoApproved ? "default" : "default"
       });
+      // Invalidate both current and history queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/timesheet/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/timesheet/history'] });
       queryClient.invalidateQueries({ queryKey: ['/api/timesheet'] });
     },
     onError: (error) => {
