@@ -271,7 +271,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-blue-600">Period Status</p>
                           <div className="mt-2">
-                            {getStatusBadge(currentTimesheet.status)}
+                            {getStatusBadge(currentTimesheet.timesheet?.status || currentTimesheet.status)}
                           </div>
                         </div>
                         <FileText className="h-8 w-8 text-blue-500" />
@@ -285,7 +285,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-emerald-600">Total Hours</p>
                           <p className="text-2xl font-bold text-emerald-700 mt-1">
-                            {currentTimesheet.totalHours || 0}h
+                            {currentTimesheet.timesheet?.totalHours || currentTimesheet.totalHours || 0}h
                           </p>
                         </div>
                         <Clock className="h-8 w-8 text-emerald-500" />
@@ -299,7 +299,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-amber-600">Gross Pay</p>
                           <p className="text-2xl font-bold text-amber-700 mt-1">
-                            {formatCurrency(currentTimesheet.totalEarnings || 0)}
+                            {formatCurrency(currentTimesheet.timesheet?.totalEarnings || currentTimesheet.totalEarnings || 0)}
                           </p>
                         </div>
                         <DollarSign className="h-8 w-8 text-amber-500" />
@@ -346,10 +346,10 @@ export default function StaffTimesheetView() {
                       </div>
                     </div>
                     
-                    {currentTimesheet.status === 'draft' && (
+                    {(currentTimesheet.timesheet?.status === 'draft' || currentTimesheet.status === 'draft') && (
                       <div className="mt-6 pt-4 border-t border-slate-200">
                         <Button
-                          onClick={() => submitMutation.mutate(currentTimesheet.id)}
+                          onClick={() => submitMutation.mutate(currentTimesheet.timesheet?.id || currentTimesheet.id)}
                           disabled={submitMutation.isPending}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
