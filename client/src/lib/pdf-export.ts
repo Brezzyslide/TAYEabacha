@@ -13,9 +13,7 @@ export interface PDFExportOptions {
 export interface PDFSection {
   title: string;
   content: string | { [key: string]: any };
-  type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support' | 'colored_box' | 'multi_column' | 'assessment_table';
-  color?: string;
-  columns?: PDFSection[];
+  type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support';
 }
 
 export class PDFExportUtility {
@@ -146,12 +144,6 @@ export class PDFExportUtility {
       this.addTable(section.content);
     } else if (section.type === 'behaviour_support' && typeof section.content === 'object') {
       this.addBehaviourSupport(section.content);
-    } else if (section.type === 'colored_box') {
-      this.addColoredBox(section.content, section.color || '#B8944D');
-    } else if (section.type === 'multi_column' && section.columns) {
-      this.addMultiColumn(section.columns);
-    } else if (section.type === 'assessment_table' && typeof section.content === 'object') {
-      this.addAssessmentTable(section.content);
     } else {
       this.addText(String(section.content));
     }
@@ -354,173 +346,6 @@ export class PDFExportUtility {
     this.pdf.setTextColor(0, 0, 0);
   }
 
-  private addColoredBox(content: string | string[] | { [key: string]: any }, color: string): void {
-    this.checkPageBreak(25);
-    
-    // Convert hex color to RGB
-    const rgb = this.hexToRgb(color);
-    
-    // Calculate box dimensions
-    const padding = 8;
-    const boxWidth = this.contentWidth - 20;
-    let boxHeight = 25;
-    
-    // Handle different content types
-    let lines: string[] = [];
-    if (typeof content === 'string') {
-      lines = this.pdf.splitTextToSize(content, boxWidth - (padding * 2));
-    } else if (Array.isArray(content)) {
-      lines = content.flatMap(item => this.pdf.splitTextToSize(`• ${item}`, boxWidth - (padding * 2)));
-    } else if (typeof content === 'object') {
-      lines = Object.entries(content).flatMap(([key, value]) => 
-        this.pdf.splitTextToSize(`${key}: ${value}`, boxWidth - (padding * 2))
-      );
-    }
-    
-    boxHeight = Math.max(25, (lines.length * 6) + (padding * 2));
-    
-    // Draw rounded rectangle background
-    this.pdf.setFillColor(rgb.r, rgb.g, rgb.b);
-    this.drawRoundedRect(this.margin + 10, this.currentY, boxWidth, boxHeight, 3);
-    
-    // Add white text content
-    this.pdf.setTextColor(255, 255, 255);
-    this.pdf.setFontSize(10);
-    this.pdf.setFont('helvetica', 'normal');
-    
-    let textY = this.currentY + padding + 5;
-    lines.forEach(line => {
-      this.pdf.text(line, this.margin + 10 + padding, textY);
-      textY += 6;
-    });
-    
-    this.currentY += boxHeight + 10;
-    this.pdf.setTextColor(0, 0, 0); // Reset text color
-  }
-
-  private addMultiColumn(columns: PDFSection[]): void {
-    this.checkPageBreak(50);
-    
-    const columnWidth = (this.contentWidth - 20) / columns.length;
-    const startY = this.currentY;
-    let maxHeight = 0;
-    
-    columns.forEach((column, index) => {
-      const columnX = this.margin + (index * columnWidth) + (index * 10);
-      const savedY = this.currentY;
-      this.currentY = startY;
-      
-      // Create temporary PDF utility for column content
-      const tempStartY = this.currentY;
-      this.renderColumnContent(column, columnX, columnWidth - 10);
-      
-      const columnHeight = this.currentY - tempStartY;
-      maxHeight = Math.max(maxHeight, columnHeight);
-    });
-    
-    this.currentY = startY + maxHeight + 15;
-  }
-
-  private renderColumnContent(column: PDFSection, x: number, width: number): void {
-    // Column header
-    this.pdf.setFillColor(184, 148, 77); // Warm Gold from TUSK palette
-    this.pdf.rect(x, this.currentY, width, 12, 'F');
-    
-    this.pdf.setFontSize(10);
-    this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setTextColor(255, 255, 255);
-    this.pdf.text(column.title, x + 5, this.currentY + 8);
-    this.currentY += 15;
-    
-    // Column content
-    this.pdf.setTextColor(0, 0, 0);
-    this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setFontSize(9);
-    
-    if (typeof column.content === 'string') {
-      const lines = this.pdf.splitTextToSize(column.content, width - 10);
-      lines.forEach((line: string) => {
-        this.pdf.text(line, x + 5, this.currentY);
-        this.currentY += 5;
-      });
-    } else if (Array.isArray(column.content)) {
-      column.content.forEach(item => {
-        const lines = this.pdf.splitTextToSize(`• ${item}`, width - 15);
-        lines.forEach((line: string) => {
-          this.pdf.text(line, x + 5, this.currentY);
-          this.currentY += 5;
-        });
-      });
-    } else if (typeof column.content === 'object') {
-      Object.entries(column.content).forEach(([key, value]) => {
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.text(`${key}:`, x + 5, this.currentY);
-        this.currentY += 5;
-        
-        this.pdf.setFont('helvetica', 'normal');
-        const lines = this.pdf.splitTextToSize(String(value), width - 10);
-        lines.forEach((line: string) => {
-          this.pdf.text(line, x + 5, this.currentY);
-          this.currentY += 5;
-        });
-        this.currentY += 2;
-      });
-    }
-  }
-
-  private addAssessmentTable(tableData: { [key: string]: any }): void {
-    this.checkPageBreak(30);
-    
-    // Enhanced table with alternating row colors
-    const leftColumnWidth = 85;
-    const rightColumnWidth = this.contentWidth - leftColumnWidth - 10;
-    let rowIndex = 0;
-    
-    Object.entries(tableData).forEach(([key, value]) => {
-      this.checkPageBreak(15);
-      
-      // Alternating row background
-      if (rowIndex % 2 === 0) {
-        this.pdf.setFillColor(248, 249, 250); // Light gray
-        this.pdf.rect(this.margin, this.currentY - 2, this.contentWidth, 12, 'F');
-      }
-      
-      // Key column with bold text
-      this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setFontSize(10);
-      this.pdf.text(key, this.margin + 5, this.currentY + 5);
-      
-      // Value column with normal text
-      this.pdf.setFont('helvetica', 'normal');
-      const valueLines = this.pdf.splitTextToSize(String(value), rightColumnWidth - 10);
-      let valueY = this.currentY + 5;
-      
-      valueLines.forEach((line: string) => {
-        this.pdf.text(line, this.margin + leftColumnWidth + 5, valueY);
-        valueY += 6;
-      });
-      
-      this.currentY += Math.max(12, valueLines.length * 6 + 2);
-      rowIndex++;
-    });
-    
-    this.currentY += 5;
-  }
-
-  private drawRoundedRect(x: number, y: number, width: number, height: number, radius: number): void {
-    // Draw rounded rectangle using curves
-    this.pdf.roundedRect(x, y, width, height, radius, radius, 'F');
-  }
-
-  private hexToRgb(hex: string): { r: number; g: number; b: number } {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 184, g: 148, b: 77 }; // Default to Warm Gold
-  }
-
   private savePDF(filename: string): void {
     this.pdf.save(filename);
   }
@@ -560,54 +385,17 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'table'
   });
 
-  // Section 1: About Me - Enhanced with colored boxes and multi-column layout
+  // Section 1: About Me
   sections.push({
     title: 'About Me',
-    type: 'multi_column',
-    content: '',
-    columns: [
-      {
-        title: 'Personal Goals',
-        content: [
-          plan.aboutMeData?.personalGoals || 'To be independent',
-          'To develop new friendships', 
-          'To volunteer/ find a job'
-        ],
-        type: 'colored_box',
-        color: '#D8BFD8' // Light purple
-      },
-      {
-        title: 'NDIS Goals & Community Engagement',
-        content: [
-          plan.aboutMeData?.ndisGoals || 'Improve independent living skills',
-          'Enhance emotional regulation',
-          'Increase community participation'
-        ],
-        type: 'colored_box', 
-        color: '#DDA0DD' // Plum
-      },
-      {
-        title: 'Likes',
-        content: [
-          plan.aboutMeData?.interests || 'AFL football',
-          'Collingwood football club',
-          'Video games',
-          'Steak',
-          'Being actively listened to'
-        ],
-        type: 'colored_box',
-        color: '#E6E6FA' // Lavender
-      },
-      {
-        title: 'Dislikes', 
-        content: [
-          plan.aboutMeData?.challenges || 'Having to wait',
-          'Being told the word "No"'
-        ],
-        type: 'colored_box',
-        color: '#F0E6FF' // Very light purple
-      }
-    ]
+    content: [
+      plan.aboutMeData?.personalHistory ? `Personal History: ${plan.aboutMeData.personalHistory}` : 'Personal History: Not provided',
+      plan.aboutMeData?.interests ? `Interests: ${plan.aboutMeData.interests}` : 'Interests: Not provided',
+      plan.aboutMeData?.preferences ? `Preferences: ${plan.aboutMeData.preferences}` : 'Preferences: Not provided',
+      plan.aboutMeData?.strengths ? `Strengths: ${plan.aboutMeData.strengths}` : 'Strengths: Not provided',
+      plan.aboutMeData?.challenges ? `Challenges: ${plan.aboutMeData.challenges}` : 'Challenges: Not provided'
+    ],
+    type: 'list'
   });
 
   // Section 2: Goals & Outcomes
@@ -620,50 +408,7 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'list'
   });
 
-  // Section 2: Disability and Health - Enhanced assessment table format
-  sections.push({
-    title: 'Disability and Health',
-    type: 'assessment_table',
-    content: {
-      'Disability Type': client?.primaryDiagnosis || 'Not specified',
-      'Impact': 'Difficulties with cognitive abilities, social communication and comprehension. Post-traumatic stress disorder (PTSD). Trauma and stressor-related disorders.',
-      'Living Arrangements': plan.aboutMeData?.livingArrangement || 'Supported Independent Living (SIL)',
-      'Communication Method': plan.communicationData?.primaryMethods || 'Verbal communication with support',
-      'Family History': plan.aboutMeData?.personalHistory || 'Family provides emotional support',
-      'Mental Health': 'Diagnosis of post-traumatic stress disorder, linked to early experiences',
-      'Education/Employment': 'Currently not engaged in formal education or employment programs'
-    }
-  });
-
-  // Section 3: Care Team - Multi-column professional layout
-  sections.push({
-    title: 'My Care Team',
-    type: 'multi_column',
-    content: '',
-    columns: [
-      {
-        title: 'Team Members',
-        content: {
-          'Care Coordinator': 'Mary Dimitrievski',
-          'Support Worker': 'Toyesh Akinpelu', 
-          'Occupational Therapist': 'Anton Horvat'
-        },
-        type: 'assessment_table'
-      },
-      {
-        title: 'Contact Details & Assessments',
-        content: {
-          'Direct Observations': 'Kate Lander - 15/04/2025',
-          'Behavioural Function': 'Kate Lander - 22/04/2025',
-          'Mental Health Screen': 'Anton Horvat - 10/04/2025',
-          'Psychological Assessment': 'Tara Watson - 09/07/2013'
-        },
-        type: 'assessment_table'
-      }
-    ]
-  });
-
-  // Section 4: Activities of Daily Living Support
+  // Section 3: Activities of Daily Living Support
   sections.push({
     title: 'Activities of Daily Living Support',
     content: {
@@ -674,7 +419,7 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
       'Safety Considerations': plan.adlData?.safety || 'Not specified',
       'Independence Level': plan.adlData?.independence || 'Not specified'
     },
-    type: 'assessment_table'
+    type: 'table'
   });
 
   // Section 5: Communication Support
@@ -736,54 +481,7 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'table'
   });
 
-  // Section 7: Medication Management - Colored box format
-  sections.push({
-    title: 'Medication',
-    type: 'colored_box',
-    content: {
-      'Clonidine Hydrochloride (5/P)': '100mcg - 2 x daily - Treat symptoms of ADHD',
-      'Ristin': '2mg - 3 x daily - Treat symptoms of ADHD',
-      'Olanzapine': '7.5mg - 2 x daily - Alter mood and emotional stability',
-      'Lysanse': '70mg - Daily - Treat symptoms of ADHD',
-      'Metformin Hydrochloride': '1000mg - Daily - Treat high blood sugar levels'
-    },
-    color: '#FFB6C1' // Light pink
-  });
-
-  // Section 8: General Health - Multi-column layout
-  sections.push({
-    title: 'General Health',
-    type: 'multi_column',
-    content: '',
-    columns: [
-      {
-        title: 'Health Conditions',
-        content: [
-          'Type 2 diabetes diagnosis',
-          'Risk of metabolic syndrome',
-          'Increased blood pressure',
-          'High blood sugar levels',
-          'Excess body fat around waist'
-        ],
-        type: 'colored_box',
-        color: '#F0F8FF' // Alice blue
-      },
-      {
-        title: 'Diet & Sleep',
-        content: [
-          'Prefers soft drinks and fast foods',
-          'Limited vegetable consumption',
-          'Difficulty falling asleep',
-          'Frequent night wakings',
-          'Support needed for sleep routine'
-        ],
-        type: 'colored_box',
-        color: '#F5F5DC' // Beige
-      }
-    ]
-  });
-
-  // Section 9: Mealtime Management
+  // Section 8: Mealtime Management
   sections.push({
     title: 'Mealtime Management',
     content: {
@@ -794,7 +492,7 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
       'Assistance Level': plan.mealtimeData?.assistanceRisk || 'Not specified',
       'Environmental Setup': plan.mealtimeData?.environmentalRisk || 'Not specified'
     },
-    type: 'assessment_table'
+    type: 'table'
   });
 
   // Section 9: Review & Summary
