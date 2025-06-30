@@ -352,22 +352,22 @@ export default function StaffTimesheetView() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <p className="font-medium text-slate-700">Gross Pay</p>
-                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet.totalEarnings)}</p>
+                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet?.totalEarnings || 0)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-slate-700">Tax Withheld</p>
-                        <p className="text-lg font-bold text-red-600">-{formatCurrency(currentTimesheet.totalTax)}</p>
+                        <p className="text-lg font-bold text-red-600">-{formatCurrency(currentTimesheet?.timesheet?.totalTax || 0)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-slate-700">Net Pay</p>
-                        <p className="text-lg font-bold text-emerald-600">{formatCurrency(currentTimesheet.netPay)}</p>
+                        <p className="text-lg font-bold text-emerald-600">{formatCurrency(currentTimesheet?.timesheet?.netPay || 0)}</p>
                       </div>
                     </div>
                     
-                    {(currentTimesheet.timesheet?.status === 'draft' || currentTimesheet.status === 'draft') && (
+                    {currentTimesheet?.timesheet?.status === 'draft' && (
                       <div className="mt-6 pt-4 border-t border-slate-200">
                         <Button
-                          onClick={() => submitMutation.mutate(currentTimesheet.timesheet?.id || currentTimesheet.id)}
+                          onClick={() => submitMutation.mutate(currentTimesheet?.timesheet?.id || 0)}
                           disabled={submitMutation.isPending}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
@@ -379,11 +379,14 @@ export default function StaffTimesheetView() {
                   </CardContent>
                 </Card>
 
-                {/* Timesheet Entries */}
-                {currentTimesheet.entries && currentTimesheet.entries.length > 0 && (
+                {/* Individual Shift Earnings */}
+                {currentTimesheet?.entries && currentTimesheet.entries.length > 0 && (
                   <Card className="border-2 border-slate-200 shadow-sm">
                     <CardHeader>
-                      <CardTitle>Timesheet Entries</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        <Briefcase className="h-5 w-5" />
+                        Individual Shift Earnings
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-x-auto">
@@ -394,17 +397,48 @@ export default function StaffTimesheetView() {
                               <TableHead>Shift</TableHead>
                               <TableHead>Client</TableHead>
                               <TableHead>Hours</TableHead>
-                              <TableHead>Created</TableHead>
+                              <TableHead>Rate</TableHead>
+                              <TableHead>Earnings</TableHead>
+                              <TableHead>Type</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {currentTimesheet.entries.map((entry) => (
                               <TableRow key={entry.id}>
-                                <TableCell>{entry.shiftDate ? formatDate(entry.shiftDate) : '-'}</TableCell>
-                                <TableCell>{entry.shiftTitle || 'General Shift'}</TableCell>
-                                <TableCell>{entry.clientName || '-'}</TableCell>
-                                <TableCell>{entry.totalHours || 0}h</TableCell>
-                                <TableCell>{entry.createdAt ? formatDateTime(entry.createdAt) : '-'}</TableCell>
+                                <TableCell>{entry.entryDate ? formatDate(entry.entryDate) : '-'}</TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {entry.startTime && entry.endTime && (
+                                      `${format(new Date(entry.startTime), 'h:mm a')} - ${format(new Date(entry.endTime), 'h:mm a')}`
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-gray-400" />
+                                    {entry.clientName || '-'}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{entry.totalHours || 0}h</div>
+                                  {entry.breakMinutes > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      -{entry.breakMinutes}min break
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{formatCurrency(entry.hourlyRate || 0)}/hr</div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-bold text-emerald-600">{formatCurrency(entry.grossPay || 0)}</div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={entry.isAutoGenerated ? "default" : "secondary"} className="text-xs">
+                                    {entry.isAutoGenerated ? "Auto" : "Manual"}
+                                  </Badge>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
