@@ -777,13 +777,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the shift update if budget processing fails
         }
 
-        // Create automatic timesheet entry
+        // Create automatic timesheet entry - AWAIT THIS BEFORE RESPONDING
         try {
           await createTimesheetEntryFromShift(shiftId);
           console.log(`[TIMESHEET] Successfully created timesheet entry for completed shift ${shiftId}`);
+          
+          // Add a small delay to ensure database transactions are fully committed
+          await new Promise(resolve => setTimeout(resolve, 200));
+          console.log(`[TIMESHEET] Database commit delay completed for shift ${shiftId}`);
         } catch (timesheetError) {
           console.error(`[TIMESHEET ERROR] Failed to create timesheet entry for shift ${shiftId}:`, timesheetError);
-          // Don't fail the shift update if timesheet processing fails
+          // Don't fail the shift update if timesheet processing fails, but log the error
         }
       }
       

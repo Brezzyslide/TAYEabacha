@@ -199,7 +199,7 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         queryClient.refetchQueries({ queryKey: ["/api/timesheet/current"] });
         // Clear all timesheet-related cache
         queryClient.removeQueries({ queryKey: ["/api/timesheet"] });
-      }, 1000);
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
