@@ -135,6 +135,8 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         description: "Your shift has been started successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timesheet/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timesheet/history"] });
     },
     onError: (error: Error) => {
       toast({
@@ -180,6 +182,8 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         description: "Your shift has been completed successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timesheet/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timesheet/history"] });
     },
     onError: (error: Error) => {
       toast({
