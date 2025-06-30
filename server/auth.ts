@@ -112,4 +112,25 @@ export function setupAuth(app: Express) {
       res.json(req.user);
     }
   });
+
+  // Add the /api/auth/user endpoint that the frontend expects
+  app.get("/api/auth/user", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const user = req.user as any;
+      // Get company information for the user's tenant
+      const company = await storage.getCompanyByTenantId(user.tenantId);
+      
+      const userWithCompany = {
+        ...user,
+        companyName: company?.name || 'CareConnect'
+      };
+      
+      res.json(userWithCompany);
+    } catch (error) {
+      console.error('Error fetching user with company info:', error);
+      res.json(req.user);
+    }
+  });
 }
