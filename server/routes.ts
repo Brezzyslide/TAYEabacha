@@ -7,7 +7,7 @@ import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning";
 import { db, pool } from "./db";
 import * as schema from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, lt, gte, lte } from "drizzle-orm";
-const { medicationRecords, medicationPlans, clients, users, shiftCancellations, timesheets: timesheetsTable, timesheetEntries, leaveBalances, companies, tenants, careSupportPlans } = schema;
+const { medicationRecords, medicationPlans, clients, users, shifts, shiftCancellations, timesheets: timesheetsTable, timesheetEntries, leaveBalances, companies, tenants, careSupportPlans } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";
@@ -5040,6 +5040,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Submit timesheet error:", error);
       res.status(500).json({ message: "Failed to submit timesheet" });
+    }
+  });
+
+  // Get detailed timesheet entries for staff view
+  app.get("/api/timesheet/:timesheetId/entries", requireAuth, async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.timesheetId);
+      
+      // Get timesheet and verify ownership
+      const timesheet = await db.select()
+        .from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ));
+
+      if (timesheet.length === 0) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      // Get timesheet entries with shift and client details
+      const entries = await db.select({
+        id: timesheetEntries.id,
+        timesheetId: timesheetEntries.timesheetId,
+        shiftId: timesheetEntries.shiftId,
+        entryDate: timesheetEntries.entryDate,
+        startTime: timesheetEntries.startTime,
+        endTime: timesheetEntries.endTime,
+        breakMinutes: timesheetEntries.breakMinutes,
+        totalHours: timesheetEntries.totalHours,
+        hourlyRate: timesheetEntries.hourlyRate,
+        grossPay: timesheetEntries.grossPay,
+        notes: timesheetEntries.notes,
+        createdAt: timesheetEntries.createdAt,
+        // Get shift details
+        shiftTitle: shifts.title,
+        clientName: clients.fullName
+      })
+      .from(timesheetEntries)
+      .leftJoin(shifts, eq(timesheetEntries.shiftId, shifts.id))
+      .leftJoin(clients, eq(shifts.clientId, clients.id))
+      .where(eq(timesheetEntries.timesheetId, timesheetId))
+      .orderBy(desc(timesheetEntries.entryDate));
+
+      res.json({
+        timesheet: timesheet[0],
+        entries: entries
+      });
+    } catch (error: any) {
+      console.error("Get timesheet entries error:", error);
+      res.status(500).json({ message: "Failed to get timesheet entries" });
     }
   });
 

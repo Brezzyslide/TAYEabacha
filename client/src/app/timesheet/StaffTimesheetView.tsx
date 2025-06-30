@@ -74,6 +74,8 @@ export default function StaffTimesheetView() {
   
   // Staff timesheet state  
   const [selectedEntry, setSelectedEntry] = useState<TimesheetEntry | null>(null);
+  const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
+  const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Get current timesheet
@@ -92,6 +94,12 @@ export default function StaffTimesheetView() {
   const { data: leaveBalances } = useQuery<LeaveBalance>({
     queryKey: ['/api/leave-balances'],
     enabled: !!user && user.employmentType !== 'casual',
+  });
+
+  // Get detailed timesheet entries for selected timesheet
+  const { data: timesheetDetails } = useQuery({
+    queryKey: [`/api/timesheet/${selectedTimesheet?.id}/entries`],
+    enabled: !!selectedTimesheet?.id,
   });
 
   // Submit timesheet mutation
@@ -467,11 +475,8 @@ export default function StaffTimesheetView() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  // View timesheet details functionality
-                                  toast({
-                                    title: "Timesheet Details",
-                                    description: `Viewing timesheet for ${formatDate(timesheet.payPeriodStart)} - ${formatDate(timesheet.payPeriodEnd)}`
-                                  });
+                                  setSelectedTimesheet(timesheet);
+                                  setIsViewingDetails(true);
                                 }}
                                 className="flex items-center gap-2"
                               >
@@ -578,6 +583,146 @@ export default function StaffTimesheetView() {
             </TabsContent>
           )}
         </Tabs>
+
+        {/* Timesheet Details Modal */}
+        <Dialog open={isViewingDetails} onOpenChange={setIsViewingDetails}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Timesheet Details
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedTimesheet && (
+              <div className="space-y-6">
+                {/* Timesheet Summary */}
+                <Card className="border-2 border-blue-200 bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="font-semibold text-blue-900 mb-2">Pay Period</h3>
+                        <p className="text-blue-800">
+                          {formatDate(selectedTimesheet.payPeriodStart)} - {formatDate(selectedTimesheet.payPeriodEnd)}
+                        </p>
+                        <div className="mt-2">
+                          {getStatusBadge(selectedTimesheet.status)}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="font-medium text-blue-700">Hours</p>
+                          <p className="text-lg font-bold text-blue-900">{selectedTimesheet.totalHours}h</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-700">Gross Pay</p>
+                          <p className="text-lg font-bold text-blue-900">{formatCurrency(selectedTimesheet.totalEarnings)}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-700">Tax</p>
+                          <p className="text-lg font-bold text-red-600">-{formatCurrency(selectedTimesheet.totalTax)}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-700">Net Pay</p>
+                          <p className="text-lg font-bold text-emerald-600">{formatCurrency(selectedTimesheet.netPay)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Timesheet Entries */}
+                {timesheetDetails && timesheetDetails.entries && timesheetDetails.entries.length > 0 ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Timesheet Entries ({timesheetDetails.entries.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Shift</TableHead>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Start Time</TableHead>
+                              <TableHead>End Time</TableHead>
+                              <TableHead>Hours</TableHead>
+                              <TableHead>Rate</TableHead>
+                              <TableHead>Earnings</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {timesheetDetails.entries.map((entry: any) => (
+                              <TableRow key={entry.id}>
+                                <TableCell>{entry.entryDate ? formatDate(entry.entryDate) : '-'}</TableCell>
+                                <TableCell>{entry.shiftTitle || 'General Shift'}</TableCell>
+                                <TableCell>{entry.clientName || '-'}</TableCell>
+                                <TableCell>{entry.startTime ? formatDateTime(entry.startTime) : '-'}</TableCell>
+                                <TableCell>{entry.endTime ? formatDateTime(entry.endTime) : '-'}</TableCell>
+                                <TableCell>{entry.totalHours || 0}h</TableCell>
+                                <TableCell>{formatCurrency(entry.hourlyRate || 0)}</TableCell>
+                                <TableCell className="font-semibold">{formatCurrency(entry.grossPay || 0)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Clock className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-slate-900 mb-2">No Entries Found</h3>
+                      <p className="text-slate-600">This timesheet doesn't have any recorded entries yet.</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Summary Information */}
+                <Card className="border border-slate-200">
+                  <CardHeader>
+                    <CardTitle>Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="bg-slate-50 p-3 rounded-lg">
+                        <p className="font-medium text-slate-700">Total Hours Worked</p>
+                        <p className="text-xl font-bold text-slate-900">{selectedTimesheet.totalHours}h</p>
+                      </div>
+                      <div className="bg-emerald-50 p-3 rounded-lg">
+                        <p className="font-medium text-emerald-700">Gross Earnings</p>
+                        <p className="text-xl font-bold text-emerald-800">{formatCurrency(selectedTimesheet.totalEarnings)}</p>
+                      </div>
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="font-medium text-blue-700">Net Pay</p>
+                        <p className="text-xl font-bold text-blue-800">{formatCurrency(selectedTimesheet.netPay)}</p>
+                      </div>
+                    </div>
+                    
+                    <Separator className="my-4" />
+                    
+                    <div className="text-sm text-slate-600">
+                      <p><strong>Created:</strong> {formatDateTime(selectedTimesheet.createdAt)}</p>
+                      <p><strong>Last Updated:</strong> {formatDateTime(selectedTimesheet.updatedAt)}</p>
+                      {selectedTimesheet.status === 'submitted' && (
+                        <p className="text-blue-600 font-medium mt-2">
+                          ⏳ This timesheet is pending admin approval
+                        </p>
+                      )}
+                      {selectedTimesheet.status === 'approved' && (
+                        <p className="text-emerald-600 font-medium mt-2">
+                          ✅ This timesheet has been approved and is ready for payroll
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
