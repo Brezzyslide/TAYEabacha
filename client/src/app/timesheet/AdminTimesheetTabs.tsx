@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { ApprovalBadge } from "@/components/ui/approval-badge";
 
 interface AdminTimesheet {
   id: number;
