@@ -134,9 +134,16 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         title: "Shift Started",
         description: "Your shift has been started successfully",
       });
+      // Invalidate immediately
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/timesheet/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/timesheet/history"] });
+      
+      // Also invalidate with a slight delay to ensure backend processing is complete
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/timesheet"] });
+        queryClient.refetchQueries({ queryKey: ["/api/timesheet/current"] });
+      }, 1000);
     },
     onError: (error: Error) => {
       toast({
@@ -181,9 +188,18 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         title: "Shift Ended",
         description: "Your shift has been completed successfully",
       });
+      // Invalidate immediately
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/timesheet/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/timesheet/history"] });
+      
+      // Also invalidate with a slight delay to ensure backend processing is complete
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/timesheet"] });
+        queryClient.refetchQueries({ queryKey: ["/api/timesheet/current"] });
+        // Clear all timesheet-related cache
+        queryClient.removeQueries({ queryKey: ["/api/timesheet"] });
+      }, 1000);
     },
     onError: (error: Error) => {
       toast({
