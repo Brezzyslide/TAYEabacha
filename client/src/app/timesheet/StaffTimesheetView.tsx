@@ -86,7 +86,7 @@ export default function StaffTimesheetView() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Get current timesheet
-  const { data: currentTimesheet, isLoading } = useQuery({
+  const { data: currentTimesheet, isLoading } = useQuery<TimesheetSummary>({
     queryKey: ['/api/timesheet/current'],
     enabled: !!user
   });
@@ -289,7 +289,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-blue-600">Period Status</p>
                           <div className="mt-2">
-                            {getStatusBadge(currentTimesheet.timesheet?.status || currentTimesheet.status)}
+                            {getStatusBadge(currentTimesheet?.timesheet?.status || 'draft')}
                           </div>
                         </div>
                         <FileText className="h-8 w-8 text-blue-500" />
@@ -303,7 +303,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-emerald-600">Total Hours</p>
                           <p className="text-2xl font-bold text-emerald-700 mt-1">
-                            {currentTimesheet.timesheet?.totalHours || currentTimesheet.totalHours || 0}h
+                            {currentTimesheet?.totalHours || 0}h
                           </p>
                         </div>
                         <Clock className="h-8 w-8 text-emerald-500" />
@@ -317,7 +317,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-amber-600">Gross Pay</p>
                           <p className="text-2xl font-bold text-amber-700 mt-1">
-                            {formatCurrency(currentTimesheet.timesheet?.totalEarnings || currentTimesheet.totalEarnings || 0)}
+                            {formatCurrency(currentTimesheet?.totalEarnings || 0)}
                           </p>
                         </div>
                         <DollarSign className="h-8 w-8 text-amber-500" />
@@ -331,7 +331,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-purple-600">Net Pay</p>
                           <p className="text-2xl font-bold text-purple-700 mt-1">
-                            {formatCurrency(currentTimesheet.netPay || 0)}
+                            {formatCurrency(currentTimesheet?.timesheet?.netPay || 0)}
                           </p>
                         </div>
                         <TrendingUp className="h-8 w-8 text-purple-500" />
@@ -345,7 +345,7 @@ export default function StaffTimesheetView() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
-                      Pay Period: {formatDate(currentTimesheet.payPeriodStart)} - {formatDate(currentTimesheet.payPeriodEnd)}
+                      Pay Period: {currentTimesheet?.timesheet?.payPeriodStart ? formatDate(currentTimesheet.timesheet.payPeriodStart) : 'Current'} - {currentTimesheet?.timesheet?.payPeriodEnd ? formatDate(currentTimesheet.timesheet.payPeriodEnd) : 'Period'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

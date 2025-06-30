@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { timesheets, timesheetEntries, shifts, users, payScales } from "@shared/schema";
+import { timesheets, timesheetEntries, shifts, users, payScales, clients } from "@shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { calculatePayroll, calculatePayPeriod, updateLeaveBalances } from "./payroll-calculator";
 
