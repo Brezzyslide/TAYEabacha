@@ -1964,38 +1964,49 @@ export class DatabaseStorage implements IStorage {
   async getAdminTimesheets(tenantId: number, status: string | string[]): Promise<any[]> {
     const statusArray = Array.isArray(status) ? status : [status];
     
-    const query = sql`
-      SELECT 
-        t.id,
-        t.user_id as "userId",
-        u.full_name as "staffName",
-        u.username as "staffUsername", 
-        u.email as "staffEmail",
-        t.pay_period_start as "payPeriodStart",
-        t.pay_period_end as "payPeriodEnd",
-        t.status,
-        t.total_hours as "totalHours",
-        t.total_earnings as "totalEarnings",
-        t.total_tax as "totalTax",
-        t.total_super as "totalSuper",
-        t.net_pay as "netPay",
-        t.submitted_at as "submittedAt",
-        t.approved_at as "approvedAt",
-        t.created_at as "createdAt",
-        lb.annual_leave as "annualLeave",
-        lb.sick_leave as "sickLeave",
-        lb.personal_leave as "personalLeave",
-        lb.long_service_leave as "longServiceLeave"
-      FROM timesheets t
-      INNER JOIN users u ON t.user_id = u.id AND t.tenant_id = u.tenant_id
-      LEFT JOIN leave_balances lb ON u.id = lb.user_id AND u.tenant_id = lb.tenant_id
-      WHERE t.tenant_id = ${tenantId}
-        AND t.status = ANY(${statusArray})
-      ORDER BY t.created_at DESC
-    `;
-    
-    const result = await db.execute(query);
-    return result.rows as any[];
+    try {
+      const result = await db.select({
+        id: timesheets.id,
+        userId: timesheets.userId,
+        staffName: users.fullName,
+        staffUsername: users.username,
+        staffEmail: users.email,
+        payPeriodStart: timesheets.payPeriodStart,
+        payPeriodEnd: timesheets.payPeriodEnd,
+        status: timesheets.status,
+        totalHours: timesheets.totalHours,
+        totalEarnings: timesheets.totalEarnings,
+        totalTax: timesheets.totalTax,
+        totalSuper: timesheets.totalSuper,
+        netPay: timesheets.netPay,
+        submittedAt: timesheets.submittedAt,
+        approvedAt: timesheets.approvedAt,
+        createdAt: timesheets.createdAt,
+        annualLeave: leaveBalances.annualLeave,
+        sickLeave: leaveBalances.sickLeave,
+        personalLeave: leaveBalances.personalLeave,
+        longServiceLeave: leaveBalances.longServiceLeave
+      })
+      .from(timesheets)
+      .innerJoin(users, and(
+        eq(timesheets.userId, users.id),
+        eq(timesheets.tenantId, users.tenantId)
+      ))
+      .leftJoin(leaveBalances, and(
+        eq(users.id, leaveBalances.userId),
+        eq(users.tenantId, leaveBalances.tenantId)
+      ))
+      .where(and(
+        eq(timesheets.tenantId, tenantId),
+        or(...statusArray.map(s => eq(timesheets.status, s as any)))
+      ))
+      .orderBy(desc(timesheets.createdAt));
+
+      return result;
+    } catch (error) {
+      console.error("[ADMIN TIMESHEETS] Query error:", error);
+      return [];
+    }
   }
 
   async approveTimesheet(timesheetId: number, adminUserId: number, tenantId: number): Promise<any> {
