@@ -101,6 +101,12 @@ export default function AdminTimesheetTabs() {
     enabled: !!user && (user.role === "Admin" || user.role === "ConsoleManager")
   });
 
+  // Debug logging for payslips data
+  console.log("Payslip Timesheets Data:", payslipTimesheets);
+  console.log("Payslip Timesheets Length:", payslipTimesheets.length);
+  console.log("Filtered Payslips:", filterTimesheets(payslipTimesheets || []));
+  console.log("Current Filters:", { searchTerm, statusFilter, staffFilter, periodFilter });
+
   // Analytics Data
   const { data: analyticsData } = useQuery({
     queryKey: ["/api/admin/timesheet-analytics"],
@@ -172,13 +178,13 @@ export default function AdminTimesheetTabs() {
 
   const filterTimesheets = (timesheets: AdminTimesheet[]) => {
     return timesheets.filter(timesheet => {
-      const matchesSearch = timesheet.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           timesheet.staffUsername.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (timesheet.staffName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (timesheet.staffUsername || timesheet.staffEmail || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || timesheet.status === statusFilter;
       const matchesStaff = staffFilter === "all" || timesheet.userId.toString() === staffFilter;
       
-      // Period filter logic
-      const periodStart = new Date(timesheet.payPeriodStart);
+      // Period filter logic - skip period filtering for payslips since they should show all approved timesheets
+      const periodStart = timesheet.payPeriodStart ? new Date(timesheet.payPeriodStart) : new Date();
       const now = new Date();
       const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14);
       const matchesPeriod = periodFilter === "all" || 
@@ -603,6 +609,14 @@ export default function AdminTimesheetTabs() {
             <CardContent>
               {loadingPayslips ? (
                 <div className="text-center py-8 text-slate-500">Loading payslips...</div>
+              ) : payslipTimesheets.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  No approved timesheets ready for payslip generation.
+                </div>
+              ) : filterTimesheets(payslipTimesheets).length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  No payslips match your current filters. Found {payslipTimesheets.length} total approved timesheets.
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
