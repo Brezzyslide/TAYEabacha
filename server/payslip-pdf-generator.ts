@@ -65,10 +65,14 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
     doc.setTextColor(0, 0, 0);
     let yPos = 120;
     
+    const totalHours = parseFloat(timesheet.totalHours || "0");
+    const totalEarnings = parseFloat(timesheet.totalEarnings || "0");
+    const hourlyRate = totalHours > 0 ? totalEarnings / totalHours : 0;
+    
     doc.text('Regular Hours', 25, yPos);
-    doc.text(`${parseFloat(timesheet.totalHours || "0")}`, 80, yPos);
-    doc.text(`$${parseFloat(timesheet.hourlyRate || "0").toFixed(2)}`, 110, yPos);
-    doc.text(`$${parseFloat(timesheet.totalEarnings || "0").toFixed(2)}`, 150, yPos);
+    doc.text(`${totalHours.toFixed(2)}`, 80, yPos);
+    doc.text(`$${hourlyRate.toFixed(2)}`, 110, yPos);
+    doc.text(`$${totalEarnings.toFixed(2)}`, 150, yPos);
     
     yPos += 8;
     doc.text('Superannuation (11%)', 25, yPos);
@@ -104,16 +108,19 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
     doc.setFillColor(240, 240, 240);
     doc.rect(20, yPos, 170, 25, 'F');
     
+    const totalTax = parseFloat(timesheet.totalTax || "0");
+    const netPay = parseFloat(timesheet.netPay || "0");
+    
     doc.setFont('helvetica', 'normal');
     doc.text('Gross Pay:', 25, yPos + 8);
-    doc.text(`$${parseFloat(timesheet.totalEarnings || "0").toFixed(2)}`, 150, yPos + 8);
+    doc.text(`$${totalEarnings.toFixed(2)}`, 150, yPos + 8);
     
     doc.text('Total Deductions:', 25, yPos + 16);
-    doc.text(`$${parseFloat(timesheet.totalTax || "0").toFixed(2)}`, 150, yPos + 16);
+    doc.text(`$${totalTax.toFixed(2)}`, 150, yPos + 16);
     
     doc.setFont('helvetica', 'bold');
     doc.text('Net Pay:', 25, yPos + 24);
-    doc.text(`$${parseFloat(timesheet.netPay || "0").toFixed(2)}`, 150, yPos + 24);
+    doc.text(`$${netPay.toFixed(2)}`, 150, yPos + 24);
     
     // Footer
     doc.setFontSize(8);
