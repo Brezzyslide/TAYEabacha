@@ -2059,6 +2059,20 @@ export class DatabaseStorage implements IStorage {
 
   async getTimesheetEntries(timesheetId: number, tenantId: number): Promise<any[]> {
     try {
+      // First verify timesheet belongs to the tenant
+      const timesheet = await db.select()
+        .from(timesheets)
+        .where(and(
+          eq(timesheets.id, timesheetId),
+          eq(timesheets.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      if (!timesheet.length) {
+        console.log(`Timesheet ${timesheetId} not found for tenant ${tenantId}`);
+        return [];
+      }
+
       // Get timesheet entries with shift and client details
       const entries = await db.select({
         id: timesheetEntries.id,
@@ -2081,10 +2095,7 @@ export class DatabaseStorage implements IStorage {
       .from(timesheetEntries)
       .leftJoin(shifts, eq(timesheetEntries.shiftId, shifts.id))
       .leftJoin(clients, eq(shifts.clientId, clients.id))
-      .where(and(
-        eq(timesheetEntries.timesheetId, timesheetId),
-        eq(timesheetEntries.tenantId, tenantId)
-      ))
+      .where(eq(timesheetEntries.timesheetId, timesheetId))
       .orderBy(desc(timesheetEntries.entryDate));
 
       return entries;
