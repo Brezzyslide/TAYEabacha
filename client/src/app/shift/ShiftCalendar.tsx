@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Plus, Users, MapPin } from "lucide-react";
+import { Calendar, Clock, Plus, Users, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { type Shift } from "@shared/schema";
@@ -379,21 +379,57 @@ export default function ShiftCalendar() {
               {/* Calendar Navigation */}
               {viewMode === "calendar" && (
                 <div className="flex items-center justify-between mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
-                  >
-                    Previous
-                  </Button>
-                  <h2 className="text-xl font-semibold">
-                    {format(currentDate, "MMMM yyyy")}
-                  </h2>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
-                  >
-                    Next
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth()))}
+                    >
+                      &lt;&lt;
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+                    >
+                      Previous
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-semibold">
+                      {format(currentDate, "MMMM yyyy")}
+                    </h2>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setCurrentDate(new Date())}
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setCurrentDate(new Date(2025, 5, 30))} // June 2025
+                    >
+                      June 2025
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth()))}
+                    >
+                      &gt;&gt;
+                    </Button>
+                  </div>
                 </div>
               )}
 
