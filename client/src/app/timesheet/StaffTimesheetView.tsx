@@ -303,7 +303,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-emerald-600">Total Hours</p>
                           <p className="text-2xl font-bold text-emerald-700 mt-1">
-                            {currentTimesheet?.totalHours || 0}h
+                            {currentTimesheet?.timesheet?.totalHours || 0}h
                           </p>
                         </div>
                         <Clock className="h-8 w-8 text-emerald-500" />
@@ -352,7 +352,7 @@ export default function StaffTimesheetView() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <p className="font-medium text-slate-700">Gross Pay</p>
-                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet?.totalEarnings || 0)}</p>
+                        <p className="text-lg font-bold text-slate-900">{formatCurrency(currentTimesheet?.timesheet?.totalEarnings || 0)}</p>
                       </div>
                       <div>
                         <p className="font-medium text-slate-700">Tax Withheld</p>
