@@ -110,6 +110,9 @@ export default function AdminTimesheetTabs() {
   // Get timesheet entries for editing
   const { data: timesheetEntries = [] } = useQuery({
     queryKey: ["/api/admin/timesheet-entries", selectedTimesheet?.id],
+    queryFn: () => selectedTimesheet ? fetch(`/api/admin/timesheet-entries/${selectedTimesheet.id}`, {
+      credentials: 'include'
+    }).then(res => res.json()).then(data => data.entries || []) : [],
     enabled: !!selectedTimesheet
   });
 
