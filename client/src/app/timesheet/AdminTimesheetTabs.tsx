@@ -112,7 +112,7 @@ export default function AdminTimesheetTabs() {
     queryKey: ["/api/admin/timesheet-entries", selectedTimesheet?.id],
     queryFn: () => selectedTimesheet ? fetch(`/api/admin/timesheet-entries/${selectedTimesheet.id}`, {
       credentials: 'include'
-    }).then(res => res.json()).then(data => data.entries || []) : [],
+    }).then(res => res.json()) : [],
     enabled: !!selectedTimesheet
   });
 
