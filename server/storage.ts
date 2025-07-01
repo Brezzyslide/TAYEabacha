@@ -206,6 +206,7 @@ export interface IStorage {
   getTimesheetById(timesheetId: number, tenantId: number): Promise<any>;
   getTimesheetEntries(timesheetId: number, tenantId: number): Promise<any[]>;
   updateTimesheetEntry(entryId: number, updateData: any, tenantId: number): Promise<any>;
+  getTimesheetEntryById(entryId: number, tenantId: number): Promise<any>;
   markTimesheetAsPaid(timesheetId: number, adminUserId: number, tenantId: number): Promise<any>;
   createBulkNotifications(notifications: InsertNotification[]): Promise<Notification[]>;
 
@@ -1679,8 +1680,8 @@ export class DatabaseStorage implements IStorage {
     return entry.id;
   }
 
-  async updateTimesheetEntry(entryId: number, updates: any, tenantId: number): Promise<void> {
-    await db.update(timesheetEntries)
+  async updateTimesheetEntry(entryId: number, updates: any, tenantId: number): Promise<any> {
+    const [updatedEntry] = await db.update(timesheetEntries)
       .set(updates)
       .where(and(
         eq(timesheetEntries.id, entryId),
@@ -1692,7 +1693,10 @@ export class DatabaseStorage implements IStorage {
               eq(timesheets.tenantId, tenantId)
             ))
         )
-      ));
+      ))
+      .returning();
+    
+    return updatedEntry;
   }
 
   async deleteTimesheetEntry(entryId: number, tenantId: number): Promise<void> {
@@ -2187,10 +2191,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateTimesheetEntry(entryId: number, updateData: any, tenantId: number): Promise<any> {
-    // Placeholder implementation - would update timesheet entries if table exists
-    return { id: entryId, message: "Entry update not yet implemented" };
-  }
+
 
   async markTimesheetAsPaid(timesheetId: number, adminUserId: number, tenantId: number): Promise<any> {
     const [updated] = await db.update(timesheets)
