@@ -22,7 +22,8 @@ import {
   Search,
   User,
   Users,
-  FileDown
+  FileDown,
+  Eye
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -445,7 +446,17 @@ export default function AdminTimesheetTabs() {
                                   setIsEditDialogOpen(true);
                                 }}
                               >
-                                <Edit className="h-4 w-4" />
+                                {timesheet.status === "submitted" || timesheet.status === "approved" ? (
+                                  <>
+                                    <Eye className="h-4 w-4" />
+                                    View
+                                  </>
+                                ) : (
+                                  <>
+                                    <Edit className="h-4 w-4" />
+                                    Edit
+                                  </>
+                                )}
                               </Button>
                               {timesheet.status === "submitted" && (
                                 <>
@@ -544,7 +555,17 @@ export default function AdminTimesheetTabs() {
                                   setIsEditDialogOpen(true);
                                 }}
                               >
-                                <Edit className="h-4 w-4" />
+                                {timesheet.status === "submitted" || timesheet.status === "approved" ? (
+                                  <>
+                                    <Eye className="h-4 w-4" />
+                                    View
+                                  </>
+                                ) : (
+                                  <>
+                                    <Edit className="h-4 w-4" />
+                                    Edit
+                                  </>
+                                )}
                               </Button>
                               {timesheet.status === "approved" && (
                                 <Button
@@ -642,7 +663,12 @@ export default function AdminTimesheetTabs() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Edit Timesheet - {selectedTimesheet?.staffName}</DialogTitle>
+            <DialogTitle>
+              {selectedTimesheet && (selectedTimesheet.status === "submitted" || selectedTimesheet.status === "approved") 
+                ? `View Timesheet - ${selectedTimesheet.staffName}`
+                : `Edit Timesheet - ${selectedTimesheet?.staffName}`
+              }
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {selectedTimesheet && (
