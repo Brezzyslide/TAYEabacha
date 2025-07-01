@@ -4907,6 +4907,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff payslip PDF generation endpoint
+  app.get("/api/payslips/:id/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+      const timesheet = await storage.getTimesheetById(timesheetId, req.user.tenantId);
+      
+      if (!timesheet) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      // Verify user owns this timesheet or has admin access
+      if (timesheet.userId !== req.user.id && !["Admin", "ConsoleManager"].includes(req.user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Only allow PDF generation for approved or paid timesheets
+      if (!['approved', 'paid'].includes(timesheet.status)) {
+        return res.status(400).json({ message: "Payslip only available for approved timesheets" });
+      }
+
+      // Import PDF generation utility
+      const { generatePayslipPDF } = await import('./payslip-pdf-generator');
+      const pdfBuffer = await generatePayslipPDF(timesheet, req.user.tenantId);
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "download_payslip",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Downloaded payslip PDF`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=payslip-${timesheet.staffName}-${new Date().toISOString().split('T')[0]}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Staff payslip PDF error:", error);
+      res.status(500).json({ message: "Failed to generate payslip PDF" });
+    }
+  });
+
   // Care Support Plans API
   app.get("/api/care-support-plans", requireAuth, async (req: any, res) => {
     try {

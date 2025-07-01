@@ -3,6 +3,9 @@ import { format } from "date-fns";
 
 export async function generatePayslipPDF(timesheet: any, tenantId: number): Promise<Buffer> {
   try {
+    // Debug: Log the timesheet data being passed
+    console.log('[PAYSLIP PDF] Generating PDF for timesheet:', JSON.stringify(timesheet, null, 2));
+    
     // Dynamic import for jsPDF to avoid ESM issues
     const { jsPDF } = await import('jspdf');
     
