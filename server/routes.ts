@@ -4627,7 +4627,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get payslip-ready timesheets (approved)
   app.get("/api/admin/payslips", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
+      // Get only approved timesheets that haven't been paid yet
       const timesheets = await storage.getAdminTimesheets(req.user.tenantId, 'approved');
+      console.log(`[PAYSLIPS] Found ${timesheets.length} approved timesheets for tenant ${req.user.tenantId}`);
       res.json(timesheets);
     } catch (error: any) {
       console.error("Get admin payslips error:", error);

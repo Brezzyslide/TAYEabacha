@@ -129,6 +129,7 @@ export default function AdminTimesheetTabs() {
       toast({ title: "Timesheet approved successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payslips"] });
     }
   });
 
