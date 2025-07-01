@@ -317,7 +317,7 @@ export default function StaffTimesheetView() {
                         <div>
                           <p className="text-sm font-medium text-amber-600">Gross Pay</p>
                           <p className="text-2xl font-bold text-amber-700 mt-1">
-                            {formatCurrency(currentTimesheet?.totalEarnings || 0)}
+                            {formatCurrency(currentTimesheet?.timesheet?.totalEarnings || 0)}
                           </p>
                         </div>
                         <DollarSign className="h-8 w-8 text-amber-500" />
