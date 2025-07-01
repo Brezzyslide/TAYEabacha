@@ -19,7 +19,7 @@ import {
   type PayScale, type Notification, type InsertNotification
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, or } from "drizzle-orm";
+import { eq, and, desc, sql, or, exists } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
