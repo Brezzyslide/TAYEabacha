@@ -673,10 +673,10 @@ export default function StaffTimesheetView() {
                 </Card>
 
                 {/* Timesheet Entries */}
-                {timesheetDetails && timesheetDetails.entries && timesheetDetails.entries.length > 0 ? (
+                {currentTimesheet && currentTimesheet.entries && currentTimesheet.entries.length > 0 ? (
                   <Card>
                     <CardHeader>
-                      <CardTitle>Timesheet Entries ({timesheetDetails.entries.length})</CardTitle>
+                      <CardTitle>Timesheet Entries ({currentTimesheet.entries.length})</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-x-auto">
@@ -694,7 +694,7 @@ export default function StaffTimesheetView() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {timesheetDetails.entries.map((entry: any) => (
+                            {currentTimesheet.entries.map((entry: any) => (
                               <TableRow key={entry.id}>
                                 <TableCell>{entry.entryDate ? formatDate(entry.entryDate) : '-'}</TableCell>
                                 <TableCell>{entry.shiftTitle || 'General Shift'}</TableCell>
