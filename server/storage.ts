@@ -2109,7 +2109,24 @@ export class DatabaseStorage implements IStorage {
   async getTimesheetById(timesheetId: number, tenantId: number): Promise<any> {
     const query = sql`
       SELECT 
-        t.*,
+        t.id,
+        t.user_id as "userId",
+        t.tenant_id as "tenantId",
+        t.pay_period_start as "payPeriodStart",
+        t.pay_period_end as "payPeriodEnd",
+        t.status,
+        t.total_hours as "totalHours",
+        t.total_earnings as "totalEarnings",
+        t.total_tax as "totalTax",
+        t.total_super as "totalSuper",
+        t.net_pay as "netPay",
+        t.submitted_at as "submittedAt",
+        t.approved_at as "approvedAt",
+        t.approved_by as "approvedBy",
+        t.paid_at as "paidAt",
+        t.paid_by as "paidBy",
+        t.created_at as "createdAt",
+        t.updated_at as "updatedAt",
         u.full_name as "staffName",
         u.username as "staffUsername",
         u.email as "staffEmail"

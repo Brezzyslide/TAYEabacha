@@ -5234,7 +5234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: 'approved',
             submittedAt: new Date(),
             approvedAt: new Date(),
-            approvedBy: -1, // System auto-approval indicator
+            approvedBy: null, // System auto-approval (no specific user)
             updatedAt: new Date()
           })
           .where(eq(timesheetsTable.id, timesheetId))
