@@ -2208,6 +2208,26 @@ export class DatabaseStorage implements IStorage {
     
     return updated;
   }
+
+  async getTimesheetEntryById(entryId: number, tenantId: number): Promise<any> {
+    const result = await db
+      .select()
+      .from(timesheetEntries)
+      .where(and(
+        eq(timesheetEntries.id, entryId),
+        exists(
+          db.select({ id: timesheets.id })
+            .from(timesheets)
+            .where(and(
+              eq(timesheets.id, timesheetEntries.timesheetId),
+              eq(timesheets.tenantId, tenantId)
+            ))
+        )
+      ))
+      .limit(1);
+    
+    return result[0];
+  }
 }
 
 export const storage = new DatabaseStorage();

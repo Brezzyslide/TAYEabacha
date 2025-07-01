@@ -206,7 +206,7 @@ async function fixMissingTimesheetEntries(tenantId: number): Promise<string[]> {
   return fixes;
 }
 
-async function updateTimesheetTotals(timesheetId: number): Promise<void> {
+export async function updateTimesheetTotals(timesheetId: number): Promise<void> {
   await db.execute(sql`
     UPDATE timesheets 
     SET 

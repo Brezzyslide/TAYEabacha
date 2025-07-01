@@ -11,6 +11,7 @@ const { medicationRecords, medicationPlans, clients, users, shifts, shiftCancell
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";
+import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -4850,18 +4851,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const entryId = parseInt(req.params.entryId);
       const updateData = req.body;
+      
+      // Get the timesheet entry to find the timesheet ID
+      const entry = await storage.getTimesheetEntryById(entryId, req.user.tenantId);
+      if (!entry) {
+        return res.status(404).json({ message: "Timesheet entry not found" });
+      }
+      
       const updatedEntry = await storage.updateTimesheetEntry(entryId, updateData, req.user.tenantId);
       
       if (!updatedEntry) {
-        return res.status(404).json({ message: "Timesheet entry not found" });
+        return res.status(404).json({ message: "Failed to update timesheet entry" });
       }
+
+      // Recalculate timesheet totals after updating entry
+      await updateTimesheetTotals(entry.timesheetId);
 
       await storage.createActivityLog({
         userId: req.user.id,
         action: "update_timesheet_entry",
         resourceType: "timesheet_entry",
         resourceId: entryId,
-        description: `Updated timesheet entry`,
+        description: `Updated timesheet entry and recalculated totals`,
         tenantId: req.user.tenantId,
       });
 
