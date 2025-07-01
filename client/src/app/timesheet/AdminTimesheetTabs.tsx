@@ -101,9 +101,7 @@ export default function AdminTimesheetTabs() {
     enabled: !!user && (user.role === "Admin" || user.role === "ConsoleManager")
   });
 
-  // Debug logging for payslips data
-  console.log("Payslip Timesheets Data:", payslipTimesheets);
-  console.log("Payslip Timesheets Length:", Array.isArray(payslipTimesheets) ? payslipTimesheets.length : 0);
+
 
   // Analytics Data
   const { data: analyticsData } = useQuery({
@@ -160,20 +158,46 @@ export default function AdminTimesheetTabs() {
 
   // Generate PDF payslip
   const generatePayslipPDF = useMutation({
-    mutationFn: (timesheetId: number) => 
-      apiRequest("POST", `/api/admin/timesheets/${timesheetId}/generate-payslip-pdf`),
-    onSuccess: (data) => {
+    mutationFn: async (timesheetId: number) => {
+      const response = await fetch(`/api/admin/timesheets/${timesheetId}/generate-payslip-pdf`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate payslip');
+      }
+      
+      return response.blob();
+    },
+    onSuccess: (blob, timesheetId) => {
+      // Find the timesheet data for the filename
+      const timesheet = (payslipTimesheets as any[])?.find(t => t.id === timesheetId);
+      const staffName = timesheet?.staffName || 'staff';
+      
       // Create download link for PDF
-      const blob = new Blob([data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `payslip-${selectedTimesheet?.staffName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.download = `payslip-${staffName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast({ title: "Payslip PDF generated successfully" });
+      
+      // Refresh the payslips data
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/payslips"] });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Failed to generate payslip", 
+        description: "Please try again.",
+        variant: "destructive" 
+      });
     }
   });
 
