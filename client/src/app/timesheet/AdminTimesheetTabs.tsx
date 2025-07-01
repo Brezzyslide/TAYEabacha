@@ -23,10 +23,16 @@ import {
   User,
   Users,
   FileDown,
-  Eye
+  Eye,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { ApprovalBadge } from "@/components/ui/approval-badge";
@@ -309,6 +315,71 @@ export default function AdminTimesheetTabs() {
     setStaffPayslipEndDate("");
   };
 
+  // State for editing timesheet entries in Current Period
+  const [showTimesheetDetails, setShowTimesheetDetails] = useState(false);
+  const [currentTimesheetEntries, setCurrentTimesheetEntries] = useState<any[]>([]);
+  const [editingCurrentEntry, setEditingCurrentEntry] = useState<any>(null);
+
+  // Create Manual Entry mutation for Current Period
+  const createManualEntry = useMutation({
+    mutationFn: async (entryData: any) => {
+      const response = await fetch('/api/admin/timesheet-entries/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(entryData),
+      });
+      if (!response.ok) throw new Error('Failed to create manual entry');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheet-analytics"] });
+      toast({ title: "Manual timesheet entry created successfully" });
+      if (selectedTimesheet?.id) {
+        loadTimesheetEntries(selectedTimesheet.id);
+      }
+    }
+  });
+
+  // Edit Current Period Entry mutation
+  const editCurrentEntry = useMutation({
+    mutationFn: async ({ entryId, updates }: { entryId: number; updates: any }) => {
+      const response = await fetch(`/api/admin/timesheet-entries/${entryId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error('Failed to update entry');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheet-analytics"] });
+      toast({ title: "Timesheet entry updated successfully" });
+      setEditingCurrentEntry(null);
+      if (selectedTimesheet?.id) {
+        loadTimesheetEntries(selectedTimesheet.id);
+      }
+    }
+  });
+
+  // Load timesheet entries for editing
+  const loadTimesheetEntries = async (timesheetId: number) => {
+    try {
+      const response = await fetch(`/api/admin/timesheet-entries/${timesheetId}`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const entries = await response.json();
+        setCurrentTimesheetEntries(entries);
+      }
+    } catch (error) {
+      console.error('Failed to load timesheet entries:', error);
+    }
+  };
+
   // Calculate analytics from filtered data
   const calculateAnalytics = (timesheets: any[]) => {
     const filtered = filterTimesheets(timesheets);
@@ -581,6 +652,18 @@ export default function AdminTimesheetTabs() {
                                     Edit
                                   </>
                                 )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={async () => {
+                                  setSelectedTimesheet(timesheet);
+                                  await loadTimesheetEntries(timesheet.id);
+                                  setShowTimesheetDetails(true);
+                                }}
+                              >
+                                <Clock className="h-4 w-4" />
+                                Edit Details
                               </Button>
                               {timesheet.status === "submitted" && (
                                 <>
@@ -1088,6 +1171,206 @@ export default function AdminTimesheetTabs() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Timesheet Details Editor Modal for Current Period */}
+      <Dialog open={showTimesheetDetails} onOpenChange={setShowTimesheetDetails}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Edit Timesheet Details - {selectedTimesheet?.staffName}
+            </DialogTitle>
+            <div className="text-sm text-slate-600">
+              Pay Period: {selectedTimesheet && format(new Date(selectedTimesheet.payPeriodStart), "MMM dd")} - {selectedTimesheet && format(new Date(selectedTimesheet.payPeriodEnd), "MMM dd, yyyy")}
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Timesheet Summary */}
+            {selectedTimesheet && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Timesheet Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-sm text-slate-600">Total Hours</div>
+                      <div className="text-xl font-semibold">{selectedTimesheet.totalHours}h</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-600">Gross Pay</div>
+                      <div className="text-xl font-semibold">${selectedTimesheet.totalEarnings}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-600">Status</div>
+                      <div>{getStatusBadge(selectedTimesheet.status)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-600">Leave Accrued</div>
+                      <div className="text-sm">
+                        <div>Annual: {selectedTimesheet.annualLeave || 0}h</div>
+                        <div>Sick: {selectedTimesheet.sickLeave || 0}h</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Timesheet Entries */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Timesheet Entries</span>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      // Create manual entry form logic here
+                      const newEntry = {
+                        timesheetId: selectedTimesheet?.id,
+                        entryDate: new Date().toISOString().split('T')[0],
+                        startTime: '09:00',
+                        endTime: '17:00',
+                        breakMinutes: 30,
+                        hourlyRate: 25.41,
+                        notes: '',
+                        isAutoGenerated: false
+                      };
+                      setEditingCurrentEntry(newEntry);
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Manual Entry
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Break</TableHead>
+                        <TableHead>Hours</TableHead>
+                        <TableHead>Rate</TableHead>
+                        <TableHead>Gross Pay</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentTimesheetEntries.map((entry) => (
+                        <TableRow key={`current-${entry.id}`}>
+                          <TableCell>
+                            <div className="text-sm">
+                              {format(new Date(entry.entryDate), "MMM dd, yyyy")}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {entry.startTime} - {entry.endTime}
+                            </div>
+                          </TableCell>
+                          <TableCell>{entry.breakMinutes || 0} min</TableCell>
+                          <TableCell>{entry.totalHours || 0}h</TableCell>
+                          <TableCell>${entry.hourlyRate || 0}</TableCell>
+                          <TableCell>${entry.grossPay || 0}</TableCell>
+                          <TableCell>
+                            <Badge variant={entry.isAutoGenerated ? "default" : "secondary"}>
+                              {entry.isAutoGenerated ? "Auto" : "Manual"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingCurrentEntry(entry)}
+                                disabled={selectedTimesheet?.status === "approved"}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              {!entry.isAutoGenerated && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={async () => {
+                                    if (confirm('Delete this manual entry?')) {
+                                      try {
+                                        const response = await fetch(`/api/admin/timesheet-entries/${entry.id}`, {
+                                          method: 'DELETE',
+                                          credentials: 'include'
+                                        });
+                                        if (response.ok) {
+                                          await loadTimesheetEntries(selectedTimesheet!.id);
+                                          queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
+                                          toast({ title: "Entry deleted successfully" });
+                                        }
+                                      } catch (error) {
+                                        toast({ title: "Failed to delete entry", variant: "destructive" });
+                                      }
+                                    }
+                                  }}
+                                  disabled={selectedTimesheet?.status === "approved"}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Entry Modal */}
+      {editingCurrentEntry && (
+        <Dialog open={!!editingCurrentEntry} onOpenChange={() => setEditingCurrentEntry(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingCurrentEntry.id ? 'Edit Timesheet Entry' : 'Add Manual Entry'}
+              </DialogTitle>
+            </DialogHeader>
+            <TimesheetEntryForm
+              entry={editingCurrentEntry}
+              onSave={async (entryData) => {
+                try {
+                  if (editingCurrentEntry.id) {
+                    // Update existing entry
+                    await editCurrentEntry.mutateAsync({
+                      entryId: editingCurrentEntry.id,
+                      updates: entryData
+                    });
+                  } else {
+                    // Create new manual entry
+                    await createManualEntry.mutateAsync({
+                      ...entryData,
+                      timesheetId: selectedTimesheet?.id
+                    });
+                  }
+                } catch (error) {
+                  toast({ 
+                    title: "Failed to save entry", 
+                    variant: "destructive" 
+                  });
+                }
+              }}
+              onCancel={() => setEditingCurrentEntry(null)}
+              loading={editCurrentEntry.isPending || createManualEntry.isPending}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
