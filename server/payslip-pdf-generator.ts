@@ -66,15 +66,15 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
     let yPos = 120;
     
     doc.text('Regular Hours', 25, yPos);
-    doc.text(`${timesheet.totalHours || 0}`, 80, yPos);
-    doc.text(`$${(timesheet.hourlyRate || 0).toFixed(2)}`, 110, yPos);
-    doc.text(`$${(timesheet.totalEarnings || 0).toFixed(2)}`, 150, yPos);
+    doc.text(`${parseFloat(timesheet.totalHours || "0")}`, 80, yPos);
+    doc.text(`$${parseFloat(timesheet.hourlyRate || "0").toFixed(2)}`, 110, yPos);
+    doc.text(`$${parseFloat(timesheet.totalEarnings || "0").toFixed(2)}`, 150, yPos);
     
     yPos += 8;
     doc.text('Superannuation (11%)', 25, yPos);
     doc.text('-', 80, yPos);
     doc.text('-', 110, yPos);
-    doc.text(`$${(timesheet.superContribution || 0).toFixed(2)}`, 150, yPos);
+    doc.text(`$${parseFloat(timesheet.totalSuper || "0").toFixed(2)}`, 150, yPos);
     
     // Deductions section
     yPos += 20;
@@ -92,7 +92,7 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
     doc.setFont('helvetica', 'normal');
     yPos += 15;
     doc.text('Income Tax', 25, yPos);
-    doc.text(`$${(timesheet.incomeTax || 0).toFixed(2)}`, 150, yPos);
+    doc.text(`$${parseFloat(timesheet.totalTax || "0").toFixed(2)}`, 150, yPos);
     
     // Summary section
     yPos += 25;
@@ -106,14 +106,14 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
     
     doc.setFont('helvetica', 'normal');
     doc.text('Gross Pay:', 25, yPos + 8);
-    doc.text(`$${(timesheet.totalEarnings || 0).toFixed(2)}`, 150, yPos + 8);
+    doc.text(`$${parseFloat(timesheet.totalEarnings || "0").toFixed(2)}`, 150, yPos + 8);
     
     doc.text('Total Deductions:', 25, yPos + 16);
-    doc.text(`$${(timesheet.incomeTax || 0).toFixed(2)}`, 150, yPos + 16);
+    doc.text(`$${parseFloat(timesheet.totalTax || "0").toFixed(2)}`, 150, yPos + 16);
     
     doc.setFont('helvetica', 'bold');
     doc.text('Net Pay:', 25, yPos + 24);
-    doc.text(`$${(timesheet.netPay || 0).toFixed(2)}`, 150, yPos + 24);
+    doc.text(`$${parseFloat(timesheet.netPay || "0").toFixed(2)}`, 150, yPos + 24);
     
     // Footer
     doc.setFontSize(8);
