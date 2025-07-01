@@ -244,25 +244,69 @@ export default function AdminTimesheetTabs() {
     }
   });
 
-  // Filter function definition
-  const filterTimesheets = (timesheets: any[]) => {
+  // Date range states for filtering
+  const [payslipStartDate, setPayslipStartDate] = useState<string>("");
+  const [payslipEndDate, setPayslipEndDate] = useState<string>("");
+  const [staffPayslipStartDate, setStaffPayslipStartDate] = useState<string>("");
+  const [staffPayslipEndDate, setStaffPayslipEndDate] = useState<string>("");
+
+  // Enhanced filter function with date range support
+  const filterTimesheets = (timesheets: any[], tabType: 'general' | 'payslips' | 'staff-payslips' = 'general') => {
     if (!Array.isArray(timesheets)) return [];
+    
+    // Get appropriate date filters based on tab
+    const startDate = tabType === 'payslips' ? payslipStartDate : 
+                     tabType === 'staff-payslips' ? staffPayslipStartDate : "";
+    const endDate = tabType === 'payslips' ? payslipEndDate : 
+                   tabType === 'staff-payslips' ? staffPayslipEndDate : "";
+    
     return timesheets.filter(timesheet => {
       const matchesSearch = (timesheet.staffName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (timesheet.staffUsername || timesheet.staffEmail || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || timesheet.status === statusFilter;
       const matchesStaff = staffFilter === "all" || timesheet.userId.toString() === staffFilter;
       
-      // For payslips, show all approved regardless of period
-      const periodStart = timesheet.payPeriodStart ? new Date(timesheet.payPeriodStart) : new Date();
-      const now = new Date();
-      const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14);
-      const matchesPeriod = periodFilter === "all" || 
-        (periodFilter === "current" && periodStart >= currentPeriodStart) ||
-        (periodFilter === "previous" && periodStart < currentPeriodStart);
+      // Date range filtering based on pay period end or paid date
+      let matchesDateRange = true;
+      if (startDate || endDate) {
+        const timesheetDate = new Date(timesheet.payPeriodEnd || timesheet.paidAt || timesheet.payPeriodStart);
+        if (startDate && timesheetDate < new Date(startDate)) {
+          matchesDateRange = false;
+        }
+        if (endDate && timesheetDate > new Date(endDate + 'T23:59:59')) {
+          matchesDateRange = false;
+        }
+      }
       
-      return matchesSearch && matchesStatus && matchesStaff && matchesPeriod;
+      // For general tabs, keep existing period logic
+      if (tabType === 'general') {
+        const periodStart = timesheet.payPeriodStart ? new Date(timesheet.payPeriodStart) : new Date();
+        const now = new Date();
+        const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14);
+        const matchesPeriod = periodFilter === "all" || 
+          (periodFilter === "current" && periodStart >= currentPeriodStart) ||
+          (periodFilter === "previous" && periodStart < currentPeriodStart);
+        
+        return matchesSearch && matchesStatus && matchesStaff && matchesPeriod;
+      }
+      
+      return matchesSearch && matchesStatus && matchesStaff && matchesDateRange;
     });
+  };
+
+  // Clear filters functions
+  const clearPayslipFilters = () => {
+    setSearchTerm("");
+    setStaffFilter("all");
+    setPayslipStartDate("");
+    setPayslipEndDate("");
+  };
+
+  const clearStaffPayslipFilters = () => {
+    setSearchTerm("");
+    setStaffFilter("all");
+    setStaffPayslipStartDate("");
+    setStaffPayslipEndDate("");
   };
 
   // Calculate analytics from filtered data
@@ -678,15 +722,82 @@ export default function AdminTimesheetTabs() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Payslips Filters */}
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Search */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Search Staff</label>
+                    <Input
+                      placeholder="Search by name or email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                  
+                  {/* Staff Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Staff Member</label>
+                    <Select value={staffFilter} onValueChange={setStaffFilter}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="All Staff" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Staff</SelectItem>
+                        {Array.from(new Set((payslipTimesheets as any[])?.map(t => ({ id: t.userId, name: t.staffName })) || [])).map(staff => (
+                          <SelectItem key={staff.id} value={staff.id.toString()}>{staff.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                    <Input
+                      type="date"
+                      value={payslipStartDate}
+                      onChange={(e) => setPayslipStartDate(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+                    <Input
+                      type="date"
+                      value={payslipEndDate}
+                      onChange={(e) => setPayslipEndDate(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center mt-4">
+                  <div className="text-sm text-slate-600">
+                    Showing {filterTimesheets(payslipTimesheets, 'payslips').length} of {(payslipTimesheets as any[])?.length || 0} payslips
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearPayslipFilters}
+                    className="text-xs"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
               {loadingPayslips ? (
                 <div className="text-center py-8 text-slate-500">Loading payslips...</div>
               ) : !Array.isArray(payslipTimesheets) || payslipTimesheets.length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   No approved timesheets ready for payslip generation.
                 </div>
-              ) : filterTimesheets(payslipTimesheets).length === 0 ? (
+              ) : filterTimesheets(payslipTimesheets, 'payslips').length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
-                  No payslips match your current filters. Found {payslipTimesheets.length} total approved timesheets.
+                  No payslips match your current filters. Found {(payslipTimesheets as any[])?.length || 0} total approved timesheets.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -704,7 +815,7 @@ export default function AdminTimesheetTabs() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filterTimesheets(payslipTimesheets).map((timesheet) => (
+                      {filterTimesheets(payslipTimesheets, 'payslips').map((timesheet) => (
                         <TableRow key={timesheet.id}>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -756,6 +867,73 @@ export default function AdminTimesheetTabs() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Staff Payslips Filters */}
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Search */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Search Staff</label>
+                    <Input
+                      placeholder="Search by name or email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                  
+                  {/* Staff Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Staff Member</label>
+                    <Select value={staffFilter} onValueChange={setStaffFilter}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="All Staff" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Staff</SelectItem>
+                        {Array.from(new Set((staffPayslips as any[])?.map(t => ({ id: t.userId, name: t.staffName })) || [])).map(staff => (
+                          <SelectItem key={staff.id} value={staff.id.toString()}>{staff.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                    <Input
+                      type="date"
+                      value={staffPayslipStartDate}
+                      onChange={(e) => setStaffPayslipStartDate(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+                    <Input
+                      type="date"
+                      value={staffPayslipEndDate}
+                      onChange={(e) => setStaffPayslipEndDate(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center mt-4">
+                  <div className="text-sm text-slate-600">
+                    Showing {filterTimesheets(staffPayslips, 'staff-payslips').length} of {(staffPayslips as any[])?.length || 0} historical payslips
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearStaffPayslipFilters}
+                    className="text-xs"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
               {loadingStaffPayslips ? (
                 <div className="text-center py-8 text-slate-500">Loading historical payslips...</div>
               ) : !Array.isArray(staffPayslips) || staffPayslips.length === 0 ? (
@@ -777,7 +955,7 @@ export default function AdminTimesheetTabs() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filterTimesheets(staffPayslips).map((timesheet) => (
+                      {filterTimesheets(staffPayslips, 'staff-payslips').map((timesheet) => (
                         <TableRow key={timesheet.id}>
                           <TableCell>
                             <div className="flex items-center gap-2">
