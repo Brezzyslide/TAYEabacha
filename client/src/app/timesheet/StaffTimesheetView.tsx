@@ -98,7 +98,7 @@ export default function StaffTimesheetView() {
   });
 
   // Get user leave balances (for non-casual staff)
-  const { data: leaveBalances } = useQuery<LeaveBalance>({
+  const { data: leaveBalances } = useQuery<any[]>({
     queryKey: ['/api/leave-balances'],
     enabled: !!user && user.employmentType !== 'casual',
   });
@@ -568,7 +568,7 @@ export default function StaffTimesheetView() {
                         </div>
                         <p className="text-sm font-medium text-emerald-700">Annual Leave</p>
                         <p className="text-2xl font-bold text-emerald-800 mt-1">
-                          {leaveBalances.annualLeave.toFixed(1)}h
+                          {leaveBalances && leaveBalances[0] ? parseFloat(leaveBalances[0].annualLeave || '0').toFixed(1) : '0.0'}h
                         </p>
                       </CardContent>
                     </Card>
@@ -580,7 +580,7 @@ export default function StaffTimesheetView() {
                         </div>
                         <p className="text-sm font-medium text-red-700">Sick Leave</p>
                         <p className="text-2xl font-bold text-red-800 mt-1">
-                          {leaveBalances.sickLeave.toFixed(1)}h
+                          {leaveBalances && leaveBalances[0] ? parseFloat(leaveBalances[0].sickLeave || '0').toFixed(1) : '0.0'}h
                         </p>
                       </CardContent>
                     </Card>
@@ -592,7 +592,7 @@ export default function StaffTimesheetView() {
                         </div>
                         <p className="text-sm font-medium text-blue-700">Personal Leave</p>
                         <p className="text-2xl font-bold text-blue-800 mt-1">
-                          {leaveBalances.personalLeave.toFixed(1)}h
+                          {leaveBalances && leaveBalances[0] ? parseFloat(leaveBalances[0].personalLeave || '0').toFixed(1) : '0.0'}h
                         </p>
                       </CardContent>
                     </Card>
@@ -604,7 +604,7 @@ export default function StaffTimesheetView() {
                         </div>
                         <p className="text-sm font-medium text-purple-700">Long Service</p>
                         <p className="text-2xl font-bold text-purple-800 mt-1">
-                          {leaveBalances.longServiceLeave.toFixed(1)}h
+                          {leaveBalances && leaveBalances[0] ? parseFloat(leaveBalances[0].longServiceLeave || '0').toFixed(1) : '0.0'}h
                         </p>
                       </CardContent>
                     </Card>
