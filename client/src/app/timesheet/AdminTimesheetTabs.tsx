@@ -103,9 +103,7 @@ export default function AdminTimesheetTabs() {
 
   // Debug logging for payslips data
   console.log("Payslip Timesheets Data:", payslipTimesheets);
-  console.log("Payslip Timesheets Length:", payslipTimesheets.length);
-  console.log("Filtered Payslips:", filterTimesheets(payslipTimesheets || []));
-  console.log("Current Filters:", { searchTerm, statusFilter, staffFilter, periodFilter });
+  console.log("Payslip Timesheets Length:", Array.isArray(payslipTimesheets) ? payslipTimesheets.length : 0);
 
   // Analytics Data
   const { data: analyticsData } = useQuery({
@@ -114,13 +112,16 @@ export default function AdminTimesheetTabs() {
   });
 
   // Get timesheet entries for editing
-  const { data: timesheetEntries = [] } = useQuery({
+  const { data: timesheetEntriesData } = useQuery({
     queryKey: ["/api/admin/timesheet-entries", selectedTimesheet?.id],
     queryFn: () => selectedTimesheet ? fetch(`/api/admin/timesheet-entries/${selectedTimesheet.id}`, {
       credentials: 'include'
     }).then(res => res.json()) : [],
     enabled: !!selectedTimesheet
   });
+
+  // Ensure timesheetEntries is always an array
+  const timesheetEntries = Array.isArray(timesheetEntriesData) ? timesheetEntriesData : [];
 
   // Approve timesheet
   const approveTimesheet = useMutation({
@@ -176,14 +177,16 @@ export default function AdminTimesheetTabs() {
     }
   });
 
-  const filterTimesheets = (timesheets: AdminTimesheet[]) => {
+  // Filter function definition
+  const filterTimesheets = (timesheets: any[]) => {
+    if (!Array.isArray(timesheets)) return [];
     return timesheets.filter(timesheet => {
       const matchesSearch = (timesheet.staffName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (timesheet.staffUsername || timesheet.staffEmail || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || timesheet.status === statusFilter;
       const matchesStaff = staffFilter === "all" || timesheet.userId.toString() === staffFilter;
       
-      // Period filter logic - skip period filtering for payslips since they should show all approved timesheets
+      // For payslips, show all approved regardless of period
       const periodStart = timesheet.payPeriodStart ? new Date(timesheet.payPeriodStart) : new Date();
       const now = new Date();
       const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14);
@@ -196,7 +199,7 @@ export default function AdminTimesheetTabs() {
   };
 
   // Calculate analytics from filtered data
-  const calculateAnalytics = (timesheets: AdminTimesheet[]) => {
+  const calculateAnalytics = (timesheets: any[]) => {
     const filtered = filterTimesheets(timesheets);
     return {
       totalTimesheets: filtered.length,
@@ -609,7 +612,7 @@ export default function AdminTimesheetTabs() {
             <CardContent>
               {loadingPayslips ? (
                 <div className="text-center py-8 text-slate-500">Loading payslips...</div>
-              ) : payslipTimesheets.length === 0 ? (
+              ) : !Array.isArray(payslipTimesheets) || payslipTimesheets.length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   No approved timesheets ready for payslip generation.
                 </div>
