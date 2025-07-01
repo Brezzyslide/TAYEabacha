@@ -4911,14 +4911,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payslips/:id/pdf", requireAuth, async (req: any, res) => {
     try {
       const timesheetId = parseInt(req.params.id);
+      console.log(`[PAYSLIP] User ${req.user.id} (${req.user.role}) requesting payslip for timesheet ${timesheetId}`);
+      
       const timesheet = await storage.getTimesheetById(timesheetId, req.user.tenantId);
       
       if (!timesheet) {
+        console.log(`[PAYSLIP] Timesheet ${timesheetId} not found for tenant ${req.user.tenantId}`);
         return res.status(404).json({ message: "Timesheet not found" });
       }
 
+      console.log(`[PAYSLIP] Found timesheet ${timesheetId} belonging to user ${timesheet.userId}, requesting user is ${req.user.id}`);
+
       // Verify user owns this timesheet or has admin access
       if (timesheet.userId !== req.user.id && !["Admin", "ConsoleManager"].includes(req.user.role)) {
+        console.log(`[PAYSLIP] Access denied - user ${req.user.id} cannot access timesheet owned by ${timesheet.userId}`);
         return res.status(403).json({ message: "Access denied" });
       }
 
