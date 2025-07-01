@@ -55,7 +55,12 @@ export async function autoProvisionNewTenant(
     console.log(`[NEW TENANT SETUP] Provisioning timesheets`);
     await createTimesheetsForTenant(tenantId);
     
-    // 7. Activity logging
+    // 7. Apply comprehensive fixes (employment types, leave balances, constraints)
+    console.log(`[NEW TENANT SETUP] Applying comprehensive fixes`);
+    const { applyFixesToNewTenant } = await import('./comprehensive-tenant-fixes');
+    await applyFixesToNewTenant(tenantId);
+    
+    // 8. Activity logging
     await storage.createActivityLog({
       tenantId,
       userId: adminUserId,

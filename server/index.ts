@@ -52,6 +52,12 @@ app.use((req, res, next) => {
   console.log("[MULTI-TENANT FIX] Running comprehensive consistency enforcement for ALL tenants");
   try {
     await runCompleteConsistencyCheck();
+    
+    // Apply comprehensive timesheet and employment type fixes
+    console.log("[COMPREHENSIVE FIX] Applying all timesheet, leave, and employment fixes to ALL tenants");
+    const { applyComprehensiveTenantFixes } = await import('./comprehensive-tenant-fixes');
+    await applyComprehensiveTenantFixes();
+    
     console.log("[MULTI-TENANT FIX] Consistency enforcement completed successfully");
   } catch (error) {
     console.error("[MULTI-TENANT FIX] Consistency enforcement failed:", error);
