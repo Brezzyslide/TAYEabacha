@@ -4624,7 +4624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get payslip-ready timesheets (approved)
+  // Get payslip-ready timesheets (approved, not paid yet)
   app.get("/api/admin/payslips", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       // Get only approved timesheets that haven't been paid yet
@@ -4634,6 +4634,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Get admin payslips error:", error);
       res.status(500).json({ message: "Failed to fetch payslips" });
+    }
+  });
+
+  // Get staff payslips (historical paid timesheets)
+  app.get("/api/admin/staff-payslips", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      // Get all paid timesheets for historical payslip access
+      const timesheets = await storage.getAdminTimesheets(req.user.tenantId, 'paid');
+      console.log(`[STAFF PAYSLIPS] Found ${timesheets.length} paid timesheets for tenant ${req.user.tenantId}`);
+      res.json(timesheets);
+    } catch (error: any) {
+      console.error("Get staff payslips error:", error);
+      res.status(500).json({ message: "Failed to fetch staff payslips" });
     }
   });
 

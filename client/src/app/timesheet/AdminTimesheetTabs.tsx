@@ -95,9 +95,15 @@ export default function AdminTimesheetTabs() {
     enabled: !!user && (user.role === "Admin" || user.role === "ConsoleManager")
   });
 
-  // Payslip Ready Timesheets
+  // Payslip Ready Timesheets (approved, not paid yet)
   const { data: payslipTimesheets = [], isLoading: loadingPayslips } = useQuery({
     queryKey: ["/api/admin/payslips"],
+    enabled: !!user && (user.role === "Admin" || user.role === "ConsoleManager")
+  });
+
+  // Staff Payslips (historical paid timesheets)
+  const { data: staffPayslips = [], isLoading: loadingStaffPayslips } = useQuery({
+    queryKey: ["/api/admin/staff-payslips"],
     enabled: !!user && (user.role === "Admin" || user.role === "ConsoleManager")
   });
 
@@ -160,43 +166,79 @@ export default function AdminTimesheetTabs() {
   // Generate PDF payslip
   const generatePayslipPDF = useMutation({
     mutationFn: async (timesheetId: number) => {
-      const response = await fetch(`/api/admin/timesheets/${timesheetId}/generate-payslip-pdf`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to generate payslip');
+      try {
+        const response = await fetch(`/api/admin/timesheets/${timesheetId}/generate-payslip-pdf`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to generate payslip: ${errorText}`);
+        }
+        
+        // Check if response is actually a PDF
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/pdf')) {
+          throw new Error('Server did not return a PDF file');
+        }
+        
+        return {
+          blob: await response.blob(),
+          timesheetId
+        };
+      } catch (error) {
+        console.error('PDF generation error:', error);
+        throw error;
       }
-      
-      return response.blob();
     },
-    onSuccess: (blob, timesheetId) => {
-      // Find the timesheet data for the filename
-      const timesheet = (payslipTimesheets as any[])?.find(t => t.id === timesheetId);
-      const staffName = timesheet?.staffName || 'staff';
-      
-      // Create download link for PDF
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `payslip-${staffName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast({ title: "Payslip PDF generated successfully" });
-      
-      // Refresh the payslips data
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/payslips"] });
+    onSuccess: ({ blob, timesheetId }) => {
+      try {
+        // Find the timesheet data for the filename
+        const timesheet = (payslipTimesheets as any[])?.find(t => t.id === timesheetId);
+        const staffName = timesheet?.staffName?.replace(/[^a-zA-Z0-9]/g, '_') || 'staff';
+        
+        // Validate blob
+        if (!blob || blob.size === 0) {
+          throw new Error('Empty PDF file received');
+        }
+        
+        // Create download link for PDF
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `payslip-${staffName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        
+        // Add to DOM, click, then remove
+        document.body.appendChild(a);
+        a.click();
+        
+        // Clean up
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 100);
+        
+        toast({ title: "Payslip PDF downloaded successfully" });
+        
+        // Refresh the payslips data
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/payslips"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/staff-payslips"] });
+      } catch (error) {
+        console.error('Download error:', error);
+        toast({ 
+          title: "Download failed", 
+          description: "PDF was generated but download failed. Please try again.",
+          variant: "destructive" 
+        });
+      }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Payslip generation error:', error);
       toast({ 
         title: "Failed to generate payslip", 
-        description: "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive" 
       });
     }
@@ -411,10 +453,11 @@ export default function AdminTimesheetTabs() {
       </Card>
 
       <Tabs defaultValue="current" className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
-          <TabsTrigger value="current">Current Period</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="payslips">Payslips</TabsTrigger>
+        <TabsList className="flex flex-wrap w-full gap-1 p-1 h-auto">
+          <TabsTrigger value="current" className="text-xs sm:text-sm flex-shrink-0">Current Period</TabsTrigger>
+          <TabsTrigger value="history" className="text-xs sm:text-sm flex-shrink-0">History</TabsTrigger>
+          <TabsTrigger value="payslips" className="text-xs sm:text-sm flex-shrink-0">Payslips</TabsTrigger>
+          <TabsTrigger value="staff-payslips" className="text-xs sm:text-sm flex-shrink-0">Staff Payslips</TabsTrigger>
         </TabsList>
 
         {/* Current Period Tab */}
@@ -692,6 +735,74 @@ export default function AdminTimesheetTabs() {
                               <Download className="h-4 w-4" />
                               Generate PDF
                             </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Staff Payslips Tab */}
+        <TabsContent value="staff-payslips">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Staff Payslips (Historical)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingStaffPayslips ? (
+                <div className="text-center py-8 text-slate-500">Loading historical payslips...</div>
+              ) : !Array.isArray(staffPayslips) || staffPayslips.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  No historical payslips found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Staff Member</TableHead>
+                        <TableHead>Pay Period</TableHead>
+                        <TableHead>Hours</TableHead>
+                        <TableHead>Gross Pay</TableHead>
+                        <TableHead>Net Pay</TableHead>
+                        <TableHead>Paid Date</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filterTimesheets(staffPayslips).map((timesheet) => (
+                        <TableRow key={timesheet.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-slate-400" />
+                              <div>
+                                <div className="font-medium">{timesheet.staffName}</div>
+                                <div className="text-sm text-slate-500">{timesheet.staffEmail}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {format(new Date(timesheet.payPeriodStart), "MMM dd")} - {format(new Date(timesheet.payPeriodEnd), "MMM dd, yyyy")}
+                            </div>
+                          </TableCell>
+                          <TableCell>{timesheet.totalHours}h</TableCell>
+                          <TableCell>${timesheet.totalEarnings}</TableCell>
+                          <TableCell className="font-medium">${timesheet.netPay}</TableCell>
+                          <TableCell>
+                            {timesheet.paidAt ? format(new Date(timesheet.paidAt), "MMM dd, yyyy") : "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                              Paid
+                            </span>
                           </TableCell>
                         </TableRow>
                       ))}
