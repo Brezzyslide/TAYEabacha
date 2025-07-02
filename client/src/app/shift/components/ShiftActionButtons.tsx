@@ -170,8 +170,11 @@ export default function ShiftActionButtons({ shift }: ShiftActionButtonsProps) {
         // Continue without location if geolocation fails
       }
 
+      const completionTimestamp = new Date().toISOString();
       const updateData = {
-        endTime: new Date().toISOString(),
+        endTime: completionTimestamp,
+        status: "completed",
+        endTimestamp: completionTimestamp,
         isActive: false,
         ...(locationData && {
           latitude: locationData.latitude.toString(),

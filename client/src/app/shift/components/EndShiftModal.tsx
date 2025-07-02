@@ -114,8 +114,11 @@ export default function EndShiftModal({ shift, isOpen, onClose }: EndShiftModalP
         throw new Error("Handover notes are required to end your shift");
       }
 
+      const completionTimestamp = new Date().toISOString();
       const updateData = {
-        endTime: new Date().toISOString(),
+        endTime: completionTimestamp,
+        status: "completed",
+        endTimestamp: completionTimestamp,
         isActive: false,
         ...(location && {
           latitude: location.latitude.toString(),
