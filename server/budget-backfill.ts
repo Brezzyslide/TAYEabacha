@@ -14,7 +14,7 @@ export async function backfillBudgetDeductions() {
       
       // Get completed shifts without budget transactions
       const completedShifts = await storage.getCompletedShiftsWithoutBudgetTransactions(tenant.id);
-      console.log(`[BUDGET BACKFILL] Found ${completedShifts.length} unprocessed shifts for tenant ${tenant.id}`);
+      console.log(`[BUDGET BACKFILL] Found ${completedShifts.length} unprocessed shifts for tenant ${tenant.id} (using scheduled duration billing)`);
 
       for (const shift of completedShifts) {
         try {
@@ -39,7 +39,8 @@ async function processShiftBudgetDeduction(shift: any) {
     return;
   }
 
-  // Calculate shift duration in hours
+  // Calculate shift duration based on SCHEDULED hours (not actual worked time)
+  // Healthcare sector billing: charge full booking regardless of completion time
   const startTime = new Date(shift.startTime);
   const endTime = new Date(shift.endTime);
   const shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);

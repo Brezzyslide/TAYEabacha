@@ -80,12 +80,13 @@ async function processBudgetDeduction(shift: any, userId: number) {
     return;
   }
 
-  // Calculate shift duration in hours
+  // Calculate shift duration based on SCHEDULED hours (not actual worked time)
+  // Healthcare sector billing: charge full booking regardless of completion time
   const startTime = new Date(shift.startTime);
   const endTime = new Date(shift.endTime);
   const shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
   
-  console.log(`[BUDGET DEDUCTION] Shift duration: ${shiftHours} hours`);
+  console.log(`[BUDGET DEDUCTION] SCHEDULED shift duration: ${shiftHours} hours (billing based on booked time, not actual completion time)`);
   
   if (shiftHours <= 0) {
     console.log(`[BUDGET DEDUCTION] Invalid shift duration: ${shiftHours}`);
@@ -945,10 +946,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (processedUpdateData.status === "completed" && processedUpdateData.endTimestamp && shift.startTimestamp) {
         console.log(`[BUDGET DEDUCTION] Starting budget deduction for shift ${shift.id}`);
         try {
-          // Calculate shift duration in hours
-          const startTime = new Date(shift.startTimestamp);
-          const endTime = new Date(processedUpdateData.endTimestamp);
-          const shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+          // Calculate shift duration based on BOOKED hours, not actual worked hours
+          // Healthcare sector standard: charge full booking regardless of completion time
+          if (!shift.startTime || !shift.endTime) {
+            console.log(`[BUDGET DEDUCTION] Missing scheduled times for shift ${shift.id}`);
+            return;
+          }
+          
+          const scheduledStartTime = new Date(shift.startTime);
+          const scheduledEndTime = new Date(shift.endTime);
+          const shiftHours = (scheduledEndTime.getTime() - scheduledStartTime.getTime()) / (1000 * 60 * 60);
+          
+          console.log(`[BUDGET DEDUCTION] Using SCHEDULED duration: ${shiftHours} hours (not actual worked time)`);
+          console.log(`[BUDGET DEDUCTION] Scheduled: ${scheduledStartTime.toISOString()} → ${scheduledEndTime.toISOString()}`);
           
           console.log(`[BUDGET DEDUCTION] Shift hours: ${shiftHours}, Client ID: ${shift.clientId}`);
           
@@ -959,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             if (budget) {
               // Determine shift type and get pricing
-              const shiftType = determineShiftType(startTime);
+              const shiftType = determineShiftType(scheduledStartTime);
               const staffRatio = shift.staffRatio || "1:1";
               
               // Determine shift type and get pricing
