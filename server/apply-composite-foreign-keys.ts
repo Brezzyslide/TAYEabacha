@@ -10,8 +10,24 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const { Pool } = pg;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+
+// Handle both development and production environments
+function getCurrentDirname(): string {
+  try {
+    if (import.meta.url) {
+      const __filename = fileURLToPath(import.meta.url);
+      return dirname(__filename);
+    }
+  } catch (error) {
+    // Fallback for production builds where import.meta.url might not be available
+    console.log('[COMPOSITE FK] Using fallback dirname resolution');
+  }
+  
+  // Fallback to current working directory + server
+  return process.cwd();
+}
+
+const __dirname = getCurrentDirname();
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -27,8 +43,31 @@ export async function applyCompositeForeignKeys(): Promise<void> {
     console.log('[COMPOSITE FK MIGRATION] Starting database-level tenant isolation enforcement...');
     
     // Read the simplified migration SQL file first
-    const migrationPath = join(__dirname, 'simplified-composite-fk.sql');
-    const migrationSQL = readFileSync(migrationPath, 'utf8');
+    // Try multiple possible paths for dev/prod environments
+    let migrationSQL: string;
+    let migrationPath: string;
+    
+    const possiblePaths = [
+      join(__dirname, 'simplified-composite-fk.sql'),          // Development
+      join(process.cwd(), 'server', 'simplified-composite-fk.sql'), // Production fallback 1
+      join(process.cwd(), 'dist', 'simplified-composite-fk.sql'),   // Production fallback 2
+      join(process.cwd(), 'simplified-composite-fk.sql')            // Production fallback 3
+    ];
+    
+    for (const path of possiblePaths) {
+      try {
+        migrationSQL = readFileSync(path, 'utf8');
+        migrationPath = path;
+        console.log(`[COMPOSITE FK] Successfully loaded SQL from: ${path}`);
+        break;
+      } catch (error) {
+        console.log(`[COMPOSITE FK] Could not load SQL from: ${path}`);
+      }
+    }
+    
+    if (!migrationSQL) {
+      throw new Error('Could not find simplified-composite-fk.sql file in any expected location');
+    }
     
     // Execute the migration in a transaction
     const client = await pool.connect();
