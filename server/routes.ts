@@ -756,6 +756,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (processedUpdateData.endTime && typeof processedUpdateData.endTime === 'string') {
         processedUpdateData.endTime = new Date(processedUpdateData.endTime);
       }
+      if (processedUpdateData.endTimestamp && typeof processedUpdateData.endTimestamp === 'string') {
+        processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
+      }
       
       console.log(`[SHIFT UPDATE] Processed data with Date objects:`, processedUpdateData);
       
