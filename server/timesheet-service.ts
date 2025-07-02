@@ -18,16 +18,31 @@ export async function getCurrentTimesheet(userId: number, tenantId: number): Pro
   console.log(`[TIMESHEET SERVICE] Getting current timesheet for user ${userId}, tenant ${tenantId}`);
   console.log(`[TIMESHEET SERVICE] Pay period: ${payPeriod.start.toISOString()} to ${payPeriod.end.toISOString()}`);
 
-  // Get the most recent timesheet for the current or most recent pay period
+  // First try to get timesheet for the exact current pay period
   let timesheet = await db
     .select()
     .from(timesheets)
     .where(and(
       eq(timesheets.userId, userId),
-      eq(timesheets.tenantId, tenantId)
+      eq(timesheets.tenantId, tenantId),
+      gte(timesheets.payPeriodEnd, payPeriod.start),
+      lte(timesheets.payPeriodStart, payPeriod.end)
     ))
     .orderBy(desc(timesheets.payPeriodStart))
     .limit(1);
+
+  // If no timesheet found for current period, get the most recent one
+  if (!timesheet.length) {
+    timesheet = await db
+      .select()
+      .from(timesheets)
+      .where(and(
+        eq(timesheets.userId, userId),
+        eq(timesheets.tenantId, tenantId)
+      ))
+      .orderBy(desc(timesheets.payPeriodStart))
+      .limit(1);
+  }
 
   console.log(`[TIMESHEET SERVICE] Found ${timesheet.length} timesheets for user ${userId}`);
   
