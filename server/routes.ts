@@ -11,6 +11,7 @@ const { medicationRecords, medicationPlans, clients, users, shifts, shiftCancell
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";
+import { createSmartTimesheetEntry } from "./smart-timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 
 // Helper function to determine shift type based on start time
@@ -779,16 +780,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the shift update if budget processing fails
         }
 
-        // Create automatic timesheet entry - AWAIT THIS BEFORE RESPONDING
+        // Create smart timesheet entry with submission timing logic - AWAIT THIS BEFORE RESPONDING
         try {
-          await createTimesheetEntryFromShift(shiftId);
-          console.log(`[TIMESHEET] Successfully created timesheet entry for completed shift ${shiftId}`);
+          // Use the actual shift completion timestamp for smart calculation
+          const submissionTimestamp = new Date(processedUpdateData.endTimestamp);
+          await createSmartTimesheetEntry(shiftId, submissionTimestamp);
+          console.log(`[SMART TIMESHEET] Successfully created smart timesheet entry for completed shift ${shiftId}`);
           
           // Add a small delay to ensure database transactions are fully committed
           await new Promise(resolve => setTimeout(resolve, 200));
-          console.log(`[TIMESHEET] Database commit delay completed for shift ${shiftId}`);
+          console.log(`[SMART TIMESHEET] Database commit delay completed for shift ${shiftId}`);
         } catch (timesheetError) {
-          console.error(`[TIMESHEET ERROR] Failed to create timesheet entry for shift ${shiftId}:`, timesheetError);
+          console.error(`[SMART TIMESHEET ERROR] Failed to create smart timesheet entry for shift ${shiftId}:`, timesheetError);
           // Don't fail the shift update if timesheet processing fails, but log the error
         }
       }
