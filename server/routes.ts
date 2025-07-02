@@ -4751,6 +4751,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all staff timesheets with entries for admin management
+  app.get("/api/admin/staff-timesheets", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      // Get all timesheets (any status) with their entries for comprehensive staff timesheet management
+      const timesheets = await storage.getAdminTimesheets(req.user.tenantId, ['draft', 'submitted', 'approved', 'rejected', 'paid']);
+      
+      // Get timesheet entries for each timesheet
+      const timesheetsWithEntries = await Promise.all(timesheets.map(async (timesheet) => {
+        const entries = await storage.getTimesheetEntries(timesheet.id, req.user.tenantId);
+        return {
+          ...timesheet,
+          entries: entries
+        };
+      }));
+      
+      console.log(`[STAFF TIMESHEETS] Found ${timesheetsWithEntries.length} staff timesheets for tenant ${req.user.tenantId}`);
+      res.json(timesheetsWithEntries);
+    } catch (error: any) {
+      console.error("Get staff timesheets error:", error);
+      res.status(500).json({ message: "Failed to fetch staff timesheets" });
+    }
+  });
+
   // Approve timesheet
   app.post("/api/admin/timesheets/:id/approve", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
