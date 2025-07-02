@@ -44,8 +44,8 @@ export async function applyCompositeForeignKeys(): Promise<void> {
     
     // Read the simplified migration SQL file first
     // Try multiple possible paths for dev/prod environments
-    let migrationSQL: string;
-    let migrationPath: string;
+    let migrationSQL: string = '';
+    let migrationPath: string = '';
     
     const possiblePaths = [
       join(__dirname, 'simplified-composite-fk.sql'),          // Development
@@ -54,10 +54,12 @@ export async function applyCompositeForeignKeys(): Promise<void> {
       join(process.cwd(), 'simplified-composite-fk.sql')            // Production fallback 3
     ];
     
+    let sqlLoaded = false;
     for (const path of possiblePaths) {
       try {
         migrationSQL = readFileSync(path, 'utf8');
         migrationPath = path;
+        sqlLoaded = true;
         console.log(`[COMPOSITE FK] Successfully loaded SQL from: ${path}`);
         break;
       } catch (error) {
@@ -65,7 +67,7 @@ export async function applyCompositeForeignKeys(): Promise<void> {
       }
     }
     
-    if (!migrationSQL) {
+    if (!sqlLoaded || !migrationSQL) {
       throw new Error('Could not find simplified-composite-fk.sql file in any expected location');
     }
     
