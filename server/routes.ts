@@ -768,7 +768,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Process budget deduction and timesheet entry when shift is completed
-      if (processedUpdateData.endTime && processedUpdateData.isActive === false) {
+      if ((processedUpdateData.endTime && processedUpdateData.isActive === false) || 
+          (processedUpdateData.status === "completed" && processedUpdateData.endTimestamp)) {
         console.log(`[SHIFT COMPLETION] Processing completion for shift ${shiftId}`);
         
         // Process budget deduction
