@@ -63,7 +63,7 @@ export default function WageIncreaseManager() {
   const previewMutation = useMutation({
     mutationFn: (percentage: number) => 
       apiRequest('POST', '/api/schads/wage-increase/preview', { increasePercentage: percentage }),
-    onSuccess: (data) => {
+    onSuccess: (data: WageIncreasePreview) => {
       setPreviewData(data);
     },
     onError: () => {
@@ -79,7 +79,7 @@ export default function WageIncreaseManager() {
   const applyMutation = useMutation({
     mutationFn: (params: { increasePercentage: number; effectiveDate: string; description: string }) =>
       apiRequest('POST', '/api/schads/wage-increase/apply', params),
-    onSuccess: (data) => {
+    onSuccess: (data: { results: any[] }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/schads/wage-increase/history'] });
       queryClient.invalidateQueries({ queryKey: ['/api/pay-scales'] });
       setShowConfirmDialog(false);

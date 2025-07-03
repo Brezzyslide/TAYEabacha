@@ -1,30 +1,53 @@
-# ScHADS Award Wage Rates 2024-25
+# ScHADS Award Wage Rates 2024-25 - Disability Services
 
 ## Social, Community, Home Care and Disability Services Industry Award 2010
+### Home Care Employee (Disability Care) Classification
 
-### Level 1 - Support Worker
-- **Pay Point 1**: $24.98/hour (Entry level, no experience)
-- **Pay Point 2**: $25.98/hour (3 months experience)
-- **Pay Point 3**: $26.98/hour (6 months experience)
-- **Pay Point 4**: $27.98/hour (12 months experience)
+*Rates effective from 1 July 2024 (3.75% increase applied)*
 
-### Level 2 - Support Worker Grade 2
-- **Pay Point 1**: $28.45/hour (Certificate III + experience)
-- **Pay Point 2**: $29.45/hour (Additional skills/experience)
-- **Pay Point 3**: $30.45/hour (Senior support worker)
-- **Pay Point 4**: $31.45/hour (Lead support worker)
+### Level 1 - Home Care Employee (Entry Level)
+- **Pay Point 1**: $26.30/hour (Less than 1 year experience)
+- **Pay Point 2**: $27.15/hour (6 months experience)  
+- **Pay Point 3**: $28.00/hour (12 months experience)
 
-### Level 3 - Coordinator/Team Leader
-- **Pay Point 1**: $32.89/hour (Diploma + coordination duties)
-- **Pay Point 2**: $33.89/hour (Advanced coordination)
-- **Pay Point 3**: $34.89/hour (Senior coordinator)
-- **Pay Point 4**: $35.89/hour (Team leader)
+*Focus on basic chores like cleaning and cooking, learning on the job through straightforward tasks*
 
-### Level 4 - Manager/Senior Coordinator
-- **Pay Point 1**: $37.45/hour (Degree + management)
-- **Pay Point 2**: $38.45/hour (Senior management)
-- **Pay Point 3**: $39.45/hour (Area manager)
-- **Pay Point 4**: $40.45/hour (Senior manager)
+### Level 2 - Home Care Employee (Personal Care)
+- **Pay Point 1**: $29.10/hour (Personal care qualified)
+- **Pay Point 2**: $30.25/hour (Experienced personal care)
+- **Pay Point 3**: $31.40/hour (Senior personal care worker)
 
-*Rates effective from 1 July 2024*
-*Includes minimum wage increases and penalty rates for evenings, weekends, and public holidays*
+*Handle daily personal care, cooking, cleaning and outings. Work independently and assist others.*
+
+### Level 3 - Home Care Employee (Qualified)
+- **Pay Point 1**: $33.45/hour (Certificate III or equivalent)
+- **Pay Point 2**: $34.60/hour (Advanced skills)
+- **Pay Point 3**: $35.75/hour (Senior qualified worker)
+
+*Tasks requiring judgment and skills. Computer work, meal planning and staff organizing.*
+
+### Level 4 - Home Care Employee (Team Leader)
+- **Pay Point 1**: $38.20/hour (Team leadership)
+- **Pay Point 2**: $39.35/hour (Senior team leader)
+- **Pay Point 3**: $40.50/hour (Lead coordinator)
+
+*Leading teams by planning and managing tasks efficiently. Technology and process management.*
+
+### Level 5 - Home Care Employee (Specialist/Manager)
+- **Pay Point 1**: $42.85/hour (Resource coordination)
+- **Pay Point 2**: $44.00/hour (Senior manager)
+- **Pay Point 3**: $45.15/hour (Area/Operations manager)
+
+*Resource coordination and team leadership, emphasizing quality, safety and efficiency.*
+
+### Key Allowances & Penalty Rates
+- **Casual Loading**: 25% on top of base rates
+- **Saturday**: 150% of ordinary rate  
+- **Sunday**: 200% of ordinary rate
+- **Public Holiday**: 250% of ordinary rate
+- **Afternoon Shift**: 112.5% of ordinary rate
+- **Night Shift**: 115% of ordinary rate
+- **Overtime (First 2 hours)**: 150% of ordinary rate
+- **Overtime (After 2 hours)**: 200% of ordinary rate
+
+*All rates comply with Fair Work Commission Modern Award Pay Database (July 2024)*

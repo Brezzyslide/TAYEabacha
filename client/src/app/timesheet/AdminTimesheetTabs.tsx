@@ -35,6 +35,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { ApprovalBadge } from "@/components/ui/approval-badge";
+import PayScaleManagement from "@/app/admin/PayScaleManagement";
+import WageIncreaseManager from "@/app/admin/WageIncreaseManager";
 
 interface AdminTimesheet {
   id: number;
@@ -734,6 +736,8 @@ export default function AdminTimesheetTabs() {
           <TabsTrigger value="history" className="text-xs sm:text-sm flex-shrink-0">History</TabsTrigger>
           <TabsTrigger value="payslips" className="text-xs sm:text-sm flex-shrink-0">Payslips</TabsTrigger>
           <TabsTrigger value="staff-payslips" className="text-xs sm:text-sm flex-shrink-0">Staff Payslips</TabsTrigger>
+          <TabsTrigger value="pay-scales" className="text-xs sm:text-sm flex-shrink-0">Pay Scales</TabsTrigger>
+          <TabsTrigger value="wage-increases" className="text-xs sm:text-sm flex-shrink-0">Wage Increases</TabsTrigger>
         </TabsList>
 
         {/* Current Period Tab */}
@@ -1234,6 +1238,16 @@ export default function AdminTimesheetTabs() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Pay Scales Tab */}
+        <TabsContent value="pay-scales">
+          <PayScaleManagement />
+        </TabsContent>
+
+        {/* Wage Increases Tab */}
+        <TabsContent value="wage-increases">
+          <WageIncreaseManager />
         </TabsContent>
       </Tabs>
 
