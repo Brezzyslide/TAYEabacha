@@ -487,7 +487,7 @@ export class DatabaseStorage implements IStorage {
   async endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined> {
     const [shift] = await db
       .update(shifts)
-      .set({ endTime, isActive: false })
+      .set({ endTime, isActive: false, status: "completed" })
       .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)))
       .returning();
     return shift || undefined;

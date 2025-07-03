@@ -234,6 +234,41 @@ export async function updateTimesheetTotals(timesheetId: number): Promise<void> 
   `);
 }
 
+function determineShiftType(startTime: Date): "AM" | "PM" | "ActiveNight" | "Sleepover" {
+  const hour = startTime.getHours();
+  
+  if (hour >= 6 && hour < 14) {
+    return "AM";
+  } else if (hour >= 14 && hour < 22) {
+    return "PM";
+  } else if (hour >= 22 || hour < 6) {
+    return "ActiveNight";
+  } else {
+    return "Sleepover";
+  }
+}
+
+async function processMissingBudgetDeductions(tenantId: number): Promise<string[]> {
+  const fixes: string[] = [];
+  
+  try {
+    console.log(`[BUDGET FIX] Processing missing budget deductions for tenant ${tenantId}`);
+    
+    // Use the existing budget backfill system which already handles this logic properly
+    const { backfillBudgetDeductions } = await import('./budget-backfill.js');
+    
+    // Run budget backfill specifically for this tenant
+    await backfillBudgetDeductions();
+    
+    fixes.push(`Executed budget backfill system to process missing deductions for tenant ${tenantId}`);
+  } catch (error: any) {
+    console.error(`[BUDGET FIX] Error processing budget deductions for tenant ${tenantId}:`, error);
+    fixes.push(`Budget deduction processing failed: ${error?.message || "Unknown error"}`);
+  }
+  
+  return fixes;
+}
+
 async function fixTimesheetSubmitButtons(tenantId: number): Promise<string[]> {
   const fixes: string[] = [];
   

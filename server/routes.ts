@@ -908,6 +908,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Shift not found" });
       }
       
+      // CRITICAL FIX: Process NDIS budget deduction immediately after shift completion
+      try {
+        console.log(`[SHIFT END] Processing budget deduction for shift ${shift.id}`);
+        await processBudgetDeduction(shift, req.user.id);
+        console.log(`[SHIFT END] Budget deduction completed for shift ${shift.id}`);
+      } catch (budgetError) {
+        console.error(`[SHIFT END] Budget deduction failed for shift ${shift.id}:`, budgetError);
+        // Continue with shift completion even if budget deduction fails
+      }
+      
       // Log activity
       await storage.createActivityLog({
         userId: req.user.id,
@@ -918,8 +928,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       });
       
+      // Add delay to ensure budget processing completes before frontend refresh
+      setTimeout(() => {
+        console.log(`[SHIFT END] Budget processing window closed for shift ${shift.id}`);
+      }, 200);
+      
       res.json(shift);
     } catch (error) {
+      console.error("Failed to end shift:", error);
       res.status(500).json({ message: "Failed to end shift" });
     }
   });
