@@ -71,12 +71,13 @@ const SAMPLE_CLIENT_TEMPLATES = [
 /**
  * Provisions comprehensive features for a new tenant
  */
-export async function provisionTenant(tenantId: number, companyId: string): Promise<void> {
+export async function provisionTenant(tenantId: number, companyId: string, adminUserId?: number): Promise<void> {
   console.log(`[TENANT PROVISIONING] Starting provisioning for tenant ${tenantId}`);
+  const createdByUserId = adminUserId || 1; // Default to 1 for backward compatibility
 
   try {
     // 1. Create sample clients
-    await provisionSampleClients(tenantId, companyId);
+    await provisionSampleClients(tenantId, companyId, createdByUserId);
     
     // 2. Create NDIS budgets for clients
     await provisionNdisBudgets(tenantId);
@@ -88,7 +89,7 @@ export async function provisionTenant(tenantId: number, companyId: string): Prom
     await provisionCarePlans(tenantId);
     
     // 5. Create standardized medication plans
-    await provisionMedicationPlans(tenantId);
+    await provisionMedicationPlans(tenantId, createdByUserId);
     
     // 6. Create standardized hourly observations
     await provisionHourlyObservations(tenantId);
@@ -112,7 +113,7 @@ export async function provisionTenant(tenantId: number, companyId: string): Prom
 /**
  * Creates sample clients for the tenant
  */
-async function provisionSampleClients(tenantId: number, companyId: string): Promise<void> {
+async function provisionSampleClients(tenantId: number, companyId: string, createdByUserId: number = 1): Promise<void> {
   for (const template of SAMPLE_CLIENT_TEMPLATES) {
     const clientData = {
       ...template,
@@ -121,7 +122,7 @@ async function provisionSampleClients(tenantId: number, companyId: string): Prom
       dateOfBirth: new Date(template.dateOfBirth),
       tenantId,
       companyId,
-      createdBy: 1, // Default system user
+      createdBy: createdByUserId,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -255,7 +256,7 @@ async function provisionCarePlans(tenantId: number): Promise<void> {
 /**
  * Creates standardized medication plans for the tenant
  */
-async function provisionMedicationPlans(tenantId: number): Promise<void> {
+async function provisionMedicationPlans(tenantId: number, createdByUserId: number = 1): Promise<void> {
   const clients = await storage.getClientsByTenant(tenantId);
   
   for (const client of clients.slice(0, 3)) { // Create plans for first 3 clients
@@ -274,7 +275,7 @@ async function provisionMedicationPlans(tenantId: number): Promise<void> {
       instructions: 'Take with food',
       status: 'active',
       tenantId,
-      createdBy: 1,
+      createdBy: createdByUserId,
       createdAt: new Date(),
       updatedAt: new Date()
     };

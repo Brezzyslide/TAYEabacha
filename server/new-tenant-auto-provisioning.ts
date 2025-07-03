@@ -33,7 +33,7 @@ export async function autoProvisionNewTenant(
   try {
     // 1. Core tenant provisioning (clients, shifts, budgets, care plans)
     console.log(`[NEW TENANT SETUP] Provisioning core features`);
-    await provisionTenant(tenantId, companyId);
+    await provisionTenant(tenantId, companyId, adminUserId);
     
     // 2. ScHADS pay scales
     console.log(`[NEW TENANT SETUP] Setting up ScHADS pay scales`);
