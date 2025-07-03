@@ -766,7 +766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("[SHIFT UPDATE] ✅ PERMISSIONS PASSED, STARTING CONVERSION");
       
-      // EXPLICIT timestamp conversion for Drizzle
+      // COMPREHENSIVE timestamp conversion for ALL possible date fields
       const processedUpdateData = { ...updateData };
       
       console.log(`[SHIFT UPDATE] ✅ RAW DATA TYPES:`, {
@@ -774,33 +774,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTime: typeof processedUpdateData.endTime,
         endTimestamp: typeof processedUpdateData.endTimestamp
       });
+      console.log(`[SHIFT UPDATE] ✅ ALL FIELDS:`, Object.keys(processedUpdateData));
       
-      // Force convert startTime
-      if (processedUpdateData.startTime) {
-        console.log(`[SHIFT UPDATE] ✅ CONVERTING startTime from: ${processedUpdateData.startTime}`);
-        processedUpdateData.startTime = new Date(processedUpdateData.startTime);
-        console.log(`[SHIFT UPDATE] ✅ startTime converted to: ${processedUpdateData.startTime}`);
-      }
+      // Define all possible timestamp fields that might be sent from frontend
+      const timestampFields = [
+        'startTime', 'endTime', 'startTimestamp', 'endTimestamp', 
+        'createdAt', 'updatedAt', 'scheduledStartTime', 'scheduledEndTime'
+      ];
       
-      // Force convert endTime
-      if (processedUpdateData.endTime) {
-        console.log(`[SHIFT UPDATE] ✅ CONVERTING endTime from: ${processedUpdateData.endTime}`);
-        processedUpdateData.endTime = new Date(processedUpdateData.endTime);
-        console.log(`[SHIFT UPDATE] ✅ endTime converted to: ${processedUpdateData.endTime}`);
-      }
-      
-      // Force convert endTimestamp  
-      if (processedUpdateData.endTimestamp) {
-        console.log(`[SHIFT UPDATE] ✅ CONVERTING endTimestamp from: ${processedUpdateData.endTimestamp}`);
-        processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
-        console.log(`[SHIFT UPDATE] ✅ endTimestamp converted to: ${processedUpdateData.endTimestamp}`);
-      }
-      
-      console.log(`[SHIFT UPDATE] ✅ FINAL VERIFICATION:`, {
-        startTime: processedUpdateData.startTime instanceof Date ? 'IS DATE' : 'NOT DATE',
-        endTime: processedUpdateData.endTime instanceof Date ? 'IS DATE' : 'NOT DATE',
-        endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'IS DATE' : 'NOT DATE'
+      // Convert ALL timestamp fields to Date objects
+      timestampFields.forEach(field => {
+        if (processedUpdateData[field] && typeof processedUpdateData[field] === 'string') {
+          console.log(`[SHIFT UPDATE] ✅ CONVERTING ${field} from: ${processedUpdateData[field]}`);
+          try {
+            processedUpdateData[field] = new Date(processedUpdateData[field]);
+            console.log(`[SHIFT UPDATE] ✅ ${field} converted to: ${processedUpdateData[field]}`);
+          } catch (error) {
+            console.error(`[SHIFT UPDATE] ❌ Failed to convert ${field}:`, error);
+            delete processedUpdateData[field]; // Remove invalid date field
+          }
+        }
       });
+      
+      // Final verification of all timestamp conversions
+      const verificationResults = {};
+      timestampFields.forEach(field => {
+        if (processedUpdateData[field] !== undefined) {
+          verificationResults[field] = processedUpdateData[field] instanceof Date ? 'IS DATE' : 'NOT DATE';
+        }
+      });
+      console.log(`[SHIFT UPDATE] ✅ FINAL VERIFICATION:`, verificationResults);
       
       // Get original shift data BEFORE updating to preserve scheduled times for budget billing
       let originalShiftForBudget = null;
