@@ -364,7 +364,7 @@ export default function StaffTimesheetView() {
                       </div>
                     </div>
                     
-                    {currentTimesheet?.timesheet?.status === 'draft' && (
+                    {(currentTimesheet?.timesheet?.status === 'draft' || currentTimesheet?.timesheet?.status === 'rejected') && (
                       <div className="mt-6 pt-4 border-t border-slate-200">
                         <Button
                           onClick={() => submitMutation.mutate(currentTimesheet?.timesheet?.id || 0)}

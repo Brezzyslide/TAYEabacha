@@ -5284,8 +5284,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Timesheet not found" });
       }
 
-      if (timesheet[0].status !== 'draft') {
-        return res.status(400).json({ message: "Only draft timesheets can be submitted" });
+      // Allow submission for draft or rejected timesheets
+      if (timesheet[0].status !== 'draft' && timesheet[0].status !== 'rejected') {
+        return res.status(400).json({ message: "Only draft or rejected timesheets can be submitted" });
       }
 
       // Check if timesheet qualifies for auto-approval
