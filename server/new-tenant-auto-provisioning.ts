@@ -81,20 +81,23 @@ export async function autoProvisionNewTenant(
  * Creates NDIS pricing structure for new tenant
  */
 async function createNdisPricingForTenant(tenantId: number): Promise<void> {
-  const standardPricing = [
-    { category: 'SIL', subcategory: 'Standard', unitPrice: '65.00', description: 'Supported Independent Living' },
-    { category: 'CapacityBuilding', subcategory: 'SocialSkills', unitPrice: '75.00', description: 'Social and community participation' },
-    { category: 'CommunityAccess', subcategory: 'Transport', unitPrice: '55.00', description: 'Community access and transport' },
-    { category: 'CommunityAccess', subcategory: 'Recreation', unitPrice: '60.00', description: 'Recreation and leisure activities' }
+  const standardRates = [
+    { shiftType: "AM", ratio: "1:1", rate: "40.00" },
+    { shiftType: "PM", ratio: "1:1", rate: "60.00" },
+    { shiftType: "ActiveNight", ratio: "1:1", rate: "80.00" },
+    { shiftType: "Sleepover", ratio: "1:1", rate: "100.00" },
+    { shiftType: "AM", ratio: "1:2", rate: "25.00" },
+    { shiftType: "PM", ratio: "1:2", rate: "35.00" },
+    { shiftType: "ActiveNight", ratio: "1:2", rate: "45.00" },
+    { shiftType: "Sleepover", ratio: "1:2", rate: "55.00" }
   ];
   
-  for (const pricing of standardPricing) {
+  for (const rate of standardRates) {
     await storage.createNdisPricing({
       tenantId,
-      category: pricing.category,
-      subcategory: pricing.subcategory,
-      unitPrice: pricing.unitPrice,
-      description: pricing.description
+      shiftType: rate.shiftType,
+      ratio: rate.ratio,
+      rate: rate.rate
     });
   }
 }
