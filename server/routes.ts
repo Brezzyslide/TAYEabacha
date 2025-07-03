@@ -644,10 +644,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/shifts", requireAuth, async (req: any, res) => {
     try {
       const { clientId } = req.query;
-      console.log(`[SHIFTS API] User: ${req.user.username}, TenantId: ${req.user.tenantId}`);
+      console.log(`[SHIFTS API] User: ${req.user.username}, Role: ${req.user.role}, TenantId: ${req.user.tenantId}`);
       
-      const shifts = await storage.getActiveShifts(req.user.tenantId);
-      console.log(`[SHIFTS API] Found ${shifts.length} shifts for tenant ${req.user.tenantId}`);
+      // Admin and ConsoleManager see ALL shifts, others see only active shifts
+      const isAdmin = req.user.role === 'Admin' || req.user.role === 'ConsoleManager';
+      const shifts = isAdmin 
+        ? await storage.getAllShifts(req.user.tenantId)
+        : await storage.getActiveShifts(req.user.tenantId);
+        
+      console.log(`[SHIFTS API] Found ${shifts.length} shifts for tenant ${req.user.tenantId} (Admin view: ${isAdmin})`);
       console.log(`[SHIFTS API] Shifts tenant IDs:`, shifts.map(s => `ID:${s.id} tenant:${s.tenantId}`));
       
       // Filter by clientId if provided
