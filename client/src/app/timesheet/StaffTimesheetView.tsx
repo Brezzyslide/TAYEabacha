@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,16 +85,20 @@ export default function StaffTimesheetView() {
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Get current timesheet
+  // Get current timesheet with real-time refresh
   const { data: currentTimesheet, isLoading } = useQuery<TimesheetSummary>({
     queryKey: ['/api/timesheet/current'],
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 30000, // Refresh every 30 seconds for real-time updates after shift completion
+    refetchOnWindowFocus: true, // Refresh when user focuses on window
   });
 
-  // Get timesheet history
+  // Get timesheet history with periodic refresh
   const { data: timesheetHistory = [] } = useQuery({
     queryKey: ['/api/timesheet/history'],
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 60000, // Refresh every minute for history updates
+    refetchOnWindowFocus: true,
   });
 
   // Get user leave balances (for non-casual staff)
@@ -108,6 +112,15 @@ export default function StaffTimesheetView() {
     queryKey: [`/api/timesheet/${selectedTimesheet?.id}/entries`],
     enabled: !!selectedTimesheet?.id,
   });
+
+  // Force refresh timesheet data when component mounts or becomes visible
+  useEffect(() => {
+    if (user) {
+      // Refresh timesheet data immediately when component loads
+      queryClient.invalidateQueries({ queryKey: ['/api/timesheet/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/timesheet/history'] });
+    }
+  }, [user, queryClient]);
 
   // Submit timesheet mutation
   const submitMutation = useMutation({
