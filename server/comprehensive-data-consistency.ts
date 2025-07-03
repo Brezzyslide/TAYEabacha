@@ -90,7 +90,7 @@ export async function getAllTenantStatistics(): Promise<TenantStatistics[]> {
  */
 async function provisionCaseNotes(tenantId: number): Promise<void> {
   const clients = await storage.getClientsByTenant(tenantId);
-  const users = await db.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
+  const users = await pool.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
   
   if (clients.length === 0 || users.rows.length === 0) {
     console.log(`[CONSISTENCY] Skipping case notes for tenant ${tenantId} - no clients or users`);
@@ -125,7 +125,7 @@ async function provisionCaseNotes(tenantId: number): Promise<void> {
  */
 async function provisionObservations(tenantId: number): Promise<void> {
   const clients = await storage.getClientsByTenant(tenantId);
-  const users = await db.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
+  const users = await pool.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
   
   if (clients.length === 0 || users.rows.length === 0) {
     console.log(`[CONSISTENCY] Skipping observations for tenant ${tenantId} - no clients or users`);

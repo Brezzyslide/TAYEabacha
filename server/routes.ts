@@ -249,6 +249,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication routes
   setupAuth(app);
+  
+  // Health check endpoint for AWS ECS/ALB
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Test database connection
+      await pool.query("SELECT 1");
+      
+      res.status(200).json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || "1.0.0",
+        environment: process.env.NODE_ENV || "development",
+        database: "connected"
+      });
+    } catch (error) {
+      console.error("Health check failed:", error);
+      res.status(503).json({
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: "Database connection failed"
+      });
+    }
+  });
 
   // Company creation endpoint - public access for admin setup
   app.post("/api/admin/create-company", async (req, res) => {
