@@ -64,7 +64,7 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
       likesPreferences: "",
       dislikesAversions: "",
       allergiesMedicalAlerts: "",
-      companyId: "COMP001",
+
       isActive: true,
     },
   });

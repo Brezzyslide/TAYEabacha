@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { CalendarIcon, User, Heart, AlertTriangle, Target } from "lucide-react";
@@ -28,6 +29,7 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const form = useForm<InsertClient>({
     resolver: zodResolver(insertClientSchema),
@@ -44,16 +46,19 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
       dislikesAversions: "",
       allergiesMedicalAlerts: "",
       primaryDiagnosis: "",
-      tenantId: 1,
-      companyId: "COMP001",
-      createdBy: 1,
       isActive: true
     },
   });
 
   const createClientMutation = useMutation({
     mutationFn: async (data: InsertClient) => {
-      const response = await apiRequest("POST", "/api/clients", data);
+      // Add user's tenant and company data dynamically instead of hardcoded values
+      const clientData = {
+        ...data,
+        tenantId: user?.tenantId,
+        createdBy: user?.id
+      };
+      const response = await apiRequest("POST", "/api/clients", clientData);
       return response.json();
     },
     onSuccess: (newClient) => {
