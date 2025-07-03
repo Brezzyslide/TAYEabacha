@@ -748,37 +748,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
       
-      // Convert string timestamps to Date objects for Drizzle
+      // Convert ALL timestamp fields to Date objects for Drizzle compatibility
       const processedUpdateData = { ...updateData };
       
-      console.log(`[SHIFT UPDATE] Before conversion:`, {
-        startTime: typeof processedUpdateData.startTime,
-        endTime: typeof processedUpdateData.endTime,
-        endTimestamp: typeof processedUpdateData.endTimestamp
+      // Convert timestamp strings to Date objects
+      ['startTime', 'endTime', 'startTimestamp', 'endTimestamp'].forEach(field => {
+        if (processedUpdateData[field]) {
+          processedUpdateData[field] = new Date(processedUpdateData[field]);
+          console.log(`[SHIFT UPDATE] Converted ${field} to Date object`);
+        }
       });
       
-      if (processedUpdateData.startTime && typeof processedUpdateData.startTime === 'string') {
-        processedUpdateData.startTime = new Date(processedUpdateData.startTime);
-      }
-      if (processedUpdateData.endTime && typeof processedUpdateData.endTime === 'string') {
-        processedUpdateData.endTime = new Date(processedUpdateData.endTime);
-      }
-      if (processedUpdateData.endTimestamp && typeof processedUpdateData.endTimestamp === 'string') {
-        processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
-      }
-      
-      // Force conversion for endTimestamp if it exists
-      if (processedUpdateData.endTimestamp) {
-        processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
-      }
-      
-      console.log(`[SHIFT UPDATE] After conversion:`, {
-        startTime: processedUpdateData.startTime instanceof Date ? 'Date' : typeof processedUpdateData.startTime,
-        endTime: processedUpdateData.endTime instanceof Date ? 'Date' : typeof processedUpdateData.endTime,
-        endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'Date' : typeof processedUpdateData.endTimestamp
+      console.log(`[SHIFT UPDATE] Final processed data:`, {
+        status: processedUpdateData.status,
+        endTime: processedUpdateData.endTime instanceof Date ? 'Date Object' : processedUpdateData.endTime,
+        endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'Date Object' : processedUpdateData.endTimestamp,
+        isActive: processedUpdateData.isActive
       });
-      
-      console.log(`[SHIFT UPDATE] Processed data with Date objects:`, processedUpdateData);
       
       const updatedShift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
       
