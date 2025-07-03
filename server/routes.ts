@@ -750,6 +750,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert string timestamps to Date objects for Drizzle
       const processedUpdateData = { ...updateData };
+      
+      console.log(`[SHIFT UPDATE] Before conversion:`, {
+        startTime: typeof processedUpdateData.startTime,
+        endTime: typeof processedUpdateData.endTime,
+        endTimestamp: typeof processedUpdateData.endTimestamp
+      });
+      
       if (processedUpdateData.startTime && typeof processedUpdateData.startTime === 'string') {
         processedUpdateData.startTime = new Date(processedUpdateData.startTime);
       }
@@ -759,6 +766,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (processedUpdateData.endTimestamp && typeof processedUpdateData.endTimestamp === 'string') {
         processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
       }
+      
+      // Force conversion for endTimestamp if it exists
+      if (processedUpdateData.endTimestamp) {
+        processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
+      }
+      
+      console.log(`[SHIFT UPDATE] After conversion:`, {
+        startTime: processedUpdateData.startTime instanceof Date ? 'Date' : typeof processedUpdateData.startTime,
+        endTime: processedUpdateData.endTime instanceof Date ? 'Date' : typeof processedUpdateData.endTime,
+        endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'Date' : typeof processedUpdateData.endTimestamp
+      });
       
       console.log(`[SHIFT UPDATE] Processed data with Date objects:`, processedUpdateData);
       
