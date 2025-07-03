@@ -788,6 +788,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'IS DATE' : 'NOT DATE'
       });
       
+      // Get original shift data BEFORE updating to preserve scheduled times for budget billing
+      let originalShiftForBudget = null;
+      const isShiftCompletion = (processedUpdateData.endTime && processedUpdateData.isActive === false) || 
+                               (processedUpdateData.status === "completed" && processedUpdateData.endTimestamp);
+      
+      if (isShiftCompletion) {
+        originalShiftForBudget = await storage.getShift(shiftId, req.user.tenantId);
+        console.log(`[BUDGET DEDUCTION] Saved original scheduled times: ${originalShiftForBudget?.startTime} → ${originalShiftForBudget?.endTime}`);
+      }
+      
       console.log("[SHIFT UPDATE] ✅ ABOUT TO CALL storage.updateShift");
       
       const updatedShift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
@@ -799,13 +809,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Process budget deduction and timesheet entry when shift is completed
-      if ((processedUpdateData.endTime && processedUpdateData.isActive === false) || 
-          (processedUpdateData.status === "completed" && processedUpdateData.endTimestamp)) {
+      if (isShiftCompletion && originalShiftForBudget) {
         console.log(`[SHIFT COMPLETION] Processing completion for shift ${shiftId}`);
         
-        // Process budget deduction
+        // Process budget deduction using ORIGINAL scheduled times (not actual completion times)
         try {
-          await processBudgetDeduction(updatedShift, req.user.id);
+          console.log(`[BUDGET DEDUCTION] Using ORIGINAL scheduled times: ${originalShiftForBudget.startTime} → ${originalShiftForBudget.endTime}`);
+          await processBudgetDeduction(originalShiftForBudget, req.user.id);
           console.log(`[BUDGET DEDUCTION] Successfully processed budget deduction for shift ${shiftId}`);
         } catch (budgetError) {
           console.error(`[BUDGET DEDUCTION ERROR] Failed to process budget deduction for shift ${shiftId}:`, budgetError);
