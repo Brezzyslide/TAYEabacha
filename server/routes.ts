@@ -770,9 +770,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const processedUpdateData = { ...updateData };
       
       console.log(`[SHIFT UPDATE] ✅ RAW DATA TYPES:`, {
+        startTime: typeof processedUpdateData.startTime,
         endTime: typeof processedUpdateData.endTime,
         endTimestamp: typeof processedUpdateData.endTimestamp
       });
+      
+      // Force convert startTime
+      if (processedUpdateData.startTime) {
+        console.log(`[SHIFT UPDATE] ✅ CONVERTING startTime from: ${processedUpdateData.startTime}`);
+        processedUpdateData.startTime = new Date(processedUpdateData.startTime);
+        console.log(`[SHIFT UPDATE] ✅ startTime converted to: ${processedUpdateData.startTime}`);
+      }
       
       // Force convert endTime
       if (processedUpdateData.endTime) {
@@ -789,6 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`[SHIFT UPDATE] ✅ FINAL VERIFICATION:`, {
+        startTime: processedUpdateData.startTime instanceof Date ? 'IS DATE' : 'NOT DATE',
         endTime: processedUpdateData.endTime instanceof Date ? 'IS DATE' : 'NOT DATE',
         endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'IS DATE' : 'NOT DATE'
       });
