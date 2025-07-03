@@ -727,7 +727,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/shifts/:id", requireAuth, async (req: any, res) => {
+    console.log("[SHIFT UPDATE] ✅ ROUTE ENTERED - Starting shift update process");
+    
     try {
+      console.log("[SHIFT UPDATE] ✅ INSIDE TRY BLOCK");
+      
       const shiftId = parseInt(req.params.id);
       const updateData = req.body;
       
@@ -735,45 +739,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[SHIFT UPDATE] Update data:`, JSON.stringify(updateData, null, 2));
       console.log(`[SHIFT UPDATE] Tenant ID: ${req.user.tenantId}`);
       
+      console.log("[SHIFT UPDATE] ✅ BEFORE PERMISSION CHECK");
+      
       // Get the existing shift to check permissions
       const existingShift = await storage.getShift(shiftId, req.user.tenantId);
       if (!existingShift) {
+        console.log("[SHIFT UPDATE] ❌ SHIFT NOT FOUND");
         return res.status(404).json({ message: "Shift not found" });
       }
       
+      console.log("[SHIFT UPDATE] ✅ SHIFT FOUND, CHECKING PERMISSIONS");
+      
       // Permission check: SupportWorker can only update their own shifts, TeamLeader+ can update assigned shifts
       if (req.user.role === "SupportWorker" && existingShift.userId !== req.user.id) {
+        console.log("[SHIFT UPDATE] ❌ PERMISSION DENIED - Not user's shift");
         return res.status(403).json({ message: "You can only update your own assigned shifts" });
       } else if (req.user.role !== "SupportWorker" && !["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(req.user.role)) {
+        console.log("[SHIFT UPDATE] ❌ PERMISSION DENIED - Insufficient role");
         return res.status(403).json({ message: "Insufficient permissions" });
       }
+      
+      console.log("[SHIFT UPDATE] ✅ PERMISSIONS PASSED, STARTING CONVERSION");
       
       // EXPLICIT timestamp conversion for Drizzle
       const processedUpdateData = { ...updateData };
       
-      console.log(`[SHIFT UPDATE] Raw data types:`, {
+      console.log(`[SHIFT UPDATE] ✅ RAW DATA TYPES:`, {
         endTime: typeof processedUpdateData.endTime,
         endTimestamp: typeof processedUpdateData.endTimestamp
       });
       
       // Force convert endTime
       if (processedUpdateData.endTime) {
-        console.log(`[SHIFT UPDATE] Converting endTime from: ${processedUpdateData.endTime}`);
+        console.log(`[SHIFT UPDATE] ✅ CONVERTING endTime from: ${processedUpdateData.endTime}`);
         processedUpdateData.endTime = new Date(processedUpdateData.endTime);
-        console.log(`[SHIFT UPDATE] endTime converted to: ${processedUpdateData.endTime}`);
+        console.log(`[SHIFT UPDATE] ✅ endTime converted to: ${processedUpdateData.endTime}`);
       }
       
       // Force convert endTimestamp  
       if (processedUpdateData.endTimestamp) {
-        console.log(`[SHIFT UPDATE] Converting endTimestamp from: ${processedUpdateData.endTimestamp}`);
+        console.log(`[SHIFT UPDATE] ✅ CONVERTING endTimestamp from: ${processedUpdateData.endTimestamp}`);
         processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
-        console.log(`[SHIFT UPDATE] endTimestamp converted to: ${processedUpdateData.endTimestamp}`);
+        console.log(`[SHIFT UPDATE] ✅ endTimestamp converted to: ${processedUpdateData.endTimestamp}`);
       }
       
-      console.log(`[SHIFT UPDATE] Final verification:`, {
+      console.log(`[SHIFT UPDATE] ✅ FINAL VERIFICATION:`, {
         endTime: processedUpdateData.endTime instanceof Date ? 'IS DATE' : 'NOT DATE',
         endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'IS DATE' : 'NOT DATE'
       });
+      
+      console.log("[SHIFT UPDATE] ✅ ABOUT TO CALL storage.updateShift");
       
       const updatedShift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
       
