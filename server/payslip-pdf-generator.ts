@@ -140,8 +140,10 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
 
 async function getCompanyName(tenantId: number): Promise<string> {
   try {
-    // Simple company name based on tenant ID
-    return `NeedsCareAI+ Company ${tenantId}`;
+    // Get actual company name from database using storage
+    const { storage } = await import('./storage');
+    const company = await storage.getCompanyByTenantId(tenantId);
+    return company?.name || `NeedsCareAI+ Company ${tenantId}`;
   } catch (error) {
     console.error('Error getting company name:', error);
     return `NeedsCareAI+ Company ${tenantId}`;
