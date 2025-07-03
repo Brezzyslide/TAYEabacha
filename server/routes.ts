@@ -748,22 +748,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
       
-      // Convert ALL timestamp fields to Date objects for Drizzle compatibility
+      // EXPLICIT timestamp conversion for Drizzle
       const processedUpdateData = { ...updateData };
       
-      // Convert timestamp strings to Date objects
-      ['startTime', 'endTime', 'startTimestamp', 'endTimestamp'].forEach(field => {
-        if (processedUpdateData[field]) {
-          processedUpdateData[field] = new Date(processedUpdateData[field]);
-          console.log(`[SHIFT UPDATE] Converted ${field} to Date object`);
-        }
+      console.log(`[SHIFT UPDATE] Raw data types:`, {
+        endTime: typeof processedUpdateData.endTime,
+        endTimestamp: typeof processedUpdateData.endTimestamp
       });
       
-      console.log(`[SHIFT UPDATE] Final processed data:`, {
-        status: processedUpdateData.status,
-        endTime: processedUpdateData.endTime instanceof Date ? 'Date Object' : processedUpdateData.endTime,
-        endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'Date Object' : processedUpdateData.endTimestamp,
-        isActive: processedUpdateData.isActive
+      // Force convert endTime
+      if (processedUpdateData.endTime) {
+        console.log(`[SHIFT UPDATE] Converting endTime from: ${processedUpdateData.endTime}`);
+        processedUpdateData.endTime = new Date(processedUpdateData.endTime);
+        console.log(`[SHIFT UPDATE] endTime converted to: ${processedUpdateData.endTime}`);
+      }
+      
+      // Force convert endTimestamp  
+      if (processedUpdateData.endTimestamp) {
+        console.log(`[SHIFT UPDATE] Converting endTimestamp from: ${processedUpdateData.endTimestamp}`);
+        processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
+        console.log(`[SHIFT UPDATE] endTimestamp converted to: ${processedUpdateData.endTimestamp}`);
+      }
+      
+      console.log(`[SHIFT UPDATE] Final verification:`, {
+        endTime: processedUpdateData.endTime instanceof Date ? 'IS DATE' : 'NOT DATE',
+        endTimestamp: processedUpdateData.endTimestamp instanceof Date ? 'IS DATE' : 'NOT DATE'
       });
       
       const updatedShift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
