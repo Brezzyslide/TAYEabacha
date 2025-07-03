@@ -139,28 +139,30 @@ export default function StaffHourDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className="flex items-center border rounded-md">
-            <Button
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('card')}
-              className="rounded-r-none"
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="rounded-l-none"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* View Toggle - Hidden for Support Workers */}
+          {user?.role !== 'SupportWorker' && (
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('card')}
+                className="rounded-r-none"
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="rounded-l-none"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
-          {/* Export Button */}
-          {allocations.length > 0 && (
+          {/* Export Button - Hidden for Support Workers */}
+          {user?.role !== 'SupportWorker' && allocations.length > 0 && (
             <Button variant="outline" onClick={exportToExcel}>
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -385,17 +387,20 @@ export default function StaffHourDashboard() {
                         className="h-2" 
                       />
                     </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => setEditingAllocation(allocation)}
-                        className="flex-1"
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
+                    {/* Only show edit button for non-support workers */}
+                    {user?.role !== 'SupportWorker' && (
+                      <div className="flex gap-2 pt-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => setEditingAllocation(allocation)}
+                          className="flex-1"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -403,14 +408,14 @@ export default function StaffHourDashboard() {
           ) : (
             // List View
             <div className="space-y-2">
-              <div className="grid grid-cols-7 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className={`grid gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 ${user?.role === 'SupportWorker' ? 'grid-cols-6' : 'grid-cols-7'}`}>
                 <div>Staff Name</div>
                 <div>Period</div>
                 <div>Max Hours</div>
                 <div>Used Hours</div>
                 <div>Remaining</div>
                 <div>Utilization</div>
-                <div>Actions</div>
+                {user?.role !== 'SupportWorker' && <div>Actions</div>}
               </div>
               {allocations.map((allocation) => {
                 const usedHours = parseFloat(allocation.hoursUsed);
@@ -418,7 +423,7 @@ export default function StaffHourDashboard() {
                 const utilization = Math.round((usedHours / maxHours) * 100);
                 
                 return (
-                  <div key={allocation.id} className="grid grid-cols-7 gap-4 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 items-center">
+                  <div key={allocation.id} className={`grid gap-4 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 items-center ${user?.role === 'SupportWorker' ? 'grid-cols-6' : 'grid-cols-7'}`}>
                     <div className="font-medium">{getStaffName(allocation.staffId)}</div>
                     <div>
                       <Badge variant="outline" className="text-xs">
@@ -441,16 +446,18 @@ export default function StaffHourDashboard() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => setEditingAllocation(allocation)}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
+                    {user?.role !== 'SupportWorker' && (
+                      <div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => setEditingAllocation(allocation)}
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

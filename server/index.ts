@@ -58,6 +58,11 @@ app.use((req, res, next) => {
     const { applyComprehensiveTenantFixes } = await import('./comprehensive-tenant-fixes');
     await applyComprehensiveTenantFixes();
     
+    // Apply comprehensive data consistency across all modules
+    console.log("[DATA CONSISTENCY] Enforcing comprehensive data consistency across all modules");
+    const { enforceComprehensiveDataConsistency } = await import('./comprehensive-data-consistency');
+    await enforceComprehensiveDataConsistency();
+    
     console.log("[MULTI-TENANT FIX] Consistency enforcement completed successfully");
   } catch (error) {
     console.error("[MULTI-TENANT FIX] Consistency enforcement failed:", error);

@@ -2852,14 +2852,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Prepare data for validation
       const recordData = {
         medicationPlanId: req.body.medicationPlanId || null,
         clientId,
         administeredBy: req.user.id,
         medicationName: req.body.medicationName,
-        scheduledTime: actualTime, // Use actual time as scheduled time for database constraint
+        scheduledTime: actualTime,
         actualTime: actualTime,
-        dateTime: actualTime, // Duplicate field for compatibility
+        dateTime: actualTime,
         timeOfDay: req.body.timeOfDay,
         route: req.body.route,
         status: req.body.status,
@@ -2871,6 +2872,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         attachmentAfterUrl: req.body.attachmentAfterUrl || null,
         tenantId: req.user.tenantId,
       };
+
+      // Validate timeOfDay enum values
+      const validTimeOfDayValues = ["Morning", "Afternoon", "Evening", "Night"];
+      if (recordData.timeOfDay && !validTimeOfDayValues.includes(recordData.timeOfDay)) {
+        return res.status(400).json({ 
+          message: "Invalid time of day", 
+          error: `Expected one of: ${validTimeOfDayValues.join(", ")}, received: ${recordData.timeOfDay}` 
+        });
+      }
+
+      // Validate status enum values
+      const validStatusValues = ["Administered", "Refused", "Missed"];
+      if (recordData.status && !validStatusValues.includes(recordData.status)) {
+        return res.status(400).json({ 
+          message: "Invalid status", 
+          error: `Expected one of: ${validStatusValues.join(", ")}, received: ${recordData.status}` 
+        });
+      }
+
+      // Validate route enum values
+      const validRouteValues = ["Oral", "Injection", "Topical", "Other"];
+      if (recordData.route && !validRouteValues.includes(recordData.route)) {
+        return res.status(400).json({ 
+          message: "Invalid route", 
+          error: `Expected one of: ${validRouteValues.join(", ")}, received: ${recordData.route}` 
+        });
+      }
 
       const record = await storage.createMedicationRecord(recordData);
       

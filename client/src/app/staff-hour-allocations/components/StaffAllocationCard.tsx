@@ -21,6 +21,11 @@ export default function StaffAllocationCard({ allocation }: StaffAllocationCardP
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Fetch current user for role checking
+  const { data: currentUser } = useQuery<UserType>({
+    queryKey: ['/api/user'],
+  });
+
   // Fetch staff details if not included
   const { data: staff } = useQuery<UserType>({
     queryKey: ['/api/users', allocation.staffId],
@@ -82,25 +87,28 @@ export default function StaffAllocationCard({ allocation }: StaffAllocationCardP
               <User className="h-4 w-4" />
               {staffData?.username || `Staff ID: ${allocation.staffId}`}
             </CardTitle>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditModalOpen(true)}
-                className="h-8 w-8 p-0"
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
+            {/* Only show action buttons for non-support workers */}
+            {currentUser?.role !== 'SupportWorker' && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
