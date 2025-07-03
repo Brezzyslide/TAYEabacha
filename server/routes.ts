@@ -5564,6 +5564,84 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
     }
   });
 
+  // ScHADS Wage Increase System
+  app.post("/api/schads/wage-increase/preview", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { increasePercentage } = req.body;
+      
+      if (!increasePercentage || increasePercentage <= 0) {
+        return res.status(400).json({ message: "Valid increase percentage required" });
+      }
+      
+      const { previewWageIncrease } = await import("./schads-auto-update");
+      const preview = await previewWageIncrease(increasePercentage);
+      
+      res.json(preview);
+    } catch (error: any) {
+      console.error("Wage increase preview error:", error);
+      res.status(500).json({ message: "Failed to generate preview" });
+    }
+  });
+
+  app.post("/api/schads/wage-increase/apply", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { increasePercentage, effectiveDate, description } = req.body;
+      
+      // Validate inputs
+      const { validateWageIncrease, applyYearlyWageIncrease } = await import("./schads-auto-update");
+      const effectiveDateObj = new Date(effectiveDate);
+      const errors = validateWageIncrease(increasePercentage, effectiveDateObj);
+      
+      if (errors.length > 0) {
+        return res.status(400).json({ message: "Validation failed", errors });
+      }
+      
+      // Apply wage increase across all tenants
+      const results = await applyYearlyWageIncrease({
+        effectiveDate: effectiveDateObj,
+        increasePercentage,
+        description: description || `${increasePercentage}% ScHADS wage increase`,
+        appliedBy: req.user.id
+      });
+      
+      res.json({
+        success: true,
+        message: `Wage increase applied successfully to ${results.length} tenants`,
+        results
+      });
+      
+    } catch (error: any) {
+      console.error("Wage increase application error:", error);
+      res.status(500).json({ message: "Failed to apply wage increase" });
+    }
+  });
+
+  app.get("/api/schads/wage-increase/history", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { getWageIncreaseHistory } = await import("./schads-auto-update");
+      const history = await getWageIncreaseHistory(req.user.tenantId);
+      res.json(history);
+    } catch (error: any) {
+      console.error("Wage increase history error:", error);
+      res.status(500).json({ message: "Failed to fetch wage increase history" });
+    }
+  });
+
+  app.get("/api/schads/wage-increase/due-check", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { isWageIncreaseDue, getNextWageIncreaseDate } = await import("./schads-auto-update");
+      
+      res.json({
+        isDue: isWageIncreaseDue(),
+        nextIncreaseDate: getNextWageIncreaseDate(),
+        currentDate: new Date()
+      });
+    } catch (error: any) {
+      console.error("Wage increase due check error:", error);
+      res.status(500).json({ message: "Failed to check wage increase status" });
+    }
+  });
+
   // Close the registerRoutes function
   return server;
 }
