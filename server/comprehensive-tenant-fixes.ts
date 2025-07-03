@@ -48,6 +48,10 @@ async function fixTenantComprehensively(tenantId: number): Promise<void> {
     const timesheetFixes = await fixMissingTimesheetEntries(tenantId);
     fixes.push(...timesheetFixes);
     
+    // 4. Fix timesheet submit button visibility
+    const submitButtonFixes = await fixTimesheetSubmitButtons(tenantId);
+    fixes.push(...submitButtonFixes);
+    
     // 4. Fix leave balances initialization
     const leaveFixes = await fixLeaveBalances(tenantId);
     fixes.push(...leaveFixes);
@@ -228,6 +232,47 @@ export async function updateTimesheetTotals(timesheetId: number): Promise<void> 
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ${timesheetId}
   `);
+}
+
+async function fixTimesheetSubmitButtons(tenantId: number): Promise<string[]> {
+  const fixes: string[] = [];
+  
+  try {
+    // Get current pay period dates (fortnightly cycle)
+    const now = new Date();
+    
+    // Use 14-day cycles starting from a known Monday
+    const baseDate = new Date(2025, 5, 23); // Monday June 23, 2025
+    const daysSinceBase = Math.floor((now.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+    const cycleNumber = Math.floor(daysSinceBase / 14);
+    
+    const payPeriodStart = new Date(baseDate.getTime() + (cycleNumber * 14 * 24 * 60 * 60 * 1000));
+    const payPeriodEnd = new Date(payPeriodStart.getTime() + (14 * 24 * 60 * 60 * 1000) - 1);
+    
+    // Reset current pay period timesheets to 'draft' status
+    // This ensures staff can submit their timesheets
+    const result = await db.execute(sql`
+      UPDATE timesheets 
+      SET 
+        status = 'draft',
+        submitted_at = NULL,
+        approved_at = NULL,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE tenant_id = ${tenantId}
+        AND pay_period_start >= ${payPeriodStart}
+        AND pay_period_end <= ${payPeriodEnd}
+        AND status IN ('paid', 'approved')
+    `);
+    
+    if (result.rowCount && result.rowCount > 0) {
+      fixes.push(`Reset ${result.rowCount} timesheets to draft status for submit button visibility`);
+    }
+    
+  } catch (error) {
+    console.error(`[TIMESHEET FIX] Error fixing submit buttons for tenant ${tenantId}:`, error);
+  }
+  
+  return fixes;
 }
 
 async function fixLeaveBalances(tenantId: number): Promise<string[]> {
