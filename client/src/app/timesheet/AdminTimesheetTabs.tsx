@@ -297,6 +297,25 @@ export default function AdminTimesheetTabs() {
     }
   });
 
+  // Admin submit timesheet (for staff)
+  const adminSubmitTimesheet = useMutation({
+    mutationFn: (timesheetId: number) => 
+      apiRequest("POST", `/api/admin/timesheets/${timesheetId}/submit`),
+    onSuccess: () => {
+      toast({ title: "Timesheet submitted successfully by admin" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/staff-timesheets"] });
+      setShowTimesheetDetails(false);
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Submission Failed", 
+        description: "Failed to submit timesheet. Please try again.",
+        variant: "destructive" 
+      });
+    }
+  });
+
   // Update timesheet entry
   const updateEntry = useMutation({
     mutationFn: ({ entryId, data }: { entryId: number; data: Partial<TimesheetEntry> }) => 
@@ -1470,6 +1489,35 @@ export default function AdminTimesheetTabs() {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Submit Timesheet Section for Draft Status */}
+            {selectedTimesheet && selectedTimesheet.status === 'draft' && (
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="text-lg">Submit Timesheet</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600">
+                        Submit this timesheet on behalf of {selectedTimesheet.staffName} for approval.
+                      </p>
+                      <div className="mt-2 text-xs text-slate-500">
+                        Total Hours: {selectedTimesheet.totalHours}h | Total Earnings: ${selectedTimesheet.totalEarnings}
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => adminSubmitTimesheet.mutate(selectedTimesheet.id)}
+                      disabled={adminSubmitTimesheet.isPending}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {adminSubmitTimesheet.isPending ? 'Submitting...' : 'Submit for Approval'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </DialogContent>
       </Dialog>

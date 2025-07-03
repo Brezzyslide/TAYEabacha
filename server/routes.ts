@@ -4370,6 +4370,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin submit timesheet (for staff) - SEPARATE ENDPOINT
+  app.post("/api/admin/timesheets/:timesheetId/submit", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.timesheetId);
+      
+      console.log(`[ADMIN SUBMIT] Admin ${req.user.id} submitting timesheet ${timesheetId}`);
+      
+      // Get timesheet (admin can submit any timesheet in their tenant)
+      const timesheet = await db.select()
+        .from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId) // Only tenant check, no userId check
+        ));
+
+      if (timesheet.length === 0) {
+        return res.status(404).json({ message: "Timesheet not found" });
+      }
+
+      // Allow submission for draft or rejected timesheets
+      if (timesheet[0].status !== 'draft' && timesheet[0].status !== 'rejected') {
+        return res.status(400).json({ message: "Only draft or rejected timesheets can be submitted" });
+      }
+
+      console.log(`[ADMIN SUBMIT] Timesheet status: ${timesheet[0].status}, submitting for staff ${timesheet[0].userId}`);
+
+      // Submit timesheet (admin submits on behalf of staff)
+      const updatedTimesheet = await db.update(timesheetsTable)
+        .set({ 
+          status: 'submitted',
+          submittedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(timesheetsTable.id, timesheetId))
+        .returning();
+
+      const totalHours = parseFloat(timesheet[0].totalHours || "0") || 0;
+      
+      // Create activity log for admin submission
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "admin_submit_timesheet",
+        resourceType: "timesheet",
+        resourceId: timesheetId,
+        description: `Admin submitted timesheet for staff member (${totalHours}h)`,
+        tenantId: req.user.tenantId,
+      });
+
+      // Create notification for the staff member
+      await storage.createNotification({
+        userId: timesheet[0].userId,
+        tenantId: req.user.tenantId,
+        title: "Timesheet Submitted by Admin",
+        message: `Your timesheet for ${totalHours} hours has been submitted by admin for approval`,
+        type: "info",
+        isRead: false
+      });
+
+      console.log(`[ADMIN SUBMIT] ✅ Successfully submitted timesheet ${timesheetId} for staff ${timesheet[0].userId}`);
+
+      res.json({
+        timesheet: updatedTimesheet[0],
+        message: "Timesheet submitted successfully by admin",
+        submittedBy: "admin"
+      });
+    } catch (error: any) {
+      console.error("Admin submit timesheet error:", error);
+      res.status(500).json({ message: "Failed to submit timesheet" });
+    }
+  });
+
   // Get timesheet entries for a specific timesheet
   app.get("/api/admin/timesheet-entries/:timesheetId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
