@@ -17,8 +17,8 @@ export default function ShiftDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("shift-calendar");
 
-  const isAdminOrCoordinator = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "coordinator";
-  const isAdmin = user?.role?.toLowerCase() === "admin";
+  const isAdminOrCoordinator = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "coordinator" || user?.role?.toLowerCase() === "consolemanager";
+  const isAdmin = user?.role?.toLowerCase() === "admin" || user?.role?.toLowerCase() === "consolemanager";
 
   return (
     <div className="space-y-6">
