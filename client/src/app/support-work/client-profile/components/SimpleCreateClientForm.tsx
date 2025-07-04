@@ -32,7 +32,6 @@ const clientFormSchema = z.object({
   likesPreferences: z.string().optional(),
   dislikesAversions: z.string().optional(),
   allergiesMedicalAlerts: z.string().optional(),
-  companyId: z.string(),
   isActive: z.boolean(),
 });
 
@@ -120,7 +119,6 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
         likesPreferences: data.likesPreferences || null,
         dislikesAversions: data.dislikesAversions || null,
         allergiesMedicalAlerts: data.allergiesMedicalAlerts || null,
-        companyId: data.companyId,
         isActive: data.isActive,
       };
       console.log("Submitting client data:", submissionData);
