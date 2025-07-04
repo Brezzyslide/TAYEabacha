@@ -178,12 +178,12 @@ async function provisionObservations(tenantId: number): Promise<void> {
  * Provision sample medication records for tenants lacking coverage
  */
 async function provisionMedicationRecords(tenantId: number): Promise<void> {
-  const medicationPlans = await db.query(
+  const medicationPlans = await pool.query(
     "SELECT * FROM medication_plans WHERE tenant_id = $1 LIMIT 3",
     [tenantId]
   );
   
-  const users = await db.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
+  const users = await pool.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
   
   if (medicationPlans.rows.length === 0 || users.rows.length === 0) {
     console.log(`[CONSISTENCY] Skipping medication records for tenant ${tenantId} - no plans or users`);
@@ -228,7 +228,7 @@ async function provisionMedicationRecords(tenantId: number): Promise<void> {
  */
 async function provisionIncidentReports(tenantId: number): Promise<void> {
   const clients = await storage.getClientsByTenant(tenantId);
-  const users = await db.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
+  const users = await pool.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
   
   if (clients.length === 0 || users.rows.length === 0) {
     console.log(`[CONSISTENCY] Skipping incident reports for tenant ${tenantId} - no clients or users`);
@@ -272,7 +272,7 @@ async function provisionIncidentReports(tenantId: number): Promise<void> {
  * Standardize hour allocations across all tenants
  */
 async function standardizeHourAllocations(tenantId: number): Promise<void> {
-  const users = await db.query("SELECT id FROM users WHERE tenant_id = $1", [tenantId]);
+  const users = await pool.query("SELECT id FROM users WHERE tenant_id = $1", [tenantId]);
   
   if (users.rows.length === 0) {
     console.log(`[CONSISTENCY] Skipping hour allocations for tenant ${tenantId} - no users`);
@@ -281,7 +281,7 @@ async function standardizeHourAllocations(tenantId: number): Promise<void> {
 
   // Ensure each user has exactly one hour allocation
   for (const user of users.rows) {
-    const existingAllocation = await db.query(
+    const existingAllocation = await pool.query(
       "SELECT id FROM hour_allocations WHERE staff_id = $1 AND tenant_id = $2",
       [user.id, tenantId]
     );
