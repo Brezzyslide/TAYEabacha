@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { User } from "@shared/schema";
+import { EMPLOYMENT_TYPES } from "@shared/employmentTypes";
 import { UserCircle, Mail, Shield, Plus, Search, Edit, UserPlus, Key, Phone, MapPin, Upload, ImageIcon, FileText, FileSpreadsheet, DollarSign, UserCheck, UserX, Calendar } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { useForm } from "react-hook-form";
@@ -433,9 +434,11 @@ function EditStaffForm({
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="full-time">Full-time</SelectItem>
-              <SelectItem value="part-time">Part-time</SelectItem>
-              <SelectItem value="casual">Casual</SelectItem>
+              {EMPLOYMENT_TYPES.map(type => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -846,9 +849,11 @@ export default function Staff() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="full-time">Full-time</SelectItem>
-                            <SelectItem value="part-time">Part-time</SelectItem>
-                            <SelectItem value="casual">Casual</SelectItem>
+                            {EMPLOYMENT_TYPES.map(type => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
