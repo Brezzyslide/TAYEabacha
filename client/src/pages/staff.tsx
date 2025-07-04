@@ -33,7 +33,7 @@ const createStaffSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   isActive: z.boolean().default(true),
-  employmentType: z.enum(["fulltime", "parttime", "casual"]).default("casual"),
+  employmentType: z.enum(["full-time", "part-time", "casual"]).default("casual"),
   payLevel: z.number().min(1).max(4).default(1),
   payPoint: z.number().min(1).max(4).default(1),
 });
@@ -48,7 +48,7 @@ const editStaffSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   isActive: z.boolean(),
-  employmentType: z.enum(["fulltime", "parttime", "casual"]),
+  employmentType: z.enum(["full-time", "part-time", "casual"]),
   payLevel: z.number().min(1).max(4),
   payPoint: z.number().min(1).max(4),
 });
