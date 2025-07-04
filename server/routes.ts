@@ -435,6 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertClientSchema.parse({
         ...req.body,
         tenantId: req.user.tenantId,
+        companyId: req.user.companyId,
         createdBy: req.user.id,
       });
       
