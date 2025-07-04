@@ -429,13 +429,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", requireAuth, async (req: any, res) => {
     try {
-      console.log("Creating client with user:", { id: req.user?.id, tenantId: req.user?.tenantId, role: req.user?.role });
+      console.log("Creating client with user:", req.user);
       console.log("Request body:", req.body);
+      
+      // Get company info for this tenant
+      const company = await storage.getCompanyByTenantId(req.user.tenantId);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found for tenant" });
+      }
       
       const validatedData = insertClientSchema.parse({
         ...req.body,
         tenantId: req.user.tenantId,
-        companyId: req.user.companyId,
+        companyId: company.id,
         createdBy: req.user.id,
       });
       
