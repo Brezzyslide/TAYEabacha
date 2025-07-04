@@ -64,7 +64,9 @@ export async function autoProvisionNewTenant(
     await storage.createActivityLog({
       tenantId,
       userId: adminUserId,
-      type: 'tenant_provisioned',
+      action: 'tenant_provisioned',
+      resourceType: 'tenant',
+      resourceId: tenantId,
       description: `New tenant ${tenantId} fully provisioned with all features`,
       metadata: { companyId, features: 'all' }
     });
@@ -117,9 +119,8 @@ async function createHourAllocationsForTenant(tenantId: number): Promise<void> {
       await storage.createHourAllocation({
         staffId: user.id,
         tenantId,
-        allocatedHours: weeklyHours,
-        period: 'weekly',
-        startDate: new Date(),
+        maxHours: weeklyHours,
+        allocationPeriod: 'weekly',
         isActive: true
       });
     }
@@ -131,14 +132,14 @@ async function createHourAllocationsForTenant(tenantId: number): Promise<void> {
  */
 async function ensureTaxBrackets(): Promise<void> {
   try {
-    const existingBrackets = await storage.getTaxBrackets();
+    const existingBrackets = await storage.getTaxBrackets(2025);
     if (existingBrackets.length === 0) {
       const australianTaxBrackets = [
-        { minIncome: 0, maxIncome: 18200, rate: 0, taxYear: '2024-25' },
-        { minIncome: 18201, maxIncome: 45000, rate: 0.19, taxYear: '2024-25' },
-        { minIncome: 45001, maxIncome: 120000, rate: 0.325, taxYear: '2024-25' },
-        { minIncome: 120001, maxIncome: 180000, rate: 0.37, taxYear: '2024-25' },
-        { minIncome: 180001, maxIncome: 999999999, rate: 0.45, taxYear: '2024-25' }
+        { taxYear: 2025, minIncome: "0", maxIncome: "18200", taxRate: "0", baseTax: "0" },
+        { taxYear: 2025, minIncome: "18201", maxIncome: "45000", taxRate: "0.19", baseTax: "0" },
+        { taxYear: 2025, minIncome: "45001", maxIncome: "120000", taxRate: "0.325", baseTax: "5092" },
+        { taxYear: 2025, minIncome: "120001", maxIncome: "180000", taxRate: "0.37", baseTax: "29467" },
+        { taxYear: 2025, minIncome: "180001", maxIncome: "999999999", taxRate: "0.45", baseTax: "51667" }
       ];
       
       for (const bracket of australianTaxBrackets) {
@@ -170,7 +171,7 @@ async function createTimesheetsForTenant(tenantId: number): Promise<void> {
     // Create initial timesheet for each staff member
     for (const staffMember of staff) {
       await db.insert(schema.timesheets).values({
-        staffId: staffMember.id,
+        userId: staffMember.id,
         tenantId: tenantId,
         payPeriodStart: payPeriod.start,
         payPeriodEnd: payPeriod.end,

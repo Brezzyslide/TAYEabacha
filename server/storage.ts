@@ -2,7 +2,7 @@ import {
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
-  shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries, leaveBalances,
+  shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries, leaveBalances, taxBrackets,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -16,7 +16,7 @@ import {
   type NdisPricing, type InsertNdisPricing, type NdisBudget, type InsertNdisBudget,
   type BudgetTransaction, type InsertBudgetTransaction, type CareSupportPlan, type InsertCareSupportPlan,
   type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest,
-  type PayScale, type Notification, type InsertNotification
+  type PayScale, type Notification, type InsertNotification, type TaxBracket
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, or, exists } from "drizzle-orm";
@@ -209,6 +209,10 @@ export interface IStorage {
   getTimesheetEntryById(entryId: number, tenantId: number): Promise<any>;
   markTimesheetAsPaid(timesheetId: number, adminUserId: number, tenantId: number): Promise<any>;
   createBulkNotifications(notifications: InsertNotification[]): Promise<Notification[]>;
+
+  // Tax Brackets
+  getTaxBrackets(taxYear: number): Promise<any[]>;
+  createTaxBracket(bracket: any): Promise<any>;
 
   // Session store
   sessionStore: any;
@@ -1078,11 +1082,12 @@ export class DatabaseStorage implements IStorage {
 
   async createHourAllocation(insertAllocation: InsertHourAllocation): Promise<HourAllocation> {
     // Convert number fields to strings for decimal columns
+    const maxHours = insertAllocation.maxHours || 0;
     const processedData = {
       ...insertAllocation,
-      maxHours: insertAllocation.maxHours.toString(),
+      maxHours: maxHours.toString(),
       hoursUsed: "0",
-      remainingHours: insertAllocation.maxHours.toString(),
+      remainingHours: maxHours.toString(),
     };
     const [allocation] = await db.insert(hourAllocations).values(processedData).returning();
     return allocation;
@@ -2228,6 +2233,22 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return result[0];
+  }
+
+  // Tax Brackets
+  async getTaxBrackets(taxYear: number): Promise<any[]> {
+    const result = await db
+      .select()
+      .from(taxBrackets)
+      .where(eq(taxBrackets.taxYear, taxYear))
+      .orderBy(taxBrackets.minIncome);
+    
+    return result;
+  }
+
+  async createTaxBracket(bracket: any): Promise<any> {
+    const [created] = await db.insert(taxBrackets).values(bracket).returning();
+    return created;
   }
 }
 
