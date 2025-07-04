@@ -2800,8 +2800,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, email, password, role, fullName, phone, address, isActive, employmentType, payLevel, payPoint } = req.body;
       
-      console.log("[STAFF CREATION] Request body:", { username, employmentType, payLevel, payPoint, role });
-      
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
@@ -2835,10 +2833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payPoint: payPoint || 1,
       };
 
-      console.log("[STAFF CREATION] Final userData:", userData);
-      
       const newUser = await storage.createUser(userData);
-      console.log("[STAFF CREATION] User created successfully:", { id: newUser.id, username: newUser.username, employmentType: newUser.employmentType });
       
       // Log activity
       await storage.createActivityLog({
