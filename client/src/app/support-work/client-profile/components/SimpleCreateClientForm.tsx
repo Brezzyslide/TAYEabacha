@@ -99,6 +99,11 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
   });
 
   const onSubmit = async (data: CreateClientFormData) => {
+    console.log("SimpleCreateClientForm - Form submission started");
+    console.log("Form data received:", data);
+    console.log("Form validation state:", form.formState);
+    console.log("Form errors:", form.formState.errors);
+    
     setIsSubmitting(true);
     try {
       // Prepare data for server - convert empty strings to null for database
@@ -119,7 +124,11 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
         isActive: data.isActive,
       };
       console.log("Submitting client data:", submissionData);
-      await createClientMutation.mutateAsync(submissionData);
+      const result = await createClientMutation.mutateAsync(submissionData);
+      console.log("Client creation successful:", result);
+    } catch (error: any) {
+      console.error("SimpleCreateClientForm - Client creation error:", error);
+      console.error("Error details:", error?.response?.data);
     } finally {
       setIsSubmitting(false);
     }

@@ -83,12 +83,20 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
   });
 
   const onSubmit = async (data: InsertClient) => {
+    console.log("Form submission started");
+    console.log("User context:", user);
+    console.log("Form data received:", data);
+    console.log("Form validation state:", form.formState);
+    console.log("Form errors:", form.formState.errors);
+    
     setIsSubmitting(true);
     try {
       console.log("Submitting client data:", data);
-      await createClientMutation.mutateAsync(data);
+      const result = await createClientMutation.mutateAsync(data);
+      console.log("Client creation successful:", result);
     } catch (error: any) {
       console.error("Client creation error:", error);
+      console.error("Error details:", error?.response?.data);
       toast({
         title: "Error",
         description: error?.message || "Failed to create client",
