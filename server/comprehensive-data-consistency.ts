@@ -242,24 +242,24 @@ async function provisionIncidentReports(tenantId: number): Promise<void> {
     const client = clients[i];
     
     const incidentData = {
+      incidentId: `INC-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
       clientId: client.id,
-      reportedBy: userId,
-      incidentDate: new Date(),
-      incidentTime: "14:30",
+      staffId: userId,
+      dateTime: new Date(),
       location: "Community Centre",
-      incidentType: i === 0 ? "Minor Injury" : "Behavioral Incident",
-      severity: "Low",
+      witnessName: "Staff member on duty",
+      witnessPhone: null,
+      types: [i === 0 ? "Minor Injury" : "Behavioral Incident"],
+      isNDISReportable: false,
+      triggers: [],
+      intensityRating: i === 0 ? 2 : 4,
+      staffResponses: [],
       description: i === 0 
         ? `${client.firstName} sustained a minor scrape on knee while walking in the garden. Wound was cleaned and bandaged immediately.`
         : `${client.firstName} became upset when asked to stop preferred activity. Support provided until client calmed down.`,
-      immediateActions: i === 0 
-        ? "First aid provided, wound cleaned and bandaged, ice pack applied"
-        : "Provided calm space, used de-escalation techniques, offered alternative activities",
-      witnessNames: "Staff member on duty",
-      followUpRequired: i === 0 ? "Monitor healing progress" : "Review behaviour support plan",
-      status: "open",
+      externalRef: null,
+      status: "Open",
       tenantId,
-      createdAt: new Date(),
     };
 
     await storage.createIncidentReport(incidentData);

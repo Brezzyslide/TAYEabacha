@@ -845,6 +845,8 @@ export const insertIncidentReportSchema = createInsertSchema(incidentReports).om
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dateTime: z.coerce.date(),
 });
 
 export const insertIncidentClosureSchema = createInsertSchema(incidentClosures).omit({
