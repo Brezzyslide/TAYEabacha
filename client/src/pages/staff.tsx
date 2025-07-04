@@ -433,8 +433,8 @@ function EditStaffForm({
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="fulltime">Full-time</SelectItem>
-              <SelectItem value="parttime">Part-time</SelectItem>
+              <SelectItem value="full-time">Full-time</SelectItem>
+              <SelectItem value="part-time">Part-time</SelectItem>
               <SelectItem value="casual">Casual</SelectItem>
             </SelectContent>
           </Select>
@@ -846,8 +846,8 @@ export default function Staff() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="fulltime">Full-time</SelectItem>
-                            <SelectItem value="parttime">Part-time</SelectItem>
+                            <SelectItem value="full-time">Full-time</SelectItem>
+                            <SelectItem value="part-time">Part-time</SelectItem>
                             <SelectItem value="casual">Casual</SelectItem>
                           </SelectContent>
                         </Select>
