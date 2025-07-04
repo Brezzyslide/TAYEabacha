@@ -4,7 +4,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
 import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning";
-import { db, pool } from "./db";
+import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, lt, gte, lte } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users, shifts, shiftCancellations, timesheets: timesheetsTable, timesheetEntries, leaveBalances, companies, tenants, careSupportPlans } = schema;

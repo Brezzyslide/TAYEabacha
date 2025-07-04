@@ -18,11 +18,10 @@ import {
   type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest,
   type PayScale, type Notification, type InsertNotification, type TaxBracket
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./lib/dbClient";
 import { eq, and, desc, sql, or, exists } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { pool } from "./db";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -319,14 +318,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(tenants);
   }
 
-  // Companies
-  async getCompanyByTenantId(tenantId: number): Promise<Company | undefined> {
-    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
-    if (!tenant || !tenant.companyId) return undefined;
-    
-    const [company] = await db.select().from(companies).where(eq(companies.id, tenant.companyId));
-    return company || undefined;
-  }
+  // Companies section - getCompanyByTenantId already defined above
 
   async updateCompanyLogo(tenantId: number, logoUrl: string): Promise<Company | undefined> {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));

@@ -4,7 +4,7 @@
  * Based on primary tenant (tenant 1) as the standard
  */
 
-import { pool } from "./db";
+import { pool } from "./lib/dbClient";
 import { storage } from "./storage";
 
 interface TenantStatistics {
