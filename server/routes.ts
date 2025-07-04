@@ -5693,6 +5693,83 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
     }
   });
 
+  // Tenant Provisioning Validation Endpoints
+  app.post("/api/provisioning/check", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { checkProvisioning } = await import("./tenant-provisioning-validator");
+      const { tenantId, expect } = req.body;
+      
+      // Use current tenant if not specified
+      const targetTenantId = tenantId || req.user.tenantId;
+      
+      const result = await checkProvisioning({
+        tenantId: targetTenantId,
+        expect: expect || {
+          hasAtLeast: {
+            taxBrackets: 3,
+            hourAllocations: 1,
+            employmentTypes: 3
+          }
+        }
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Provisioning check error:", error);
+      res.status(500).json({ message: "Failed to check provisioning status" });
+    }
+  });
+
+  app.get("/api/provisioning/validate-all", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { validateAllTenants, generateProvisioningReport } = await import("./tenant-provisioning-validator");
+      
+      const results = await validateAllTenants({
+        hasAtLeast: {
+          taxBrackets: 3,
+          hourAllocations: 1,
+          employmentTypes: 3,
+          users: 1,
+          payScales: 1
+        }
+      });
+      
+      const report = generateProvisioningReport(results);
+      
+      res.json({
+        results,
+        report,
+        summary: {
+          totalTenants: results.length,
+          passedTenants: results.filter(r => r.passed).length,
+          failedTenants: results.filter(r => !r.passed).length
+        }
+      });
+    } catch (error: any) {
+      console.error("Validate all tenants error:", error);
+      res.status(500).json({ message: "Failed to validate all tenants" });
+    }
+  });
+
+  app.get("/api/provisioning/health/:tenantId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { quickHealthCheck } = await import("./tenant-provisioning-validator");
+      const tenantId = req.params.tenantId;
+      
+      const isHealthy = await quickHealthCheck(tenantId);
+      
+      res.json({
+        tenantId,
+        healthy: isHealthy,
+        status: isHealthy ? "HEALTHY" : "NEEDS_ATTENTION",
+        timestamp: new Date()
+      });
+    } catch (error: any) {
+      console.error("Health check error:", error);
+      res.status(500).json({ message: "Failed to perform health check" });
+    }
+  });
+
   // Close the registerRoutes function
   return server;
 }
