@@ -1565,7 +1565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientName = client ? `${client.firstName} ${client.lastName}` : "Unknown Client";
       
       // Create PDF using jsPDF
-      const jsPDF = (await import('jspdf')).default;
+      const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
       const pageWidth = 297;
       const pageHeight = 210;
@@ -1731,8 +1731,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'table' as const
       }));
 
-      // Import and use PDF utility
-      const jsPDF = (await import('jspdf')).default;
+      // Import jsPDF with proper syntax
+      const { jsPDF } = await import('jspdf');
       
       const options = {
         title: 'Case Notes Export',
