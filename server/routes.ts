@@ -429,11 +429,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", requireAuth, async (req: any, res) => {
     try {
+      console.log("Creating client with user:", { id: req.user?.id, tenantId: req.user?.tenantId, role: req.user?.role });
+      console.log("Request body:", req.body);
+      
       const validatedData = insertClientSchema.parse({
         ...req.body,
         tenantId: req.user.tenantId,
         createdBy: req.user.id,
       });
+      
+      console.log("Validated data:", validatedData);
       
       const client = await storage.createClient(validatedData);
       
@@ -449,10 +454,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(client);
     } catch (error) {
+      console.error("Client creation error:", error);
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid client data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create client" });
+      console.error("Server error during client creation:", error);
+      res.status(500).json({ message: "Failed to create client", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
