@@ -142,12 +142,12 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
               Incident Report: {incident.report.incidentId}
             </DialogTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {getStatusBadge(incident.report.status)}
               {incident.report.isNDISReportable && (
                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
@@ -158,7 +158,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                 variant="outline"
                 size="sm"
                 onClick={handleExportPDF}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
               >
                 <Download className="h-4 w-4" />
                 Export PDF
