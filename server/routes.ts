@@ -2104,6 +2104,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Incident Reports Excel Export API
+  app.post("/api/incident-reports/export/excel", requireAuth, async (req: any, res) => {
+    try {
+      const { incidentIds } = req.body;
+      const tenantId = req.user.tenantId;
+      
+      // Get company information for header
+      const company = await storage.getCompanyByTenantId(tenantId);
+      const companyName = company?.name || `Company ${tenantId}`;
+      
+      // Fetch incident reports
+      const incidents = await Promise.all(
+        incidentIds.map((id: string) => storage.getIncidentReport(id, tenantId))
+      );
+      
+      const validIncidents = incidents.filter(incident => incident !== undefined);
+      
+      if (validIncidents.length === 0) {
+        return res.status(404).json({ message: "No incident reports found" });
+      }
+
+      // Get client names for the incidents
+      const incidentsWithClientInfo = await Promise.all(
+        validIncidents.map(async (incident) => {
+          const client = await storage.getClient(incident.clientId, tenantId);
+          const staff = await storage.getUser(incident.staffId, tenantId);
+          const closure = await storage.getIncidentClosure(incident.incidentId, tenantId);
+          return {
+            ...incident,
+            clientName: client ? `${client.firstName} ${client.lastName}` : "Unknown Client",
+            staffName: staff ? staff.fullName || staff.username : "Unknown Staff",
+            closure
+          };
+        })
+      );
+      
+      // Import xlsx for Excel export
+      const XLSX = await import('xlsx');
+      
+      // Prepare data for Excel export
+      const excelData = incidentsWithClientInfo.map(incident => ({
+        'Incident ID': incident.incidentId,
+        'Date & Time': new Date(incident.dateTime).toLocaleString('en-AU'),
+        'Location': incident.location,
+        'Client': incident.clientName,
+        'Staff': incident.staffName,
+        'Status': incident.status,
+        'NDIS Reportable': incident.isNDISReportable ? 'Yes' : 'No',
+        'Intensity Rating': `${incident.intensityRating}/10`,
+        'Types': incident.types.join(', '),
+        'Description': incident.description,
+        'Witness Name': incident.witnessName || '',
+        'Witness Phone': incident.witnessPhone || '',
+        'External Reference': incident.externalRef || '',
+        'Triggers': incident.triggers ? incident.triggers.map((t: any) => `${t.label}${t.notes ? `: ${t.notes}` : ''}`).join('; ') : '',
+        'Staff Responses': incident.staffResponses ? incident.staffResponses.map((r: any) => `${r.label}${r.notes ? `: ${r.notes}` : ''}`).join('; ') : '',
+        'Created At': new Date(incident.createdAt).toLocaleString('en-AU'),
+        // Closure information
+        'Closure Date': incident.closure ? new Date(incident.closure.closureDate).toLocaleDateString('en-AU') : '',
+        'Severity': incident.closure?.severity || '',
+        'Hazard Type': incident.closure?.hazard || '',
+        'Control Level': incident.closure?.controlLevel || '',
+        'Review Type': incident.closure?.reviewType || '',
+        'Lost Time Injury': incident.closure?.wasLTI?.toUpperCase() || '',
+        'External Notice': incident.closure ? (incident.closure.externalNotice ? 'Yes' : 'No') : '',
+        'Control Review': incident.closure ? (incident.closure.controlReview ? 'Yes' : 'No') : '',
+        'Improvements Implemented': incident.closure ? (incident.closure.implemented ? 'Yes' : 'No') : '',
+        'Participant Context': incident.closure?.participantContext?.toUpperCase() || '',
+        'Support Plan Available': incident.closure?.supportPlanAvailable?.toUpperCase() || '',
+        'Improvements/Actions': incident.closure?.improvements || '',
+        'Outcome': incident.closure?.outcome || ''
+      }));
+      
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 15 }, // Incident ID
+        { wch: 20 }, // Date & Time
+        { wch: 20 }, // Location
+        { wch: 20 }, // Client
+        { wch: 20 }, // Staff
+        { wch: 10 }, // Status
+        { wch: 15 }, // NDIS Reportable
+        { wch: 15 }, // Intensity Rating
+        { wch: 30 }, // Types
+        { wch: 50 }, // Description
+        { wch: 20 }, // Witness Name
+        { wch: 15 }, // Witness Phone
+        { wch: 20 }, // External Reference
+        { wch: 40 }, // Triggers
+        { wch: 40 }, // Staff Responses
+        { wch: 20 }, // Created At
+        { wch: 15 }, // Closure Date
+        { wch: 10 }, // Severity
+        { wch: 15 }, // Hazard Type
+        { wch: 15 }, // Control Level
+        { wch: 20 }, // Review Type
+        { wch: 15 }, // Lost Time Injury
+        { wch: 15 }, // External Notice
+        { wch: 15 }, // Control Review
+        { wch: 20 }, // Improvements Implemented
+        { wch: 20 }, // Participant Context
+        { wch: 20 }, // Support Plan Available
+        { wch: 40 }, // Improvements/Actions
+        { wch: 40 }  // Outcome
+      ];
+      worksheet['!cols'] = columnWidths;
+      
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Incident Reports');
+      
+      // Generate Excel buffer
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      
+      // Set response headers
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="incident-reports-export-${new Date().toISOString().split('T')[0]}.xlsx"`);
+      res.setHeader('Content-Length', excelBuffer.length);
+      
+      // Send Excel file
+      res.send(excelBuffer);
+      
+    } catch (error) {
+      console.error("Incident reports Excel export error:", error);
+      res.status(500).json({ message: "Failed to export incident reports to Excel" });
+    }
+  });
+
   app.post("/api/case-notes", requireAuth, async (req: any, res) => {
     try {
       const caseNoteData = {
@@ -3017,6 +3148,305 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Create incident report error:", error);
       res.status(500).json({ message: "Failed to create incident report" });
+    }
+  });
+
+  // Individual Incident Report PDF Export API
+  app.get("/api/incident-reports/:incidentId/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const { incidentId } = req.params;
+      const tenantId = req.user.tenantId;
+      
+      // Get company information for header
+      const company = await storage.getCompanyByTenantId(tenantId);
+      const companyName = company?.name || `Company ${tenantId}`;
+      
+      // Fetch incident report
+      const incident = await storage.getIncidentReport(incidentId, tenantId);
+      
+      if (!incident) {
+        return res.status(404).json({ message: "Incident report not found" });
+      }
+
+      // Get closure information if exists
+      const closure = await storage.getIncidentClosure(incidentId, tenantId);
+
+      // Get client information
+      const client = await storage.getClient(incident.clientId, tenantId);
+      const staff = await storage.getUser(incident.staffId);
+      
+      // Import jsPDF with proper syntax
+      const { jsPDF } = await import('jspdf');
+      
+      // Create PDF manually using the same format as PDFExportUtility
+      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      
+      // Add centered header (first page only)
+      pdf.setFillColor(37, 99, 235); // Professional blue
+      pdf.rect(margin, 10, contentWidth, 40, 'F');
+      
+      // Add accent bar
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(margin, 10, contentWidth, 8, 'F');
+      
+      // Add company name and title (white text)
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(22);
+      pdf.setFont('helvetica', 'bold');
+      const title = 'Incident Report';
+      const titleWidth = pdf.getTextWidth(title);
+      pdf.text(title, (pageWidth - titleWidth) / 2, 30);
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      const companyText = companyName;
+      const companyWidth = pdf.getTextWidth(companyText);
+      pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
+      
+      // Reset text color to black for content
+      pdf.setTextColor(0, 0, 0);
+      
+      let currentY = 70;
+      
+      // Incident Information Section
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(margin, currentY, contentWidth, 8, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Incident Information', margin + 5, currentY + 6);
+      pdf.setTextColor(0, 0, 0);
+      currentY += 15;
+      
+      // Basic incident details
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const incidentDetails = [
+        ['Incident ID:', incident.incidentId],
+        ['Date & Time:', new Date(incident.dateTime).toLocaleString('en-AU')],
+        ['Location:', incident.location],
+        ['Client:', client ? `${client.firstName} ${client.lastName} (${client.clientId})` : 'Unknown'],
+        ['Reporting Staff:', staff ? staff.fullName || staff.username : 'Unknown'],
+        ['Status:', incident.status],
+        ['NDIS Reportable:', incident.isNDISReportable ? 'Yes' : 'No'],
+        ['Intensity Rating:', `${incident.intensityRating}/10`]
+      ];
+      
+      incidentDetails.forEach(([label, value]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(label, margin, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(value, margin + 50, currentY);
+        currentY += 8;
+      });
+      
+      // Incident Types
+      if (incident.types && incident.types.length > 0) {
+        currentY += 5;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Incident Types:', margin, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(incident.types.join(', '), margin + 50, currentY);
+        currentY += 8;
+      }
+      
+      // Witnesses
+      if (incident.witnessName) {
+        currentY += 5;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Witness:', margin, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`${incident.witnessName}${incident.witnessPhone ? ` (${incident.witnessPhone})` : ''}`, margin + 50, currentY);
+        currentY += 8;
+      }
+      
+      // External Reference
+      if (incident.externalRef) {
+        currentY += 5;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('External Reference:', margin, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(incident.externalRef, margin + 50, currentY);
+        currentY += 8;
+      }
+      
+      // Description Section
+      if (incident.description) {
+        currentY += 10;
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY, contentWidth, 8, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Description', margin + 5, currentY + 6);
+        pdf.setTextColor(0, 0, 0);
+        currentY += 15;
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        const descriptionLines = pdf.splitTextToSize(incident.description, contentWidth - 20);
+        descriptionLines.forEach((line: string) => {
+          pdf.text(line, margin + 5, currentY);
+          currentY += 6;
+        });
+      }
+      
+      // Triggers Section
+      const triggers = (incident as any).triggers || [];
+      if (Array.isArray(triggers) && triggers.length > 0) {
+        currentY += 10;
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY, contentWidth, 8, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Triggers', margin + 5, currentY + 6);
+        pdf.setTextColor(0, 0, 0);
+        currentY += 15;
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        triggers.forEach((trigger: any) => {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`• ${trigger.label}`, margin + 5, currentY);
+          currentY += 6;
+          if (trigger.notes) {
+            pdf.setFont('helvetica', 'normal');
+            const noteLines = pdf.splitTextToSize(trigger.notes, contentWidth - 30);
+            noteLines.forEach((line: string) => {
+              pdf.text(line, margin + 10, currentY);
+              currentY += 6;
+            });
+          }
+        });
+      }
+      
+      // Staff Responses Section
+      const staffResponses = (incident as any).staffResponses || [];
+      if (Array.isArray(staffResponses) && staffResponses.length > 0) {
+        currentY += 10;
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY, contentWidth, 8, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Staff Responses', margin + 5, currentY + 6);
+        pdf.setTextColor(0, 0, 0);
+        currentY += 15;
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        staffResponses.forEach((response: any) => {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`• ${response.label}`, margin + 5, currentY);
+          currentY += 6;
+          if (response.notes) {
+            pdf.setFont('helvetica', 'normal');
+            const noteLines = pdf.splitTextToSize(response.notes, contentWidth - 30);
+            noteLines.forEach((line: string) => {
+              pdf.text(line, margin + 10, currentY);
+              currentY += 6;
+            });
+          }
+        });
+      }
+      
+      // Closure Information (if exists)
+      if (closure) {
+        currentY += 10;
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY, contentWidth, 8, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Closure Information', margin + 5, currentY + 6);
+        pdf.setTextColor(0, 0, 0);
+        currentY += 15;
+        
+        const closureDetails = [
+          ['Closure Date:', new Date(closure.closureDate).toLocaleDateString('en-AU')],
+          ['Severity Level:', closure.severity],
+          ['Hazard Type:', closure.hazard],
+          ['Control Level:', closure.controlLevel],
+          ['Review Type:', closure.reviewType],
+          ['Lost Time Injury:', closure.wasLTI?.toUpperCase() || 'No'],
+          ['External Notice:', closure.externalNotice ? 'Yes' : 'No'],
+          ['Control Review:', closure.controlReview ? 'Yes' : 'No'],
+          ['Improvements Implemented:', closure.implemented ? 'Yes' : 'No'],
+          ['Participant Context:', closure.participantContext?.toUpperCase() || 'Not specified'],
+          ['Support Plan Available:', closure.supportPlanAvailable?.toUpperCase() || 'Not specified']
+        ];
+        
+        pdf.setFontSize(10);
+        closureDetails.forEach(([label, value]) => {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(label, margin, currentY);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(value, margin + 70, currentY);
+          currentY += 8;
+        });
+        
+        // Improvements/Actions
+        if (closure.improvements) {
+          currentY += 5;
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Improvements/Actions:', margin, currentY);
+          currentY += 8;
+          pdf.setFont('helvetica', 'normal');
+          const improvementLines = pdf.splitTextToSize(closure.improvements, contentWidth - 20);
+          improvementLines.forEach((line: string) => {
+            pdf.text(line, margin + 5, currentY);
+            currentY += 6;
+          });
+        }
+        
+        // Outcome
+        if (closure.outcome) {
+          currentY += 5;
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Outcome:', margin, currentY);
+          currentY += 8;
+          pdf.setFont('helvetica', 'normal');
+          const outcomeLines = pdf.splitTextToSize(closure.outcome, contentWidth - 20);
+          outcomeLines.forEach((line: string) => {
+            pdf.text(line, margin + 5, currentY);
+            currentY += 6;
+          });
+        }
+      }
+      
+      // Add footer on all pages
+      const pageCount = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(
+          `Generated by ${req.user.fullName || req.user.username} on ${new Date().toLocaleDateString('en-AU')}`,
+          margin,
+          pageHeight - 10
+        );
+        pdf.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 20, pageHeight - 10);
+      }
+      
+      // Generate PDF buffer
+      const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+      
+      // Set response headers
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="incident-report-${incident.incidentId}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      // Send PDF
+      res.send(pdfBuffer);
+      
+    } catch (error) {
+      console.error("Individual incident report PDF export error:", error);
+      res.status(500).json({ message: "Failed to generate incident report PDF" });
     }
   });
 

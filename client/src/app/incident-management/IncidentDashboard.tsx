@@ -81,9 +81,7 @@ export default function IncidentDashboard() {
 
   const deleteIncidentMutation = useMutation({
     mutationFn: (incidentId: string) => 
-      apiRequest(`/api/incident-reports/${incidentId}`, {
-        method: "DELETE",
-      }),
+      apiRequest("DELETE", `/api/incident-reports/${incidentId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/incident-reports"] });
       toast({
@@ -219,6 +217,39 @@ export default function IncidentDashboard() {
     }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      const response = await fetch("/api/incident-reports/export/excel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ incidentIds: filteredIncidents.map(i => i.report.incidentId) })
+      });
+      
+      if (!response.ok) throw new Error('Failed to export Excel');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `incident-reports-export-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export successful",
+        description: "Incident reports have been exported to Excel"
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to export incident reports to Excel",
+        variant: "destructive"
+      });
+    }
+  };
+
   const incidentStats = {
     total: incidents.length,
     open: incidents.filter((i: IncidentReport) => i.report.status === "Open").length,
@@ -245,10 +276,20 @@ export default function IncidentDashboard() {
           <h1 className="text-3xl font-bold">Incident Management</h1>
           <p className="text-muted-foreground">Comprehensive incident reporting and closure tracking</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Incident Report
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={handleExportExcel}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export to Excel
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Incident Report
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -374,7 +415,7 @@ export default function IncidentDashboard() {
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>Client: {incident.client.firstName} {incident.client.lastName} ({incident.client.clientId})</span>
-                          <span>Staff: {incident.staff.firstName} {incident.staff.lastName}</span>
+                          <span>Staff: {incident.staff.username}</span>
                           <span>Location: {incident.report.location}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">

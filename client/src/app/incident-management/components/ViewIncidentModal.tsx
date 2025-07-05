@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, Clock, User, MapPin, Phone, FileText, Target, Zap, Users, CheckCircle, ExternalLink } from "lucide-react";
+import { AlertTriangle, Clock, User, MapPin, Phone, FileText, Target, Zap, Users, CheckCircle, ExternalLink, Download } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface IncidentReport {
   report: {
@@ -63,6 +64,36 @@ interface ViewIncidentModalProps {
 }
 
 export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncidentModalProps) {
+  const { toast } = useToast();
+
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch(`/api/incident-reports/${incident.report.incidentId}/pdf`);
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `incident-report-${incident.report.incidentId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "PDF Generated",
+        description: "Incident report exported successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Could not generate PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Open":
@@ -123,6 +154,15 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                   NDIS Reportable
                 </Badge>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPDF}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export PDF
+              </Button>
             </div>
           </div>
         </DialogHeader>
