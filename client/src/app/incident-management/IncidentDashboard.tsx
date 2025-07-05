@@ -250,6 +250,35 @@ export default function IncidentDashboard() {
     }
   };
 
+  const handleExportIndividualPDF = async (incidentId: string) => {
+    try {
+      const response = await fetch(`/api/incident-reports/${incidentId}/pdf`);
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `incident-report-${incidentId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "PDF Generated",
+        description: `Incident report ${incidentId} exported successfully`
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Could not generate PDF",
+        variant: "destructive"
+      });
+    }
+  };
+
   const incidentStats = {
     total: incidents.length,
     open: incidents.filter((i: IncidentReport) => i.report.status === "Open").length,
@@ -426,6 +455,15 @@ export default function IncidentDashboard() {
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleViewIncident(incident)}>
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleExportIndividualPDF(incident.report.incidentId)}
+                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                          title="Export to PDF"
+                        >
+                          <Download className="h-4 w-4" />
                         </Button>
                         {incident.report.status === "Open" && (
                           <Button variant="outline" size="sm" onClick={() => handleCloseIncident(incident)}>
