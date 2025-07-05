@@ -3462,8 +3462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Task Board API - TeamLeader+ can manage tasks
-  app.get("/api/task-board-tasks", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+  // Task Board API - Read access for all roles, management for TeamLeader+
+  app.get("/api/task-board-tasks", requireAuth, requireRole(["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const tasks = await storage.getTaskBoardTasks(req.user.tenantId);
       res.json(tasks);
@@ -3510,7 +3510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/task-board-tasks/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+  app.put("/api/task-board-tasks/:id", requireAuth, requireRole(["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const taskId = parseInt(req.params.id);
       const task = await storage.updateTaskBoardTask(taskId, req.body, req.user.companyId);
