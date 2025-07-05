@@ -171,10 +171,13 @@ export default function AllShiftsTab() {
           
           <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
           
-          <Button onClick={() => setIsNewShiftModalOpen(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Shift
-          </Button>
+          {/* Only show New Shift button for roles with shift creation permissions */}
+          {user && (user.role === "Coordinator" || user.role === "Admin" || user.role === "ConsoleManager") && (
+            <Button onClick={() => setIsNewShiftModalOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              New Shift
+            </Button>
+          )}
         </div>
       </div>
 
