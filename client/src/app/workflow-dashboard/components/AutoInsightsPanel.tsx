@@ -36,7 +36,7 @@ export default function AutoInsightsPanel() {
         setLocation('/case-notes');
         break;
       case 'staff-hours':
-        setLocation('/staff-hour-allocation');
+        setLocation('/hourly-observations');
         break;
       default:
         console.log('Quick action not implemented:', action);
