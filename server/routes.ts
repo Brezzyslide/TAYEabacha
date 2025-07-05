@@ -3311,6 +3311,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         triggers.forEach((trigger: any) => {
+          // Check if we need a new page
+          if (currentY + 20 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
           pdf.setFont('helvetica', 'bold');
           pdf.text(`• ${trigger.label}`, margin + 5, currentY);
           currentY += 6;
@@ -3318,6 +3324,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pdf.setFont('helvetica', 'normal');
             const noteLines = pdf.splitTextToSize(trigger.notes, contentWidth - 30);
             noteLines.forEach((line: string) => {
+              // Check if we need a new page for each line
+              if (currentY + 6 > pageHeight - 30) {
+                pdf.addPage();
+                currentY = 30;
+              }
               pdf.text(line, margin + 10, currentY);
               currentY += 6;
             });
@@ -3341,6 +3352,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         staffResponses.forEach((response: any) => {
+          // Check if we need a new page
+          if (currentY + 20 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
           pdf.setFont('helvetica', 'bold');
           pdf.text(`• ${response.label}`, margin + 5, currentY);
           currentY += 6;
@@ -3348,6 +3365,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pdf.setFont('helvetica', 'normal');
             const noteLines = pdf.splitTextToSize(response.notes, contentWidth - 30);
             noteLines.forEach((line: string) => {
+              // Check if we need a new page for each line
+              if (currentY + 6 > pageHeight - 30) {
+                pdf.addPage();
+                currentY = 30;
+              }
               pdf.text(line, margin + 10, currentY);
               currentY += 6;
             });
@@ -3357,6 +3379,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Closure Information (if exists)
       if (closure) {
+        // Check if we need a new page for closure section
+        if (currentY + 80 > pageHeight - 30) {
+          pdf.addPage();
+          currentY = 30;
+        }
+        
         currentY += 10;
         pdf.setFillColor(37, 99, 235);
         pdf.rect(margin, currentY, contentWidth, 8, 'F');
@@ -3392,6 +3420,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Improvements/Actions
         if (closure.improvements) {
+          // Check if we need a new page
+          if (currentY + 30 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
           currentY += 5;
           pdf.setFont('helvetica', 'bold');
           pdf.text('Improvements/Actions:', margin, currentY);
@@ -3399,6 +3433,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdf.setFont('helvetica', 'normal');
           const improvementLines = pdf.splitTextToSize(closure.improvements, contentWidth - 20);
           improvementLines.forEach((line: string) => {
+            // Check if we need a new page for each line
+            if (currentY + 6 > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
             pdf.text(line, margin + 5, currentY);
             currentY += 6;
           });
@@ -3406,6 +3445,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Outcome
         if (closure.outcome) {
+          // Check if we need a new page
+          if (currentY + 30 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
           currentY += 5;
           pdf.setFont('helvetica', 'bold');
           pdf.text('Outcome:', margin, currentY);
@@ -3413,6 +3458,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdf.setFont('helvetica', 'normal');
           const outcomeLines = pdf.splitTextToSize(closure.outcome, contentWidth - 20);
           outcomeLines.forEach((line: string) => {
+            // Check if we need a new page for each line
+            if (currentY + 6 > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
             pdf.text(line, margin + 5, currentY);
             currentY += 6;
           });
