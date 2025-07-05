@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWorkflowInsights } from "../hooks/useWorkflowInsights";
+import { useLocation } from "wouter";
 import { 
   AlertTriangle, 
   Clock, 
@@ -15,6 +16,32 @@ import {
 
 export default function AutoInsightsPanel() {
   const { insights, isLoading } = useWorkflowInsights();
+  const [, setLocation] = useLocation();
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'schedule':
+        setLocation('/shift');
+        break;
+      case 'medication':
+        setLocation('/medication-dashboard');
+        break;
+      case 'observations':
+        setLocation('/hourly-observations');
+        break;
+      case 'incidents':
+        setLocation('/incident-management');
+        break;
+      case 'case-notes':
+        setLocation('/case-notes');
+        break;
+      case 'staff-hours':
+        setLocation('/staff-hour-allocation');
+        break;
+      default:
+        console.log('Quick action not implemented:', action);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -162,22 +189,22 @@ export default function AutoInsightsPanel() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleQuickAction('schedule')}>
               View Today's Schedule
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleQuickAction('medication')}>
               Medication Administration
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleQuickAction('observations')}>
               Complete Observations
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleQuickAction('incidents')}>
               Review Incidents
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleQuickAction('case-notes')}>
               Update Case Notes
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handleQuickAction('staff-hours')}>
               Staff Hour Report
             </Button>
           </div>
