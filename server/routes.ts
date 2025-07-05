@@ -3513,7 +3513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/task-board-tasks/:id", requireAuth, requireRole(["SupportWorker", "TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const taskId = parseInt(req.params.id);
-      const task = await storage.updateTaskBoardTask(taskId, req.body, req.user.companyId);
+      const task = await storage.updateTaskBoardTask(taskId, req.body, req.user.tenantId);
       
       if (!task) {
         return res.status(404).json({ message: "Task not found" });
@@ -3537,7 +3537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/task-board-tasks/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const taskId = parseInt(req.params.id);
-      const success = await storage.deleteTaskBoardTask(taskId, req.user.companyId);
+      const success = await storage.deleteTaskBoardTask(taskId, req.user.tenantId);
       
       if (!success) {
         return res.status(404).json({ message: "Task not found" });
