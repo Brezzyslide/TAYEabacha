@@ -24,7 +24,7 @@ export default function AutoInsightsPanel() {
         setLocation('/shift');
         break;
       case 'medication':
-        setLocation('/medication-dashboard');
+        setLocation('/medications');
         break;
       case 'observations':
         setLocation('/hourly-observations');
