@@ -84,10 +84,11 @@ const adlSubtypes = [
 type ObservationFormData = z.infer<typeof observationSchema>;
 
 // Observation display components
-const ObservationCard = ({ observation, clientName, onQuickView }: { 
+const ObservationCard = ({ observation, clientName, onQuickView, onExportPDF }: { 
   observation: any; 
   clientName: string; 
   onQuickView: (obs: any) => void;
+  onExportPDF?: (obs: any) => void;
 }) => (
   <Card className="mb-4">
     <CardHeader>
@@ -102,15 +103,28 @@ const ObservationCard = ({ observation, clientName, onQuickView }: {
             {observation.observationType === 'behaviour' ? 'Behaviour' : 'ADL'}
           </span>
         </CardTitle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onQuickView(observation)}
-          className="gap-2"
-        >
-          <ZoomIn className="w-4 h-4" />
-          Quick View
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onQuickView(observation)}
+            className="gap-1"
+          >
+            <ZoomIn className="w-4 h-4" />
+            View
+          </Button>
+          {onExportPDF && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onExportPDF(observation)}
+              className="gap-1"
+            >
+              <FileText className="w-4 h-4" />
+              PDF
+            </Button>
+          )}
+        </div>
       </div>
     </CardHeader>
     <CardContent>
@@ -218,7 +232,13 @@ const ObservationCard = ({ observation, clientName, onQuickView }: {
   </Card>
 );
 
-const ObservationRow = ({ observation, clientName, isLast }: { observation: any; clientName: string; isLast: boolean }) => (
+const ObservationRow = ({ observation, clientName, isLast, onQuickView, onExportPDF }: { 
+  observation: any; 
+  clientName: string; 
+  isLast: boolean;
+  onQuickView?: (obs: any) => void;
+  onExportPDF?: (obs: any) => void;
+}) => (
   <div className={`flex items-center justify-between p-4 ${!isLast ? 'border-b' : ''}`}>
     <div className="flex-1">
       <div className="flex items-center gap-2 mb-1">
@@ -235,9 +255,35 @@ const ObservationRow = ({ observation, clientName, isLast }: { observation: any;
         <p className="text-xs text-blue-600">Subtype: {observation.subtype}</p>
       )}
     </div>
-    <div className="text-sm text-gray-500 text-right">
-      <p>{observation.timestamp ? new Date(observation.timestamp).toLocaleDateString() : 'No date'}</p>
-      <p className="text-xs">{observation.timestamp ? new Date(observation.timestamp).toLocaleTimeString() : ''}</p>
+    <div className="flex items-center gap-2">
+      <div className="text-sm text-gray-500 text-right mr-4">
+        <p>{observation.timestamp ? new Date(observation.timestamp).toLocaleDateString() : 'No date'}</p>
+        <p className="text-xs">{observation.timestamp ? new Date(observation.timestamp).toLocaleTimeString() : ''}</p>
+      </div>
+      <div className="flex gap-2">
+        {onQuickView && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onQuickView(observation)}
+            className="gap-1"
+          >
+            <ZoomIn className="w-4 h-4" />
+            View
+          </Button>
+        )}
+        {onExportPDF && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onExportPDF(observation)}
+            className="gap-1"
+          >
+            <FileText className="w-4 h-4" />
+            PDF
+          </Button>
+        )}
+      </div>
     </div>
   </div>
 );
@@ -714,6 +760,8 @@ export default function ObservationDashboard() {
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<FilterType>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
+  const [dateRangeStart, setDateRangeStart] = useState<string>("");
+  const [dateRangeEnd, setDateRangeEnd] = useState<string>("");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [selectedObservation, setSelectedObservation] = useState<any>(null);
@@ -764,26 +812,45 @@ export default function ObservationDashboard() {
     // Date filter
     if (dateFilter !== "all") {
       const now = new Date();
-      const filterDate = new Date();
       
       switch (dateFilter) {
         case "today":
-          filterDate.setHours(0, 0, 0, 0);
-          filtered = filtered.filter((obs: any) => 
-            new Date(obs.timestamp) >= filterDate
-          );
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayEnd = new Date();
+          todayEnd.setHours(23, 59, 59, 999);
+          filtered = filtered.filter((obs: any) => {
+            const obsDate = new Date(obs.timestamp);
+            return obsDate >= todayStart && obsDate <= todayEnd;
+          });
           break;
         case "week":
-          filterDate.setDate(now.getDate() - 7);
+          const weekStart = new Date();
+          weekStart.setDate(now.getDate() - 7);
+          weekStart.setHours(0, 0, 0, 0);
           filtered = filtered.filter((obs: any) => 
-            new Date(obs.timestamp) >= filterDate
+            new Date(obs.timestamp) >= weekStart
           );
           break;
         case "month":
-          filterDate.setMonth(now.getMonth() - 1);
+          const monthStart = new Date();
+          monthStart.setMonth(now.getMonth() - 1);
+          monthStart.setHours(0, 0, 0, 0);
           filtered = filtered.filter((obs: any) => 
-            new Date(obs.timestamp) >= filterDate
+            new Date(obs.timestamp) >= monthStart
           );
+          break;
+        case "custom":
+          if (dateRangeStart && dateRangeEnd) {
+            const rangeStart = new Date(dateRangeStart);
+            rangeStart.setHours(0, 0, 0, 0);
+            const rangeEnd = new Date(dateRangeEnd);
+            rangeEnd.setHours(23, 59, 59, 999);
+            filtered = filtered.filter((obs: any) => {
+              const obsDate = new Date(obs.timestamp);
+              return obsDate >= rangeStart && obsDate <= rangeEnd;
+            });
+          }
           break;
       }
     }
@@ -792,7 +859,7 @@ export default function ObservationDashboard() {
     return filtered.sort((a: any, b: any) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-  }, [observations, clients, searchTerm, selectedClient, selectedType, dateFilter]);
+  }, [observations, clients, searchTerm, selectedClient, selectedType, dateFilter, dateRangeStart, dateRangeEnd]);
 
   const getClientName = (clientId: number) => {
     const client = (clients as any[]).find(c => c.id === clientId);
@@ -804,14 +871,80 @@ export default function ObservationDashboard() {
     setIsQuickViewOpen(true);
   };
 
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export
-    console.log("Export PDF");
+  const handleExportPDF = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/observations/export/pdf", {
+        clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
+        observationType: selectedType !== "all" ? selectedType : null,
+        dateFilter,
+        dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
+        dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
+        searchTerm: searchTerm || null,
+        observations: filteredObservations
+      });
+      
+      // Convert base64 to blob and download
+      const pdfBlob = new Blob([Uint8Array.from(atob(response.pdf), c => c.charCodeAt(0))], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `observations-export-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("PDF export failed:", error);
+    }
   };
 
-  const handleExportExcel = () => {
-    // TODO: Implement Excel export
-    console.log("Export Excel");
+  const handleExportExcel = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/observations/export/excel", {
+        clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
+        observationType: selectedType !== "all" ? selectedType : null,
+        dateFilter,
+        dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
+        dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
+        searchTerm: searchTerm || null,
+        observations: filteredObservations
+      });
+      
+      // Convert base64 to blob and download
+      const excelBlob = new Blob([Uint8Array.from(atob(response.excel), c => c.charCodeAt(0))], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const url = URL.createObjectURL(excelBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `observations-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Excel export failed:", error);
+    }
+  };
+
+  const handleIndividualPDF = async (observation: any) => {
+    try {
+      const response = await apiRequest("GET", `/api/observations/${observation.id}/pdf`);
+      
+      // Convert base64 to blob and download
+      const pdfBlob = new Blob([Uint8Array.from(atob(response.pdf), c => c.charCodeAt(0))], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      const clientName = getClientName(observation.clientId);
+      a.download = `observation-${observation.id}-${clientName}-${new Date(observation.timestamp).toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Individual PDF export failed:", error);
+    }
   };
 
   if (isLoading) {
@@ -926,7 +1059,7 @@ export default function ObservationDashboard() {
               </Select>
 
               <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="All Dates" />
                 </SelectTrigger>
                 <SelectContent>
@@ -934,8 +1067,30 @@ export default function ObservationDashboard() {
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="week">Past Week</SelectItem>
                   <SelectItem value="month">Past Month</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Date Range Inputs for Custom Filter */}
+              {dateFilter === "custom" && (
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="date"
+                    value={dateRangeStart}
+                    onChange={(e) => setDateRangeStart(e.target.value)}
+                    className="w-[140px]"
+                    placeholder="Start Date"
+                  />
+                  <span className="text-sm text-gray-500">to</span>
+                  <Input
+                    type="date"
+                    value={dateRangeEnd}
+                    onChange={(e) => setDateRangeEnd(e.target.value)}
+                    className="w-[140px]"
+                    placeholder="End Date"
+                  />
+                </div>
+              )}
             </div>
 
             {/* View Toggle */}
@@ -1010,6 +1165,7 @@ export default function ObservationDashboard() {
                 observation={observation}
                 clientName={getClientName(observation.clientId)}
                 onQuickView={handleQuickView}
+                onExportPDF={handleIndividualPDF}
               />
             ))}
           </div>
@@ -1027,6 +1183,7 @@ export default function ObservationDashboard() {
                     clientName={getClientName(observation.clientId)}
                     isLast={index === filteredObservations.length - 1}
                     onQuickView={handleQuickView}
+                    onExportPDF={handleIndividualPDF}
                   />
                 ))}
               </div>

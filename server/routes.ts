@@ -2578,6 +2578,393 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Individual observation PDF export
+  app.get("/api/observations/:id/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const observationId = parseInt(req.params.id);
+      const observation = await storage.getObservation(observationId, req.user.tenantId);
+      
+      if (!observation) {
+        return res.status(404).json({ message: "Observation not found" });
+      }
+
+      // Get client and staff info
+      const client = await storage.getClient(observation.clientId, req.user.tenantId);
+      const staff = await storage.getUser(observation.userId);
+      const company = await storage.getCompanyByTenantId(req.user.tenantId);
+      const companyName = company?.name || "NeedsCareAI+";
+
+      const { jsPDF } = await import('jspdf');
+      
+      // Create PDF
+      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      
+      // Add centered header (first page only)
+      pdf.setFillColor(37, 99, 235); // Professional blue
+      pdf.rect(margin, 10, contentWidth, 40, 'F');
+      
+      // Add accent bar
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(margin, 10, contentWidth, 8, 'F');
+      
+      // Add company name and title (white text)
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(22);
+      pdf.setFont('helvetica', 'bold');
+      const title = 'Hourly Observation Report';
+      const titleWidth = pdf.getTextWidth(title);
+      pdf.text(title, (pageWidth - titleWidth) / 2, 30);
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      const companyText = companyName;
+      const companyWidth = pdf.getTextWidth(companyText);
+      pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
+      
+      // Reset text color to black for content
+      pdf.setTextColor(0, 0, 0);
+      
+      let currentY = 70;
+      
+      // Observation Information Section
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(margin, currentY, contentWidth, 8, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Observation Information', margin + 5, currentY + 6);
+      pdf.setTextColor(0, 0, 0);
+      currentY += 15;
+      
+      // Basic observation details
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const observationDetails = [
+        ['Observation ID:', observation.id.toString()],
+        ['Date & Time:', new Date(observation.timestamp).toLocaleString('en-AU')],
+        ['Type:', observation.observationType === 'behaviour' ? 'Behaviour' : 'Activities of Daily Living'],
+        ['Client:', client ? `${client.firstName} ${client.lastName} (${client.clientId})` : 'Unknown'],
+        ['Observed by:', staff ? (staff.fullName || staff.username) : 'Unknown'],
+      ];
+
+      if (observation.subtype) {
+        observationDetails.push(['Subtype:', observation.subtype]);
+      }
+      
+      observationDetails.forEach(([label, value]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(label, margin, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(value, margin + 50, currentY);
+        currentY += 8;
+      });
+      
+      // Observation Content
+      if (observation.observationType === 'behaviour') {
+        // Star Chart Assessment
+        currentY += 10;
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY, contentWidth, 8, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Star Chart Assessment', margin + 5, currentY + 6);
+        pdf.setTextColor(0, 0, 0);
+        currentY += 15;
+
+        const starChartItems = [
+          ['Settings:', observation.settings, observation.settingsRating],
+          ['Time:', observation.time, observation.timeRating],
+          ['Antecedents:', observation.antecedents, observation.antecedentsRating],
+          ['Response:', observation.response, observation.responseRating]
+        ];
+
+        starChartItems.forEach(([label, text, rating]) => {
+          if (text) {
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(label, margin, currentY);
+            pdf.setFont('helvetica', 'normal');
+            
+            // Add text with word wrapping
+            const splitText = pdf.splitTextToSize(text, contentWidth - 100);
+            pdf.text(splitText, margin, currentY + 6);
+            currentY += splitText.length * 5 + 3;
+            
+            // Add star rating
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`Rating: ${rating}/5 stars`, margin, currentY);
+            currentY += 10;
+          }
+        });
+      } else {
+        // ADL Observation
+        if (observation.notes) {
+          currentY += 10;
+          pdf.setFillColor(37, 99, 235);
+          pdf.rect(margin, currentY, contentWidth, 8, 'F');
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Observation Notes', margin + 5, currentY + 6);
+          pdf.setTextColor(0, 0, 0);
+          currentY += 15;
+
+          pdf.setFont('helvetica', 'normal');
+          const splitNotes = pdf.splitTextToSize(observation.notes, contentWidth);
+          pdf.text(splitNotes, margin, currentY);
+        }
+      }
+
+      // Add footer on all pages
+      const footerY = pageHeight - 15;
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName}`, margin, footerY);
+      
+      const pdfOutput = pdf.output('datauristring');
+      const base64Data = pdfOutput.split(',')[1];
+      
+      res.json({ pdf: base64Data });
+    } catch (error) {
+      console.error("Individual observation PDF export error:", error);
+      res.status(500).json({ message: "Failed to export observation PDF" });
+    }
+  });
+
+  // Bulk observations PDF export
+  app.post("/api/observations/export/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
+      
+      if (!observations || observations.length === 0) {
+        return res.status(400).json({ message: "No observations to export" });
+      }
+
+      const company = await storage.getCompanyByTenantId(req.user.tenantId);
+      const companyName = company?.name || "NeedsCareAI+";
+
+      const { jsPDF } = await import('jspdf');
+      
+      // Create PDF
+      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      
+      // Add centered header (first page only)
+      pdf.setFillColor(37, 99, 235); // Professional blue
+      pdf.rect(margin, 10, contentWidth, 40, 'F');
+      
+      // Add accent bar
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(margin, 10, contentWidth, 8, 'F');
+      
+      // Add company name and title (white text)
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(22);
+      pdf.setFont('helvetica', 'bold');
+      const title = 'Hourly Observations Export';
+      const titleWidth = pdf.getTextWidth(title);
+      pdf.text(title, (pageWidth - titleWidth) / 2, 30);
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      const companyText = companyName;
+      const companyWidth = pdf.getTextWidth(companyText);
+      pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
+      
+      // Reset text color to black for content
+      pdf.setTextColor(0, 0, 0);
+      
+      let currentY = 70;
+
+      // Export Summary
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(margin, currentY, contentWidth, 8, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Export Summary', margin + 5, currentY + 6);
+      pdf.setTextColor(0, 0, 0);
+      currentY += 15;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const summaryDetails = [
+        ['Total Observations:', observations.length.toString()],
+        ['Export Date:', new Date().toLocaleDateString('en-AU')],
+        ['Generated by:', req.user.fullName || req.user.username]
+      ];
+
+      if (dateFilter && dateFilter !== 'all') {
+        if (dateFilter === 'custom' && dateRangeStart && dateRangeEnd) {
+          summaryDetails.push(['Date Range:', `${new Date(dateRangeStart).toLocaleDateString('en-AU')} to ${new Date(dateRangeEnd).toLocaleDateString('en-AU')}`]);
+        } else {
+          summaryDetails.push(['Date Filter:', dateFilter]);
+        }
+      }
+
+      summaryDetails.forEach(([label, value]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(label, margin, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(value, margin + 50, currentY);
+        currentY += 8;
+      });
+
+      currentY += 10;
+
+      // Get all clients for name lookup
+      const clients = await storage.getClients(req.user.tenantId);
+      const clientMap = clients.reduce((acc: any, client: any) => {
+        acc[client.id] = client;
+        return acc;
+      }, {});
+
+      // Observations Table
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(margin, currentY, contentWidth, 8, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Observations Details', margin + 5, currentY + 6);
+      pdf.setTextColor(0, 0, 0);
+      currentY += 15;
+
+      // Table headers
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Date/Time', margin, currentY);
+      pdf.text('Client', margin + 45, currentY);
+      pdf.text('Type', margin + 90, currentY);
+      pdf.text('Details', margin + 120, currentY);
+      currentY += 8;
+
+      // Table content
+      pdf.setFont('helvetica', 'normal');
+      observations.forEach((obs: any, index: number) => {
+        if (currentY > pageHeight - 40) {
+          pdf.addPage();
+          currentY = 30;
+        }
+
+        const client = clientMap[obs.clientId];
+        const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown';
+        
+        pdf.text(new Date(obs.timestamp).toLocaleDateString('en-AU'), margin, currentY);
+        pdf.text(clientName, margin + 45, currentY);
+        pdf.text(obs.observationType, margin + 90, currentY);
+        
+        // Truncate details for table view
+        const details = obs.notes || obs.settings || 'No details';
+        const truncatedDetails = details.length > 40 ? details.substring(0, 37) + '...' : details;
+        pdf.text(truncatedDetails, margin + 120, currentY);
+        
+        currentY += 8;
+      });
+
+      // Add footer on all pages
+      const footerY = pageHeight - 15;
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName} | Page ${pdf.getNumberOfPages()}`, margin, footerY);
+      
+      const pdfOutput = pdf.output('datauristring');
+      const base64Data = pdfOutput.split(',')[1];
+      
+      res.json({ pdf: base64Data });
+    } catch (error) {
+      console.error("Bulk observations PDF export error:", error);
+      res.status(500).json({ message: "Failed to export observations PDF" });
+    }
+  });
+
+  // Bulk observations Excel export
+  app.post("/api/observations/export/excel", requireAuth, async (req: any, res) => {
+    try {
+      const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
+      
+      if (!observations || observations.length === 0) {
+        return res.status(400).json({ message: "No observations to export" });
+      }
+
+      const XLSX = require('xlsx');
+      
+      // Get all clients for name lookup
+      const clients = await storage.getClients(req.user.tenantId);
+      const clientMap = clients.reduce((acc: any, client: any) => {
+        acc[client.id] = client;
+        return acc;
+      }, {});
+
+      // Format data for Excel
+      const excelData = observations.map((obs: any) => {
+        const client = clientMap[obs.clientId];
+        const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown';
+        
+        const baseData = {
+          'Date': new Date(obs.timestamp).toLocaleDateString('en-AU'),
+          'Time': new Date(obs.timestamp).toLocaleTimeString('en-AU'),
+          'Client Name': clientName,
+          'Client ID': client?.clientId || 'Unknown',
+          'Observation Type': obs.observationType === 'behaviour' ? 'Behaviour' : 'Activities of Daily Living',
+          'Subtype': obs.subtype || '',
+          'Notes': obs.notes || ''
+        };
+
+        // Add behaviour-specific fields if applicable
+        if (obs.observationType === 'behaviour') {
+          return {
+            ...baseData,
+            'Settings': obs.settings || '',
+            'Settings Rating': obs.settingsRating || '',
+            'Time Context': obs.time || '',
+            'Time Rating': obs.timeRating || '',
+            'Antecedents': obs.antecedents || '',
+            'Antecedents Rating': obs.antecedentsRating || '',
+            'Response': obs.response || '',
+            'Response Rating': obs.responseRating || ''
+          };
+        }
+
+        return baseData;
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Auto-width columns
+      const colWidths = [];
+      const headers = Object.keys(excelData[0] || {});
+      headers.forEach((header, i) => {
+        const maxLength = Math.max(
+          header.length,
+          ...excelData.map(row => String(row[header] || '').length)
+        );
+        colWidths[i] = { width: Math.min(Math.max(maxLength + 2, 10), 50) };
+      });
+      worksheet['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Observations');
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      const base64Data = excelBuffer.toString('base64');
+      
+      res.json({ excel: base64Data });
+    } catch (error) {
+      console.error("Bulk observations Excel export error:", error);
+      res.status(500).json({ message: "Failed to export observations Excel" });
+    }
+  });
+
   // Medication Plans API
   app.get("/api/medication-plans", requireAuth, async (req: any, res) => {
     try {
