@@ -4564,13 +4564,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`[BULK UPLOAD] Processing row ${i + 1}:`, JSON.stringify(userData, null, 2));
           
+          // Convert data types to ensure proper format (Excel parsing issues)
+          const processedUserData = {
+            username: String(userData.username || '').trim(),
+            email: String(userData.email || '').trim(),
+            password: String(userData.password || '').trim(),
+            fullName: String(userData.fullName || '').trim(),
+            role: String(userData.role || 'SupportWorker').trim(),
+            phone: userData.phone ? String(userData.phone).trim() : null,
+            address: userData.address ? String(userData.address).trim() : null,
+          };
+          
           // Validate required fields
-          if (!userData.username || !userData.email || !userData.password || !userData.fullName) {
+          if (!processedUserData.username || !processedUserData.email || !processedUserData.password || !processedUserData.fullName) {
             const missingFields = [];
-            if (!userData.username) missingFields.push('username');
-            if (!userData.email) missingFields.push('email');
-            if (!userData.password) missingFields.push('password');
-            if (!userData.fullName) missingFields.push('fullName');
+            if (!processedUserData.username) missingFields.push('username');
+            if (!processedUserData.email) missingFields.push('email');
+            if (!processedUserData.password) missingFields.push('password');
+            if (!processedUserData.fullName) missingFields.push('fullName');
             
             const errorMsg = `Row ${i + 1}: Missing required fields: ${missingFields.join(', ')}. Received fields: ${Object.keys(userData).join(', ')}`;
             console.log(`[BULK UPLOAD] ${errorMsg}`);
@@ -4579,17 +4590,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Hash password
-          const hashedPassword = await hashPassword(userData.password);
+          const hashedPassword = await hashPassword(processedUserData.password);
           
           // Create user with proper validation
           const userPayload = {
-            username: userData.username,
-            email: userData.email,
+            username: processedUserData.username,
+            email: processedUserData.email,
             password: hashedPassword,
-            fullName: userData.fullName,
-            role: userData.role || "SupportWorker",
-            phone: userData.phone || null,
-            address: userData.address || null,
+            fullName: processedUserData.fullName,
+            role: processedUserData.role,
+            phone: processedUserData.phone,
+            address: processedUserData.address,
             tenantId: req.user.tenantId,
             isActive: true,
           };
