@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { canCreateTasks } from "@/lib/permissions";
 import { format } from "date-fns";
 import { 
   Plus, 
@@ -220,7 +221,7 @@ export default function ManualTaskBoard() {
         </div>
         
         {/* Only show Add Task button for roles with task creation permissions */}
-        {user && (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager") && (
+        {canCreateTasks(user) && (
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogTrigger asChild>
               <Button>

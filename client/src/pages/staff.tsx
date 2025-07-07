@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { PermissionGuard } from "@/components/auth/PermissionGuard";
 import { useAuth } from "@/hooks/use-auth";
+import { canManageStaff } from "@/lib/permissions";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 
@@ -536,11 +537,7 @@ export default function Staff() {
   });
 
   // Permission helper function
-  const hasPermission = (requiredRole: string) => {
-    if (!user) return false;
-    if (user.role?.toLowerCase() === "consolemanager") return true;
-    return user.role?.toLowerCase() === requiredRole.toLowerCase();
-  };
+  const hasStaffPermissions = canManageStaff(user);
 
   const form = useForm<CreateStaffFormData>({
     resolver: zodResolver(createStaffSchema),
@@ -1023,7 +1020,7 @@ export default function Staff() {
       <Tabs defaultValue="staff-directory" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="staff-directory">Staff Directory</TabsTrigger>
-          {(hasPermission("Admin") || hasPermission("ConsoleManager")) && (
+          {hasStaffPermissions && (
             <TabsTrigger value="billing-management">Billing Management</TabsTrigger>
           )}
         </TabsList>

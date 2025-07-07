@@ -8,6 +8,7 @@ import { Target, FileText, Calendar, User, Download, Edit, Plus } from "lucide-r
 import { ComprehensiveCarePlanWizardRefactored } from "@/app/care-support-plans/components/ComprehensiveCarePlanWizardRefactored";
 import { SimplePlanModal } from "@/app/care-support-plans/components/SimplePlanModal";
 import { useAuth } from "@/hooks/use-auth";
+import { canCreateCarePlans } from "@/lib/permissions";
 import type { CareSupportPlan } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -46,7 +47,7 @@ export default function CarePlansTab({ clientId, companyId }: CarePlansTabProps)
     queryKey: [`/api/clients/${clientId}`]
   });
 
-  const canCreatePlans = user && (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager");
+  const canCreatePlans = canCreateCarePlans(user);
 
   const getStatusColor = (status: string | null) => {
     switch (status) {

@@ -10,6 +10,7 @@ import { ComprehensiveCarePlanWizardRefactored } from "./components/Comprehensiv
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { canCreateCarePlans, canEditCarePlans } from "@/lib/permissions";
 import type { CareSupportPlan } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -70,8 +71,8 @@ export function CareSupportPlans() {
     setSelectedPlan(null);
   };
 
-  const canCreatePlans = user && (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager");
-  const canEditPlans = user && (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager");
+  const canCreatePlans = canCreateCarePlans(user);
+  const canEditPlans = canEditCarePlans(user);
 
   const filteredPlans = carePlans.filter(plan => {
     if (!searchTerm) return true;

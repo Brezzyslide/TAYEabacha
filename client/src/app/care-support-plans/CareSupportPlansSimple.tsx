@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { SimplePlanModal } from "./components/SimplePlanModal";
 import { ComprehensiveCarePlanWizardRefactored } from "./components/ComprehensiveCarePlanWizardRefactored";
 import { useAuth } from "@/hooks/use-auth";
+import { canCreateCarePlans } from "@/lib/permissions";
 import type { CareSupportPlan } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -27,7 +28,7 @@ export function CareSupportPlans() {
     queryKey: ["/api/clients"],
   });
 
-  const canCreatePlans = user && (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager");
+  const canCreatePlans = canCreateCarePlans(user);
 
   const filteredPlans = carePlans.filter((plan: CareSupportPlan) => {
     const client = clients.find((c: any) => c.id === plan.clientId);
