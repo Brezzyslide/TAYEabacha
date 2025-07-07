@@ -4539,8 +4539,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { data: staffData } = req.body;
       
+      console.log("[BULK UPLOAD] Received data structure:", JSON.stringify(staffData, null, 2));
+      
       if (!Array.isArray(staffData) || staffData.length === 0) {
+        console.log("[BULK UPLOAD] ERROR: Invalid data structure - not array or empty");
         return res.status(400).json({ message: "No valid staff data provided" });
+      }
+      
+      console.log(`[BULK UPLOAD] Processing ${staffData.length} staff records for tenant ${req.user.tenantId}`);
+      
+      // Log first record structure for debugging
+      if (staffData.length > 0) {
+        console.log("[BULK UPLOAD] First record structure:", JSON.stringify(staffData[0], null, 2));
       }
 
       const results = {
@@ -4552,9 +4562,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userData = staffData[i];
         
         try {
+          console.log(`[BULK UPLOAD] Processing row ${i + 1}:`, JSON.stringify(userData, null, 2));
+          
           // Validate required fields
           if (!userData.username || !userData.email || !userData.password || !userData.fullName) {
-            results.errors.push(`Row ${i + 1}: Missing required fields (username, email, password, fullName)`);
+            const missingFields = [];
+            if (!userData.username) missingFields.push('username');
+            if (!userData.email) missingFields.push('email');
+            if (!userData.password) missingFields.push('password');
+            if (!userData.fullName) missingFields.push('fullName');
+            
+            const errorMsg = `Row ${i + 1}: Missing required fields: ${missingFields.join(', ')}. Received fields: ${Object.keys(userData).join(', ')}`;
+            console.log(`[BULK UPLOAD] ${errorMsg}`);
+            results.errors.push(errorMsg);
             continue;
           }
 
@@ -4562,7 +4582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hashedPassword = await hashPassword(userData.password);
           
           // Create user with proper validation
-          const user = await storage.createUser({
+          const userPayload = {
             username: userData.username,
             email: userData.email,
             password: hashedPassword,
@@ -4572,11 +4592,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             address: userData.address || null,
             tenantId: req.user.tenantId,
             isActive: true,
-          });
+          };
           
+          console.log(`[BULK UPLOAD] Creating user with payload:`, JSON.stringify(userPayload, null, 2));
+          
+          const user = await storage.createUser(userPayload);
+          
+          console.log(`[BULK UPLOAD] Successfully created user ${user.id}: ${user.username}`);
           results.success++;
         } catch (error: any) {
-          results.errors.push(`Row ${i + 1}: ${error.message || 'Unknown error'}`);
+          const errorMsg = `Row ${i + 1}: ${error.message || 'Unknown error'}`;
+          console.log(`[BULK UPLOAD] ERROR: ${errorMsg}`);
+          results.errors.push(errorMsg);
         }
       }
       
