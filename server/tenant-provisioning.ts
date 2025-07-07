@@ -76,6 +76,13 @@ export async function provisionTenant(tenantId: number, companyId: string, admin
   const createdByUserId = adminUserId || 1; // Default to 1 for backward compatibility
 
   try {
+    // Check if tenant already has clients (avoid duplicate provisioning)
+    const existingClients = await storage.getClientsByTenant(tenantId);
+    if (existingClients.length > 0) {
+      console.log(`[TENANT PROVISIONING] Tenant ${tenantId} already has ${existingClients.length} clients, skipping demo data provisioning`);
+      return;
+    }
+
     // 1. Create sample clients
     await provisionSampleClients(tenantId, companyId, createdByUserId);
     

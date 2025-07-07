@@ -28,11 +28,11 @@ export async function autoProvisionNewTenant(
   companyId: string, 
   adminUserId: number
 ): Promise<void> {
-  console.log(`[NEW TENANT SETUP] Starting auto-provisioning for tenant ${tenantId}`);
+  console.log(`[NEW TENANT SETUP] Starting auto-provisioning for tenant ${tenantId} (DEMO DATA ONLY)`);
   
   try {
     // 1. Core tenant provisioning (clients, shifts, budgets, care plans)
-    console.log(`[NEW TENANT SETUP] Provisioning core features`);
+    console.log(`[NEW TENANT SETUP] Provisioning demo data and core features`);
     await provisionTenant(tenantId, companyId, adminUserId);
     
     // 2. ScHADS pay scales

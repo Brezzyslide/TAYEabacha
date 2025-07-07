@@ -323,13 +323,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[NEW TENANT SETUP] Successfully auto-provisioned tenant ${tenant.id} with demo data`);
         } catch (error) {
           console.error(`[NEW TENANT SETUP] Error auto-provisioning tenant ${tenant.id}:`, error);
-          // Fallback to basic provisioning
-          try {
-            await provisionTenant(tenant.id, company.id);
-            console.log(`[TENANT PROVISIONING] Fallback provisioning completed for tenant ${tenant.id}`);
-          } catch (fallbackError) {
-            console.error(`[TENANT PROVISIONING] Fallback provisioning failed:`, fallbackError);
-          }
+          // No fallback provisioning - respect includeDemoData=false choice
+          console.log(`[NEW TENANT SETUP] Skipping fallback demo data provisioning for tenant ${tenant.id} (includeDemoData=false)`);
         }
       } else {
         // Only provision essential system features (pay scales, tax brackets, NDIS pricing) - no demo data
