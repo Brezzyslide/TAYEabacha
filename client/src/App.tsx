@@ -34,6 +34,7 @@ import MessageDashboard from "@/app/messages/MessageDashboard";
 import CreateCompanyPage from "@/app/admin/create-company/CreateCompanyPage";
 import CompanySummaryPage from "@/app/admin/company-summary/CompanySummaryPage";
 import CompanyListPage from "@/app/admin/companies/CompanyListPage";
+import CompanyDetailsPage from "@/app/admin/companies/CompanyDetailsPage";
 import StaffHourDashboard from "@/app/staff-hour-allocations/StaffHourDashboard";
 import RolesPermissionsDashboard from "@/app/roles-permissions/RolesPermissionsDashboard";
 import WorkflowDashboard from "@/app/workflow-dashboard/WorkflowDashboard";
@@ -79,6 +80,7 @@ function Router() {
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/export" component={Export} />
       <ProtectedRoute path="/admin/companies" component={CompanyListPage} />
+      <ProtectedRoute path="/admin/companies/:id" component={CompanyDetailsPage} />
       <Route path="/admin/create-company" component={CreateCompanyPage} />
       <Route path="/admin/company-summary" component={CompanySummaryPage} />
       <Route component={NotFound} />
