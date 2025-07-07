@@ -538,8 +538,8 @@ export default function Staff() {
   // Permission helper function
   const hasPermission = (requiredRole: string) => {
     if (!user) return false;
-    if (user.role === "ConsoleManager") return true;
-    return user.role === requiredRole;
+    if (user.role?.toLowerCase() === "consolemanager") return true;
+    return user.role?.toLowerCase() === requiredRole.toLowerCase();
   };
 
   const form = useForm<CreateStaffFormData>({

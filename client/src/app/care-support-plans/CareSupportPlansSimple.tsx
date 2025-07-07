@@ -27,7 +27,7 @@ export function CareSupportPlans() {
     queryKey: ["/api/clients"],
   });
 
-  const canCreatePlans = user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "admin" || user.role === "ConsoleManager");
+  const canCreatePlans = user && (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager");
 
   const filteredPlans = carePlans.filter((plan: CareSupportPlan) => {
     const client = clients.find((c: any) => c.id === plan.clientId);

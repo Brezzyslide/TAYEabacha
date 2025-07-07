@@ -16,13 +16,13 @@ function hasPermission(user: any, resource: string, action: string): boolean {
   if (!user) return false;
   
   // Console managers and admins have full access
-  if (user.role === "ConsoleManager" || user.role === "Admin") return true;
+  if (user.role?.toLowerCase() === "consolemanager" || user.role?.toLowerCase() === "admin") return true;
   
   // Team leaders can view all case notes in their tenant
-  if (user.role === "TeamLeader" || user.role === "Coordinator") return true;
+  if (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator") return true;
   
   // Support workers can only view case notes for their assigned clients
-  if (user.role === "SupportWorker" && resource === "caseNotes" && action === "view") {
+  if (user.role?.toLowerCase() === "supportworker" && resource === "caseNotes" && action === "view") {
     return true; // Will be filtered by clientId in the query
   }
   

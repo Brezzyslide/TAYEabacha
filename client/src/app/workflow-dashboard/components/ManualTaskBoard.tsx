@@ -220,7 +220,7 @@ export default function ManualTaskBoard() {
         </div>
         
         {/* Only show Add Task button for roles with task creation permissions */}
-        {user && (user.role === "TeamLeader" || user.role === "Coordinator" || user.role === "Admin" || user.role === "ConsoleManager") && (
+        {user && (user.role?.toLowerCase() === "teamleader" || user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager") && (
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogTrigger asChild>
               <Button>
