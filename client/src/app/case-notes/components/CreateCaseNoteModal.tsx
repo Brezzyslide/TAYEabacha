@@ -73,13 +73,15 @@ interface CreateCaseNoteModalProps {
   onClose: () => void;
   onSubmit: (data: CaseNoteFormData & { caseNoteTags: any; spellCheckCount: number }) => Promise<void>;
   clientId?: number;
+  editingNote?: any;
 }
 
 export default function CreateCaseNoteModal({ 
   isOpen, 
   onClose, 
   onSubmit,
-  clientId 
+  clientId,
+  editingNote
 }: CreateCaseNoteModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -95,15 +97,40 @@ export default function CreateCaseNoteModal({
   const form = useForm<CaseNoteFormData>({
     resolver: zodResolver(caseNoteSchema),
     defaultValues: {
-      clientId: clientId || 0,
-      content: "",
-      title: "",
-      category: "Progress Note",
-      incidentOccurred: false,
-      medicationStatus: undefined,
-      attachments: []
+      clientId: editingNote?.clientId || clientId || 0,
+      content: editingNote?.content || "",
+      title: editingNote?.title || "",
+      category: editingNote?.category || "Progress Note",
+      incidentOccurred: editingNote?.incidentOccurred || false,
+      medicationStatus: editingNote?.medicationStatus || undefined,
+      attachments: editingNote?.attachments || []
     },
   });
+
+  // Reset form when editingNote changes (ensure original content is loaded)
+  useEffect(() => {
+    if (editingNote) {
+      form.reset({
+        clientId: editingNote.clientId,
+        title: editingNote.title,
+        content: editingNote.content,
+        category: editingNote.category || "Progress Note",
+        incidentOccurred: editingNote.incidentOccurred || false,
+        medicationStatus: editingNote.medicationStatus || undefined,
+        attachments: editingNote.attachments || []
+      });
+    } else if (clientId) {
+      form.reset({
+        clientId: clientId,
+        content: "",
+        title: "",
+        category: "Progress Note",
+        incidentOccurred: false,
+        medicationStatus: undefined,
+        attachments: []
+      });
+    }
+  }, [editingNote, clientId, form]);
 
   const selectedClientId = form.watch("clientId");
   const contentValue = form.watch("content");
@@ -310,7 +337,15 @@ export default function CreateCaseNoteModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pill className="h-5 w-5" />
-            Create Case Note
+            {editingNote ? "Edit Case Note" : "Create Case Note"}
+            {editingNote && (
+              <div className="text-sm text-gray-500 font-normal mt-1">
+                Created on {new Date(editingNote.createdAt).toLocaleDateString()} 
+                {editingNote.createdAt !== editingNote.updatedAt && (
+                  <span> • Last updated {new Date(editingNote.updatedAt).toLocaleDateString()}</span>
+                )}
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -324,23 +359,36 @@ export default function CreateCaseNoteModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Client *</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      value={field.value?.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select client" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id.toString()}>
-                            {client.firstName} {client.lastName} ({client.clientId})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {editingNote ? (
+                      // Show client name as read-only when editing
+                      <div className="flex items-center p-2 border rounded-md bg-gray-50 dark:bg-gray-800">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          {selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName} (${selectedClient.clientId})` : 'Unknown Client'}
+                        </span>
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          Cannot be changed
+                        </Badge>
+                      </div>
+                    ) : (
+                      // Editable dropdown for new case notes
+                      <Select 
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        value={field.value?.toString()}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select client" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {clients.map((client) => (
+                            <SelectItem key={client.id} value={client.id.toString()}>
+                              {client.firstName} {client.lastName} ({client.clientId})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

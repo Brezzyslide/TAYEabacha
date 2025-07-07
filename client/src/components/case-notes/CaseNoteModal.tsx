@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -68,6 +68,22 @@ export default function CaseNoteModal({
     }
   });
 
+  // Reset form when caseNote changes (ensure original content is loaded)
+  useEffect(() => {
+    if (caseNote) {
+      form.reset({
+        clientId: caseNote.clientId,
+        title: caseNote.title,
+        content: caseNote.content,
+        category: caseNote.category,
+        priority: (caseNote.priority as "normal" | "high" | "urgent"),
+        type: (caseNote.type as "standard" | "incident" | "medication"),
+        linkedShiftId: caseNote.linkedShiftId,
+        tags: caseNote.tags || []
+      });
+    }
+  }, [caseNote, form]);
+
   const watchedContent = form.watch("content");
   const wordCount = watchedContent?.split(/\s+/).filter(word => word.length > 0).length || 0;
 
@@ -92,35 +108,58 @@ export default function CaseNoteModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{caseNote ? "Edit Case Note" : "Create Case Note"}</DialogTitle>
+          <DialogTitle>
+            {caseNote ? "Edit Case Note" : "Create Case Note"}
+            {caseNote && (
+              <div className="text-sm text-gray-500 font-normal mt-1">
+                Created on {new Date(caseNote.createdAt).toLocaleDateString()} 
+                {caseNote.createdAt !== caseNote.updatedAt && (
+                  <span> • Last updated {new Date(caseNote.updatedAt).toLocaleDateString()}</span>
+                )}
+              </div>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* Client Selection */}
+            {/* Client Selection - Read-only when editing */}
             <FormField
               control={form.control}
               name="clientId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Client *</FormLabel>
-                  <Select 
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                    value={field.value?.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select client" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id.toString()}>
-                          {client.fullName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {caseNote ? (
+                    // Show client name as read-only when editing
+                    <div className="flex items-center p-2 border rounded-md bg-gray-50 dark:bg-gray-800">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {clients.find(c => c.id === field.value)?.fullName || 'Unknown Client'}
+                      </span>
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        Cannot be changed
+                      </Badge>
+                    </div>
+                  ) : (
+                    // Editable dropdown for new case notes
+                    <Select 
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      value={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select client" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id.toString()}>
+                            {client.fullName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

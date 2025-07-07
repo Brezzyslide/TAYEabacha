@@ -403,12 +403,20 @@ export default function CaseNoteDashboard() {
         }}
         onSubmit={async (data) => {
           return new Promise<void>((resolve, reject) => {
-            createMutation.mutate(data, {
-              onSuccess: () => resolve(),
-              onError: (error) => reject(error)
-            });
+            if (editingNote) {
+              updateMutation.mutate({ id: editingNote.id, data }, {
+                onSuccess: () => resolve(),
+                onError: (error) => reject(error)
+              });
+            } else {
+              createMutation.mutate(data, {
+                onSuccess: () => resolve(),
+                onError: (error) => reject(error)
+              });
+            }
           });
         }}
+        editingNote={editingNote}
       />
     </div>
   );
