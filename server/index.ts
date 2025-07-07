@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { provisionAllExistingTenants } from "./tenant-provisioning";
 import { runCompleteConsistencyCheck } from "./simplified-multi-tenant-fix";
 import { runStartupSecurityChecks } from "./enhanced-tenant-security";
+import path from 'path';
 
 // Set timezone to Australian Eastern Standard Time
 process.env.TZ = 'Australia/Sydney';
@@ -44,6 +45,9 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 (async () => {
   const server = await registerRoutes(app);

@@ -5207,11 +5207,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company Logo Upload API
-  app.post("/api/company/logo", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+  const multer = (await import('multer')).default;
+  const path = await import('path');
+  const fs = await import('fs');
+  
+  // Create uploads directory if it doesn't exist
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  fs.promises.mkdir(uploadsDir, { recursive: true }).catch(console.error);
+  
+  // Configure multer for file uploads
+  const storage_multer = multer.diskStorage({
+    destination: (req: any, file: any, cb: any) => {
+      cb(null, uploadsDir);
+    },
+    filename: (req: any, file: any, cb: any) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, `company-logo-${req.user.tenantId}-${uniqueSuffix}${path.extname(file.originalname)}`);
+    }
+  });
+  
+  const upload = multer({ 
+    storage: storage_multer,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req: any, file: any, cb: any) => {
+      const allowedTypes = /jpeg|jpg|png|gif|svg/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+      
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed!'));
+      }
+    }
+  });
+
+  app.post("/api/company/logo", requireAuth, requireRole(["Admin", "ConsoleManager"]), upload.single('logo'), async (req: any, res) => {
     try {
-      // In a real implementation, you'd handle file upload with multer
-      // and store the file in cloud storage (AWS S3, etc.)
-      const logoUrl = req.body.logoUrl || "/uploads/company-logo.png"; // Placeholder
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const logoUrl = `/uploads/${req.file.filename}`;
       
       const company = await storage.updateCompanyLogo(req.user.tenantId, logoUrl);
       
@@ -5219,11 +5258,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id,
         action: "upload_company_logo",
         resourceType: "company",
-        description: "Uploaded company logo for white-labeling",
+        description: `Uploaded company logo: ${req.file.originalname}`,
         tenantId: req.user.tenantId,
       });
       
-      res.json({ message: "Logo uploaded successfully", logoUrl });
+      res.json({ 
+        message: "Logo uploaded successfully", 
+        logoUrl,
+        filename: req.file.filename
+      });
     } catch (error) {
       console.error("Logo upload error:", error);
       res.status(500).json({ message: "Failed to upload logo" });
