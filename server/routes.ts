@@ -283,7 +283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         primaryContactName, 
         primaryContactEmail, 
         primaryContactPhone, 
-        password 
+        password,
+        includeDemoData = false
       } = req.body;
 
       // Create company with UUID
@@ -315,18 +316,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isFirstLogin: true,
       });
 
-      // Automatically provision comprehensive features for new tenant
-      try {
-        await autoProvisionNewTenant(tenant.id, company.id, adminUser.id);
-        console.log(`[NEW TENANT SETUP] Successfully auto-provisioned tenant ${tenant.id} with complete feature set`);
-      } catch (error) {
-        console.error(`[NEW TENANT SETUP] Error auto-provisioning tenant ${tenant.id}:`, error);
-        // Fallback to basic provisioning
+      // Only provision demo data if explicitly requested
+      if (includeDemoData) {
         try {
-          await provisionTenant(tenant.id, company.id);
-          console.log(`[TENANT PROVISIONING] Fallback provisioning completed for tenant ${tenant.id}`);
-        } catch (fallbackError) {
-          console.error(`[TENANT PROVISIONING] Fallback provisioning failed:`, fallbackError);
+          await autoProvisionNewTenant(tenant.id, company.id, adminUser.id);
+          console.log(`[NEW TENANT SETUP] Successfully auto-provisioned tenant ${tenant.id} with demo data`);
+        } catch (error) {
+          console.error(`[NEW TENANT SETUP] Error auto-provisioning tenant ${tenant.id}:`, error);
+          // Fallback to basic provisioning
+          try {
+            await provisionTenant(tenant.id, company.id);
+            console.log(`[TENANT PROVISIONING] Fallback provisioning completed for tenant ${tenant.id}`);
+          } catch (fallbackError) {
+            console.error(`[TENANT PROVISIONING] Fallback provisioning failed:`, fallbackError);
+          }
+        }
+      } else {
+        // Only provision essential system features (pay scales, tax brackets, NDIS pricing) - no demo data
+        try {
+          const { provisionScHADSRates } = await import('./new-tenant-auto-provisioning');
+          const { createNdisPricingForTenant, ensureTaxBrackets } = await import('./new-tenant-auto-provisioning');
+          
+          console.log(`[NEW TENANT SETUP] Creating essential system features for tenant ${tenant.id} (no demo data)`);
+          
+          // ScHADS pay scales (required for payroll)
+          await provisionScHADSRates(tenant.id);
+          
+          // NDIS pricing structure (required for budget calculations)
+          await createNdisPricingForTenant(tenant.id);
+          
+          // Tax brackets (required for payroll)
+          await ensureTaxBrackets();
+          
+          console.log(`[NEW TENANT SETUP] Essential features provisioned for tenant ${tenant.id} without demo data`);
+        } catch (error) {
+          console.error(`[NEW TENANT SETUP] Error provisioning essential features for tenant ${tenant.id}:`, error);
         }
       }
 
@@ -338,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId: tenant.id,
           adminUserId: adminUser.id,
           adminEmail: adminUser.email,
-          status: "Created Successfully with Full Features"
+          status: includeDemoData ? "Created Successfully with Demo Data" : "Created Successfully (No Demo Data)"
         }
       ]);
 
@@ -346,7 +370,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         company,
         tenant,
         admin: adminUser,
-        message: "Company created successfully with comprehensive features"
+        message: includeDemoData 
+          ? "Company created successfully with demo data" 
+          : "Company created successfully (essential features only, no demo data)"
       });
     } catch (error) {
       console.error("Company creation error:", error);
