@@ -130,8 +130,10 @@ async function processBudgetDeduction(shift: any, userId: number) {
     return;
   }
 
-  const shiftCost = effectiveRate * shiftHours;
-  console.log(`[BUDGET DEDUCTION] Calculated cost: $${shiftCost} (${shiftHours}h × $${effectiveRate})`);
+  // Apply ratio multiplier for shared staffing costs
+  const ratioMultiplier = getRatioMultiplier(staffRatio);
+  const shiftCost = effectiveRate * shiftHours * ratioMultiplier;
+  console.log(`[BUDGET DEDUCTION] Calculated cost: $${shiftCost} (${shiftHours}h × $${effectiveRate} × ${ratioMultiplier} ratio multiplier)`);
 
   // Use the shift's actual funding category instead of defaulting based on shift type
   const category = shift.fundingCategory || 
@@ -172,7 +174,7 @@ async function processBudgetDeduction(shift: any, userId: number) {
     rate: effectiveRate,
     amount: shiftCost,
     shiftId: shift.id,
-    description: `Shift completion: ${shift.title}`,
+    description: `Shift completion: ${shift.title} (${shiftHours.toFixed(1)}h × $${effectiveRate} × ${ratioMultiplier} ratio)`,
     companyId,
     createdByUserId: userId,
     tenantId: shift.tenantId,
@@ -201,6 +203,18 @@ function determineShiftType(startTime: Date): "AM" | "PM" | "ActiveNight" | "Sle
   } else {
     return "ActiveNight"; // Night shift: 12:00 AM - 6:00 AM
   }
+}
+
+function getRatioMultiplier(ratio: string): number {
+  const multipliers = {
+    "1:1": 1.0,   // Full cost for one client
+    "1:2": 0.6,   // 60% of full cost per client (shared between 2)
+    "1:3": 0.4,   // 40% of full cost per client (shared between 3)
+    "1:4": 0.3,   // 30% of full cost per client (shared between 4)
+    "2:1": 2.0,   // Double cost for enhanced support (2 staff to 1 client)
+  };
+  
+  return multipliers[ratio as keyof typeof multipliers] || 1.0;
 }
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";

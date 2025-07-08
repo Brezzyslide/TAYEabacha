@@ -79,7 +79,9 @@ async function processShiftBudgetDeduction(shift: any) {
     return;
   }
 
-  const shiftCost = effectiveRate * shiftHours;
+  // Apply ratio multiplier for shared staffing costs
+  const ratioMultiplier = getRatioMultiplier(staffRatio);
+  const shiftCost = effectiveRate * shiftHours * ratioMultiplier;
   
   // Use the shift's actual funding category instead of defaulting based on shift type
   const category = shift.fundingCategory || 
@@ -120,7 +122,7 @@ async function processShiftBudgetDeduction(shift: any) {
     rate: effectiveRate,
     amount: shiftCost,
     shiftId: shift.id,
-    description: `Backfill: Shift completion - ${shift.title}`,
+    description: `Backfill: Shift completion - ${shift.title} (${shiftHours.toFixed(1)}h × $${effectiveRate} × ${ratioMultiplier} ratio)`,
     companyId,
     createdByUserId: shift.userId || 1, // Use shift assignee or fallback to admin
     tenantId: shift.tenantId,
@@ -137,4 +139,16 @@ function determineShiftType(startTime: Date): "AM" | "PM" | "ActiveNight" | "Sle
   } else {
     return hour >= 22 || hour < 6 ? "ActiveNight" : "Sleepover";
   }
+}
+
+function getRatioMultiplier(ratio: string): number {
+  const multipliers = {
+    "1:1": 1.0,   // Full cost for one client
+    "1:2": 0.6,   // 60% of full cost per client (shared between 2)
+    "1:3": 0.4,   // 40% of full cost per client (shared between 3)
+    "1:4": 0.3,   // 30% of full cost per client (shared between 4)
+    "2:1": 2.0,   // Double cost for enhanced support (2 staff to 1 client)
+  };
+  
+  return multipliers[ratio as keyof typeof multipliers] || 1.0;
 }
