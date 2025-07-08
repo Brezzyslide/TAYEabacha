@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -102,8 +102,8 @@ export default function RecordAdministrationModal({
 
   // Get current user for administered by field
   const { data: currentUser } = useQuery({
-    queryKey: ['/api/user'],
-    queryFn: () => fetch('/api/user').then(res => res.json())
+    queryKey: ['/api/auth/user'],
+    queryFn: () => fetch('/api/auth/user', { credentials: 'include' }).then(res => res.json())
   });
 
   // Fetch active medication plans for this client (if no specific plan provided)
@@ -131,9 +131,16 @@ export default function RecordAdministrationModal({
       notes: "",
       wasWitnessed: false,
       medicationName: medicationPlan?.medicationName || "",
-      administeredBy: currentUser?.id || 0,
+      administeredBy: 0,
     },
   });
+
+  // Update administeredBy when currentUser is loaded
+  React.useEffect(() => {
+    if (currentUser?.id) {
+      form.setValue('administeredBy', currentUser.id);
+    }
+  }, [currentUser, form]);
 
   // Create medication record mutation
   const createRecordMutation = useMutation({
