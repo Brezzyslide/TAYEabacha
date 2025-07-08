@@ -5550,7 +5550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Check for existing username and email, auto-generate unique ones if needed
-          const existingUsers = await storage.getUsers(req.user.tenantId);
+          const existingUsers = await storage.getUsersByTenant(req.user.tenantId);
           let finalUsername = processedUserData.username;
           let finalEmail = processedUserData.email;
           let attempts = 0;
