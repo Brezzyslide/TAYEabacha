@@ -1,0 +1,301 @@
+Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+api/login:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+api/login:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this error
+2StaffHourDashboard.tsx:30 [StaffHourDashboard] Modal state: false
+PermissionGuard.tsx:34 [PermissionGuard] hour-allocations create check: Object
+CreateAllocationModal.tsx:58 [CreateAllocationModal] Props received: Object
+CreateAllocationModal.tsx:66 [CreateAllocationModal] Staff data: Object
+StaffHourDashboard.tsx:30 [StaffHourDashboard] Modal state: false
+PermissionGuard.tsx:34 [PermissionGuard] hour-allocations create check: Object
+CreateAllocationModal.tsx:58 [CreateAllocationModal] Props received: Object
+CreateAllocationModal.tsx:66 [CreateAllocationModal] Staff data: Object
+2chunk-VTP46WMH.js:32 Content not found in playback state, this is self healing 
+(anonymous) @ chunk-VTP46WMH.js:32Understand this warning
+3hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-623L5XBO.js?v=8d87a492:331:29)
+    at chunk-623L5XBO.js?v=8d87a492:235:13
+    at chunk-623L5XBO.js?v=8d87a492:158:58
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at chunk-623L5XBO.js?v=8d87a492:149:64
+    at chunk-2K77HOHX.js?v=8d87a492:79:13
+    at chunk-2K77HOHX.js?v=8d87a492:56:13
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at chunk-YL6M4KTM.js?v=8d87a492:260:22
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at DialogPortal (chunk-623L5XBO.js?v=8d87a492:111:11)
+    at _c3 (dialog.tsx:35:6)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at Dialog (chunk-623L5XBO.js?v=8d87a492:52:5)
+    at EndShiftModal (EndShiftModal.tsx:28:41)
+    at div (<anonymous>)
+    at MyShiftsTab (MyShiftsTab.tsx:17:45)
+    at div (<anonymous>)
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at @radix-ui_react-tabs.js?v=eb4c8c86:176:13
+    at _c5 (tabs.tsx:41:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at @radix-ui_react-tabs.js?v=eb4c8c86:54:7
+    at div (<anonymous>)
+    at ShiftDashboard (ShiftDashboard.tsx:17:20)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Route (wouter.js?v=592bf30c:323:16)
+    at ProtectedRoute (protected-route.tsx:8:3)
+    at Switch (wouter.js?v=592bf30c:379:17)
+    at Router (<anonymous>)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=5cf490dc:64:5)
+    at AuthProvider (use-auth.tsx:23:32)
+    at ThemeProvider (theme-provider.tsx:15:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=e04f6397:2805:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608Understand this warning
+StaffTimesheetView.tsx:128 [FRONTEND] Submitting timesheet 13 for user 31
+StaffTimesheetView.tsx:131 [FRONTEND] Timesheet submission successful: Response
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-623L5XBO.js?v=8d87a492:331:29)
+    at chunk-623L5XBO.js?v=8d87a492:235:13
+    at chunk-623L5XBO.js?v=8d87a492:158:58
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at chunk-623L5XBO.js?v=8d87a492:149:64
+    at chunk-2K77HOHX.js?v=8d87a492:79:13
+    at chunk-2K77HOHX.js?v=8d87a492:56:13
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at chunk-YL6M4KTM.js?v=8d87a492:260:22
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at DialogPortal (chunk-623L5XBO.js?v=8d87a492:111:11)
+    at _c3 (dialog.tsx:35:6)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at Dialog (chunk-623L5XBO.js?v=8d87a492:52:5)
+    at ComposeMessageModal (ComposeMessageModal.tsx:45:47)
+    at div (<anonymous>)
+    at MessageDashboard (MessageDashboard.tsx:48:39)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Route (wouter.js?v=592bf30c:323:16)
+    at ProtectedRoute (protected-route.tsx:8:3)
+    at Switch (wouter.js?v=592bf30c:379:17)
+    at Router (<anonymous>)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=5cf490dc:64:5)
+    at AuthProvider (use-auth.tsx:23:32)
+    at ThemeProvider (theme-provider.tsx:15:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=e04f6397:2805:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-623L5XBO.js?v=8d87a492:331:29)
+    at chunk-623L5XBO.js?v=8d87a492:235:13
+    at chunk-623L5XBO.js?v=8d87a492:158:58
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at chunk-623L5XBO.js?v=8d87a492:149:64
+    at chunk-2K77HOHX.js?v=8d87a492:79:13
+    at chunk-2K77HOHX.js?v=8d87a492:56:13
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at chunk-YL6M4KTM.js?v=8d87a492:260:22
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at DialogPortal (chunk-623L5XBO.js?v=8d87a492:111:11)
+    at _c3 (dialog.tsx:35:6)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at Dialog (chunk-623L5XBO.js?v=8d87a492:52:5)
+    at CreateCaseNoteModal (CreateCaseNoteModal.tsx:80:3)
+    at div (<anonymous>)
+    at CaseNoteDashboard (CaseNoteDashboard.tsx:18:39)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Route (wouter.js?v=592bf30c:323:16)
+    at ProtectedRoute (protected-route.tsx:8:3)
+    at Switch (wouter.js?v=592bf30c:379:17)
+    at Router (<anonymous>)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=5cf490dc:64:5)
+    at AuthProvider (use-auth.tsx:23:32)
+    at ThemeProvider (theme-provider.tsx:15:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=e04f6397:2805:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608Understand this warning
+hook.js:608 Warning: A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://reactjs.org/link/controlled-components Error Component Stack
+    at input (<anonymous>)
+    at _c (input.tsx:6:6)
+    at chunk-2K77HOHX.js?v=8d87a492:79:13
+    at chunk-2K77HOHX.js?v=8d87a492:56:13
+    at form.tsx:107:9
+    at div (<anonymous>)
+    at form.tsx:76:6
+    at Controller (chunk-4BFJKWC4.js?v=8d87a492:298:35)
+    at FormField (form.tsx:33:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at _c9 (card.tsx:62:6)
+    at div (<anonymous>)
+    at _c (card.tsx:8:6)
+    at form (<anonymous>)
+    at FormProvider (chunk-4BFJKWC4.js?v=8d87a492:102:11)
+    at div (<anonymous>)
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at chunk-YL6M4KTM.js?v=8d87a492:61:7
+    at chunk-2K77HOHX.js?v=8d87a492:79:13
+    at chunk-2K77HOHX.js?v=8d87a492:56:13
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at chunk-6UVAOWYU.js?v=8d87a492:29:5
+    at chunk-623L5XBO.js?v=8d87a492:235:13
+    at chunk-623L5XBO.js?v=8d87a492:158:58
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at chunk-623L5XBO.js?v=8d87a492:149:64
+    at chunk-2K77HOHX.js?v=8d87a492:79:13
+    at chunk-2K77HOHX.js?v=8d87a492:56:13
+    at chunk-AXMZZQ2X.js?v=8d87a492:42:13
+    at chunk-YL6M4KTM.js?v=8d87a492:260:22
+    at Presence (chunk-DI3MHBAI.js?v=8d87a492:24:11)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at DialogPortal (chunk-623L5XBO.js?v=8d87a492:111:11)
+    at _c3 (dialog.tsx:35:6)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at Dialog (chunk-623L5XBO.js?v=8d87a492:52:5)
+    at CreateCaseNoteModal (CreateCaseNoteModal.tsx:80:3)
+    at div (<anonymous>)
+    at CaseNoteDashboard (CaseNoteDashboard.tsx:18:39)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Route (wouter.js?v=592bf30c:323:16)
+    at ProtectedRoute (protected-route.tsx:8:3)
+    at Switch (wouter.js?v=592bf30c:379:17)
+    at Router (<anonymous>)
+    at Provider (chunk-OXZDJRWN.js?v=8d87a492:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=5cf490dc:64:5)
+    at AuthProvider (use-auth.tsx:23:32)
+    at ThemeProvider (theme-provider.tsx:15:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=e04f6397:2805:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608Understand this error
+api/case-notes:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+hook.js:608 Form submission error: Error: 500: {"message":"Failed to create case note"}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:25:3)
+    at async Object.mutationFn (CaseNoteDashboard.tsx:46:24)
+overrideMethod @ hook.js:608Understand this error
+api/case-notes:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+hook.js:608 Form submission error: Error: 500: {"message":"Failed to create case note"}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:25:3)
+    at async Object.mutationFn (CaseNoteDashboard.tsx:46:24)
+overrideMethod @ hook.js:608Understand this error
+queryClient.ts:18  POST http://ec2-54-80-195-220.compute-1.amazonaws.com:5000/api/case-notes 500 (Internal Server Error)
+apiRequest @ queryClient.ts:18
+mutationFn @ CaseNoteDashboard.tsx:46
+fn @ @tanstack_react-query.js?v=e04f6397:1189
+run @ @tanstack_react-query.js?v=e04f6397:494
+start @ @tanstack_react-query.js?v=e04f6397:536
+execute @ @tanstack_react-query.js?v=e04f6397:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=e04f6397:2630
+(anonymous) @ @tanstack_react-query.js?v=e04f6397:3295
+(anonymous) @ CaseNoteDashboard.tsx:412
+onSubmit @ CaseNoteDashboard.tsx:405
+handleSubmit @ CreateCaseNoteModal.tsx:331
+(anonymous) @ chunk-4BFJKWC4.js?v=8d87a492:1465
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=8d87a492:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=8d87a492:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=8d87a492:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=8d87a492:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=8d87a492:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=8d87a492:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=8d87a492:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=8d87a492:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=8d87a492:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=8d87a492:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=8d87a492:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=8d87a492:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=8d87a492:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=8d87a492:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=8d87a492:5449Understand this error
+CreateCaseNoteModal.tsx:341 Form submission error: Error: 500: {"message":"Failed to create case note"}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:25:3)
+    at async Object.mutationFn (CaseNoteDashboard.tsx:46:24)
+overrideMethod @ hook.js:608
+handleSubmit @ CreateCaseNoteModal.tsx:341
+await in handleSubmit
+(anonymous) @ chunk-4BFJKWC4.js?v=8d87a492:1465
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=8d87a492:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=8d87a492:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=8d87a492:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=8d87a492:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=8d87a492:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=8d87a492:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=8d87a492:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=8d87a492:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=8d87a492:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=8d87a492:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=8d87a492:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=8d87a492:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=8d87a492:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=8d87a492:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=8d87a492:5449Understand this error
+queryClient.ts:18  POST http://ec2-54-80-195-220.compute-1.amazonaws.com:5000/api/case-notes 500 (Internal Server Error)
+apiRequest @ queryClient.ts:18
+mutationFn @ CaseNoteDashboard.tsx:46
+fn @ @tanstack_react-query.js?v=e04f6397:1189
+run @ @tanstack_react-query.js?v=e04f6397:494
+start @ @tanstack_react-query.js?v=e04f6397:536
+execute @ @tanstack_react-query.js?v=e04f6397:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=e04f6397:2630
+(anonymous) @ @tanstack_react-query.js?v=e04f6397:3295
+(anonymous) @ CaseNoteDashboard.tsx:412
+onSubmit @ CaseNoteDashboard.tsx:405
+handleSubmit @ CreateCaseNoteModal.tsx:331
+(anonymous) @ chunk-4BFJKWC4.js?v=8d87a492:1465
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=8d87a492:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=8d87a492:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=8d87a492:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=8d87a492:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=8d87a492:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=8d87a492:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=8d87a492:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=8d87a492:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=8d87a492:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=8d87a492:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=8d87a492:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=8d87a492:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=8d87a492:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=8d87a492:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=8d87a492:5449Understand this error
+CreateCaseNoteModal.tsx:341 Form submission error: Error: 500: {"message":"Failed to create case note"}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:25:3)
+    at async Object.mutationFn (CaseNoteDashboard.tsx:46:24)
+overrideMethod @ hook.js:608
+handleSubmit @ CreateCaseNoteModal.tsx:341
+await in handleSubmit
+(anonymous) @ chunk-4BFJKWC4.js?v=8d87a492:1465
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=8d87a492:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=8d87a492:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=8d87a492:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=8d87a492:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=8d87a492:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=8d87a492:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=8d87a492:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=8d87a492:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=8d87a492:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=8d87a492:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=8d87a492:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=8d87a492:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=8d87a492:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=8d87a492:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=8d87a492:5449Understand this error

@@ -2351,13 +2351,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/case-notes", requireAuth, async (req: any, res) => {
     try {
+      console.log("[CASE NOTES] Creation request:", {
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+        body: req.body
+      });
+
+      // Validate required fields
+      if (!req.body.title) {
+        console.log("[CASE NOTES] Missing title");
+        return res.status(400).json({ message: "Title is required" });
+      }
+      
+      if (!req.body.clientId) {
+        console.log("[CASE NOTES] Missing clientId");
+        return res.status(400).json({ message: "Client ID is required" });
+      }
+
       const caseNoteData = {
         ...req.body,
         userId: req.user.id,
         tenantId: req.user.tenantId,
+        // Ensure timestamp fields are properly formatted
+        timestamp: req.body.timestamp || new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
+      console.log("[CASE NOTES] Creating with data:", caseNoteData);
+      
       const caseNote = await storage.createCaseNote(caseNoteData);
+      
+      console.log("[CASE NOTES] Successfully created:", caseNote.id);
       
       // Log activity
       await storage.createActivityLog({
@@ -2370,9 +2395,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.status(201).json(caseNote);
-    } catch (error) {
-      console.error("Case note creation error:", error);
-      res.status(500).json({ message: "Failed to create case note" });
+    } catch (error: any) {
+      console.error("[CASE NOTES] Creation error:", {
+        message: error.message,
+        stack: error.stack,
+        constraint: error.constraint,
+        code: error.code,
+        detail: error.detail
+      });
+      res.status(500).json({ 
+        message: "Failed to create case note",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -2422,14 +2456,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
+      
+      console.log("[CLIENT CASE NOTES] Creation request:", {
+        clientId,
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+        body: req.body
+      });
+
+      // Validate required fields
+      if (!req.body.title) {
+        console.log("[CLIENT CASE NOTES] Missing title");
+        return res.status(400).json({ message: "Title is required" });
+      }
+
       const caseNoteData = {
         ...req.body,
         clientId,
         userId: req.user.id,
         tenantId: req.user.tenantId,
+        // Ensure timestamp fields are properly formatted
+        timestamp: req.body.timestamp || new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
+      console.log("[CLIENT CASE NOTES] Creating with data:", caseNoteData);
+      
       const caseNote = await storage.createCaseNote(caseNoteData);
+      
+      console.log("[CLIENT CASE NOTES] Successfully created:", caseNote.id);
       
       // Log activity
       await storage.createActivityLog({
@@ -2442,8 +2498,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.status(201).json(caseNote);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to create case note" });
+    } catch (error: any) {
+      console.error("[CLIENT CASE NOTES] Creation error:", {
+        message: error.message,
+        stack: error.stack,
+        constraint: error.constraint,
+        code: error.code,
+        detail: error.detail
+      });
+      res.status(500).json({ 
+        message: "Failed to create case note",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 

@@ -35,12 +35,15 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Set to true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true',
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax'
+      sameSite: 'lax',
+      // Allow cookies to work across different domains in deployment
+      domain: process.env.NODE_ENV === 'production' ? undefined : undefined
     },
     rolling: true, // Extends session on activity
+    name: 'needscareai.sid', // Custom session name for better security
   };
 
   app.set("trust proxy", 1);
@@ -82,8 +85,35 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    console.log("[LOGIN] Login attempt:", {
+      username: req.body.username,
+      hasPassword: !!req.body.password,
+      sessionID: req.sessionID,
+      userAgent: req.get('User-Agent')
+    });
+    
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("[LOGIN] Authentication error:", err);
+        return next(err);
+      }
+      
+      if (!user) {
+        console.log("[LOGIN] Authentication failed:", info);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("[LOGIN] Login error:", loginErr);
+          return next(loginErr);
+        }
+        
+        console.log("[LOGIN] Login successful:", { userId: user.id, username: user.username, tenantId: user.tenantId });
+        res.status(200).json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
@@ -115,21 +145,36 @@ export function setupAuth(app: Express) {
 
   // Add the /api/auth/user endpoint that the frontend expects
   app.get("/api/auth/user", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    console.log("[AUTH] User endpoint called:", {
+      isAuthenticated: req.isAuthenticated(),
+      sessionID: req.sessionID,
+      hasUser: !!req.user,
+      userAgent: req.get('User-Agent')
+    });
+    
+    if (!req.isAuthenticated()) {
+      console.log("[AUTH] User not authenticated");
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     
     try {
       const user = req.user as any;
+      console.log("[AUTH] User found:", { id: user.id, username: user.username, tenantId: user.tenantId });
+      
       // Get company information for the user's tenant
       const company = await storage.getCompanyByTenantId(user.tenantId);
       
       const userWithCompany = {
         ...user,
-        companyName: company?.name || 'CareConnect'
+        companyName: company?.name || 'NeedsCareAI+'
       };
       
       res.json(userWithCompany);
-    } catch (error) {
-      console.error('Error fetching user with company info:', error);
+    } catch (error: any) {
+      console.error('[AUTH] Error fetching user with company info:', {
+        message: error.message,
+        stack: error.stack
+      });
       res.json(req.user);
     }
   });
