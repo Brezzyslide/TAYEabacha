@@ -3550,6 +3550,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Photo Upload Endpoint
+  app.post("/api/upload/photo", requireAuth, async (req: any, res) => {
+    try {
+      const multer = await import('multer');
+      const path = await import('path');
+      const fs = await import('fs').then(m => m.promises);
+      
+      // Configure multer for photo uploads
+      const upload = multer.default({
+        dest: 'uploads/photos/',
+        limits: {
+          fileSize: 5 * 1024 * 1024, // 5MB limit
+        },
+        fileFilter: (req, file, cb) => {
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+          if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+          } else {
+            cb(new Error('Invalid file type. Only JPEG, PNG, and GIF are allowed.'));
+          }
+        },
+      }).single('photo');
+
+      // Handle the upload
+      upload(req, res, async (err) => {
+        if (err) {
+          console.error('Photo upload error:', err);
+          return res.status(400).json({ message: err.message });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({ message: 'No photo uploaded' });
+        }
+
+        try {
+          // Generate a unique filename
+          const timestamp = Date.now();
+          const ext = path.extname(req.file.originalname);
+          const fileName = `medication-${timestamp}-${req.user.id}${ext}`;
+          const newPath = path.join('uploads/photos', fileName);
+
+          // Move file to final location
+          await fs.rename(req.file.path, newPath);
+
+          // Return the URL that can be used to access the photo
+          const photoUrl = `/uploads/photos/${fileName}`;
+          
+          res.json({ 
+            url: photoUrl,
+            filename: fileName,
+            originalName: req.file.originalname,
+            size: req.file.size
+          });
+
+        } catch (fileError) {
+          console.error('File processing error:', fileError);
+          res.status(500).json({ message: 'Failed to process uploaded photo' });
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Photo upload endpoint error:", error);
+      res.status(500).json({ message: "Failed to upload photo" });
+    }
+  });
+
   // Bulk Medication Records Excel Export
   app.get("/api/medication-records/export/excel", requireAuth, async (req: any, res) => {
     try {
@@ -7265,6 +7331,11 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       res.status(500).json({ message: "Failed to perform health check" });
     }
   });
+
+  // Serve static files from uploads directory  
+  const expressStatic = await import('express');
+  const pathModule = await import('path');
+  app.use('/uploads', expressStatic.default.static(pathModule.join(process.cwd(), 'uploads')));
 
   // Close the registerRoutes function
   return server;

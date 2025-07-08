@@ -1067,7 +1067,8 @@ export default function MedicationDashboard() {
               </Card>
 
               {/* Attachments */}
-              {(viewRecordModal.record.attachmentBeforeUrl || viewRecordModal.record.attachmentAfterUrl) && (
+              {(viewRecordModal.record.attachmentBeforeUrl || viewRecordModal.record.attachmentAfterUrl || 
+                viewRecordModal.record.photoBeforeUrl || viewRecordModal.record.photoAfterUrl) && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1077,26 +1078,74 @@ export default function MedicationDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {viewRecordModal.record.attachmentBeforeUrl && (
+                      {(viewRecordModal.record.attachmentBeforeUrl || viewRecordModal.record.photoBeforeUrl) && (
                         <div>
                           <label className="text-sm font-medium text-gray-600 block mb-2">Before Photo</label>
-                          <img 
-                            src={viewRecordModal.record.attachmentBeforeUrl} 
-                            alt="Before medication administration"
-                            className="w-full h-48 object-cover rounded-lg border"
-                          />
+                          <div className="relative">
+                            <img 
+                              src={viewRecordModal.record.attachmentBeforeUrl || viewRecordModal.record.photoBeforeUrl} 
+                              alt="Before medication administration"
+                              className="w-full h-48 object-cover rounded-lg border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500';
+                                  errorDiv.innerHTML = '<div class="text-center"><svg class="h-8 w-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg><p>Photo not available</p></div>';
+                                  parent.appendChild(errorDiv);
+                                }
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
-                      {viewRecordModal.record.attachmentAfterUrl && (
+                      {(viewRecordModal.record.attachmentAfterUrl || viewRecordModal.record.photoAfterUrl) && (
                         <div>
                           <label className="text-sm font-medium text-gray-600 block mb-2">After Photo</label>
-                          <img 
-                            src={viewRecordModal.record.attachmentAfterUrl} 
-                            alt="After medication administration"
-                            className="w-full h-48 object-cover rounded-lg border"
-                          />
+                          <div className="relative">
+                            <img 
+                              src={viewRecordModal.record.attachmentAfterUrl || viewRecordModal.record.photoAfterUrl} 
+                              alt="After medication administration"
+                              className="w-full h-48 object-cover rounded-lg border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500';
+                                  errorDiv.innerHTML = '<div class="text-center"><svg class="h-8 w-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg><p>Photo not available</p></div>';
+                                  parent.appendChild(errorDiv);
+                                }
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
+                    </div>
+                    {/* Display photo URLs for debugging (only in development) */}
+                    {import.meta.env.DEV && (
+                      <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p className="text-xs text-yellow-700 font-medium mb-1">Debug Info (Development Only):</p>
+                        <p className="text-xs text-yellow-600">Before URL: {viewRecordModal.record.attachmentBeforeUrl || viewRecordModal.record.photoBeforeUrl || 'None'}</p>
+                        <p className="text-xs text-yellow-600">After URL: {viewRecordModal.record.attachmentAfterUrl || viewRecordModal.record.photoAfterUrl || 'None'}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Show message if no photos but photo upload was attempted */}
+              {!viewRecordModal.record.attachmentBeforeUrl && !viewRecordModal.record.attachmentAfterUrl && 
+               !viewRecordModal.record.photoBeforeUrl && !viewRecordModal.record.photoAfterUrl && (
+                <Card className="border-dashed border-gray-300">
+                  <CardContent className="py-8">
+                    <div className="text-center text-gray-500">
+                      <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No photos attached to this medication record</p>
+                      <p className="text-sm">Photos can be uploaded during medication administration</p>
                     </div>
                   </CardContent>
                 </Card>

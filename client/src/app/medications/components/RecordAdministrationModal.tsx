@@ -230,13 +230,33 @@ export default function RecordAdministrationModal({
   };
 
   const uploadPhoto = async (file: File): Promise<string> => {
-    // Create a unique filename with timestamp
-    const timestamp = Date.now();
-    const fileName = `medication-${timestamp}-${file.name}`;
-    
-    // In production, implement actual file upload to cloud storage
-    // For now, return a mock URL that represents where the file would be stored
-    return `https://storage.careconnect.app/medications/${fileName}`;
+    try {
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('photo', file);
+      formData.append('type', 'medication');
+      
+      const response = await fetch('/api/upload/photo', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload photo');
+      }
+      
+      const result = await response.json();
+      return result.url;
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      // Fallback to base64 storage if upload fails
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    }
   };
 
   const onSubmit = async (data: MedicationAdministrationForm) => {
