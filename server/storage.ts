@@ -632,24 +632,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailabilityConflicts(tenantId: number): Promise<any[]> {
-    // Mock conflict analysis - in production this would analyze actual staffing requirements
-    const conflicts = [
-      {
-        day: "Monday",
-        shiftType: "AM",
-        staffCount: 2,
-        minRequired: 4,
-        isUnderStaffed: true
-      },
-      {
-        day: "Friday",
-        shiftType: "Active Night",
-        staffCount: 1,
-        minRequired: 3,
-        isUnderStaffed: true
-      }
-    ];
-    return conflicts;
+    // Return empty array - no demo data, real conflicts would be calculated based on actual staff availability and shift requirements
+    // When staff availability and shift patterns are configured, this would analyze:
+    // 1. Staff availability by day/shift type
+    // 2. Minimum staffing requirements per shift
+    // 3. Identify understaffed periods
+    return [];
   }
 
   // Activity Logs
