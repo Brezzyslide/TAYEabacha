@@ -52,24 +52,30 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 (async () => {
   const server = await registerRoutes(app);
 
-  // Run comprehensive multi-tenant consistency enforcement on startup
-  console.log("[MULTI-TENANT FIX] Running comprehensive consistency enforcement for ALL tenants");
+  // DEMO DATA PROVISIONING COMPLETELY DISABLED
+  console.log("[MULTI-TENANT FIX] ALL DEMO DATA PROVISIONING PERMANENTLY DISABLED");
+  console.log("[MULTI-TENANT FIX] New tenants start completely clean - no automatic data creation");
+  console.log("[MULTI-TENANT FIX] Users must create all their own data (clients, shifts, etc.)");
+  
+  // Run complete demo data cleanup for all existing tenants
   try {
-    await runCompleteConsistencyCheck();
-    
-    // Apply comprehensive timesheet and employment type fixes
-    console.log("[COMPREHENSIVE FIX] Applying all timesheet, leave, and employment fixes to ALL tenants");
+    console.log("[DEMO CLEANUP] Removing all existing demo data from all tenants");
+    const { completeCleanupAllDemoData } = await import('./complete-demo-data-cleanup');
+    await completeCleanupAllDemoData();
+    console.log("[DEMO CLEANUP] All demo data removed - tenants now completely clean");
+  } catch (error) {
+    console.error("[DEMO CLEANUP] Demo data cleanup failed:", error);
+  }
+  
+  // Only apply essential system fixes (employment types, tax brackets, pay scales)
+  // NO demo data provisioning whatsoever
+  try {
+    console.log("[ESSENTIAL FIXES] Applying only essential system fixes (no demo data)");
     const { applyComprehensiveTenantFixes } = await import('./comprehensive-tenant-fixes');
     await applyComprehensiveTenantFixes();
-    
-    // Apply comprehensive data consistency across all modules
-    console.log("[DATA CONSISTENCY] Enforcing comprehensive data consistency across all modules");
-    const { enforceComprehensiveDataConsistency } = await import('./comprehensive-data-consistency');
-    await enforceComprehensiveDataConsistency();
-    
-    console.log("[MULTI-TENANT FIX] Consistency enforcement completed successfully");
+    console.log("[ESSENTIAL FIXES] Essential system fixes completed - no demo data created");
   } catch (error) {
-    console.error("[MULTI-TENANT FIX] Consistency enforcement failed:", error);
+    console.error("[ESSENTIAL FIXES] Essential fixes failed:", error);
   }
 
   // Apply composite foreign key constraints for database-level tenant isolation
