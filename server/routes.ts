@@ -5549,13 +5549,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
 
+          // Check for existing username and email, auto-generate unique ones if needed
+          const existingUsers = await storage.getUsers(req.user.tenantId);
+          let finalUsername = processedUserData.username;
+          let finalEmail = processedUserData.email;
+          let attempts = 0;
+          const maxAttempts = 10;
+          
+          // Handle username duplicates
+          while (attempts < maxAttempts) {
+            const usernameExists = existingUsers.some(user => user.username === finalUsername);
+            if (!usernameExists) {
+              break; // Username is available
+            }
+            
+            // Generate new username by appending number
+            attempts++;
+            finalUsername = `${processedUserData.username}_${attempts}`;
+            console.log(`[BULK UPLOAD] Username '${processedUserData.username}' exists, trying '${finalUsername}'`);
+          }
+          
+          if (attempts >= maxAttempts) {
+            throw new Error(`Could not generate unique username for '${processedUserData.username}' after ${maxAttempts} attempts`);
+          }
+          
+          // Handle email duplicates
+          attempts = 0;
+          while (attempts < maxAttempts) {
+            const emailExists = existingUsers.some(user => user.email === finalEmail);
+            if (!emailExists) {
+              break; // Email is available
+            }
+            
+            // Generate new email by appending number before @
+            attempts++;
+            const emailParts = processedUserData.email.split('@');
+            finalEmail = `${emailParts[0]}_${attempts}@${emailParts[1]}`;
+            console.log(`[BULK UPLOAD] Email '${processedUserData.email}' exists, trying '${finalEmail}'`);
+          }
+          
+          if (attempts >= maxAttempts) {
+            throw new Error(`Could not generate unique email for '${processedUserData.email}' after ${maxAttempts} attempts`);
+          }
+
           // Hash password
           const hashedPassword = await hashPassword(processedUserData.password);
           
           // Create user with proper validation
           const userPayload = {
-            username: processedUserData.username,
-            email: processedUserData.email,
+            username: finalUsername,
+            email: finalEmail,
             password: hashedPassword,
             fullName: processedUserData.fullName,
             role: processedUserData.role,
@@ -5568,6 +5611,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[BULK UPLOAD] Creating user with payload:`, JSON.stringify(userPayload, null, 2));
           
           const user = await storage.createUser(userPayload);
+          
+          // Log any modifications made
+          let modificationMsg = "";
+          if (finalUsername !== processedUserData.username) {
+            modificationMsg += `Username changed from '${processedUserData.username}' to '${finalUsername}'. `;
+          }
+          if (finalEmail !== processedUserData.email) {
+            modificationMsg += `Email changed from '${processedUserData.email}' to '${finalEmail}'. `;
+          }
+          
+          console.log(`[BULK UPLOAD] Successfully created user ${user.id}: ${user.username}${modificationMsg ? ` (${modificationMsg.trim()})` : ''}`);
+          
+          // Add modification info to success message if changes were made
+          if (modificationMsg) {
+            results.errors.push(`Row ${i + 1}: Created successfully but with modifications - ${modificationMsg.trim()}`);
+          }
           
           console.log(`[BULK UPLOAD] Successfully created user ${user.id}: ${user.username}`);
           results.success++;
