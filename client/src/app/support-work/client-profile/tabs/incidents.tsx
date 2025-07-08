@@ -179,8 +179,10 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
   };
 
   const handleViewIncident = (incident: IncidentReport) => {
+    console.log("HandleViewIncident called with:", incident);
     setSelectedIncident(incident);
     setShowViewModal(true);
+    console.log("Modal state set - showViewModal should be true");
   };
 
   const handleCloseIncident = (incident: IncidentReport) => {
@@ -557,11 +559,14 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
       )}
 
       {showViewModal && selectedIncident && (
-        <ViewIncidentModal
-          isOpen={showViewModal}
-          onClose={() => setShowViewModal(false)}
-          incident={selectedIncident}
-        />
+        <>
+          {console.log("Rendering ViewIncidentModal with:", { showViewModal, selectedIncident })}
+          <ViewIncidentModal
+            isOpen={showViewModal}
+            onClose={() => setShowViewModal(false)}
+            incident={selectedIncident}
+          />
+        </>
       )}
 
       {showCloseModal && selectedIncident && (
