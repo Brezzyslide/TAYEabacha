@@ -39,9 +39,13 @@ const supportWorkNavigation = [
   { name: "Messages", href: "/messages", icon: MessageSquare },
 ];
 
-const shiftManagementNavigation = [
+const getShiftManagementNavigation = (isAdmin: boolean) => [
   { name: "Shift Calendar", href: "/shift", icon: Calendar },
-  { name: "My Availability", href: "/staff-availability", icon: Clock },
+  { 
+    name: isAdmin ? "Staff Availability" : "My Availability", 
+    href: isAdmin ? "/manage-staff-availability" : "/staff-availability", 
+    icon: Clock 
+  },
   { name: "Staff Hour Allocations", href: "/staff-hour-allocations", icon: TrendingUp },
   { name: "Timesheet & Pay Scales", href: "/timesheet", icon: Receipt },
 ];
@@ -119,7 +123,7 @@ export default function Sidebar() {
         {/* Shift Management Section */}
         {renderNavigationSection(
           "SHIFT MANAGEMENT", 
-          shiftManagementNavigation, 
+          getShiftManagementNavigation(isAdmin), 
           "bg-info/10 text-info border-info/20"
         )}
 
