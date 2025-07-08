@@ -211,7 +211,18 @@ export default function ObservationFormModal({
   });
 
   const handleSubmit = (data: ObservationFormData) => {
-    createMutation.mutate(data);
+    // Prevent duplicate submissions
+    if (createMutation.isPending) {
+      return;
+    }
+    
+    // Auto-populate timestamp with current time if not manually changed
+    const submissionData = {
+      ...data,
+      timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm")
+    };
+    
+    createMutation.mutate(submissionData);
   };
 
   const handleTypeChange = (value: string) => {
@@ -585,6 +596,13 @@ export default function ObservationFormModal({
                 type="submit" 
                 disabled={createMutation.isPending}
                 className="bg-blue-600 hover:bg-blue-700"
+                onClick={(e) => {
+                  // Prevent rapid double-clicking
+                  if (createMutation.isPending) {
+                    e.preventDefault();
+                    return;
+                  }
+                }}
               >
                 {createMutation.isPending 
                   ? (isEditing ? "Updating..." : "Creating...") 

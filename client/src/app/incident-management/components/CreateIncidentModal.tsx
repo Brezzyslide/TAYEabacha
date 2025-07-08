@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Plus, X, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const incidentSchema = z.object({
   clientId: z.number({ required_error: "Please select a client" }),
@@ -107,6 +108,8 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
       intensityRating: 5,
       staffResponses: [],
       description: "",
+      dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"), // Auto-set to current time
+      location: "",
     },
   });
 
@@ -143,7 +146,18 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
   });
 
   const onSubmit = (data: IncidentFormData) => {
-    createIncidentMutation.mutate(data);
+    // Prevent duplicate submissions
+    if (createIncidentMutation.isPending) {
+      return;
+    }
+    
+    // Auto-populate timestamp with current time for immediate reporting
+    const submissionData = {
+      ...data,
+      dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm")
+    };
+    
+    createIncidentMutation.mutate(submissionData);
   };
 
   const addTrigger = () => {
@@ -529,7 +543,17 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createIncidentMutation.isPending}>
+              <Button 
+                type="submit" 
+                disabled={createIncidentMutation.isPending}
+                onClick={(e) => {
+                  // Prevent rapid double-clicking
+                  if (createIncidentMutation.isPending) {
+                    e.preventDefault();
+                    return;
+                  }
+                }}
+              >
                 {createIncidentMutation.isPending ? "Creating..." : "Create Report"}
               </Button>
             </div>
