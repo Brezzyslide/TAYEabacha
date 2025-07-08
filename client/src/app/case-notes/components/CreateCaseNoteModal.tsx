@@ -89,6 +89,7 @@ export default function CreateCaseNoteModal({
   const [spellCheckResult, setSpellCheckResult] = useState<{ original: string; corrected: string } | null>(null);
   const [showSpellCheckPreview, setShowSpellCheckPreview] = useState(false);
   const [attachments, setAttachments] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -289,7 +290,14 @@ export default function CreateCaseNoteModal({
   };
 
   const handleSubmit = async (data: CaseNoteFormData) => {
+    // Prevent duplicate submissions
+    if (isSubmitting) {
+      return;
+    }
+    
     try {
+      setIsSubmitting(true);
+      
       // Build case note tags structure
       const caseNoteTags = {
         incident: {
@@ -310,12 +318,17 @@ export default function CreateCaseNoteModal({
         } : undefined
       };
 
-      await onSubmit({
+      // Auto-populate timestamp with current time for case note creation
+      const submissionData = {
         ...data,
         attachments,
         caseNoteTags,
-        spellCheckCount
-      });
+        spellCheckCount,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await onSubmit(submissionData);
       
       // Reset form
       form.reset();
@@ -326,6 +339,8 @@ export default function CreateCaseNoteModal({
       onClose();
     } catch (error) {
       console.error("Form submission error:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -737,11 +752,18 @@ export default function CreateCaseNoteModal({
               </Button>
               <Button 
                 type="submit"
-                disabled={wordCount < 130}
+                disabled={wordCount < 130 || isSubmitting}
                 className="flex items-center gap-2"
+                onClick={(e) => {
+                  // Prevent rapid double-clicking
+                  if (isSubmitting) {
+                    e.preventDefault();
+                    return;
+                  }
+                }}
               >
                 <CheckCircle className="h-4 w-4" />
-                Submit Case Note
+                {isSubmitting ? "Submitting..." : "Submit Case Note"}
               </Button>
             </DialogFooter>
           </form>

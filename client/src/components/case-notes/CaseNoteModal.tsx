@@ -90,7 +90,14 @@ export default function CaseNoteModal({
   const handleSubmit = async (data: CaseNoteFormData) => {
     setIsSubmitting(true);
     try {
-      await onSubmit(data);
+      // Auto-populate timestamp with current time for case note creation
+      const submissionData = {
+        ...data,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      await onSubmit(submissionData);
       form.reset();
       onClose();
     } catch (error) {
