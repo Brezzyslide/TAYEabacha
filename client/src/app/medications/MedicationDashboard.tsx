@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, Pill, Clock, CheckCircle, AlertTriangle, Calendar, Camera, User } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Plus, Search, Filter, Pill, Clock, CheckCircle, AlertTriangle, Calendar, Camera, User, Eye, Download, FileText, FileSpreadsheet, CalendarDays } from "lucide-react";
 
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +52,13 @@ export default function MedicationDashboard() {
   const [clientFilter, setClientFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("plans");
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [viewRecordModal, setViewRecordModal] = useState<{
+    isOpen: boolean;
+    record?: any;
+  }>({
+    isOpen: false,
+  });
   const [recordAdminModal, setRecordAdminModal] = useState<{
     isOpen: boolean;
     clientId?: number;
@@ -62,6 +70,83 @@ export default function MedicationDashboard() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Export individual record to PDF
+  const exportRecordToPDF = async (record: any) => {
+    try {
+      const response = await fetch(`/api/medication-records/${record.id}/pdf`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `medication-record-${record.id}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "PDF Downloaded",
+        description: "Medication record PDF has been downloaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export medication record to PDF.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Export bulk records to Excel
+  const exportBulkToExcel = async () => {
+    try {
+      let url = '/api/medication-records/export/excel?';
+      const params = new URLSearchParams();
+      
+      if (searchTerm) params.append('search', searchTerm);
+      if (clientFilter !== 'all') params.append('clientId', clientFilter);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (dateRange.from) params.append('dateFrom', dateRange.from);
+      if (dateRange.to) params.append('dateTo', dateRange.to);
+      
+      const response = await fetch(url + params.toString(), {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) throw new Error('Failed to generate Excel file');
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = downloadUrl;
+      a.download = `medication-records-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Excel Downloaded",
+        description: "Medication records Excel file has been downloaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export medication records to Excel.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch medication plans
   const { data: medicationPlans = [], isLoading: plansLoading } = useQuery({
@@ -361,8 +446,97 @@ export default function MedicationDashboard() {
             <TabsContent value="records" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Administration Records</CardTitle>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <CardTitle>Medication Administration Records</CardTitle>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={exportBulkToExcel}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        Export Excel
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Enhanced Filtering Controls */}
+                  <div className="flex flex-col lg:flex-row gap-4 mt-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search by medication name, client name, or administered by..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Select value={clientFilter} onValueChange={setClientFilter}>
+                        <SelectTrigger className="w-[200px]">
+                          <Filter className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Filter by client" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Clients</SelectItem>
+                          {clients.map((client: Client) => (
+                            <SelectItem key={client.id} value={client.id.toString()}>
+                              {client.firstName} {client.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[150px]">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="administered">Administered</SelectItem>
+                          <SelectItem value="refused">Refused</SelectItem>
+                          <SelectItem value="missed">Missed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <div className="flex gap-2">
+                        <Input
+                          type="date"
+                          value={dateRange.from}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
+                          className="w-[140px]"
+                          placeholder="From date"
+                        />
+                        <Input
+                          type="date"
+                          value={dateRange.to}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
+                          className="w-[140px]"
+                          placeholder="To date"
+                        />
+                      </div>
+                      
+                      {(searchTerm || clientFilter !== 'all' || statusFilter !== 'all' || dateRange.from || dateRange.to) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSearchTerm("");
+                            setClientFilter("all");
+                            setStatusFilter("all");
+                            setDateRange({ from: "", to: "" });
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Clear Filters
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
+                
                 <CardContent>
                   {medicationRecords.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
@@ -372,32 +546,92 @@ export default function MedicationDashboard() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {medicationRecords.slice(0, 10).map((record: any) => (
-                        <div key={record.id} className="border rounded-lg p-4">
+                      {medicationRecords
+                        .filter((record: any) => {
+                          // Search filter
+                          const searchLower = searchTerm.toLowerCase();
+                          const matchesSearch = !searchTerm || 
+                            (record.medicationName && record.medicationName.toLowerCase().includes(searchLower)) ||
+                            (record.clientName && record.clientName.toLowerCase().includes(searchLower)) ||
+                            (record.clientFirstName && `${record.clientFirstName} ${record.clientLastName}`.toLowerCase().includes(searchLower)) ||
+                            (record.administratorName && record.administratorName.toLowerCase().includes(searchLower));
+                          
+                          // Client filter
+                          const matchesClient = clientFilter === 'all' || record.clientId?.toString() === clientFilter;
+                          
+                          // Status filter
+                          const recordStatus = (record.result || record.status || '').toLowerCase();
+                          const matchesStatus = statusFilter === 'all' || recordStatus === statusFilter;
+                          
+                          // Date range filter
+                          const recordDate = record.dateTime || record.scheduledTime || record.createdAt;
+                          const matchesDateRange = (!dateRange.from && !dateRange.to) || 
+                            (recordDate && 
+                             (!dateRange.from || new Date(recordDate) >= new Date(dateRange.from)) &&
+                             (!dateRange.to || new Date(recordDate) <= new Date(dateRange.to + 'T23:59:59')));
+                          
+                          return matchesSearch && matchesClient && matchesStatus && matchesDateRange;
+                        })
+                        .map((record: any) => (
+                        <div key={record.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-2">
                                 <Badge className={getStatusBadge(record.result || record.status)}>
                                   {record.result || record.status}
                                 </Badge>
+                                <h4 className="font-medium text-lg">{record.medicationName || 'Unknown Medication'}</h4>
                                 <span className="text-sm text-gray-500">
                                   {record.dateTime ? format(new Date(record.dateTime), 'MMM dd, yyyy HH:mm') : 
                                    record.scheduledTime ? format(new Date(record.scheduledTime), 'MMM dd, yyyy HH:mm') :
                                    format(new Date(record.createdAt), 'MMM dd, yyyy HH:mm')}
                                 </span>
                               </div>
-                              {record.administeredTime && (
-                                <p className="text-sm text-gray-600 mb-1">
-                                  Administered: {format(new Date(record.administeredTime), 'MMM dd, yyyy HH:mm')}
-                                </p>
-                              )}
-                              <p className="text-sm text-green-600 flex items-center gap-1">
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-2">
+                                <p><strong>Client:</strong> {record.clientName || `${record.clientFirstName || ''} ${record.clientLastName || ''}`.trim() || 'Unknown'}</p>
+                                <p><strong>Route:</strong> {record.route || 'Not specified'}</p>
+                                <p><strong>Time of Day:</strong> {record.timeOfDay || 'Not specified'}</p>
+                                {record.administeredTime && (
+                                  <p><strong>Administered:</strong> {format(new Date(record.administeredTime), 'MMM dd, HH:mm')}</p>
+                                )}
+                              </div>
+                              
+                              <p className="text-sm text-green-600 flex items-center gap-1 mb-2">
                                 <User className="h-3 w-3" />
                                 Administered by: {record.administratorName || 'Unknown'}
                               </p>
+                              
                               {record.notes && (
-                                <p className="text-sm text-gray-500">{record.notes}</p>
+                                <p className="text-sm text-gray-500 italic">"{record.notes}"</p>
                               )}
+                              
+                              {record.refusalReason && (
+                                <p className="text-sm text-red-600">
+                                  <strong>Refusal Reason:</strong> {record.refusalReason}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <div className="flex flex-col gap-2 ml-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setViewRecordModal({ isOpen: true, record })}
+                                className="flex items-center gap-2"
+                              >
+                                <Eye className="h-4 w-4" />
+                                View
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportRecordToPDF(record)}
+                                className="flex items-center gap-2"
+                              >
+                                <FileText className="h-4 w-4" />
+                                PDF
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -688,6 +922,204 @@ export default function MedicationDashboard() {
         isOpen={addPlanModal}
         onClose={() => setAddPlanModal(false)}
       />
+
+      {/* View Record Modal */}
+      <Dialog open={viewRecordModal.isOpen} onOpenChange={(open) => setViewRecordModal({ isOpen: open })}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pill className="h-5 w-5" />
+              Medication Administration Record Details
+            </DialogTitle>
+            <DialogDescription>
+              Complete details for this medication administration record
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewRecordModal.record && (
+            <div className="space-y-6">
+              {/* Header Information */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xl font-semibold text-blue-900">
+                    {viewRecordModal.record.medicationName || 'Unknown Medication'}
+                  </h3>
+                  <Badge className={getStatusBadge(viewRecordModal.record.result || viewRecordModal.record.status)}>
+                    {viewRecordModal.record.result || viewRecordModal.record.status}
+                  </Badge>
+                </div>
+                <p className="text-blue-700">
+                  Record ID: #{viewRecordModal.record.id} | Created: {format(new Date(viewRecordModal.record.createdAt), 'PPP')}
+                </p>
+              </div>
+
+              {/* Client & Administration Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Client Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Client Name</label>
+                      <p className="text-lg">
+                        {viewRecordModal.record.clientName || 
+                         `${viewRecordModal.record.clientFirstName || ''} ${viewRecordModal.record.clientLastName || ''}`.trim() || 
+                         'Unknown Client'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Client ID</label>
+                      <p>{viewRecordModal.record.clientId || 'Not specified'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Timing Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Scheduled Time</label>
+                      <p>
+                        {viewRecordModal.record.scheduledTime ? 
+                         format(new Date(viewRecordModal.record.scheduledTime), 'PPp') : 
+                         'Not specified'}
+                      </p>
+                    </div>
+                    {viewRecordModal.record.administeredTime && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Actual Administration Time</label>
+                        <p>{format(new Date(viewRecordModal.record.administeredTime), 'PPp')}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Time of Day</label>
+                      <p>{viewRecordModal.record.timeOfDay || 'Not specified'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Medication Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Pill className="h-4 w-4" />
+                    Medication Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Route</label>
+                    <p>{viewRecordModal.record.route || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Dosage</label>
+                    <p>{viewRecordModal.record.dosage || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Witnessed</label>
+                    <p>{viewRecordModal.record.wasWitnessed ? 'Yes' : 'No'}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Administration Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Administration Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Administered By</label>
+                    <p className="text-lg">{viewRecordModal.record.administratorName || 'Unknown'}</p>
+                  </div>
+                  
+                  {viewRecordModal.record.notes && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Notes</label>
+                      <p className="bg-gray-50 p-3 rounded-lg text-sm italic">
+                        "{viewRecordModal.record.notes}"
+                      </p>
+                    </div>
+                  )}
+                  
+                  {viewRecordModal.record.refusalReason && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Refusal Reason</label>
+                      <p className="bg-red-50 p-3 rounded-lg text-sm text-red-700">
+                        {viewRecordModal.record.refusalReason}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Attachments */}
+              {(viewRecordModal.record.attachmentBeforeUrl || viewRecordModal.record.attachmentAfterUrl) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Photo Documentation
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {viewRecordModal.record.attachmentBeforeUrl && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-600 block mb-2">Before Photo</label>
+                          <img 
+                            src={viewRecordModal.record.attachmentBeforeUrl} 
+                            alt="Before medication administration"
+                            className="w-full h-48 object-cover rounded-lg border"
+                          />
+                        </div>
+                      )}
+                      {viewRecordModal.record.attachmentAfterUrl && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-600 block mb-2">After Photo</label>
+                          <img 
+                            src={viewRecordModal.record.attachmentAfterUrl} 
+                            alt="After medication administration"
+                            className="w-full h-48 object-cover rounded-lg border"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => exportRecordToPDF(viewRecordModal.record)}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Export PDF
+                </Button>
+                <Button onClick={() => setViewRecordModal({ isOpen: false })}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

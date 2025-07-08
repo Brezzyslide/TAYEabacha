@@ -3296,6 +3296,414 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Individual Medication Record PDF Export
+  app.get("/api/medication-records/:id/pdf", requireAuth, async (req: any, res) => {
+    try {
+      const recordId = parseInt(req.params.id);
+      const tenantId = req.user.tenantId;
+      
+      // Get the medication record with full details
+      const record = await db.select({
+        id: medicationRecords.id,
+        medicationPlanId: medicationRecords.medicationPlanId,
+        clientId: medicationRecords.clientId,
+        administeredBy: medicationRecords.administeredBy,
+        medicationName: medicationRecords.medicationName,
+        scheduledTime: medicationRecords.scheduledTime,
+        actualTime: medicationRecords.actualTime,
+        dateTime: medicationRecords.dateTime,
+        timeOfDay: medicationRecords.timeOfDay,
+        route: medicationRecords.route,
+        status: medicationRecords.status,
+        result: medicationRecords.result,
+        notes: medicationRecords.notes,
+        refusalReason: medicationRecords.refusalReason,
+        wasWitnessed: medicationRecords.wasWitnessed,
+        attachmentBeforeUrl: medicationRecords.attachmentBeforeUrl,
+        attachmentAfterUrl: medicationRecords.attachmentAfterUrl,
+        tenantId: medicationRecords.tenantId,
+        createdAt: medicationRecords.createdAt,
+        // Include administrator info
+        administratorName: users.username,
+        administratorFullName: users.fullName,
+        // Include client info
+        clientName: clients.fullName,
+        clientFirstName: clients.firstName,
+        clientLastName: clients.lastName,
+      })
+      .from(medicationRecords)
+      .leftJoin(users, eq(medicationRecords.administeredBy, users.id))
+      .leftJoin(clients, eq(medicationRecords.clientId, clients.id))
+      .where(and(
+        eq(medicationRecords.id, recordId),
+        eq(medicationRecords.tenantId, tenantId)
+      ));
+
+      if (record.length === 0) {
+        return res.status(404).json({ message: "Medication record not found" });
+      }
+
+      const medicationRecord = record[0];
+
+      // Get company information for branding
+      const company = await storage.getCompanyByTenantId(tenantId);
+      const companyName = company?.name || "NeedsCareAI+";
+
+      // Dynamic import of jsPDF
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF();
+
+      // Page dimensions and margins
+      const pageWidth = pdf.internal.pageSize.width;
+      const pageHeight = pdf.internal.pageSize.height;
+      const margin = 20;
+      const contentWidth = pageWidth - (2 * margin);
+
+      // Header (only on first page)
+      pdf.setFillColor(37, 99, 235); // Blue gradient
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(companyName, pageWidth / 2, 20, { align: 'center' });
+      pdf.setFontSize(14);
+      pdf.text('Medication Administration Record', pageWidth / 2, 30, { align: 'center' });
+
+      let currentY = 60;
+
+      // Record Information
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(margin, currentY - 4, contentWidth, 16, 'F');
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Record Information', margin + 5, currentY + 6);
+      currentY += 25;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+
+      const recordInfo = [
+        ['Record ID', `#${medicationRecord.id}`],
+        ['Medication Name', medicationRecord.medicationName || 'Unknown'],
+        ['Status', medicationRecord.result || medicationRecord.status || 'Unknown'],
+        ['Created Date', new Date(medicationRecord.createdAt).toLocaleDateString('en-AU')],
+      ];
+
+      recordInfo.forEach(([key, value]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${key}:`, margin + 5, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(String(value), margin + 85, currentY);
+        currentY += 12;
+      });
+
+      currentY += 10;
+
+      // Client Information
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(margin, currentY - 4, contentWidth, 16, 'F');
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Client Information', margin + 5, currentY + 6);
+      currentY += 25;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+
+      const clientInfo = [
+        ['Client Name', medicationRecord.clientName || `${medicationRecord.clientFirstName || ''} ${medicationRecord.clientLastName || ''}`.trim() || 'Unknown'],
+        ['Client ID', medicationRecord.clientId?.toString() || 'Unknown'],
+      ];
+
+      clientInfo.forEach(([key, value]) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${key}:`, margin + 5, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(String(value), margin + 85, currentY);
+        currentY += 12;
+      });
+
+      currentY += 10;
+
+      // Administration Details
+      pdf.setFillColor(37, 99, 235);
+      pdf.rect(margin, currentY - 4, contentWidth, 16, 'F');
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Administration Details', margin + 5, currentY + 6);
+      currentY += 25;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0, 0, 0);
+
+      const adminInfo = [
+        ['Administered By', medicationRecord.administratorFullName || medicationRecord.administratorName || 'Unknown'],
+        ['Scheduled Time', medicationRecord.scheduledTime ? new Date(medicationRecord.scheduledTime).toLocaleString('en-AU') : 'Not specified'],
+        ['Actual Time', medicationRecord.administeredTime || medicationRecord.actualTime ? new Date(medicationRecord.administeredTime || medicationRecord.actualTime).toLocaleString('en-AU') : 'Not specified'],
+        ['Time of Day', medicationRecord.timeOfDay || 'Not specified'],
+        ['Route', medicationRecord.route || 'Not specified'],
+        ['Witnessed', medicationRecord.wasWitnessed ? 'Yes' : 'No'],
+      ];
+
+      adminInfo.forEach(([key, value]) => {
+        if (currentY > pageHeight - 30) {
+          pdf.addPage();
+          currentY = 30;
+        }
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${key}:`, margin + 5, currentY);
+        pdf.setFont('helvetica', 'normal');
+        const lines = pdf.splitTextToSize(String(value), contentWidth - 90);
+        for (let i = 0; i < lines.length; i++) {
+          if (i > 0) {
+            currentY += 6;
+            if (currentY > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
+          }
+          pdf.text(lines[i], margin + 85, currentY);
+        }
+        currentY += 12;
+      });
+
+      // Notes and Additional Information
+      if (medicationRecord.notes || medicationRecord.refusalReason) {
+        currentY += 10;
+        
+        if (currentY > pageHeight - 40) {
+          pdf.addPage();
+          currentY = 30;
+        }
+        
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY - 4, contentWidth, 16, 'F');
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('Additional Information', margin + 5, currentY + 6);
+        currentY += 25;
+
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+
+        if (medicationRecord.notes) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Notes:', margin + 5, currentY);
+          pdf.setFont('helvetica', 'normal');
+          const notesLines = pdf.splitTextToSize(medicationRecord.notes, contentWidth - 90);
+          notesLines.forEach((line: string, index: number) => {
+            if (index > 0) currentY += 6;
+            if (currentY > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
+            pdf.text(line, margin + 85, currentY);
+          });
+          currentY += 15;
+        }
+
+        if (medicationRecord.refusalReason) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Refusal Reason:', margin + 5, currentY);
+          pdf.setFont('helvetica', 'normal');
+          const refusalLines = pdf.splitTextToSize(medicationRecord.refusalReason, contentWidth - 90);
+          refusalLines.forEach((line: string, index: number) => {
+            if (index > 0) currentY += 6;
+            if (currentY > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
+            pdf.text(line, margin + 85, currentY);
+          });
+        }
+      }
+
+      // Add footer to all pages
+      const pageCount = pdf.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        const footerY = pageHeight - 15;
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`${companyName} | Generated: ${new Date().toLocaleDateString('en-AU')}`, margin + 5, footerY + 8);
+        pdf.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 20, footerY + 8);
+      }
+
+      const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="medication-record-${recordId}-${new Date().toISOString().split('T')[0]}.pdf"`);
+      res.send(pdfBuffer);
+
+    } catch (error: any) {
+      console.error("Medication record PDF export error:", error);
+      res.status(500).json({ message: "Failed to export medication record to PDF" });
+    }
+  });
+
+  // Bulk Medication Records Excel Export
+  app.get("/api/medication-records/export/excel", requireAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { search, clientId, status, dateFrom, dateTo } = req.query;
+
+      // Build query with filters
+      let query = db.select({
+        id: medicationRecords.id,
+        medicationPlanId: medicationRecords.medicationPlanId,
+        clientId: medicationRecords.clientId,
+        administeredBy: medicationRecords.administeredBy,
+        medicationName: medicationRecords.medicationName,
+        scheduledTime: medicationRecords.scheduledTime,
+        actualTime: medicationRecords.actualTime,
+        dateTime: medicationRecords.dateTime,
+        timeOfDay: medicationRecords.timeOfDay,
+        route: medicationRecords.route,
+        status: medicationRecords.status,
+        result: medicationRecords.result,
+        notes: medicationRecords.notes,
+        refusalReason: medicationRecords.refusalReason,
+        wasWitnessed: medicationRecords.wasWitnessed,
+        tenantId: medicationRecords.tenantId,
+        createdAt: medicationRecords.createdAt,
+        // Include administrator info
+        administratorName: users.username,
+        administratorFullName: users.fullName,
+        // Include client info
+        clientName: clients.fullName,
+        clientFirstName: clients.firstName,
+        clientLastName: clients.lastName,
+      })
+      .from(medicationRecords)
+      .leftJoin(users, eq(medicationRecords.administeredBy, users.id))
+      .leftJoin(clients, eq(medicationRecords.clientId, clients.id))
+      .where(eq(medicationRecords.tenantId, tenantId));
+
+      let whereConditions = [eq(medicationRecords.tenantId, tenantId)];
+
+      // Apply filters
+      if (clientId && clientId !== 'all') {
+        whereConditions.push(eq(medicationRecords.clientId, parseInt(clientId as string)));
+      }
+
+      if (status && status !== 'all') {
+        whereConditions.push(eq(medicationRecords.result, status as string));
+      }
+
+      if (dateFrom) {
+        whereConditions.push(gte(medicationRecords.createdAt, new Date(dateFrom as string)));
+      }
+
+      if (dateTo) {
+        const toDate = new Date(dateTo as string);
+        toDate.setHours(23, 59, 59, 999);
+        whereConditions.push(lte(medicationRecords.createdAt, toDate));
+      }
+
+      const records = await db.select({
+        id: medicationRecords.id,
+        medicationPlanId: medicationRecords.medicationPlanId,
+        clientId: medicationRecords.clientId,
+        administeredBy: medicationRecords.administeredBy,
+        medicationName: medicationRecords.medicationName,
+        scheduledTime: medicationRecords.scheduledTime,
+        actualTime: medicationRecords.actualTime,
+        dateTime: medicationRecords.dateTime,
+        timeOfDay: medicationRecords.timeOfDay,
+        route: medicationRecords.route,
+        status: medicationRecords.status,
+        result: medicationRecords.result,
+        notes: medicationRecords.notes,
+        refusalReason: medicationRecords.refusalReason,
+        wasWitnessed: medicationRecords.wasWitnessed,
+        tenantId: medicationRecords.tenantId,
+        createdAt: medicationRecords.createdAt,
+        // Include administrator info
+        administratorName: users.username,
+        administratorFullName: users.fullName,
+        // Include client info
+        clientName: clients.fullName,
+        clientFirstName: clients.firstName,
+        clientLastName: clients.lastName,
+      })
+      .from(medicationRecords)
+      .leftJoin(users, eq(medicationRecords.administeredBy, users.id))
+      .leftJoin(clients, eq(medicationRecords.clientId, clients.id))
+      .where(and(...whereConditions))
+      .orderBy(desc(medicationRecords.createdAt));
+
+      // Apply search filter on the results
+      let filteredRecords = records;
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        filteredRecords = records.filter(record => 
+          (record.medicationName && record.medicationName.toLowerCase().includes(searchLower)) ||
+          (record.clientName && record.clientName.toLowerCase().includes(searchLower)) ||
+          (record.clientFirstName && `${record.clientFirstName} ${record.clientLastName}`.toLowerCase().includes(searchLower)) ||
+          (record.administratorName && record.administratorName.toLowerCase().includes(searchLower)) ||
+          (record.administratorFullName && record.administratorFullName.toLowerCase().includes(searchLower))
+        );
+      }
+
+      if (filteredRecords.length === 0) {
+        return res.status(404).json({ message: "No medication records found matching the criteria" });
+      }
+
+      // Generate Excel file
+      const XLSX = await import('xlsx');
+      
+      // Prepare Excel data
+      const excelData = filteredRecords.map(record => ({
+        "Record ID": record.id,
+        "Medication Name": record.medicationName || 'Unknown',
+        "Client Name": record.clientName || `${record.clientFirstName || ''} ${record.clientLastName || ''}`.trim() || 'Unknown',
+        "Administered By": record.administratorFullName || record.administratorName || 'Unknown',
+        "Status": record.result || record.status || 'Unknown',
+        "Scheduled Time": record.scheduledTime ? new Date(record.scheduledTime).toLocaleString('en-AU') : 'Not specified',
+        "Actual Time": (record.administeredTime || record.actualTime) ? new Date(record.administeredTime || record.actualTime).toLocaleString('en-AU') : 'Not specified',
+        "Time of Day": record.timeOfDay || 'Not specified',
+        "Route": record.route || 'Not specified',
+        "Witnessed": record.wasWitnessed ? 'Yes' : 'No',
+        "Notes": record.notes || '',
+        "Refusal Reason": record.refusalReason || '',
+        "Created Date": new Date(record.createdAt).toLocaleString('en-AU'),
+      }));
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      // Auto-size columns
+      const colWidths = Object.keys(excelData[0] || {}).map(key => ({
+        wch: Math.max(key.length, 15)
+      }));
+      worksheet['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Medication Records');
+
+      // Generate Excel buffer
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="medication-records-export-${new Date().toISOString().split('T')[0]}.xlsx"`);
+      res.send(excelBuffer);
+
+    } catch (error: any) {
+      console.error("Medication records Excel export error:", error);
+      res.status(500).json({ message: "Failed to export medication records to Excel" });
+    }
+  });
+
   // Staff Messages API
   app.get("/api/messages", requireAuth, async (req: any, res) => {
     try {
