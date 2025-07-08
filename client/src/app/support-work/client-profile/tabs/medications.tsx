@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Pill, Clock, CheckCircle, AlertTriangle, Calendar, User, BarChart3 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Search, Pill, Clock, CheckCircle, AlertTriangle, Calendar, User, BarChart3, Eye, Camera } from "lucide-react";
 import { format } from "date-fns";
 import RecordAdministrationModal from "@/app/medications/components/RecordAdministrationModal";
 
@@ -63,6 +64,14 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
   const [recordAdminModal, setRecordAdminModal] = useState<{
     isOpen: boolean;
     medicationPlan?: MedicationPlan;
+  }>({
+    isOpen: false,
+  });
+
+  // View record modal state
+  const [viewRecordModal, setViewRecordModal] = useState<{
+    isOpen: boolean;
+    record?: MedicationRecord;
   }>({
     isOpen: false,
   });
@@ -556,16 +565,26 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
                           }>
                             {record.result}
                           </Badge>
-                          {((record as any).attachmentBeforeUrl || (record as any).attachmentAfterUrl) && (
-                            <div className="flex gap-1">
-                              {(record as any).attachmentBeforeUrl && (
-                                <Badge variant="outline" className="text-xs">Photo Before</Badge>
-                              )}
-                              {(record as any).attachmentAfterUrl && (
-                                <Badge variant="outline" className="text-xs">Photo After</Badge>
-                              )}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {((record as any).attachmentBeforeUrl || (record as any).attachmentAfterUrl) && (
+                              <div className="flex gap-1">
+                                {(record as any).attachmentBeforeUrl && (
+                                  <Badge variant="outline" className="text-xs">Photo Before</Badge>
+                                )}
+                                {(record as any).attachmentAfterUrl && (
+                                  <Badge variant="outline" className="text-xs">Photo After</Badge>
+                                )}
+                              </div>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setViewRecordModal({ isOpen: true, record })}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -585,6 +604,169 @@ export default function MedicationsTab({ clientId, companyId }: MedicationsTabPr
         clientId={parseInt(clientId)}
         clientName={client ? `${client.firstName} ${client.lastName}` : undefined}
       />
+
+      {/* View Record Modal */}
+      {viewRecordModal.isOpen && viewRecordModal.record && (
+        <Dialog open={viewRecordModal.isOpen} onOpenChange={() => setViewRecordModal({ isOpen: false })}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Pill className="h-5 w-5" />
+                <span>Medication Record Details</span>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Medication</p>
+                      <p className="font-medium">{viewRecordModal.record.medicationName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Administration Status</p>
+                      <Badge variant={
+                        viewRecordModal.record.result === 'administered' ? 'default' :
+                        viewRecordModal.record.result === 'refused' ? 'destructive' :
+                        viewRecordModal.record.result === 'missed' ? 'secondary' : 'outline'
+                      }>
+                        {viewRecordModal.record.result}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Route</p>
+                      <p>{(viewRecordModal.record as any).route || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Time of Day</p>
+                      <p>{(viewRecordModal.record as any).timeOfDay || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Scheduled Time</p>
+                      <p>{format(new Date(viewRecordModal.record.scheduledTime), 'MMM dd, yyyy HH:mm')}</p>
+                    </div>
+                    {(viewRecordModal.record as any).actualTime && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Actual Time</p>
+                        <p>{format(new Date((viewRecordModal.record as any).actualTime), 'MMM dd, yyyy HH:mm')}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Administered By</p>
+                      <div className="flex items-center gap-1">
+                        <User className="h-4 w-4" />
+                        <span>{viewRecordModal.record.administratorName || 'N/A'}</span>
+                      </div>
+                    </div>
+                    {(viewRecordModal.record as any).wasWitnessed && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Witnessed</p>
+                        <p className="text-green-600 font-medium">✓ Yes</p>
+                      </div>
+                    )}
+                  </div>
+                  {viewRecordModal.record.notes && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-600 mb-2">Notes</p>
+                      <p className="text-sm bg-gray-50 p-3 rounded-lg">{viewRecordModal.record.notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Photo Attachments */}
+              {((viewRecordModal.record as any).attachmentBeforeUrl || (viewRecordModal.record as any).attachmentAfterUrl || 
+                (viewRecordModal.record as any).photoBeforeUrl || (viewRecordModal.record as any).photoAfterUrl) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      Photo Documentation
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {((viewRecordModal.record as any).attachmentBeforeUrl || (viewRecordModal.record as any).photoBeforeUrl) && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-600 block mb-2">Before Photo</label>
+                          <div className="relative">
+                            <img 
+                              src={(viewRecordModal.record as any).attachmentBeforeUrl || (viewRecordModal.record as any).photoBeforeUrl} 
+                              alt="Before medication administration"
+                              className="w-full h-48 object-cover rounded-lg border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500';
+                                  errorDiv.innerHTML = '<div class="text-center"><svg class="h-8 w-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg><p>Photo not available</p></div>';
+                                  parent.appendChild(errorDiv);
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {((viewRecordModal.record as any).attachmentAfterUrl || (viewRecordModal.record as any).photoAfterUrl) && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-600 block mb-2">After Photo</label>
+                          <div className="relative">
+                            <img 
+                              src={(viewRecordModal.record as any).attachmentAfterUrl || (viewRecordModal.record as any).photoAfterUrl} 
+                              alt="After medication administration"
+                              className="w-full h-48 object-cover rounded-lg border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'w-full h-48 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-500';
+                                  errorDiv.innerHTML = '<div class="text-center"><svg class="h-8 w-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg><p>Photo not available</p></div>';
+                                  parent.appendChild(errorDiv);
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {/* Display photo URLs for debugging (only in development) */}
+                    {import.meta.env.DEV && (
+                      <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p className="text-xs text-yellow-700 font-medium mb-1">Debug Info (Development Only):</p>
+                        <p className="text-xs text-yellow-600">Before URL: {(viewRecordModal.record as any).attachmentBeforeUrl || (viewRecordModal.record as any).photoBeforeUrl || 'None'}</p>
+                        <p className="text-xs text-yellow-600">After URL: {(viewRecordModal.record as any).attachmentAfterUrl || (viewRecordModal.record as any).photoAfterUrl || 'None'}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Show message if no photos */}
+              {!(viewRecordModal.record as any).attachmentBeforeUrl && !(viewRecordModal.record as any).attachmentAfterUrl && 
+               !(viewRecordModal.record as any).photoBeforeUrl && !(viewRecordModal.record as any).photoAfterUrl && (
+                <Card className="border-dashed border-gray-300">
+                  <CardContent className="py-8">
+                    <div className="text-center text-gray-500">
+                      <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No photos attached to this medication record</p>
+                      <p className="text-sm">Photos can be uploaded during medication administration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
