@@ -4076,7 +4076,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/incident-reports", requireAuth, async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId || 1;
-      const reports = await storage.getIncidentReportsWithClosures(tenantId);
+      const clientId = req.query.clientId ? parseInt(req.query.clientId as string) : undefined;
+      
+      let reports;
+      if (clientId) {
+        // Filter by specific client
+        reports = await storage.getIncidentReportsWithClosures(tenantId);
+        reports = reports.filter((report: any) => report.client.id === clientId);
+      } else {
+        // Get all incident reports for tenant
+        reports = await storage.getIncidentReportsWithClosures(tenantId);
+      }
+      
       res.json(reports);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch incident reports" });
