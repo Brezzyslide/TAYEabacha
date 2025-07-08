@@ -273,6 +273,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Extended health check for timesheet system
+  app.get("/api/health/timesheet", requireAuth, async (req: any, res) => {
+    try {
+      console.log(`[HEALTH CHECK] Timesheet health check for user ${req.user.id}, tenant ${req.user.tenantId}`);
+      
+      // Test database connectivity and user data
+      const userCheck = await db.select().from(users)
+        .where(eq(users.id, req.user.id))
+        .limit(1);
+      
+      const timesheetCheck = await db.select().from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ))
+        .limit(1);
+      
+      res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        user: {
+          found: userCheck.length > 0,
+          id: req.user.id,
+          tenantId: req.user.tenantId,
+          role: req.user.role
+        },
+        timesheet: {
+          found: timesheetCheck.length > 0,
+          count: timesheetCheck.length
+        },
+        database: "connected"
+      });
+    } catch (error: any) {
+      console.error("[HEALTH CHECK ERROR]", error);
+      res.status(500).json({
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: error.message
+      });
+    }
+  });
+
+  // Debug endpoint for timesheet submission issues
+  app.get("/api/debug/timesheet/:timesheetId", requireAuth, async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.timesheetId);
+      
+      console.log(`[DEBUG] Debugging timesheet ${timesheetId} for user ${req.user.id}, tenant ${req.user.tenantId}`);
+      
+      // Get timesheet details
+      const timesheet = await db.select()
+        .from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ));
+      
+      // Get timesheet entries
+      const entries = await db.select()
+        .from(timesheetEntries)
+        .where(eq(timesheetEntries.timesheetId, timesheetId));
+      
+      res.json({
+        timesheetId,
+        user: {
+          id: req.user.id,
+          tenantId: req.user.tenantId,
+          role: req.user.role
+        },
+        timesheet: {
+          found: timesheet.length > 0,
+          data: timesheet[0] || null
+        },
+        entries: {
+          count: entries.length,
+          data: entries
+        },
+        canSubmit: timesheet.length > 0 && 
+                   (timesheet[0].status === 'draft' || timesheet[0].status === 'rejected'),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("[DEBUG ERROR]", error);
+      res.status(500).json({
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Company creation endpoint - public access for admin setup
   app.post("/api/admin/create-company", async (req, res) => {
     try {
@@ -6267,7 +6359,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/timesheet/:timesheetId/submit", requireAuth, async (req: any, res) => {
     try {
+      console.log(`[TIMESHEET SUBMIT] Starting submission for timesheet ${req.params.timesheetId}, user ${req.user.id}, tenant ${req.user.tenantId}`);
+      
       const timesheetId = parseInt(req.params.timesheetId);
+      
+      if (isNaN(timesheetId)) {
+        console.error(`[TIMESHEET SUBMIT] Invalid timesheet ID: ${req.params.timesheetId}`);
+        return res.status(400).json({ message: "Invalid timesheet ID", error: "INVALID_ID" });
+      }
       
       // Get timesheet and verify ownership
       const timesheet = await db.select()
@@ -6278,13 +6377,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eq(timesheetsTable.tenantId, req.user.tenantId)
         ));
 
+      console.log(`[TIMESHEET SUBMIT] Found ${timesheet.length} timesheets matching criteria`);
+
       if (timesheet.length === 0) {
-        return res.status(404).json({ message: "Timesheet not found" });
+        console.error(`[TIMESHEET SUBMIT] Timesheet not found - ID: ${timesheetId}, User: ${req.user.id}, Tenant: ${req.user.tenantId}`);
+        return res.status(404).json({ message: "Timesheet not found", error: "NOT_FOUND" });
       }
+
+      console.log(`[TIMESHEET SUBMIT] Timesheet status: ${timesheet[0].status}`);
 
       // Allow submission for draft or rejected timesheets
       if (timesheet[0].status !== 'draft' && timesheet[0].status !== 'rejected') {
-        return res.status(400).json({ message: "Only draft or rejected timesheets can be submitted" });
+        console.error(`[TIMESHEET SUBMIT] Invalid status for submission: ${timesheet[0].status}`);
+        return res.status(400).json({ message: "Only draft or rejected timesheets can be submitted", error: "INVALID_STATUS", currentStatus: timesheet[0].status });
       }
 
       // Check if timesheet qualifies for auto-approval
@@ -6337,8 +6442,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         approvalType: "manual"
       });
     } catch (error: any) {
-      console.error("Submit timesheet error:", error);
-      res.status(500).json({ message: "Failed to submit timesheet" });
+      console.error("[TIMESHEET SUBMIT ERROR] Full error details:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        timesheetId: req.params.timesheetId,
+        userId: req.user?.id,
+        tenantId: req.user?.tenantId,
+        timestamp: new Date().toISOString()
+      });
+      res.status(500).json({ 
+        message: "Failed to submit timesheet", 
+        error: "INTERNAL_ERROR",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 

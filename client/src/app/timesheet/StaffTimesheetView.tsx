@@ -125,7 +125,22 @@ export default function StaffTimesheetView() {
   // Submit timesheet mutation
   const submitMutation = useMutation({
     mutationFn: async (timesheetId: number) => {
-      return apiRequest('POST', `/api/timesheet/${timesheetId}/submit`);
+      console.log(`[FRONTEND] Submitting timesheet ${timesheetId} for user ${user?.id}`);
+      try {
+        const response = await apiRequest('POST', `/api/timesheet/${timesheetId}/submit`);
+        console.log(`[FRONTEND] Timesheet submission successful:`, response);
+        return response;
+      } catch (error: any) {
+        console.error(`[FRONTEND] Timesheet submission failed:`, {
+          timesheetId,
+          userId: user?.id,
+          error: error.message,
+          status: error.status,
+          response: error.response,
+          timestamp: new Date().toISOString()
+        });
+        throw error;
+      }
     },
     onSuccess: (data: any) => {
       const wasAutoApproved = data?.autoApproved;
@@ -141,10 +156,22 @@ export default function StaffTimesheetView() {
       queryClient.invalidateQueries({ queryKey: ['/api/timesheet/history'] });
       queryClient.invalidateQueries({ queryKey: ['/api/timesheet'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error(`[FRONTEND ERROR] Detailed submission error:`, error);
+      
+      // Extract error details for better debugging
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error";
+      const errorCode = error.response?.data?.error || error.status || "UNKNOWN";
+      const errorDetails = error.response?.data?.details;
+      
+      // Show detailed error message for debugging
+      const description = process.env.NODE_ENV === 'development' 
+        ? `${errorMessage} (Code: ${errorCode}${errorDetails ? `, Details: ${errorDetails}` : ''})`
+        : "Failed to submit timesheet. Please try again.";
+      
       toast({
         title: "Submission Failed",
-        description: "Failed to submit timesheet. Please try again.",
+        description,
         variant: "destructive"
       });
     }
