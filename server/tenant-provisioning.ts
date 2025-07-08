@@ -72,49 +72,9 @@ const SAMPLE_CLIENT_TEMPLATES = [
  * Provisions comprehensive features for a new tenant
  */
 export async function provisionTenant(tenantId: number, companyId: string, adminUserId?: number): Promise<void> {
-  console.log(`[TENANT PROVISIONING] Starting provisioning for tenant ${tenantId}`);
-  const createdByUserId = adminUserId || 1; // Default to 1 for backward compatibility
-
-  try {
-    // Check if tenant already has clients (avoid duplicate provisioning)
-    const existingClients = await storage.getClientsByTenant(tenantId);
-    if (existingClients.length > 0) {
-      console.log(`[TENANT PROVISIONING] Tenant ${tenantId} already has ${existingClients.length} clients, skipping demo data provisioning`);
-      return;
-    }
-
-    // 1. Create sample clients
-    await provisionSampleClients(tenantId, companyId, createdByUserId);
-    
-    // 2. Create NDIS budgets for clients
-    await provisionNdisBudgets(tenantId);
-    
-    // 3. Create sample shifts
-    await provisionSampleShifts(tenantId);
-    
-    // 4. Create sample care support plans
-    await provisionCarePlans(tenantId);
-    
-    // 5. Create standardized medication plans
-    await provisionMedicationPlans(tenantId, createdByUserId);
-    
-    // 6. Create standardized hourly observations
-    await provisionHourlyObservations(tenantId);
-    
-    // 7. Create standardized case notes
-    await provisionCaseNotes(tenantId);
-    
-    // 8. Create standardized custom roles
-    await provisionCustomRoles(tenantId);
-    
-    // 9. Provision ScHADS award wage rates
-    await provisionPayScales(tenantId);
-    
-    console.log(`[TENANT PROVISIONING] Successfully provisioned tenant ${tenantId}`);
-  } catch (error) {
-    console.error(`[TENANT PROVISIONING] Error provisioning tenant ${tenantId}:`, error);
-    throw error;
-  }
+  console.log(`[TENANT PROVISIONING] DISABLED - No demo data will be created for tenant ${tenantId}`);
+  console.log(`[TENANT PROVISIONING] All new tenants start with completely clean slate - no sample clients, shifts, or other demo data`);
+  return;
 }
 
 /**

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
-import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning";
+// import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning"; // DISABLED - No auto-provisioning
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, lt, gte, lte } from "drizzle-orm";
@@ -408,37 +408,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isFirstLogin: true,
       });
 
-      // Only provision demo data if explicitly requested
-      if (includeDemoData) {
-        try {
-          await autoProvisionNewTenant(tenant.id, company.id, adminUser.id);
-          console.log(`[NEW TENANT SETUP] Successfully auto-provisioned tenant ${tenant.id} with demo data`);
-        } catch (error) {
-          console.error(`[NEW TENANT SETUP] Error auto-provisioning tenant ${tenant.id}:`, error);
-          // No fallback provisioning - respect includeDemoData=false choice
-          console.log(`[NEW TENANT SETUP] Skipping fallback demo data provisioning for tenant ${tenant.id} (includeDemoData=false)`);
-        }
-      } else {
-        // Only provision essential system features (pay scales, tax brackets, NDIS pricing) - no demo data
-        try {
-          const { provisionScHADSRates } = await import('./new-tenant-auto-provisioning');
-          const { createNdisPricingForTenant, ensureTaxBrackets } = await import('./new-tenant-auto-provisioning');
-          
-          console.log(`[NEW TENANT SETUP] Creating essential system features for tenant ${tenant.id} (no demo data)`);
-          
-          // ScHADS pay scales (required for payroll)
-          await provisionScHADSRates(tenant.id);
-          
-          // NDIS pricing structure (required for budget calculations)
-          await createNdisPricingForTenant(tenant.id);
-          
-          // Tax brackets (required for payroll)
-          await ensureTaxBrackets();
-          
-          console.log(`[NEW TENANT SETUP] Essential features provisioned for tenant ${tenant.id} without demo data`);
-        } catch (error) {
-          console.error(`[NEW TENANT SETUP] Error provisioning essential features for tenant ${tenant.id}:`, error);
-        }
+      // Only provision essential system features (pay scales, tax brackets, NDIS pricing) - NO DEMO DATA WHATSOEVER
+      try {
+        const { provisionScHADSRates } = await import('./new-tenant-auto-provisioning');
+        const { createNdisPricingForTenant, ensureTaxBrackets } = await import('./new-tenant-auto-provisioning');
+        
+        console.log(`[NEW TENANT SETUP] Provisioning essential system features only for tenant ${tenant.id} (NO demo data)`);
+        
+        // ScHADS pay scales (required for payroll)
+        await provisionScHADSRates(tenant.id);
+        
+        // NDIS pricing structure (required for budget calculations)
+        await createNdisPricingForTenant(tenant.id);
+        
+        // Tax brackets (required for payroll)
+        await ensureTaxBrackets();
+        
+        console.log(`[NEW TENANT SETUP] Essential system features provisioned for tenant ${tenant.id} - tenant starts completely clean`);
+      } catch (error) {
+        console.error(`[NEW TENANT SETUP] Error provisioning essential features for tenant ${tenant.id}:`, error);
+        // Continue - company creation is more important than feature provisioning
       }
 
       // Log to console as requested
@@ -457,9 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         company,
         tenant,
         admin: adminUser,
-        message: includeDemoData 
-          ? "Company created successfully with demo data" 
-          : "Company created successfully (essential features only, no demo data)"
+        message: "Company created successfully (essential features only, no demo data - completely clean slate)"
       });
     } catch (error) {
       console.error("Company creation error:", error);

@@ -86,9 +86,11 @@ export async function getAllTenantStatistics(): Promise<TenantStatistics[]> {
 }
 
 /**
- * Provision sample case notes for tenants lacking coverage
+ * DISABLED: No longer provisions sample case notes - tenants start completely clean
  */
 async function provisionCaseNotes(tenantId: number): Promise<void> {
+  console.log(`[CONSISTENCY] Skipping case notes provisioning for tenant ${tenantId} - auto-provisioning disabled`);
+  return;
   const clients = await storage.getClientsByTenant(tenantId);
   const users = await pool.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
   
@@ -175,9 +177,11 @@ async function provisionObservations(tenantId: number): Promise<void> {
 }
 
 /**
- * Provision sample medication records for tenants lacking coverage
+ * DISABLED: No longer provisions sample medication records - tenants start completely clean
  */
 async function provisionMedicationRecords(tenantId: number): Promise<void> {
+  console.log(`[CONSISTENCY] Skipping medication records provisioning for tenant ${tenantId} - auto-provisioning disabled`);
+  return;
   const medicationPlans = await pool.query(
     "SELECT * FROM medication_plans WHERE tenant_id = $1 LIMIT 3",
     [tenantId]
@@ -224,9 +228,11 @@ async function provisionMedicationRecords(tenantId: number): Promise<void> {
 }
 
 /**
- * Provision sample incident reports for tenants lacking coverage
+ * DISABLED: No longer provisions sample incident reports - tenants start completely clean
  */
 async function provisionIncidentReports(tenantId: number): Promise<void> {
+  console.log(`[CONSISTENCY] Skipping incident reports provisioning for tenant ${tenantId} - auto-provisioning disabled`);
+  return;
   const clients = await storage.getClientsByTenant(tenantId);
   const users = await pool.query("SELECT id FROM users WHERE tenant_id = $1 LIMIT 1", [tenantId]);
   
