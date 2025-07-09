@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Reply, Download, AlertTriangle, MessageSquare, Clock, User, Users } from "lucide-react";
+import { Reply, Download, AlertTriangle, MessageSquare, Clock, User, Users, FileText, FileImage, File, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 
 interface StaffMessage {
@@ -57,9 +57,44 @@ export default function ViewMessageModal({
     }
   };
 
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.toLowerCase().split('.').pop();
+    
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'webp':
+        return <FileImage className="h-5 w-5 text-blue-600" />;
+      case 'pdf':
+        return <FileText className="h-5 w-5 text-red-600" />;
+      case 'doc':
+      case 'docx':
+        return <FileText className="h-5 w-5 text-blue-600" />;
+      case 'xls':
+      case 'xlsx':
+        return <FileText className="h-5 w-5 text-green-600" />;
+      case 'txt':
+        return <FileText className="h-5 w-5 text-gray-600" />;
+      default:
+        return <File className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
   const handleDownloadAttachment = (attachment: any) => {
-    // Handle attachment download
-    console.log('Download attachment:', attachment);
+    // Create a download link for the attachment
+    if (attachment.filePath) {
+      const link = document.createElement('a');
+      link.href = attachment.filePath;
+      link.download = attachment.originalName || attachment.name || 'attachment';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      console.error('Attachment file path not available');
+    }
   };
 
   return (
@@ -148,23 +183,28 @@ export default function ViewMessageModal({
               <Separator />
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-900 flex items-center space-x-2">
-                  <span>📎</span>
+                  <Paperclip className="h-4 w-4" />
                   <span>Attachments ({message.attachments.length})</span>
                 </h4>
                 <div className="grid grid-cols-1 gap-2">
                   {message.attachments.map((attachment, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+                      className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="text-blue-600">
-                          📄
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{attachment.name || `Attachment ${index + 1}`}</p>
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        {getFileIcon(attachment.originalName || attachment.name || '')}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">
+                            {attachment.originalName || attachment.name || `Attachment ${index + 1}`}
+                          </p>
                           <p className="text-xs text-gray-500">
-                            {attachment.size ? `${Math.round(attachment.size / 1024)} KB` : 'Unknown size'}
+                            {attachment.size ? 
+                              attachment.size > 1024 * 1024 
+                                ? `${(attachment.size / (1024 * 1024)).toFixed(2)} MB`
+                                : `${Math.round(attachment.size / 1024)} KB`
+                              : 'Unknown size'
+                            }
                           </p>
                         </div>
                       </div>
@@ -172,7 +212,7 @@ export default function ViewMessageModal({
                         variant="outline"
                         size="sm"
                         onClick={() => handleDownloadAttachment(attachment)}
-                        className="flex items-center space-x-1"
+                        className="flex items-center space-x-1 hover:bg-blue-50 hover:text-blue-600"
                       >
                         <Download className="h-3 w-3" />
                         <span>Download</span>

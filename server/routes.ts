@@ -3949,6 +3949,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Message Attachment Upload Endpoint
+  app.post("/api/upload/message-attachment", requireAuth, async (req: any, res) => {
+    try {
+      const multer = await import('multer');
+      const path = await import('path');
+      const fs = await import('fs').then(m => m.promises);
+      
+      // Create attachments directory
+      const attachmentsDir = path.join(process.cwd(), 'uploads', 'message-attachments');
+      await fs.mkdir(attachmentsDir, { recursive: true });
+      
+      // Configure multer for message attachments
+      const upload = multer.default({
+        dest: attachmentsDir,
+        limits: {
+          fileSize: 5 * 1024 * 1024, // 5MB limit
+        },
+        fileFilter: (req, file, cb) => {
+          // Accept common file types for messaging
+          const allowedTypes = [
+            'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+            'application/pdf',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/plain'
+          ];
+          
+          if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+          } else {
+            cb(new Error('File type not allowed. Supported: images, PDF, Word, Excel, text files'));
+          }
+        },
+      }).single('file');
+
+      // Handle the upload
+      upload(req, res, async (err) => {
+        if (err) {
+          console.error('Message attachment upload error:', err);
+          return res.status(400).json({ message: err.message });
+        }
+
+        if (!req.file) {
+          return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        try {
+          // Generate unique filename preserving extension
+          const timestamp = Date.now();
+          const ext = path.extname(req.file.originalname);
+          const fileName = `message-${timestamp}-${req.user.id}-${Math.random().toString(36).substring(7)}${ext}`;
+          const newPath = path.join(attachmentsDir, fileName);
+          
+          // Move file to final location
+          await fs.rename(req.file.path, newPath);
+          
+          const filePath = `/uploads/message-attachments/${fileName}`;
+          
+          res.json({ 
+            filePath: filePath,
+            originalName: req.file.originalname,
+            size: req.file.size,
+            fileName: fileName
+          });
+
+        } catch (fileError) {
+          console.error('File processing error:', fileError);
+          res.status(500).json({ message: 'Failed to process uploaded file' });
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Message attachment upload endpoint error:", error);
+      res.status(500).json({ message: "Failed to upload attachment" });
+    }
+  });
+
   // Bulk Medication Records Excel Export
   app.get("/api/medication-records/export/excel", requireAuth, async (req: any, res) => {
     try {
