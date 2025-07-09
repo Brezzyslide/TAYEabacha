@@ -1,28 +1,62 @@
 import React from "react";
 
 interface CompanyLogoProps {
-  companyName: string;
+  companyName?: string;
   customLogo?: string;
   size?: "sm" | "md" | "lg";
   showName?: boolean;
 }
 
 export default function CompanyLogo({ 
-  companyName, 
+  companyName = "NeedsCareAI+", // Default fallback
   customLogo, 
   size = "md", 
   showName = true 
 }: CompanyLogoProps) {
-  // Extract first 3 letters from company name
+  // Extract first 3 letters from company name with comprehensive null safety
   const getCompanyLetters = (name: string) => {
-    const words = name.split(/\s+/);
-    if (words.length >= 3) {
-      return words.slice(0, 3).map(word => word[0].toUpperCase());
-    } else if (words.length === 2) {
-      return [words[0][0], words[1][0], words[1][1] || 'X'].map(letter => letter.toUpperCase());
-    } else {
-      const letters = name.replace(/\s+/g, '').substring(0, 3).toUpperCase();
-      return letters.padEnd(3, 'X').split('');
+    try {
+      if (!name || typeof name !== 'string' || name.trim() === '') {
+        return ['N', 'C', 'A']; // Default fallback for NeedsCareAI+
+      }
+      
+      // Clean the name and filter out empty words
+      const cleanName = name.trim();
+      const words = cleanName.split(/\s+/).filter(word => word && word.length > 0 && typeof word === 'string');
+      
+      if (words.length >= 3) {
+        return words.slice(0, 3).map(word => {
+          try {
+            const firstChar = word.charAt(0);
+            return firstChar ? firstChar.toUpperCase() : 'X';
+          } catch {
+            return 'X';
+          }
+        });
+      } else if (words.length === 2) {
+        try {
+          const first = words[0]?.charAt(0)?.toUpperCase() || 'X';
+          const second = words[1]?.charAt(0)?.toUpperCase() || 'X';
+          const third = words[1]?.charAt(1)?.toUpperCase() || 'X';
+          return [first, second, third];
+        } catch {
+          return ['N', 'C', 'A'];
+        }
+      } else if (words.length === 1 && words[0]) {
+        try {
+          const singleWord = words[0];
+          const letters = singleWord.substring(0, 3).toUpperCase();
+          return letters.padEnd(3, 'X').split('');
+        } catch {
+          return ['N', 'C', 'A'];
+        }
+      } else {
+        // Fallback if no valid words
+        return ['N', 'C', 'A'];
+      }
+    } catch (error) {
+      console.warn('[COMPANY LOGO] Error processing company name:', error);
+      return ['N', 'C', 'A']; // Safe fallback
     }
   };
 

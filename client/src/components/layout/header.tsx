@@ -23,15 +23,22 @@ export default function Header() {
   const [, setLocation] = useLocation();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
-  // Fetch company information
-  const { data: company } = useQuery<{
+  // Fetch company information with error handling
+  const { data: company, error: companyError, isLoading: companyLoading } = useQuery<{
     id: string;
     name: string;
     customLogo?: string;
   }>({
     queryKey: ['/api/company'],
     enabled: !!user,
+    retry: 3,
+    retryDelay: 1000,
   });
+
+  // AWS Production Debug: Log company data
+  console.log('[HEADER DEBUG] Company data:', company);
+  console.log('[HEADER DEBUG] Company error:', companyError);
+  console.log('[HEADER DEBUG] Company loading:', companyLoading);
 
   if (!user) return null;
 
@@ -79,7 +86,7 @@ export default function Header() {
                 <div className="flex items-center space-x-2">
                   <h1 className="text-lg sm:text-xl font-bold text-foreground">NeedsCareAI+</h1>
                   <CompanyLogo 
-                    companyName={company?.name || "Default Company"}
+                    companyName={company?.name || "NeedsCareAI+"}
                     customLogo={company?.customLogo}
                     size="sm"
                     showName={false}
