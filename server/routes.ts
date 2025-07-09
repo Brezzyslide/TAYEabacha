@@ -12,6 +12,7 @@ import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchem
 import { z } from "zod";
 import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory } from "./timesheet-service";
 import { createSmartTimesheetEntry } from "./smart-timesheet-service";
+import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 
 // Helper function to determine shift type based on start time
@@ -502,6 +503,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CRITICAL PAY SCALE FIX: Manual timesheet recalculation endpoint
+  app.post("/api/staff/:id/recalculate-timesheets", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const staffId = parseInt(req.params.id);
+      
+      console.log(`[MANUAL RECALC] Manual timesheet recalculation requested for staff ${staffId} by admin ${req.user.id}`);
+      
+      // Verify staff exists and belongs to same tenant
+      const staff = await storage.getUserById(staffId, req.user.tenantId);
+      if (!staff) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      // Perform recalculation
+      await recalculateTimesheetEntriesForUser(staffId, req.user.tenantId);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "recalculate_timesheets",
+        resourceType: "user",
+        resourceId: staffId,
+        description: `Manually recalculated timesheet entries for staff: ${staff.fullName}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      console.log(`[MANUAL RECALC] Successfully recalculated timesheets for staff ${staffId}`);
+      
+      res.json({ 
+        message: `Successfully recalculated timesheet entries for ${staff.fullName}`,
+        staffId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error(`[MANUAL RECALC] Error recalculating timesheets for staff ${req.params.id}:`, error);
+      res.status(500).json({ 
+        message: "Failed to recalculate timesheet entries", 
+        error: error.message 
+      });
+    }
+  });
+
   // AWS PRODUCTION DEBUGGING ENDPOINT - Comprehensive timesheet system diagnosis
   app.get("/api/debug/timesheet/:timesheetId", requireAuth, async (req: any, res) => {
     try {
@@ -861,10 +904,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const staffId = parseInt(req.params.id);
       const updateData = insertUserSchema.partial().parse(req.body);
       
+      console.log(`[STAFF UPDATE V2] Updating staff ${staffId} with data:`, updateData);
+      
+      // Check if pay level or pay point is being changed
+      const isPayScaleUpdate = updateData.payLevel !== undefined || updateData.payPoint !== undefined;
+      
+      if (isPayScaleUpdate) {
+        console.log(`[PAY SCALE UPDATE V2] Staff ${staffId} pay scale is being updated: Level ${updateData.payLevel}, Point ${updateData.payPoint}`);
+      }
+      
       const updatedUser = await storage.updateUser(staffId, updateData, req.user.tenantId);
       
       if (!updatedUser) {
         return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      // CRITICAL FIX: Recalculate existing timesheet entries when pay scales change
+      if (isPayScaleUpdate) {
+        try {
+          console.log(`[PAY SCALE UPDATE V2] Recalculating timesheet entries for staff ${staffId}`);
+          await recalculateTimesheetEntriesForUser(staffId, req.user.tenantId);
+          console.log(`[PAY SCALE UPDATE V2] Successfully recalculated timesheet entries for staff ${staffId}`);
+        } catch (recalcError) {
+          console.error(`[PAY SCALE UPDATE V2] Failed to recalculate timesheet entries for staff ${staffId}:`, recalcError);
+          // Continue with staff update even if recalculation fails
+        }
       }
       
       // Remove sensitive data
@@ -876,7 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: "update",
         resourceType: "user",
         resourceId: staffId,
-        description: `Updated staff member: ${updatedUser.fullName}`,
+        description: `Updated staff member: ${updatedUser.fullName}${isPayScaleUpdate ? ' (pay scale updated)' : ''}`,
         tenantId: req.user.tenantId,
       });
       
@@ -6696,6 +6760,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const staffId = parseInt(req.params.id);
       const updateData = req.body;
       
+      console.log(`[STAFF UPDATE] Updating staff ${staffId} with data:`, updateData);
+      
+      // Check if pay level or pay point is being changed
+      const isPayScaleUpdate = updateData.payLevel !== undefined || updateData.payPoint !== undefined;
+      
+      if (isPayScaleUpdate) {
+        console.log(`[PAY SCALE UPDATE] Staff ${staffId} pay scale is being updated: Level ${updateData.payLevel}, Point ${updateData.payPoint}`);
+      }
+      
       // Update user in database
       const updatedUser = await storage.updateUser(staffId, updateData, req.user.tenantId);
       
@@ -6703,12 +6776,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Staff member not found" });
       }
       
+      // CRITICAL FIX: Recalculate existing timesheet entries when pay scales change
+      if (isPayScaleUpdate) {
+        try {
+          console.log(`[PAY SCALE UPDATE] Recalculating timesheet entries for staff ${staffId}`);
+          await recalculateTimesheetEntriesForUser(staffId, req.user.tenantId);
+          console.log(`[PAY SCALE UPDATE] Successfully recalculated timesheet entries for staff ${staffId}`);
+        } catch (recalcError) {
+          console.error(`[PAY SCALE UPDATE] Failed to recalculate timesheet entries for staff ${staffId}:`, recalcError);
+          // Continue with staff update even if recalculation fails
+        }
+      }
+      
       await storage.createActivityLog({
         userId: req.user.id,
         action: "update_staff",
         resourceType: "user",
         resourceId: staffId,
-        description: `Updated staff member: ${updatedUser.username}`,
+        description: `Updated staff member: ${updatedUser.username}${isPayScaleUpdate ? ' (pay scale updated)' : ''}`,
         tenantId: req.user.tenantId,
       });
       

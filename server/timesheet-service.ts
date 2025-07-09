@@ -438,3 +438,64 @@ export async function canAddManualEntry(userId: number, tenantId: number, entryD
 
   return correspondingShift.length > 0;
 }
+
+// CRITICAL FIX: Recalculate existing timesheet entries when pay scales change
+export async function recalculateTimesheetEntriesForUser(userId: number, tenantId: number): Promise<void> {
+  console.log(`[TIMESHEET RECALC] Recalculating timesheet entries for user ${userId}, tenant ${tenantId}`);
+  
+  try {
+    // Get current hourly rate for the user
+    const newHourlyRate = await getUserHourlyRate(userId, tenantId);
+    console.log(`[TIMESHEET RECALC] New hourly rate for user ${userId}: $${newHourlyRate}`);
+    
+    // Get all timesheet entries for this user that are not yet paid
+    const timesheetEntries = await db
+      .select()
+      .from(timesheetEntries)
+      .innerJoin(timesheetsTable, eq(timesheetEntries.timesheetId, timesheetsTable.id))
+      .where(and(
+        eq(timesheetsTable.userId, userId),
+        eq(timesheetsTable.tenantId, tenantId),
+        or(
+          eq(timesheetsTable.status, 'draft'),
+          eq(timesheetsTable.status, 'submitted'),
+          eq(timesheetsTable.status, 'approved')
+        )
+      ));
+    
+    console.log(`[TIMESHEET RECALC] Found ${timesheetEntries.length} entries to recalculate`);
+    
+    // Update each entry with new hourly rate and recalculated gross pay
+    for (const entry of timesheetEntries) {
+      const entryData = entry.timesheet_entries;
+      const currentHours = parseFloat(entryData.totalHours || '0');
+      
+      // Recalculate gross pay with new hourly rate using integer math
+      const grossPayCents = Math.round(currentHours * newHourlyRate * 100);
+      const newGrossPay = grossPayCents / 100;
+      
+      await db
+        .update(timesheetEntries)
+        .set({
+          hourlyRate: String(newHourlyRate),
+          grossPay: String(newGrossPay),
+          updatedAt: new Date()
+        })
+        .where(eq(timesheetEntries.id, entryData.id));
+      
+      console.log(`[TIMESHEET RECALC] Updated entry ${entryData.id}: ${currentHours}h × $${newHourlyRate} = $${newGrossPay}`);
+    }
+    
+    // Update timesheet totals for all affected timesheets
+    const uniqueTimesheetIds = [...new Set(timesheetEntries.map(e => e.timesheet_entries.timesheetId))];
+    for (const timesheetId of uniqueTimesheetIds) {
+      await updateTimesheetTotals(timesheetId);
+      console.log(`[TIMESHEET RECALC] Updated totals for timesheet ${timesheetId}`);
+    }
+    
+    console.log(`[TIMESHEET RECALC] Successfully recalculated ${timesheetEntries.length} entries for user ${userId}`);
+  } catch (error) {
+    console.error(`[TIMESHEET RECALC] Error recalculating for user ${userId}:`, error);
+    throw error;
+  }
+}
