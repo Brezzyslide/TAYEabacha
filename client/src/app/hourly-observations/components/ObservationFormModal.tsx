@@ -210,11 +210,17 @@ export default function ObservationFormModal({
     },
   });
 
-  const handleSubmit = (data: ObservationFormData) => {
-    // Prevent duplicate submissions
-    if (createMutation.isPending) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (data: ObservationFormData) => {
+    // Prevent duplicate submissions with multiple checks
+    if (createMutation.isPending || isSubmitting) {
+      console.log("[OBSERVATION FORM] Submission blocked - already in progress");
       return;
     }
+    
+    console.log("[OBSERVATION FORM] Starting submission:", data);
+    setIsSubmitting(true);
     
     // Auto-populate timestamp with current time if not manually changed
     const submissionData = {
@@ -222,7 +228,13 @@ export default function ObservationFormModal({
       timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm")
     };
     
-    createMutation.mutate(submissionData);
+    try {
+      await createMutation.mutateAsync(submissionData);
+    } catch (error) {
+      console.error("[OBSERVATION FORM] Submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTypeChange = (value: string) => {
@@ -594,17 +606,17 @@ export default function ObservationFormModal({
               </Button>
               <Button 
                 type="submit" 
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || isSubmitting}
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={(e) => {
                   // Prevent rapid double-clicking
-                  if (createMutation.isPending) {
+                  if (createMutation.isPending || isSubmitting) {
                     e.preventDefault();
                     return;
                   }
                 }}
               >
-                {createMutation.isPending 
+                {(createMutation.isPending || isSubmitting)
                   ? (isEditing ? "Updating..." : "Creating...") 
                   : (isEditing ? "Update Observation" : "Create Observation")
                 }

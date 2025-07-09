@@ -2627,24 +2627,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/observations", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker", "ConsoleManager"]), async (req: any, res) => {
     try {
+      console.log("[OBSERVATION CREATE] Starting observation creation:", {
+        userId: req.user.id,
+        tenantId: req.user.tenantId,
+        clientId: req.body.clientId,
+        observationType: req.body.observationType,
+        timestamp: req.body.timestamp
+      });
+
+      // Generate unique timestamp if not provided or auto-timestamp is enabled
+      const currentTimestamp = new Date();
+      const observationTimestamp = req.body.timestamp ? new Date(req.body.timestamp) : currentTimestamp;
+
       // Prepare data with server-side fields before validation
       const observationData = {
         ...req.body,
         userId: req.user.id,
         tenantId: req.user.tenantId,
-        timestamp: new Date(req.body.timestamp), // Convert string to Date
+        timestamp: observationTimestamp,
+        createdAt: currentTimestamp,
+        updatedAt: currentTimestamp
       };
+
+      console.log("[OBSERVATION CREATE] Prepared observation data:", observationData);
 
       const validationResult = insertHourlyObservationSchema.safeParse(observationData);
       if (!validationResult.success) {
+        console.error("[OBSERVATION CREATE] Validation failed:", validationResult.error.issues);
         return res.status(400).json({ 
           message: "Invalid observation data", 
           errors: validationResult.error.issues 
         });
       }
 
+      console.log("[OBSERVATION CREATE] Validation passed, creating observation...");
       const observation = await storage.createObservation(validationResult.data);
       
+      console.log("[OBSERVATION CREATE] Observation created successfully:", { id: observation.id });
+
       // Log activity
       await storage.createActivityLog({
         userId: req.user.id,
@@ -2655,10 +2675,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       });
       
+      console.log("[OBSERVATION CREATE] Activity logged, returning response");
       res.status(201).json(observation);
-    } catch (error) {
-      console.error("Create observation error:", error);
-      res.status(500).json({ message: "Failed to create observation" });
+    } catch (error: any) {
+      console.error("[OBSERVATION CREATE] Error creating observation:", {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.id,
+        tenantId: req.user?.tenantId,
+        requestBody: req.body
+      });
+      res.status(500).json({ 
+        message: "Failed to create observation",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
@@ -5455,40 +5485,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/observations", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker"]), async (req: any, res) => {
-    try {
-      const validationResult = insertHourlyObservationSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          message: "Invalid observation data", 
-          errors: validationResult.error.issues 
-        });
-      }
-
-      const observationData = {
-        ...validationResult.data,
-        userId: req.user.id,
-        tenantId: req.user.tenantId,
-      };
-
-      const observation = await storage.createObservation(observationData);
-      
-      // Log activity
-      await storage.createActivityLog({
-        userId: req.user.id,
-        action: "create_observation",
-        resourceType: "observation",
-        resourceId: observation.id,
-        description: `Created ${observation.observationType} observation for client ${observation.clientId}`,
-        tenantId: req.user.tenantId,
-      });
-      
-      res.status(201).json(observation);
-    } catch (error) {
-      console.error("Create observation error:", error);
-      res.status(500).json({ message: "Failed to create observation" });
-    }
-  });
+  // DUPLICATE ENDPOINT REMOVED - This was causing duplicate observation creation
+  // Main observation creation is handled by the endpoint at line ~2628
 
   app.put("/api/observations/:id", requireAuth, requireRole(["Admin", "Coordinator", "SupportWorker"]), async (req: any, res) => {
     try {

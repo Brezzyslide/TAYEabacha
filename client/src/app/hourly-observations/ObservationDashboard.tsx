@@ -370,8 +370,25 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
     },
   });
 
-  const onSubmit = (data: ObservationFormData) => {
-    createMutation.mutate(data);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit = async (data: ObservationFormData) => {
+    // Prevent duplicate submissions
+    if (createMutation.isPending || isSubmitting) {
+      console.log("[OBSERVATION DASHBOARD] Submission blocked - already in progress");
+      return;
+    }
+    
+    console.log("[OBSERVATION DASHBOARD] Starting submission:", data);
+    setIsSubmitting(true);
+    
+    try {
+      await createMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("[OBSERVATION DASHBOARD] Submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -740,10 +757,10 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
               </Button>
               <Button 
                 type="submit" 
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || isSubmitting}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {createMutation.isPending ? "Creating..." : "Create Observation"}
+                {(createMutation.isPending || isSubmitting) ? "Creating..." : "Create Observation"}
               </Button>
             </DialogFooter>
           </form>
