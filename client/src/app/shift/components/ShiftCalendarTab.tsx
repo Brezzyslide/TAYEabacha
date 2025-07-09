@@ -182,9 +182,17 @@ export default function ShiftCalendarTab() {
   const renderShiftCard = (shift: Shift) => (
     <Card key={shift.id} className="hover:shadow-md transition-shadow cursor-pointer" 
           onClick={() => {
+            // PRODUCTION FIX: Admin users get edit modal, staff get request dialog
             if (!shift.userId && (shift as any).status !== "requested") {
-              setSelectedShiftForRequest(shift);
-              setIsRequestDialogOpen(true);
+              if (user?.role === 'Admin' || user?.role === 'ConsoleManager' || user?.role === 'Coordinator') {
+                // Admin users: Open edit modal to directly assign shifts
+                setSelectedShiftForEdit(shift);
+                setIsEditShiftModalOpen(true);
+              } else {
+                // Staff users: Open request dialog
+                setSelectedShiftForRequest(shift);
+                setIsRequestDialogOpen(true);
+              }
             }
           }}>
       <CardHeader className="pb-3">
@@ -345,8 +353,9 @@ export default function ShiftCalendarTab() {
           shifts={allViewableShifts}
           filterPeriod={filterPeriod}
           onShiftClick={(shift) => {
-            // Check if user can edit shifts (ConsoleManager/Admin/Team Leader/Coordinator)
+            // PRODUCTION FIX: Admin users get edit modal for all shifts, especially unassigned ones
             if (user?.role === "ConsoleManager" || user?.role === "Admin" || user?.role === "TeamLeader" || user?.role === "Coordinator") {
+              console.log(`[ADMIN SHIFT CLICK] Admin user ${user.role} clicked shift ${shift.id}, unassigned: ${!shift.userId}`);
               setSelectedShiftForEdit(shift);
               setIsEditShiftModalOpen(true);
               return;
@@ -354,6 +363,7 @@ export default function ShiftCalendarTab() {
             
             // For staff - only handle unassigned shifts for requesting
             if (!shift.userId && (shift as any).status !== "requested") {
+              console.log(`[STAFF SHIFT CLICK] Staff user clicked unassigned shift ${shift.id}`);
               setSelectedShiftForRequest(shift);
               setIsRequestDialogOpen(true);
               return;
