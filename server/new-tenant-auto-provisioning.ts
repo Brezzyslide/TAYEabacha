@@ -30,48 +30,22 @@ export async function autoProvisionNewTenant(
 ): Promise<void> {
   console.log(`[NEW TENANT SETUP] AUTO-PROVISIONING DISABLED - No demo data will be created for tenant ${tenantId}`);
   console.log(`[NEW TENANT SETUP] Only essential system features (pay scales, tax brackets, NDIS pricing) will be provisioned`);
-  return;
-    
-    // 2. ScHADS pay scales
-    console.log(`[NEW TENANT SETUP] Setting up ScHADS pay scales`);
+  
+  try {
+    // Only provision essential system features - NO DEMO DATA
+    console.log(`[NEW TENANT SETUP] Provisioning essential ScHADS pay scales for tenant ${tenantId}`);
     await provisionScHADSRates(tenantId);
     
-    // 3. NDIS pricing structure
-    console.log(`[NEW TENANT SETUP] Creating NDIS pricing`);
+    console.log(`[NEW TENANT SETUP] Provisioning essential NDIS pricing for tenant ${tenantId}`);
     await createNdisPricingForTenant(tenantId);
     
-    // 4. Tax brackets (system-wide, ensure exists)
-    console.log(`[NEW TENANT SETUP] Ensuring tax brackets exist`);
+    console.log(`[NEW TENANT SETUP] Ensuring Australian tax brackets exist`);
     await ensureTaxBrackets();
     
-    // 5. Hour allocations for all staff
-    console.log(`[NEW TENANT SETUP] Creating hour allocations`);
-    await createHourAllocationsForTenant(tenantId);
-    
-    // 6. Timesheet provisioning for all staff
-    console.log(`[NEW TENANT SETUP] Provisioning timesheets`);
-    await createTimesheetsForTenant(tenantId);
-    
-    // 7. Apply comprehensive fixes (employment types, leave balances, constraints)
-    console.log(`[NEW TENANT SETUP] Applying comprehensive fixes`);
-    const { applyFixesToNewTenant } = await import('./comprehensive-tenant-fixes');
-    await applyFixesToNewTenant(tenantId);
-    
-    // 8. Activity logging
-    await storage.createActivityLog({
-      tenantId,
-      userId: adminUserId,
-      action: 'tenant_provisioned',
-      resourceType: 'tenant',
-      resourceId: tenantId,
-      description: `New tenant ${tenantId} fully provisioned with all features`,
-      metadata: { companyId, features: 'all' }
-    });
-    
-    console.log(`[NEW TENANT SETUP] Successfully auto-provisioned tenant ${tenantId} with complete feature set`);
+    console.log(`[NEW TENANT SETUP] Essential features provisioned successfully for tenant ${tenantId} - NO DEMO DATA CREATED`);
     
   } catch (error) {
-    console.error(`[NEW TENANT SETUP] Failed to auto-provision tenant ${tenantId}:`, error);
+    console.error(`[NEW TENANT SETUP] Failed to provision essential features for tenant ${tenantId}:`, error);
     throw error;
   }
 }

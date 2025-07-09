@@ -169,36 +169,24 @@ async function fixTenantIssues(tenantId: number, audit: CompleteTenantAudit): Pr
   `);
   audit.fixes.push("Fixed role casing inconsistencies");
 
-  // Provision missing data based on Company 1 template
-  if (!audit.moduleStatus.clients) {
-    await provisionSampleClients(tenantId);
-    audit.fixes.push("Provisioned sample clients");
-  }
-
-  if (!audit.moduleStatus.shifts) {
-    await provisionSampleShifts(tenantId);
-    audit.fixes.push("Provisioned sample shifts");
-  }
-
+  // DEMO DATA PROVISIONING PERMANENTLY DISABLED
+  // All tenants must create their own data organically
+  console.log(`[COMPLETE AUDIT] DEMO DATA PROVISIONING DISABLED - tenant ${tenantId} starts completely clean`);
+  
+  // Only provision essential system features (no demo data)
   if (!audit.moduleStatus.budgets) {
-    await provisionNdisBudgets(tenantId);
-    audit.fixes.push("Provisioned NDIS budgets");
+    // NDIS pricing is essential for budget calculations but no demo budgets
+    console.log(`[COMPLETE AUDIT] NDIS pricing provisioning needed for tenant ${tenantId} but no demo budgets will be created`);
   }
 
-  if (!audit.moduleStatus.hourAllocations) {
-    await provisionHourAllocations(tenantId);
-    audit.fixes.push("Provisioned hour allocations");
-  }
-
-  if (!audit.moduleStatus.timesheets) {
-    await provisionTimesheets(tenantId);
-    audit.fixes.push("Provisioned timesheets");
-  }
-
+  // Essential system features only (no demo data)
   if (!audit.moduleStatus.payScales) {
     await provisionPayScales(tenantId);
-    audit.fixes.push("Provisioned pay scales");
+    audit.fixes.push("Provisioned essential pay scales");
   }
+  
+  // Hour allocations and timesheets are created organically when users create staff and work shifts
+  // No automatic provisioning to maintain clean tenant policy
 
   console.log(`[COMPLETE AUDIT] Applied ${audit.fixes.length} fixes for tenant ${tenantId}`);
 }

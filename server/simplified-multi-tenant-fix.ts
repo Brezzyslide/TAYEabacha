@@ -137,23 +137,18 @@ async function fixTenantInconsistencies(tenantId: number, report: TenantConsiste
   console.log(`[TENANT FIX] Fixing inconsistencies for tenant ${tenantId}`);
   
   try {
-    // If missing multiple core features, do full provisioning
-    if (report.fixes.includes("clients") || report.fixes.includes("budgets") || report.fixes.includes("shifts")) {
-      console.log(`[TENANT FIX] Full provisioning needed for tenant ${tenantId}`);
-      await provisionTenant(tenantId, `company-${tenantId}`);
-    }
+    // DEMO DATA PROVISIONING PERMANENTLY DISABLED
+    console.log(`[TENANT FIX] DEMO DATA PROVISIONING DISABLED - tenant ${tenantId} starts completely clean`);
+    console.log(`[TENANT FIX] Missing features will be created organically by users, not auto-provisioned`);
     
-    // Ensure pay scales exist
+    // Only provision essential system features (no demo data)
     if (report.fixes.includes("pay_scales")) {
-      console.log(`[TENANT FIX] Provisioning pay scales for tenant ${tenantId}`);
+      console.log(`[TENANT FIX] Provisioning essential pay scales for tenant ${tenantId}`);
       await provisionScHADSRates(tenantId);
     }
     
-    // Ensure timesheets exist
-    if (report.fixes.includes("timesheets")) {
-      console.log(`[TENANT FIX] Provisioning timesheets for tenant ${tenantId}`);
-      await provisionTimesheetsForTenant(tenantId);
-    }
+    // No automatic timesheet, client, shift, or budget provisioning
+    // Users must create their own data organically
     
     console.log(`[TENANT FIX] Completed fixes for tenant ${tenantId}`);
     
