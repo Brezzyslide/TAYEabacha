@@ -14,6 +14,7 @@ import { CloseIncidentModal } from "./components/CloseIncidentModal";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 interface IncidentReport {
   report: {
@@ -58,6 +59,14 @@ export default function IncidentDashboard() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Permission check: Only Admin and Coordinator can close incidents
+  const canCloseIncident = () => {
+    if (!user?.role) return false;
+    const userRole = user.role.toLowerCase();
+    return userRole === "admin" || userRole === "coordinator" || userRole === "consolemanager";
+  };
 
   const { data: incidents = [], isLoading, error } = useQuery({
     queryKey: ["/api/incident-reports"],
@@ -465,7 +474,7 @@ export default function IncidentDashboard() {
                         >
                           <Download className="h-4 w-4" />
                         </Button>
-                        {incident.report.status === "Open" && (
+                        {incident.report.status === "Open" && canCloseIncident() && (
                           <Button variant="outline" size="sm" onClick={() => handleCloseIncident(incident)}>
                             <CheckCircle className="h-4 w-4" />
                           </Button>

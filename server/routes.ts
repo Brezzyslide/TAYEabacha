@@ -4937,7 +4937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/incident-closures", requireAuth, async (req: any, res) => {
+  app.post("/api/incident-closures", requireAuth, requireRole(["admin", "coordinator", "consolemanager"]), async (req: any, res) => {
     try {
       const closureData = insertIncidentClosureSchema.parse({
         ...req.body,
@@ -4967,7 +4967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/incident-closures/:incidentId", requireAuth, async (req: any, res) => {
+  app.put("/api/incident-closures/:incidentId", requireAuth, requireRole(["admin", "coordinator", "consolemanager"]), async (req: any, res) => {
     try {
       const incidentId = req.params.incidentId;
       const tenantId = req.user?.tenantId || 1;

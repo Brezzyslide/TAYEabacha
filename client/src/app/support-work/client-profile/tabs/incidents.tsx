@@ -14,6 +14,7 @@ import { CloseIncidentModal } from "../../../incident-management/components/Clos
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 interface IncidentsTabProps {
   clientId: string;
@@ -63,6 +64,14 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Permission check: Only Admin and Coordinator can close incidents
+  const canCloseIncident = () => {
+    if (!user?.role) return false;
+    const userRole = user.role.toLowerCase();
+    return userRole === "admin" || userRole === "coordinator" || userRole === "consolemanager";
+  };
 
   // Handle missing clientId
   if (!clientId) {
@@ -498,7 +507,7 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
                           <Eye className="h-3 w-3" />
                           View
                         </Button>
-                        {incident.report.status === "Open" && (
+                        {incident.report.status === "Open" && canCloseIncident() && (
                           <Button
                             variant="outline"
                             size="sm"
