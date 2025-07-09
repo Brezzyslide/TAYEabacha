@@ -182,17 +182,23 @@ export default function ShiftCalendarTab() {
   const renderShiftCard = (shift: Shift) => (
     <Card key={shift.id} className="hover:shadow-md transition-shadow cursor-pointer" 
           onClick={() => {
-            // PRODUCTION FIX: Admin users get edit modal, staff get request dialog
+            // BULLETPROOF ADMIN ROLE CHECK: Case-insensitive with comprehensive role coverage
+            const userRole = user?.role?.toLowerCase();
+            const isAdminRole = userRole === "admin" || userRole === "consolemanager" || userRole === "coordinator" || userRole === "teamleader";
+            
+            if (isAdminRole) {
+              console.log(`[ADMIN CARD CLICK] Admin user ${user.role} clicked shift ${shift.id}, opening edit modal`);
+              setSelectedShiftForEdit(shift);
+              setIsEditShiftModalOpen(true);
+              return;
+            }
+            
+            // For staff - only handle unassigned shifts for requesting
             if (!shift.userId && (shift as any).status !== "requested") {
-              if (user?.role === 'Admin' || user?.role === 'ConsoleManager' || user?.role === 'Coordinator') {
-                // Admin users: Open edit modal to directly assign shifts
-                setSelectedShiftForEdit(shift);
-                setIsEditShiftModalOpen(true);
-              } else {
-                // Staff users: Open request dialog
-                setSelectedShiftForRequest(shift);
-                setIsRequestDialogOpen(true);
-              }
+              console.log(`[STAFF CARD CLICK] Staff user clicked unassigned shift ${shift.id}`);
+              setSelectedShiftForRequest(shift);
+              setIsRequestDialogOpen(true);
+              return;
             }
           }}>
       <CardHeader className="pb-3">
@@ -327,7 +333,11 @@ export default function ShiftCalendarTab() {
           <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
           
           {/* Only show New Shift button for roles with shift creation permissions */}
-          {user && (user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager") && (
+          {(() => {
+            const userRole = user?.role?.toLowerCase();
+            const isAdminRole = userRole === "admin" || userRole === "consolemanager" || userRole === "coordinator" || userRole === "teamleader";
+            return isAdminRole;
+          })() && (
             <Button onClick={() => setIsNewShiftModalOpen(true)} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               New Shift
@@ -353,9 +363,12 @@ export default function ShiftCalendarTab() {
           shifts={allViewableShifts}
           filterPeriod={filterPeriod}
           onShiftClick={(shift) => {
-            // PRODUCTION FIX: Admin users get edit modal for all shifts, especially unassigned ones
-            if (user?.role === "ConsoleManager" || user?.role === "Admin" || user?.role === "TeamLeader" || user?.role === "Coordinator") {
-              console.log(`[ADMIN SHIFT CLICK] Admin user ${user.role} clicked shift ${shift.id}, unassigned: ${!shift.userId}`);
+            // BULLETPROOF ADMIN ROLE CHECK: Case-insensitive with comprehensive role coverage
+            const userRole = user?.role?.toLowerCase();
+            const isAdminRole = userRole === "admin" || userRole === "consolemanager" || userRole === "coordinator" || userRole === "teamleader";
+            
+            if (isAdminRole) {
+              console.log(`[ADMIN SHIFT CLICK] Admin user ${user.role} clicked shift ${shift.id}, opening edit modal`);
               setSelectedShiftForEdit(shift);
               setIsEditShiftModalOpen(true);
               return;

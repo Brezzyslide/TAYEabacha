@@ -95,7 +95,20 @@ export default function AllShiftsTab() {
   const stats = getShiftStats();
 
   const renderShiftCard = (shift: Shift) => (
-    <Card key={shift.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleEditShift(shift)}>
+    <Card key={shift.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => {
+      // BULLETPROOF ADMIN ROLE CHECK: Case-insensitive with comprehensive role coverage
+      const userRole = user?.role?.toLowerCase();
+      const isAdminRole = userRole === "admin" || userRole === "consolemanager" || userRole === "coordinator" || userRole === "teamleader";
+      
+      if (isAdminRole) {
+        console.log(`[ADMIN ALL-SHIFTS CLICK] Admin user ${user.role} clicked shift ${shift.id}, opening edit modal`);
+        handleEditShift(shift);
+        return;
+      }
+      
+      // For staff - only handle unassigned shifts for requesting (placeholder for future implementation)
+      console.log(`[STAFF ALL-SHIFTS CLICK] Staff user clicked shift ${shift.id} - no action defined`);
+    }}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
@@ -172,7 +185,11 @@ export default function AllShiftsTab() {
           <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
           
           {/* Only show New Shift button for roles with shift creation permissions */}
-          {user && (user.role?.toLowerCase() === "coordinator" || user.role?.toLowerCase() === "admin" || user.role?.toLowerCase() === "consolemanager") && (
+          {(() => {
+            const userRole = user?.role?.toLowerCase();
+            const isAdminRole = userRole === "admin" || userRole === "consolemanager" || userRole === "coordinator" || userRole === "teamleader";
+            return isAdminRole;
+          })() && (
             <Button onClick={() => setIsNewShiftModalOpen(true)} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               New Shift
