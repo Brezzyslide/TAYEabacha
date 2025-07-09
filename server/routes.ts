@@ -502,19 +502,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Debug endpoint for timesheet submission issues
+  // AWS PRODUCTION DEBUGGING ENDPOINT - Comprehensive timesheet system diagnosis
   app.get("/api/debug/timesheet/:timesheetId", requireAuth, async (req: any, res) => {
     try {
       const timesheetId = parseInt(req.params.timesheetId);
       
-      console.log(`[DEBUG] Debugging timesheet ${timesheetId} for user ${req.user.id}, tenant ${req.user.tenantId}`);
+      console.log(`[DEBUG] AWS PRODUCTION - Debugging timesheet ${timesheetId} for user ${req.user.id}, tenant ${req.user.tenantId}`);
       
-      // Get timesheet details
-      const timesheet = await db.select()
+      // Get timesheet details (user-scoped)
+      const userTimesheet = await db.select()
         .from(timesheetsTable)
         .where(and(
           eq(timesheetsTable.id, timesheetId),
           eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
+        ));
+      
+      // Get timesheet details (tenant-scoped for admin view)
+      const tenantTimesheet = await db.select()
+        .from(timesheetsTable)
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
           eq(timesheetsTable.tenantId, req.user.tenantId)
         ));
       
@@ -523,27 +531,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(timesheetEntries)
         .where(eq(timesheetEntries.timesheetId, timesheetId));
       
+      // Get all submitted timesheets for this tenant
+      const allSubmittedTimesheets = await storage.getAdminTimesheets(req.user.tenantId, 'submitted');
+      
+      // Get all timesheets by status for this tenant
+      const statusBreakdown = await storage.getAdminTimesheets(req.user.tenantId, ['draft', 'submitted', 'approved', 'rejected', 'paid']);
+      
       res.json({
         timesheetId,
         user: {
           id: req.user.id,
+          username: req.user.username,
           tenantId: req.user.tenantId,
           role: req.user.role
         },
-        timesheet: {
-          found: timesheet.length > 0,
-          data: timesheet[0] || null
+        userScopedTimesheet: {
+          found: userTimesheet.length > 0,
+          data: userTimesheet[0] || null
+        },
+        tenantScopedTimesheet: {
+          found: tenantTimesheet.length > 0,
+          data: tenantTimesheet[0] || null
         },
         entries: {
           count: entries.length,
           data: entries
         },
-        canSubmit: timesheet.length > 0 && 
-                   (timesheet[0].status === 'draft' || timesheet[0].status === 'rejected'),
+        adminView: {
+          submittedCount: allSubmittedTimesheets.length,
+          submittedTimesheets: allSubmittedTimesheets.map(t => ({
+            id: t.id,
+            userId: t.userId,
+            staffName: t.staffName,
+            status: t.status,
+            submittedAt: t.submittedAt
+          })),
+          statusBreakdown: statusBreakdown.reduce((acc, t) => {
+            acc[t.status] = (acc[t.status] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>)
+        },
+        canSubmit: userTimesheet.length > 0 && 
+                   (userTimesheet[0].status === 'draft' || userTimesheet[0].status === 'rejected'),
+        isInAdminView: allSubmittedTimesheets.some(t => t.id === timesheetId),
         timestamp: new Date().toISOString()
       });
     } catch (error: any) {
-      console.error("[DEBUG ERROR]", error);
+      console.error("[DEBUG ERROR] AWS PRODUCTION -", error);
       res.status(500).json({
         error: error.message,
         stack: error.stack,
@@ -6722,13 +6756,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin Timesheet Management APIs
   
-  // Get current timesheets (submitted) for admin approval
+  // Get current timesheets (submitted) for admin approval - AWS PRODUCTION FIX
   app.get("/api/admin/timesheets/current", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
+      console.log(`[ADMIN CURRENT] AWS PRODUCTION - Admin ${req.user.id} (${req.user.username}) requesting current timesheets for tenant ${req.user.tenantId}`);
+      
       const timesheets = await storage.getAdminTimesheets(req.user.tenantId, 'submitted');
+      
+      console.log(`[ADMIN CURRENT] AWS PRODUCTION - Retrieved ${timesheets.length} submitted timesheets`);
+      if (timesheets.length > 0) {
+        console.log(`[ADMIN CURRENT] AWS PRODUCTION - Sample submitted timesheets:`, timesheets.slice(0, 3).map(t => ({
+          id: t.id,
+          userId: t.userId,
+          staffName: t.staffName,
+          status: t.status,
+          submittedAt: t.submittedAt,
+          totalHours: t.totalHours
+        })));
+      } else {
+        console.log(`[ADMIN CURRENT] AWS PRODUCTION - No submitted timesheets found. Checking for any timesheets in tenant...`);
+        
+        // Diagnostic query to see all timesheet statuses
+        const allTimesheets = await storage.getAdminTimesheets(req.user.tenantId, ['draft', 'submitted', 'approved', 'rejected', 'paid']);
+        console.log(`[ADMIN CURRENT] AWS PRODUCTION - Total timesheets in tenant: ${allTimesheets.length}`);
+        console.log(`[ADMIN CURRENT] AWS PRODUCTION - Status breakdown:`, allTimesheets.reduce((acc, t) => {
+          acc[t.status] = (acc[t.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>));
+      }
+      
       res.json(timesheets);
     } catch (error: any) {
-      console.error("Get admin current timesheets error:", error);
+      console.error("[ADMIN CURRENT] AWS PRODUCTION - Error:", error);
       res.status(500).json({ message: "Failed to fetch current timesheets" });
     }
   });
@@ -7311,7 +7370,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let updatedTimesheet;
       let approvalMessage;
       
-      // Always submit for admin approval (proper workflow)
+      // Always submit for admin approval (proper workflow) - AWS PRODUCTION FIX
+      console.log(`[TIMESHEET SUBMIT] AWS PRODUCTION - Updating timesheet ${timesheetId} status to 'submitted'`);
+      
       updatedTimesheet = await db.update(timesheetsTable)
         .set({ 
           status: 'submitted',
@@ -7320,6 +7381,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(timesheetsTable.id, timesheetId))
         .returning();
+
+      console.log(`[TIMESHEET SUBMIT] AWS PRODUCTION - Update result:`, updatedTimesheet.length > 0 ? {
+        id: updatedTimesheet[0].id,
+        status: updatedTimesheet[0].status,
+        submittedAt: updatedTimesheet[0].submittedAt,
+        userId: updatedTimesheet[0].userId,
+        tenantId: updatedTimesheet[0].tenantId
+      } : "NO RESULT");
 
       approvalMessage = "Timesheet submitted for admin approval";
         

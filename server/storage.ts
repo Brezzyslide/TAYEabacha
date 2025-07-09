@@ -2014,11 +2014,13 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // Admin Timesheet Management Methods
+  // Admin Timesheet Management Methods - AWS PRODUCTION FIX
   async getAdminTimesheets(tenantId: number, status: string | string[]): Promise<any[]> {
     const statusArray = Array.isArray(status) ? status : [status];
     
     try {
+      console.log(`[ADMIN TIMESHEETS] AWS PRODUCTION - Querying for tenant ${tenantId}, statuses: ${JSON.stringify(statusArray)}`);
+      
       const result = await db.select({
         id: timesheets.id,
         userId: timesheets.userId,
@@ -2056,9 +2058,18 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(timesheets.createdAt));
 
+      console.log(`[ADMIN TIMESHEETS] AWS PRODUCTION - Found ${result.length} timesheets for tenant ${tenantId}`);
+      console.log(`[ADMIN TIMESHEETS] AWS PRODUCTION - Sample results:`, result.slice(0, 3).map(t => ({
+        id: t.id,
+        userId: t.userId,
+        status: t.status,
+        submittedAt: t.submittedAt,
+        staffName: t.staffName
+      })));
+
       return result;
     } catch (error) {
-      console.error("[ADMIN TIMESHEETS] Query error:", error);
+      console.error("[ADMIN TIMESHEETS] AWS PRODUCTION - Query error:", error);
       return [];
     }
   }
