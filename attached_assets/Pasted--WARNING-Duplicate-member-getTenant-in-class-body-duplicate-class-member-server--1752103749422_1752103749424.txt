@@ -1,0 +1,68 @@
+
+
+
+" [WARNING] Duplicate member "getTenant" in class body [duplicate-class-member]
+
+    server/storage.ts:1461:8:
+      1461 │   async getTenant(tenantId: number): Promise<any> {
+           ╵         ~~~
+
+  The original member "getTenant" is here:
+
+    server/storage.ts:304:8:
+      304 │   async getTenant(id: number): Promise<Tenant | undefined> {
+          ╵         ~~~
+
+▲ [WARNING] Duplicate member "getAllTenants" in class body [duplicate-class-member]
+
+    server/storage.ts:1599:8:
+      1599 │   async getAllTenants(): Promise<Array<{ id: number; companyId?: string }>> {
+           ╵         ~~~~~
+
+  The original member "getAllTenants" is here:
+
+    server/storage.ts:1466:8:
+      1466 │   async getAllTenants(): Promise<any[]> {
+           ╵         ~~~~~
+
+▲ [WARNING] Duplicate member "getUsersByTenant" in class body [duplicate-class-member]
+
+    server/storage.ts:1623:8:
+      1623 │   async getUsersByTenant(tenantId: number): Promise<User[]> {
+           ╵         ~~~~~~
+
+  The original member "getUsersByTenant" is here:
+
+    server/storage.ts:299:8:
+      299 │   async getUsersByTenant(tenantId: number): Promise<User[]> {
+          ╵         ~~~~~~
+
+✘ [ERROR] Unexpected "catch"
+
+    server/new-tenant-auto-provisioning.ts:73:4:
+      73 │   } catch (error) {
+         ╵     ~~~
+
+▲ [WARNING] Duplicate member "createNdisBudget" in class body [duplicate-class-member]
+
+    server/storage.ts:1629:8:
+      1629 │   async createNdisBudget(budgetData: any): Promise<NdisBudget> {
+           ╵         ~~~~~~
+
+  The original member "createNdisBudget" is here:
+
+    server/storage.ts:1392:8:
+      1392 │   async createNdisBudget(insertBudget: any): Promise<NdisBudget> {
+           ╵         ~~~~~~
+
+▲ [WARNING] Duplicate member "getTimesheetEntries" in class body [duplicate-class-member]
+
+    server/storage.ts:2131:8:
+      2131 │   async getTimesheetEntries(timesheetId: number, tenantId: number): Promise<any[]> {
+           ╵         ~~~~~~~
+
+  The original member "getTimesheetEntries" is here:
+
+    server/storage.ts:1635:8:
+      1635 │   async getTimesheetEntries(timesheetId: number, tenantId: number): Promise<any[]> {
+           ╵         ~~~~~~~
