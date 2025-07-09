@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         primaryContactEmail, 
         primaryContactPhone, 
         password,
-        includeDemoData = false
+
       } = req.body;
 
       // Create company with UUID
@@ -702,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId: tenant.id,
           adminUserId: adminUser.id,
           adminEmail: adminUser.email,
-          status: includeDemoData ? "Created Successfully with Demo Data" : "Created Successfully (No Demo Data)"
+          status: "Created Successfully (No Demo Data)"
         }
       ]);
 
@@ -5754,17 +5754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create sample notifications endpoint for testing
-  app.post("/api/notifications/create-samples", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
-    try {
-      const { createSampleNotifications } = await import("./create-sample-notifications");
-      await createSampleNotifications();
-      res.json({ message: "Sample notifications created successfully" });
-    } catch (error) {
-      console.error("Error creating sample notifications:", error);
-      res.status(500).json({ message: "Failed to create sample notifications" });
-    }
-  });
+  // Sample notification endpoint removed - no demo data creation
 
   // Spell Check API using OpenAI
   app.post("/api/spellcheck-gpt", requireAuth, async (req: any, res) => {
