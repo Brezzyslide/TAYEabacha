@@ -2913,13 +2913,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.json([]);
           }
           
+          // CRITICAL FIX: Remove duplicate client IDs to prevent duplicate observations
+          const uniqueClientIds = [...new Set(assignedClientIds)];
+          
+          console.log(`[OBSERVATION FIX] User ${req.user.id} assigned to ${assignedClientIds.length} shifts with ${uniqueClientIds.length} unique clients`);
+          console.log(`[OBSERVATION FIX] Original client IDs: ${assignedClientIds.join(', ')}`);
+          console.log(`[OBSERVATION FIX] Unique client IDs: ${uniqueClientIds.join(', ')}`);
+          
           // Get observations for all assigned clients
           let allObservations = [];
-          for (const clientId of assignedClientIds) {
+          for (const clientId of uniqueClientIds) {
             const clientObservations = await storage.getObservationsByClient(clientId, req.user.tenantId);
+            console.log(`[OBSERVATION FIX] Client ${clientId}: ${clientObservations.length} observations`);
             allObservations.push(...clientObservations);
           }
           observations = allObservations;
+          console.log(`[OBSERVATION FIX] Total observations returned: ${observations.length}`);
         } else {
           observations = await storage.getObservations(req.user.tenantId);
         }
