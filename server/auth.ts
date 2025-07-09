@@ -30,20 +30,21 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'fallback-session-secret-for-dev',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true',
+      secure: process.env.NODE_ENV === 'production', // Always secure in production
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax',
-      // Allow cookies to work across different domains in deployment
-      domain: process.env.NODE_ENV === 'production' ? undefined : undefined
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site for AWS
+      // No domain restriction for AWS deployment
+      domain: undefined
     },
     rolling: true, // Extends session on activity
-    name: 'needscareai.sid', // Custom session name for better security
+    name: 'needscareai.sid',
+    proxy: process.env.NODE_ENV === 'production' // Trust proxy in production
   };
 
   app.set("trust proxy", 1);

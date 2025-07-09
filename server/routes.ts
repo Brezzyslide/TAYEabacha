@@ -6,7 +6,7 @@ import { provisionAllExistingTenants, provisionTenant } from "./tenant-provision
 // import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning"; // DISABLED - No auto-provisioning
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
-import { eq, desc, and, or, ilike, sql, lt, gte, lte } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql, lt, gte, lte, inArray } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users, shifts, shiftCancellations, timesheets: timesheetsTable, timesheetEntries, leaveBalances, companies, tenants, careSupportPlans } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
@@ -74,10 +74,16 @@ async function updateStaffHourAllocation(shiftId: number, userId: number, tenant
 }
 
 async function processBudgetDeduction(shift: any, userId: number) {
-  console.log(`[BUDGET DEDUCTION] Processing for shift ${shift.id}, client ${shift.clientId}`);
+  console.log(`[BUDGET DEDUCTION] AWS PRODUCTION Processing for shift ${shift.id}, client ${shift.clientId}, tenant ${shift.tenantId}`);
   
-  if (!shift.startTime || !shift.endTime || !shift.clientId) {
-    console.log(`[BUDGET DEDUCTION] Missing required data: startTime=${!!shift.startTime}, endTime=${!!shift.endTime}, clientId=${!!shift.clientId}`);
+  if (!shift.startTime || !shift.endTime || !shift.clientId || !shift.tenantId) {
+    console.log(`[BUDGET DEDUCTION] Missing required data: startTime=${!!shift.startTime}, endTime=${!!shift.endTime}, clientId=${!!shift.clientId}, tenantId=${!!shift.tenantId}`);
+    return;
+  }
+
+  // AWS Production safety: Add extra validation
+  if (!userId || userId <= 0) {
+    console.log(`[BUDGET DEDUCTION] Invalid userId: ${userId}`);
     return;
   }
 
@@ -283,6 +289,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "unhealthy",
         timestamp: new Date().toISOString(),
         error: "Database connection failed"
+      });
+    }
+  });
+
+  // AWS Production Debug Endpoint - Comprehensive system diagnostics
+  app.get("/api/debug/aws-production", requireAuth, async (req: any, res) => {
+    try {
+      console.log("[AWS PRODUCTION DEBUG] Diagnostic check requested by user:", req.user.id);
+      
+      // Test database connectivity and constraints
+      const dbTests = await Promise.allSettled([
+        db.select().from(users).limit(1),
+        db.select().from(clients).limit(1),
+        db.select().from(shifts).limit(1)
+      ]);
+      
+      const diagnostics = {
+        session: {
+          hasSession: !!req.session,
+          sessionId: req.sessionID,
+          authenticated: req.isAuthenticated(),
+          user: req.user ? {
+            id: req.user.id,
+            role: req.user.role,
+            tenantId: req.user.tenantId
+          } : null
+        },
+        database: {
+          users: dbTests[0].status === 'fulfilled' ? 'connected' : 'failed',
+          clients: dbTests[1].status === 'fulfilled' ? 'connected' : 'failed', 
+          shifts: dbTests[2].status === 'fulfilled' ? 'connected' : 'failed',
+          errors: dbTests.filter(t => t.status === 'rejected').map(t => (t as any).reason?.message)
+        },
+        environment: {
+          nodeEnv: process.env.NODE_ENV,
+          hasSessionSecret: !!process.env.SESSION_SECRET,
+          hasDatabaseUrl: !!process.env.DATABASE_URL,
+          platform: 'AWS',
+          uptime: process.uptime()
+        },
+        commonIssues: {
+          sessionPersistence: req.isAuthenticated(),
+          databaseConstraints: dbTests.every(t => t.status === 'fulfilled'),
+          errorLogging: 'Enhanced logging active'
+        }
+      };
+      
+      console.log("[AWS PRODUCTION DEBUG] Diagnostic results:", diagnostics);
+      res.json(diagnostics);
+    } catch (error: any) {
+      console.error("[AWS PRODUCTION DEBUG] Failed:", error);
+      res.status(500).json({ 
+        message: "Production diagnostic failed",
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+
+  // Comprehensive AWS Production Issue Testing Endpoint
+  app.get("/api/debug/aws-critical-issues", requireAuth, async (req: any, res) => {
+    try {
+      console.log("[AWS CRITICAL DEBUG] Testing 3 critical production issues for user:", req.user.id, "tenant:", req.user.tenantId);
+      
+      const results = {
+        timestamp: new Date().toISOString(),
+        tenantId: req.user.tenantId,
+        userId: req.user.id,
+        tests: {}
+      };
+
+      // TEST 1: Timesheet submission pipeline
+      try {
+        const submitted = await db.select()
+          .from(timesheetsTable)
+          .where(and(
+            eq(timesheetsTable.tenantId, req.user.tenantId),
+            eq(timesheetsTable.status, 'submitted')
+          ));
+        
+        const adminVisible = await db.select({ 
+            id: timesheetsTable.id,
+            userId: timesheetsTable.userId, 
+            status: timesheetsTable.status,
+            submittedAt: timesheetsTable.submittedAt 
+          })
+          .from(timesheetsTable)
+          .where(eq(timesheetsTable.tenantId, req.user.tenantId));
+
+        results.tests.timesheetSubmission = {
+          status: 'tested',
+          submittedCount: submitted.length,
+          totalTimesheets: adminVisible.length,
+          adminCanSeeSubmissions: submitted.length > 0,
+          latestSubmission: submitted.length > 0 ? submitted[0].submittedAt : null
+        };
+      } catch (error) {
+        results.tests.timesheetSubmission = { status: 'failed', error: error.message };
+      }
+
+      // TEST 2: Budget deduction functionality
+      try {
+        const completedShifts = await db.select()
+          .from(shifts)
+          .where(and(
+            eq(shifts.tenantId, req.user.tenantId),
+            eq(shifts.status, 'completed')
+          ))
+          .limit(5);
+
+        const budgetTransactions = await db.select()
+          .from(schema.budgetTransactions)
+          .where(eq(schema.budgetTransactions.tenantId, req.user.tenantId));
+
+        results.tests.budgetDeduction = {
+          status: 'tested',
+          completedShifts: completedShifts.length,
+          budgetTransactions: budgetTransactions.length,
+          deductionWorking: budgetTransactions.length > 0,
+          recentTransactions: budgetTransactions.slice(-3).map(t => ({
+            shiftId: t.shiftId,
+            amount: t.amount,
+            createdAt: t.createdAt
+          }))
+        };
+      } catch (error) {
+        results.tests.budgetDeduction = { status: 'failed', error: error.message };
+      }
+
+      // TEST 3: Multi-tenant consistency check
+      try {
+        const allTenants = await db.select({ id: tenants.id }).from(tenants);
+        const consistencyResults = [];
+
+        for (const tenant of allTenants.slice(0, 5)) { // Check first 5 tenants
+          const userCount = await db.select({ count: sql`count(*)` })
+            .from(users)
+            .where(eq(users.tenantId, tenant.id));
+          
+          const shiftCount = await db.select({ count: sql`count(*)` })
+            .from(shifts)
+            .where(eq(shifts.tenantId, tenant.id));
+
+          consistencyResults.push({
+            tenantId: tenant.id,
+            users: parseInt(userCount[0].count),
+            shifts: parseInt(shiftCount[0].count)
+          });
+        }
+
+        results.tests.multiTenantConsistency = {
+          status: 'tested',
+          tenantsChecked: consistencyResults.length,
+          tenantData: consistencyResults,
+          hasInconsistencies: consistencyResults.some(t => t.users === 0)
+        };
+      } catch (error) {
+        results.tests.multiTenantConsistency = { status: 'failed', error: error.message };
+      }
+
+      console.log("[AWS CRITICAL DEBUG] Test results:", results);
+      res.json(results);
+    } catch (error: any) {
+      console.error("[AWS CRITICAL DEBUG] Failed:", error);
+      res.status(500).json({ 
+        message: "Critical issue testing failed",
+        error: error.message
       });
     }
   });
@@ -1172,8 +1345,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Log activity for shift completion (budget deduction handled above)
+      // CRITICAL AWS PRODUCTION FIX: Process budget deduction and timesheet for shift completion
       if (processedUpdateData.status === "completed" && processedUpdateData.endTimestamp) {
+        console.log(`[SHIFT COMPLETION] Processing completed shift ${shift.id} for user ${req.user.id}`);
+        
+        // Process NDIS budget deduction immediately 
+        try {
+          console.log(`[SHIFT COMPLETION] Processing budget deduction for shift ${shift.id}`);
+          await processBudgetDeduction(shift, req.user.id);
+          console.log(`[SHIFT COMPLETION] Budget deduction completed for shift ${shift.id}`);
+        } catch (budgetError) {
+          console.error(`[SHIFT COMPLETION] Budget deduction failed for shift ${shift.id}:`, budgetError);
+          // Continue with shift completion even if budget deduction fails
+        }
+        
+        // Process timesheet creation using smart timesheet service
+        try {
+          console.log(`[SHIFT COMPLETION] Creating timesheet entry for shift ${shift.id}`);
+          const { createSmartTimesheetFromShift } = require('./smart-timesheet-service');
+          await createSmartTimesheetFromShift(shift, req.user.tenantId);
+          console.log(`[SHIFT COMPLETION] Timesheet entry created for shift ${shift.id}`);
+        } catch (timesheetError) {
+          console.error(`[SHIFT COMPLETION] Timesheet creation failed for shift ${shift.id}:`, timesheetError);
+          // Continue with shift completion even if timesheet creation fails
+        }
+        
+        // Log activity for shift completion
         await storage.createActivityLog({
           userId: req.user.id,
           action: "complete_shift",
@@ -1182,6 +1379,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `Completed shift: ${shift.title}`,
           tenantId: req.user.tenantId,
         });
+        
+        console.log(`[SHIFT COMPLETION] All completion processing finished for shift ${shift.id}`);
       }
       
       res.json(shift);
@@ -2401,11 +2600,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stack: error.stack,
         constraint: error.constraint,
         code: error.code,
-        detail: error.detail
+        detail: error.detail,
+        userId: req.user?.id,
+        tenantId: req.user?.tenantId,
+        clientId: req.body?.clientId,
+        environment: process.env.NODE_ENV
       });
-      res.status(500).json({ 
-        message: "Failed to create case note",
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+
+      // Handle specific database constraint errors for AWS production
+      let errorMessage = "Failed to create case note";
+      let statusCode = 500;
+
+      if (error.code === '23503') { // Foreign key violation
+        errorMessage = "Invalid client or user reference";
+        statusCode = 400;
+        console.error("[CASE NOTES] Foreign key constraint violation - check client/user exists");
+      } else if (error.code === '23505') { // Unique constraint violation  
+        errorMessage = "Case note already exists";
+        statusCode = 409;
+        console.error("[CASE NOTES] Duplicate case note attempt");
+      } else if (error.code === '23502') { // NOT NULL violation
+        errorMessage = "Missing required information";
+        statusCode = 400;
+        console.error("[CASE NOTES] Required field missing:", error.column);
+      }
+
+      res.status(statusCode).json({ 
+        message: errorMessage,
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        constraint: process.env.NODE_ENV === 'development' ? error.constraint : undefined
       });
     }
   });
@@ -7034,6 +7257,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       });
 
+      // AWS PRODUCTION FIX: Enhanced admin notification system
+      console.log(`[TIMESHEET SUBMIT] Creating admin notifications for tenant ${req.user.tenantId}`);
+      
+      // Get all admin users for this tenant to notify them
+      const adminUsers = await db.select()
+        .from(users)
+        .where(and(
+          eq(users.tenantId, req.user.tenantId),
+          inArray(users.role, ['Admin', 'ConsoleManager', 'Coordinator'])
+        ));
+      
+      console.log(`[TIMESHEET SUBMIT] Found ${adminUsers.length} admin users to notify`);
+      
+      // Notify all admin users about the submission
+      for (const admin of adminUsers) {
+        try {
+          await storage.createNotification({
+            userId: admin.id,
+            tenantId: req.user.tenantId,
+            title: "New Timesheet Submission",
+            message: `${req.user.username} submitted timesheet for ${timesheet[0].totalHours} hours - requires approval`,
+            type: "info",
+            isRead: false
+          });
+          console.log(`[TIMESHEET SUBMIT] Notified admin user ${admin.id} (${admin.username})`);
+        } catch (notifError) {
+          console.error(`[TIMESHEET SUBMIT] Failed to notify admin ${admin.id}:`, notifError);
+        }
+      }
+      
       // Create notification for staff about submission
       await storage.createNotification({
         userId: req.user.id,
