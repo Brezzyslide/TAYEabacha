@@ -35,18 +35,27 @@ async function cleanTenantDemoData(tenantId: number): Promise<void> {
     // CRITICAL: Delete in correct order to respect foreign key constraints
     // Children first, then parents to prevent constraint violations
     
-    // 1. Delete demo budget transactions first
-    const transactionsResult = await pool.query(
-      "DELETE FROM budget_transactions WHERE tenant_id = $1 AND created_at < '2025-07-08'",
-      [tenantId]
-    );
-    if (transactionsResult.rowCount > 0) {
-      cleanupActions.push(`Removed ${transactionsResult.rowCount} demo budget transactions`);
+    // 1. Delete demo budget transactions first (uses company_id, not tenant_id)
+    const companyResult = await pool.query("SELECT company_id FROM tenants WHERE id = $1", [tenantId]);
+    const companyId = companyResult.rows[0]?.company_id;
+    
+    if (companyId) {
+      const transactionsResult = await pool.query(
+        "DELETE FROM budget_transactions WHERE company_id = $1 AND created_at < '2025-07-08'",
+        [companyId]
+      );
+      if (transactionsResult.rowCount > 0) {
+        cleanupActions.push(`Removed ${transactionsResult.rowCount} demo budget transactions`);
+      }
     }
     
-    // 2. Delete timesheet entries (if any demo data exists)
+    // 2. Delete timesheet entries (linked through timesheets table)
     const timesheetEntriesResult = await pool.query(
-      "DELETE FROM timesheet_entries WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM timesheet_entries 
+       WHERE timesheet_id IN (
+         SELECT id FROM timesheets WHERE tenant_id = $1
+       ) 
+       AND created_at < '2025-07-08'`,
       [tenantId]
     );
     if (timesheetEntriesResult.rowCount > 0) {
