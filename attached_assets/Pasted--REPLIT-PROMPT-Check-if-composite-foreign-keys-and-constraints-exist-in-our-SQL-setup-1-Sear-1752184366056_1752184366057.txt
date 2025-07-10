@@ -1,0 +1,48 @@
+// REPLIT PROMPT: Check if composite foreign keys and constraints exist in our SQL setup
+
+/*
+1. Search all SQL migration files (especially under /migrations or /dist if applicable).
+2. Look for ALTER TABLE statements involving composite keys:
+   - `users (id, tenant_id)`
+   - `clients (id, tenant_id)`
+   - `shifts (client_id, tenant_id)` and `shifts (user_id, tenant_id)`
+   - `case_notes (client_id, tenant_id)`
+   - `medication_records (client_id, tenant_id)`
+
+3. Confirm if:
+   - Composite UNIQUE constraints are defined for `users`, `clients`, and `shifts`
+   - Composite FOREIGN KEY constraints are in place for shifts, case_notes, and medication_records
+   - `ON DELETE CASCADE` or `ON DELETE SET NULL` rules are correctly used
+4. If not found, return `false` and recommend running the following SQL block:
+
+----- COPY & EXECUTE THIS SQL IF MISSING -----
+
+-- SIMPLIFIED COMPOSITE FOREIGN KEY MIGRATION
+-- Critical composite constraints for multi-tenant security
+
+-- Add composite unique constraints to enable composite FKs
+ALTER TABLE users ADD CONSTRAINT users_id_tenant_unique UNIQUE (id, tenant_id);
+ALTER TABLE clients ADD CONSTRAINT clients_id_tenant_unique UNIQUE (id, tenant_id);
+ALTER TABLE shifts ADD CONSTRAINT shifts_id_tenant_unique UNIQUE (id, tenant_id);
+
+-- Add critical composite foreign keys for high-risk relationships
+
+-- Shifts -> Clients (most critical for tenant isolation)
+ALTER TABLE shifts DROP CONSTRAINT IF EXISTS shifts_client_id_clients_id_fk;
+ALTER TABLE shifts ADD CONSTRAINT shifts_client_tenant_fk
+FOREIGN KEY (client_id, tenant_id) REFERENCES clients (id, tenant_id) ON DELETE CASCADE;
+
+-- Shifts -> Users (staff assignments)
+ALTER TABLE shifts DROP CONSTRAINT IF EXISTS shifts_user_id_users_id_fk;
+ALTER TABLE shifts ADD CONSTRAINT shifts_user_tenant_fk
+FOREIGN KEY (user_id, tenant_id) REFERENCES users (id, tenant_id) ON DELETE SET NULL;
+
+-- Case Notes -> Clients
+ALTER TABLE case_notes DROP CONSTRAINT IF EXISTS case_notes_client_id_clients_id_fk;
+ALTER TABLE case_notes ADD CONSTRAINT case_notes_client_tenant_fk
+FOREIGN KEY (client_id, tenant_id) REFERENCES clients (id, tenant_id) ON DELETE CASCADE;
+
+-- Medication Records -> Clients
+ALTER TABLE medication_records DROP CONSTRAINT IF EXISTS medication_records_client_id_clients_id_fk;
+ALTER TABLE medication_records ADD CONSTRAINT medication_records_client_tenant_fk
+FO
