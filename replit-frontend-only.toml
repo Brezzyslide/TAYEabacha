@@ -1,0 +1,16 @@
+# Replit Configuration for Frontend-Only Deployment
+[deployment]
+build = "npm run build"
+run = "npm start"
+deploymentTarget = "static"
+
+[nix]
+channel = "stable-21_11"
+
+[env]
+NODE_ENV = "production"
+# DATABASE_URL will be set in Replit Secrets
+
+[[ports]]
+localPort = 5000
+externalPort = 80
