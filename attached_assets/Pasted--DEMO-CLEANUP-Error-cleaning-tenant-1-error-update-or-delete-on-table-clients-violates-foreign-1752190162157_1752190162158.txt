@@ -1,0 +1,72 @@
+"[DEMO CLEANUP] Error cleaning tenant 1: error: update or delete on table "clients" violates foreign key constraint "care_support_plans_client_id_clients_id_fk" on table "care_support_plans"
+    at C:\Users\DELL\Documents\TAYEabacha-1\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at cleanTenantDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:174:26)
+    at completeCleanupAllDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:21:7)
+    at <anonymous> (C:\Users\DELL\Documents\TAYEabacha-1\server\index.ts:65:5) {
+  length: 351,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(57) is still referenced from table "care_support_plans".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'care_support_plans',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'care_support_plans_client_id_clients_id_fk',
+  file: 'ri_triggers.c',
+  line: '2609',
+  routine: 'ri_ReportViolation'
+}
+[DEMO CLEANUP] Error during cleanup: error: update or delete on table "clients" violates foreign key constraint "care_support_plans_client_id_clients_id_fk" on table "care_support_plans"
+    at C:\Users\DELL\Documents\TAYEabacha-1\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at cleanTenantDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:174:26)
+    at completeCleanupAllDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:21:7)
+    at <anonymous> (C:\Users\DELL\Documents\TAYEabacha-1\server\index.ts:65:5) {
+  length: 351,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(57) is still referenced from table "care_support_plans".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'care_support_plans',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'care_support_plans_client_id_clients_id_fk',
+  file: 'ri_triggers.c',
+  line: '2609',
+  routine: 'ri_ReportViolation'
+}
+[DEMO CLEANUP] Demo data cleanup failed: error: update or delete on table "clients" violates foreign key constraint "care_support_plans_client_id_clients_id_fk" on table "care_support_plans"
+    at C:\Users\DELL\Documents\TAYEabacha-1\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at cleanTenantDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:174:26)
+    at completeCleanupAllDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:21:7)
+    at <anonymous> (C:\Users\DELL\Documents\TAYEabacha-1\server\index.ts:65:5) {
+  length: 351,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(57) is still referenced from table "care_support_plans".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'care_support_plans',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'care_support_plans_client_id_clients_id_fk',
+  file: 'ri_triggers.c',
+  line: '2609',
+  routine: 'ri_ReportViolation'
+}"

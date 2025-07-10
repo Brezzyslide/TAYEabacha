@@ -98,72 +98,146 @@ async function cleanTenantDemoData(tenantId: number): Promise<void> {
       cleanupActions.push(`Removed ${cancellationsResult.rowCount} demo shift cancellations`);
     }
     
-    // 4. Delete demo case notes (references clients)
+    // 4. Delete ALL case notes that reference demo clients
     const caseNotesResult = await pool.query(
-      "DELETE FROM case_notes WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM case_notes 
+       WHERE tenant_id = $1 
+       AND (
+         created_at < '2025-07-08' 
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (caseNotesResult.rowCount > 0) {
       cleanupActions.push(`Removed ${caseNotesResult.rowCount} demo case notes`);
     }
     
-    // 5. Delete demo observations (references clients)
+    // 5. Delete ALL observations that reference demo clients
     const observationsResult = await pool.query(
-      "DELETE FROM hourly_observations WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM hourly_observations 
+       WHERE tenant_id = $1 
+       AND (
+         created_at < '2025-07-08' 
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (observationsResult.rowCount > 0) {
       cleanupActions.push(`Removed ${observationsResult.rowCount} demo observations`);
     }
     
-    // 6. Delete demo medication records (references clients)
+    // 6. Delete ALL medication records that reference demo clients
     const medicationRecordsResult = await pool.query(
-      "DELETE FROM medication_records WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM medication_records 
+       WHERE tenant_id = $1 
+       AND (
+         created_at < '2025-07-08' 
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (medicationRecordsResult.rowCount > 0) {
       cleanupActions.push(`Removed ${medicationRecordsResult.rowCount} demo medication records`);
     }
     
-    // 7. Delete demo medication plans (references clients)
+    // 7. Delete ALL medication plans that reference demo clients
     const medicationPlansResult = await pool.query(
-      "DELETE FROM medication_plans WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM medication_plans 
+       WHERE tenant_id = $1 
+       AND (
+         created_at < '2025-07-08' 
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (medicationPlansResult.rowCount > 0) {
       cleanupActions.push(`Removed ${medicationPlansResult.rowCount} demo medication plans`);
     }
     
-    // 8. Delete demo incident reports (references clients)
+    // 8. Delete ALL incident reports that reference demo clients
     const incidentReportsResult = await pool.query(
-      "DELETE FROM incident_reports WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM incident_reports 
+       WHERE tenant_id = $1 
+       AND (
+         created_at < '2025-07-08' 
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (incidentReportsResult.rowCount > 0) {
       cleanupActions.push(`Removed ${incidentReportsResult.rowCount} demo incident reports`);
     }
     
-    // 9. Delete demo NDIS budgets (references clients)
+    // 9. Delete ALL NDIS budgets that reference demo clients
     const budgetsResult = await pool.query(
-      "DELETE FROM ndis_budgets WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM ndis_budgets 
+       WHERE tenant_id = $1 
+       AND (
+         created_at < '2025-07-08' 
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (budgetsResult.rowCount > 0) {
       cleanupActions.push(`Removed ${budgetsResult.rowCount} demo NDIS budgets`);
     }
     
-    // 10. Delete demo care support plans (references clients) - THIS WAS THE ISSUE
+    // 10. Delete ALL care support plans that reference demo clients we're about to delete
     const carePlansResult = await pool.query(
-      "DELETE FROM care_support_plans WHERE tenant_id = $1 AND created_at < '2025-07-08'",
+      `DELETE FROM care_support_plans 
+       WHERE tenant_id = $1 
+       AND (
+         created_at < '2025-07-08' 
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (carePlansResult.rowCount > 0) {
       cleanupActions.push(`Removed ${carePlansResult.rowCount} demo care plans`);
     }
     
-    // 11. Delete demo shifts (references clients and users)
+    // 11. Delete ALL shifts that reference demo clients or are demo shifts
     const shiftResult = await pool.query(
-      "DELETE FROM shifts WHERE tenant_id = $1 AND (title LIKE '%Sample%' OR title LIKE '%Demo%' OR created_at < '2025-07-08')",
+      `DELETE FROM shifts 
+       WHERE tenant_id = $1 
+       AND (
+         title LIKE '%Sample%' 
+         OR title LIKE '%Demo%' 
+         OR created_at < '2025-07-08'
+         OR client_id IN (
+           SELECT id FROM clients 
+           WHERE tenant_id = $1 
+           AND (client_id LIKE '%_T%' OR client_id LIKE 'CLT%' OR created_at < '2025-07-08')
+         )
+       )`,
       [tenantId]
     );
     if (shiftResult.rowCount > 0) {
