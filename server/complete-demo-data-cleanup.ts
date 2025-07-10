@@ -40,17 +40,31 @@ async function cleanTenantDemoData(tenantId: number): Promise<void> {
     const companyId = companyResult.rows[0]?.company_id;
     
     if (companyId) {
+      // Delete all budget transactions for this company from demo period
       const transactionsResult = await pool.query(
         "DELETE FROM budget_transactions WHERE company_id = $1 AND created_at < '2025-07-08'",
         [companyId]
       );
-      if (transactionsResult.rowCount > 0) {
-        cleanupActions.push(`Removed ${transactionsResult.rowCount} demo budget transactions`);
+      
+      // Also delete budget transactions that reference demo NDIS budgets we're about to delete
+      const budgetTransactionsResult2 = await pool.query(
+        `DELETE FROM budget_transactions 
+         WHERE budget_id IN (
+           SELECT id FROM ndis_budgets 
+           WHERE tenant_id = $1 AND created_at < '2025-07-08'
+         )`,
+        [tenantId]
+      );
+      
+      const totalTransactions = (transactionsResult.rowCount || 0) + (budgetTransactionsResult2.rowCount || 0);
+      if (totalTransactions > 0) {
+        cleanupActions.push(`Removed ${totalTransactions} demo budget transactions`);
       }
     }
     
-    // 2. Delete timesheet entries (linked through timesheets table)
-    const timesheetEntriesResult = await pool.query(
+    // 2. Delete timesheet entries (must delete before shifts due to FK constraint)
+    // First delete by timesheet reference
+    const timesheetEntriesResult1 = await pool.query(
       `DELETE FROM timesheet_entries 
        WHERE timesheet_id IN (
          SELECT id FROM timesheets WHERE tenant_id = $1
@@ -58,8 +72,21 @@ async function cleanTenantDemoData(tenantId: number): Promise<void> {
        AND created_at < '2025-07-08'`,
       [tenantId]
     );
-    if (timesheetEntriesResult.rowCount > 0) {
-      cleanupActions.push(`Removed ${timesheetEntriesResult.rowCount} demo timesheet entries`);
+    
+    // Also delete by shift reference (for demo shifts we're about to delete)
+    const timesheetEntriesResult2 = await pool.query(
+      `DELETE FROM timesheet_entries 
+       WHERE shift_id IN (
+         SELECT id FROM shifts 
+         WHERE tenant_id = $1 
+         AND (title LIKE '%Sample%' OR title LIKE '%Demo%' OR created_at < '2025-07-08')
+       )`,
+      [tenantId]
+    );
+    
+    const totalTimesheetEntries = (timesheetEntriesResult1.rowCount || 0) + (timesheetEntriesResult2.rowCount || 0);
+    if (totalTimesheetEntries > 0) {
+      cleanupActions.push(`Removed ${totalTimesheetEntries} demo timesheet entries`);
     }
     
     // 3. Delete shift cancellations

@@ -1,0 +1,72 @@
+"[DEMO CLEANUP] Error cleaning tenant 5: error: update or delete on table "shifts" violates foreign key constraint "timesheet_entries_shift_id_shifts_id_fk" on table "timesheet_entries"
+    at C:\Users\DELL\Documents\TAYEabacha-1\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at cleanTenantDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:147:26)
+    at completeCleanupAllDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:21:7)
+    at <anonymous> (C:\Users\DELL\Documents\TAYEabacha-1\server\index.ts:65:5) {
+  length: 342,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(163) is still referenced from table "timesheet_entries".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'timesheet_entries',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'timesheet_entries_shift_id_shifts_id_fk',
+  file: 'ri_triggers.c',
+  line: '2609',
+  routine: 'ri_ReportViolation'
+}
+[DEMO CLEANUP] Error during cleanup: error: update or delete on table "shifts" violates foreign key constraint "timesheet_entries_shift_id_shifts_id_fk" on table "timesheet_entries"
+    at C:\Users\DELL\Documents\TAYEabacha-1\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at cleanTenantDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:147:26)
+    at completeCleanupAllDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:21:7)
+    at <anonymous> (C:\Users\DELL\Documents\TAYEabacha-1\server\index.ts:65:5) {
+  length: 342,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(163) is still referenced from table "timesheet_entries".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'timesheet_entries',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'timesheet_entries_shift_id_shifts_id_fk',
+  file: 'ri_triggers.c',
+  line: '2609',
+  routine: 'ri_ReportViolation'
+}
+[DEMO CLEANUP] Demo data cleanup failed: error: update or delete on table "shifts" violates foreign key constraint "timesheet_entries_shift_id_shifts_id_fk" on table "timesheet_entries"
+    at C:\Users\DELL\Documents\TAYEabacha-1\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at cleanTenantDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:147:26)
+    at completeCleanupAllDemoData (C:\Users\DELL\Documents\TAYEabacha-1\server\complete-demo-data-cleanup.ts:21:7)
+    at <anonymous> (C:\Users\DELL\Documents\TAYEabacha-1\server\index.ts:65:5) {
+  length: 342,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(163) is still referenced from table "timesheet_entries".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'timesheet_entries',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'timesheet_entries_shift_id_shifts_id_fk',
+  file: 'ri_triggers.c',
+  line: '2609',
+  routine: 'ri_ReportViolation'
+}" another to fix please
