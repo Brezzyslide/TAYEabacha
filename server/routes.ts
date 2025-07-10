@@ -2,8 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { provisionAllExistingTenants, provisionTenant } from "./tenant-provisioning";
-// import { autoProvisionNewTenant } from "./new-tenant-auto-provisioning"; // DISABLED - No auto-provisioning
+// All demo data provisioning removed - tenants start completely clean
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, lt, gte, lte, inArray } from "drizzle-orm";
@@ -672,27 +671,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isFirstLogin: true,
       });
 
-      // Only provision essential system features (pay scales, tax brackets, NDIS pricing) - NO DEMO DATA WHATSOEVER
-      try {
-        const { provisionScHADSRates } = await import('./new-tenant-auto-provisioning');
-        const { createNdisPricingForTenant, ensureTaxBrackets } = await import('./new-tenant-auto-provisioning');
-        
-        console.log(`[NEW TENANT SETUP] Provisioning essential system features only for tenant ${tenant.id} (NO demo data)`);
-        
-        // ScHADS pay scales (required for payroll)
-        await provisionScHADSRates(tenant.id);
-        
-        // NDIS pricing structure (required for budget calculations)
-        await createNdisPricingForTenant(tenant.id);
-        
-        // Tax brackets (required for payroll)
-        await ensureTaxBrackets();
-        
-        console.log(`[NEW TENANT SETUP] Essential system features provisioned for tenant ${tenant.id} - tenant starts completely clean`);
-      } catch (error) {
-        console.error(`[NEW TENANT SETUP] Error provisioning essential features for tenant ${tenant.id}:`, error);
-        // Continue - company creation is more important than feature provisioning
-      }
+      // NO AUTO-PROVISIONING - All tenants start completely clean
+      console.log(`[NEW TENANT SETUP] Tenant ${tenant.id} created with zero data - users must create all content manually`);
 
       // Log to console as requested
       console.table([

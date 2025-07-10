@@ -57,15 +57,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   console.log("[MULTI-TENANT FIX] New tenants start completely clean - no automatic data creation");
   console.log("[MULTI-TENANT FIX] Users must create all their own data (clients, shifts, etc.)");
   
-  // Run complete demo data cleanup for all existing tenants
-  try {
-    console.log("[DEMO CLEANUP] Removing all existing demo data from all tenants");
-    const { completeCleanupAllDemoData } = await import('./complete-demo-data-cleanup');
-    await completeCleanupAllDemoData();
-    console.log("[DEMO CLEANUP] All demo data removed - tenants now completely clean");
-  } catch (error) {
-    console.error("[DEMO CLEANUP] Demo data cleanup failed:", error);
-  }
+
   
   // Only apply essential system fixes (employment types, tax brackets, pay scales)
   // NO demo data provisioning whatsoever

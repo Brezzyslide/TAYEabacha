@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Building2, User, Mail, Phone, Lock, FileText } from "lucide-react";
-import TenantProvisioningToggle from "./TenantProvisioningToggle";
+// Demo data provisioning removed - all tenants start clean
 
 const createCompanySchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -20,7 +20,7 @@ const createCompanySchema = z.object({
   primaryContactEmail: z.string().email("Invalid email address"),
   primaryContactPhone: z.string().optional(),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  includeDemoData: z.boolean().default(true),
+  // includeDemoData removed - all tenants start clean
 });
 
 type CreateCompanyFormData = z.infer<typeof createCompanySchema>;
@@ -39,7 +39,7 @@ export default function CompanyForm() {
       primaryContactEmail: "",
       primaryContactPhone: "",
       password: "",
-      includeDemoData: true,
+      // includeDemoData removed - all tenants start clean
     },
   });
 
@@ -200,11 +200,7 @@ export default function CompanyForm() {
           />
         </div>
 
-        {/* Demo Data Toggle */}
-        <TenantProvisioningToggle 
-          includeDemoData={form.watch("includeDemoData")}
-          onToggle={(value) => form.setValue("includeDemoData", value)}
-        />
+        {/* Demo data provisioning removed - all tenants start completely clean */}
 
         {/* Submit Button */}
         <div className="pt-6 border-t">
