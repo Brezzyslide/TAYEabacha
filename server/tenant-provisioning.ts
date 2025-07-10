@@ -7,14 +7,8 @@ import { provisionScHADSRates } from "./schads-provisioning";
  * CRITICAL: All new features must be automatically provisioned to ALL tenants
  */
 
-export interface TenantProvisioningData {
-  tenantId: number;
-  companyId: string;
-  sampleClients: any[];
-  sampleShifts: any[];
-  ndisBudgets: any[];
-  carePlans: any[];
-}
+// Legacy interface removed - no sample data fields needed anymore
+// All tenants start completely clean with zero demo data
 
 // Demo data creation completely removed - all tenants start with clean slate
 

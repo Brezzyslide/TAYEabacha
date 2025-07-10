@@ -175,7 +175,7 @@ async function provisionTimesheetsForTenant(tenantId: number): Promise<void> {
     // Calculate current pay period
     const payPeriod = calculatePayPeriod(new Date());
     
-    // Create sample timesheet for each staff member
+    // Create essential timesheet for each staff member (no demo data)
     for (const staffMember of staff) {
       const existingTimesheet = await db.select().from(schema.timesheets)
         .where(eq(schema.timesheets.userId, staffMember.id))
