@@ -29,23 +29,36 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // AWS Production Session Configuration
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  console.log(`[AUTH CONFIG] Environment: ${process.env.NODE_ENV}`);
+  console.log(`[AUTH CONFIG] Session store type: ${storage.sessionStore.constructor.name}`);
+  console.log(`[AUTH CONFIG] Production mode: ${isProduction}`);
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'fallback-session-secret-for-dev',
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
+    store: storage.sessionStore, // Using PostgreSQL session store
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // Always secure in production
-      httpOnly: true,
+      secure: isProduction, // HTTPS only in production
+      httpOnly: true, // Prevent XSS attacks
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site for AWS
-      // No domain restriction for AWS deployment
-      domain: undefined
+      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin in production
+      domain: undefined // Let browser determine domain
     },
     rolling: true, // Extends session on activity
-    name: 'needscareai.sid',
-    proxy: process.env.NODE_ENV === 'production' // Trust proxy in production
+    name: 'needscareai.sid', // Custom session name
+    proxy: isProduction // Trust proxy headers in production (AWS ALB)
   };
+  
+  console.log(`[AUTH CONFIG] Cookie settings:`, {
+    secure: sessionSettings.cookie?.secure,
+    sameSite: sessionSettings.cookie?.sameSite,
+    httpOnly: sessionSettings.cookie?.httpOnly,
+    maxAge: sessionSettings.cookie?.maxAge
+  });
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
@@ -118,9 +131,31 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req, res, next) => {
+    console.log(`[LOGOUT] User ${req.user?.id} logging out, Session ID: ${req.sessionID}`);
+    
     req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
+      if (err) {
+        console.error("[LOGOUT] Error during logout:", err);
+        return next(err);
+      }
+      
+      // Destroy session for complete logout
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error("[LOGOUT] Session destruction error:", destroyErr);
+        } else {
+          console.log("[LOGOUT] Session destroyed successfully");
+        }
+        
+        res.clearCookie('needscareai.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        });
+        
+        res.sendStatus(200);
+      });
     });
   });
 

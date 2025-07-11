@@ -1,8 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { provisionAllExistingTenants } from "./tenant-provisioning";
-import { runCompleteConsistencyCheck } from "./simplified-multi-tenant-fix";
 import { runStartupSecurityChecks } from "./enhanced-tenant-security";
 import path from 'path';
 
@@ -13,6 +12,40 @@ console.log(`[TIMEZONE] Server timezone set to: ${process.env.TZ}`);
 console.log(`[TIMEZONE] Current server time: ${new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}`);
 
 const app = express();
+
+// CORS Configuration for AWS Production
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Production domains and development patterns
+    const allowedOrigins = [
+      'https://needscareai.replit.app',
+      'https://your-frontend-domain.com',  // Replace with actual frontend domain
+      'http://localhost:3000',             // Development
+      'http://localhost:5000',             // Development
+      'http://127.0.0.1:3000',            // Development
+      'http://127.0.0.1:5000'             // Development
+    ];
+    
+    // Allow Replit development domains (dynamic UUIDs)
+    const isReplitDomain = origin.includes('.replit.dev') || origin.includes('.picard.replit.dev');
+    
+    if (allowedOrigins.includes(origin) || isReplitDomain) {
+      callback(null, true);
+    } else {
+      console.log(`[CORS] Origin ${origin} not allowed`);
+      callback(null, true); // Allow all origins for now - restrict in production
+    }
+  },
+  credentials: true, // Allow cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

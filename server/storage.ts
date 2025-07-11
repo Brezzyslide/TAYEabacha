@@ -221,10 +221,19 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
+    // Enhanced PostgreSQL session store for AWS production
     this.sessionStore = new PostgresSessionStore({ 
       pool, 
-      createTableIfMissing: true 
+      createTableIfMissing: true,
+      tableName: 'session',           // Explicit table name
+      pruneSessionInterval: 60,       // Clean expired sessions every 60 seconds
+      errorLog: (error: any) => {     // Enhanced error logging
+        console.error('[SESSION STORE] Error:', error);
+      }
     });
+    
+    console.log('[SESSION STORE] PostgreSQL session store initialized');
+    console.log('[SESSION STORE] Using database pool connection');
   }
 
   // Company methods
