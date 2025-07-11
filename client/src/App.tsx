@@ -43,6 +43,7 @@ import { CareSupportPlans } from "@/app/care-support-plans/CareSupportPlans";
 import TimesheetDashboard from "@/app/timesheet/TimesheetDashboard";
 import BillingDashboard from "@/app/billing/BillingDashboard";
 import LandingPage from "@/pages/LandingPage";
+import EmergencyCleanup from "@/app/emergency/EmergencyCleanup";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -83,6 +84,7 @@ function Router() {
       <ProtectedRoute path="/admin/companies/:id" component={CompanyDetailsPage} />
       <Route path="/admin/create-company" component={CreateCompanyPage} />
       <Route path="/admin/company-summary" component={CompanySummaryPage} />
+      <ProtectedRoute path="/emergency-cleanup" component={EmergencyCleanup} />
       <Route component={NotFound} />
     </Switch>
   );

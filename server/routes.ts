@@ -13,6 +13,7 @@ import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory
 import { createSmartTimesheetEntry } from "./smart-timesheet-service";
 import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
+import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -7940,6 +7941,52 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
     } catch (error: any) {
       console.error("Health check error:", error);
       res.status(500).json({ message: "Failed to perform health check" });
+    }
+  });
+
+  // EMERGENCY PRODUCTION DEMO DATA CLEANUP ENDPOINTS
+  // ⚠️ SECURITY: Only ConsoleManager can access these endpoints
+  app.post("/api/emergency/cleanup-demo-data", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
+    try {
+      console.log(`🚨 EMERGENCY DEMO DATA CLEANUP initiated by user ${req.user.id} (${req.user.username})`);
+      
+      const result = await executeProductionDemoDataCleanup();
+      
+      console.log(`✅ EMERGENCY CLEANUP COMPLETED:`, result);
+      res.json({
+        success: true,
+        message: "Production demo data cleanup completed successfully",
+        result
+      });
+    } catch (error: any) {
+      console.error(`❌ EMERGENCY CLEANUP FAILED:`, error);
+      res.status(500).json({ 
+        success: false,
+        message: "Demo data cleanup failed", 
+        error: error.message 
+      });
+    }
+  });
+
+  app.get("/api/emergency/verify-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
+    try {
+      const verification = await verifyProductionCleanup();
+      
+      res.json({
+        success: true,
+        isClean: verification.isClean,
+        remainingDemo: verification.remainingDemo,
+        message: verification.isClean 
+          ? "Production database is clean - no demo data found" 
+          : `Found ${verification.remainingDemo.length} remaining demo records`
+      });
+    } catch (error: any) {
+      console.error(`❌ CLEANUP VERIFICATION FAILED:`, error);
+      res.status(500).json({ 
+        success: false,
+        message: "Verification failed", 
+        error: error.message 
+      });
     }
   });
 
