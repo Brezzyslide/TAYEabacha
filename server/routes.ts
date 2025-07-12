@@ -808,6 +808,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Creating client with user:", req.user);
       console.log("Request body:", req.body);
       
+      // 🚨 ADDITIONAL DEMO DATA PREVENTION AT API LEVEL
+      const demoFirstNames = ['Sarah', 'Michael', 'Emma', 'John', 'Jane', 'Test', 'Demo'];
+      const demoLastNames = ['Johnson', 'Chen', 'Williams', 'Doe', 'Smith', 'Test', 'Demo'];
+      
+      if (demoFirstNames.includes(req.body.firstName) || demoLastNames.includes(req.body.lastName)) {
+        console.error(`🚨 [API DEMO BLOCK] User ${req.user.username} (Tenant: ${req.user.tenantId}) attempted to create demo client: ${req.body.firstName} ${req.body.lastName}`);
+        return res.status(400).json({ 
+          message: "Demo client names are permanently blocked. Please use real client names.",
+          error: `The name "${req.body.firstName} ${req.body.lastName}" is prohibited as it matches demo data patterns.`,
+          blocked: true
+        });
+      }
+      
       // Get company info for this tenant
       const company = await storage.getCompanyByTenantId(req.user.tenantId);
       if (!company) {

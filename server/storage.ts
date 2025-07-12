@@ -366,6 +366,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
+    // 🚨 PERMANENT DEMO DATA PREVENTION SAFEGUARD
+    const demoFirstNames = ['Sarah', 'Michael', 'Emma', 'John', 'Jane', 'Test', 'Demo'];
+    const demoLastNames = ['Johnson', 'Chen', 'Williams', 'Doe', 'Smith', 'Test', 'Demo'];
+    
+    if (demoFirstNames.includes(insertClient.firstName) || demoLastNames.includes(insertClient.lastName)) {
+      console.error(`🚨 [DEMO DATA BLOCKED] Rejected client creation attempt: ${insertClient.firstName} ${insertClient.lastName}`);
+      console.error(`🚨 [DEMO DATA BLOCKED] Tenant: ${insertClient.tenantId}, CreatedBy: ${insertClient.createdBy}`);
+      throw new Error(`BLOCKED: Demo client names (${insertClient.firstName} ${insertClient.lastName}) are permanently prohibited. Use real client names only.`);
+    }
+    
     // Generate unique client ID
     const clientId = `CLT${Date.now().toString().slice(-6)}`;
     const fullName = `${insertClient.firstName} ${insertClient.lastName}`;
@@ -381,6 +391,8 @@ export class DatabaseStorage implements IStorage {
       .insert(clients)
       .values(clientData)
       .returning();
+    
+    console.log(`✅ [CLIENT CREATED] Real client: ${fullName} (ID: ${client.id}, Tenant: ${client.tenantId})`);
     return client;
   }
 

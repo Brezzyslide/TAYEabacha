@@ -1,0 +1,46 @@
+You are a code refactor agent for a multi-tenant CRM platform.
+
+🚨 Objective:
+System must operate with **absolute zero system-provided demo data** or placeholders across all modules (clients, shifts, notes, plans, etc).
+
+🎯 Your task:
+1. **Scan the entire codebase** for any of the following:
+   - Hardcoded example data
+   - Placeholder client/user/shift/case note records
+   - Mock NDIS goals, medications, observations, plans
+   - Sample emails, names, locations, or identifiers
+   - Dummy API responses or test JSON returned during development
+   - InitialState values filled with non-null records
+   - useEffect or lifecycle hooks that preload example data
+
+2. **Hard delete**:
+   - All placeholder data at the API layer, state layer, and UI layer
+   - All mock return values (especially those under `process.env.NODE_ENV`)
+   - All seeded values that are NOT essential (e.g. NDIS pricing, tax bands, pay scales)
+
+3. **Enforce user-input only system moving forward**:
+   - Require all modules (Client, Shift, Incident, Case Note, Medication, Observation) to initialize as empty
+   - Disable or remove fallback data logic (`if (!data.length) return MOCK_DATA`)
+   - Validate that all tables return `[]` for new tenants
+   - Prevent any demo data auto-population at:
+     - tenant creation
+     - user signup
+     - form rendering
+     - component mounts
+
+4. **Verify in all relevant files and modules**:
+   - `insertDemo*` or `seedDemo*` functions → DELETE
+   - `/scripts/seed-demo.ts`, `/lib/demo-data.ts` → DELETE
+   - `components/DemoClientCard`, `DemoPlanCard` etc → DELETE
+   - Any mention of `Emma Williams`, `Michael Chen`, `NDIS001003`, `Sarah Johnson`, `T1`, `T3`, or related IDs → DELETE
+   - Any JSON fixture or local mock used to simulate real data
+
+5. ✅ After cleanup:
+   - New tenant creation must return empty datasets across all key modules
+   - All forms and modules must rely 100% on real-time user input to populate
+   - All test or demo UI components must be deleted or hidden behind dev-only flags
+
+🛑 Do NOT touch:
+- Tax brackets
+- NDIS pricing metadata
+- Static config used by all tenants (e.g., employment types, pay levels)

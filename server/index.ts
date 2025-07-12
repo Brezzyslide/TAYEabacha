@@ -92,16 +92,11 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   
 
   
-  // Only apply essential system fixes (employment types, tax brackets, pay scales)
-  // NO demo data provisioning whatsoever
-  try {
-    console.log("[ESSENTIAL FIXES] Applying only essential system fixes (no demo data)");
-    const { applyComprehensiveTenantFixes } = await import('./comprehensive-tenant-fixes');
-    await applyComprehensiveTenantFixes();
-    console.log("[ESSENTIAL FIXES] Essential system fixes completed - no demo data created");
-  } catch (error) {
-    console.error("[ESSENTIAL FIXES] Essential fixes failed:", error);
-  }
+  // ALL DEMO DATA PROVISIONING COMPLETELY DISABLED
+  // NO tenant fixes, NO comprehensive fixes, NO automatic provisioning of ANY kind
+  console.log("[ZERO PROVISIONING] All tenant fixes and provisioning COMPLETELY DISABLED");
+  console.log("[ZERO PROVISIONING] All new tenants will have absolutely ZERO data");
+  console.log("[ZERO PROVISIONING] Users must create everything manually");
 
   // Apply composite foreign key constraints for database-level tenant isolation
   console.log("[COMPOSITE FK] Applying database-level tenant isolation constraints");
