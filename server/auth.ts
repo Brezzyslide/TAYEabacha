@@ -175,17 +175,14 @@ export function setupAuth(app: Express) {
         console.log("[LOGIN] Login successful:", { userId: user.id, username: user.username, tenantId: user.tenantId });
         
         // Log session details for security monitoring
-        await storage.logActivity({
+        await storage.createActivityLog({
           userId: user.id,
           tenantId: user.tenantId,
           action: 'login',
-          details: { 
-            sessionId: req.sessionID,
-            userAgent: req.headers['user-agent'],
-            ip: req.ip || req.connection.remoteAddress,
-            timestamp: new Date().toISOString(),
-            tenantVerified: true
-          }
+          resourceType: 'session',
+          resourceId: user.id,
+          description: `User ${user.username} logged in successfully`,
+          timestamp: new Date()
         });
         
         res.status(200).json(user);
