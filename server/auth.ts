@@ -65,6 +65,23 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // CRITICAL: Tenant-safe session validation middleware
+  app.use(async (req, res, next) => {
+    if (req.isAuthenticated() && req.user) {
+      const userId = req.user.id;
+      const tenantId = req.user.tenantId;
+      
+      // Verify user still exists and belongs to correct tenant
+      const user = await storage.getUserByUsernameAndTenant(req.user.username, tenantId);
+      if (!user || user.id !== userId) {
+        console.error(`[SESSION SECURITY] Invalid session detected for user ${userId} - destroying session`);
+        req.session.destroy(() => {});
+        return res.status(401).json({ error: "Session expired" });
+      }
+    }
+    next();
+  });
+
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
@@ -88,7 +105,15 @@ export function setupAuth(app: Express) {
         console.log(`[PASSPORT] User ${id} not found - session invalid`);
         return done(null, false);
       }
-      console.log(`[PASSPORT] Found user: ${user.username} (ID: ${user.id}, Tenant: ${user.tenantId})`);
+      
+      // CRITICAL: Verify user exists with matching tenant to prevent cross-tenant contamination
+      const verifiedUser = await storage.getUserByUsernameAndTenant(user.username, user.tenantId);
+      if (!verifiedUser || verifiedUser.id !== user.id) {
+        console.log(`[PASSPORT SECURITY] User ${id} failed tenant verification - destroying session`);
+        return done(null, false);
+      }
+      
+      console.log(`[PASSPORT] Verified user: ${user.username} (ID: ${user.id}, Tenant: ${user.tenantId})`);
       done(null, user);
     } catch (error) {
       console.error(`[PASSPORT] Error deserializing user ${id}:`, error);
@@ -132,13 +157,37 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      req.login(user, (loginErr) => {
+      req.login(user, async (loginErr) => {
         if (loginErr) {
           console.error("[LOGIN] Login error:", loginErr);
           return next(loginErr);
         }
         
+        // CRITICAL: Verify user belongs to claimed tenant before completing login
+        const tenantVerification = await storage.getUserByUsernameAndTenant(user.username, user.tenantId);
+        if (!tenantVerification || tenantVerification.id !== user.id) {
+          console.error(`[LOGIN SECURITY] TENANT MISMATCH: User ${user.username} failed tenant verification`);
+          req.session.destroy(() => {});
+          return res.status(401).json({ error: "Authentication failed" });
+        }
+        
+        console.log(`[LOGIN] ✅ Tenant verification passed for ${user.username} in tenant ${user.tenantId}`);
         console.log("[LOGIN] Login successful:", { userId: user.id, username: user.username, tenantId: user.tenantId });
+        
+        // Log session details for security monitoring
+        await storage.logActivity({
+          userId: user.id,
+          tenantId: user.tenantId,
+          action: 'login',
+          details: { 
+            sessionId: req.sessionID,
+            userAgent: req.headers['user-agent'],
+            ip: req.ip || req.connection.remoteAddress,
+            timestamp: new Date().toISOString(),
+            tenantVerified: true
+          }
+        });
+        
         res.status(200).json(user);
       });
     })(req, res, next);
