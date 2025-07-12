@@ -67,19 +67,51 @@ export function setupAuth(app: Express) {
 
   // CRITICAL: Tenant-safe session validation middleware
   app.use(async (req, res, next) => {
-    if (req.isAuthenticated() && req.user) {
-      const userId = req.user.id;
-      const tenantId = req.user.tenantId;
-      
-      // Verify user still exists and belongs to correct tenant
-      const user = await storage.getUserByUsernameAndTenant(req.user.username, tenantId);
+    const userId = req.session?.userId || req.user?.id;
+    const tenantId = req.session?.tenantId || req.user?.tenantId;
+
+    if (userId && tenantId) {
+      // Verify user still exists and belongs to correct tenant  
+      const user = await storage.getUserByUsernameAndTenant(req.user?.username || '', tenantId);
       if (!user || user.id !== userId) {
-        console.error(`[SESSION SECURITY] Invalid session detected for user ${userId} - destroying session`);
+        console.log(`[SESSION SECURITY] Invalid session detected for user ${userId}, tenant ${tenantId} - destroying session`);
         req.session.destroy(() => {});
-        return res.status(401).json({ error: "Session expired" });
+        return next();
+      } else {
+        req.user = user;
       }
     }
     next();
+  });
+
+  // Add enhanced session logging
+  app.use((req, res, next) => {
+    if (req.isAuthenticated() && req.user) {
+      console.log(`[SESSION] User ${req.user.email} logged in under tenant ${req.user.tenantId}`);
+    }
+    next();
+  });
+
+  passport.serializeUser((user, done) => {
+    console.log(`[PASSPORT] Serializing user: ${user.id} (${user.username})`);
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      console.log(`[PASSPORT] Deserializing user ID: ${id}`);
+      const user = await storage.getUser(id);
+      if (user) {
+        console.log(`[PASSPORT] Verified user: ${user.username} (ID: ${user.id}, Tenant: ${user.tenantId})`);
+        done(null, user);
+      } else {
+        console.log(`[PASSPORT] User ${id} not found during deserialization`);
+        done(null, false);
+      }
+    } catch (error) {
+      console.error(`[PASSPORT] Deserialization error for user ${id}:`, error);
+      done(error, null);
+    }
   });
 
   passport.use(
@@ -92,34 +124,6 @@ export function setupAuth(app: Express) {
       }
     }),
   );
-
-  passport.serializeUser((user, done) => {
-    console.log(`[PASSPORT] Serializing user: ${user.id} (${user.username})`);
-    done(null, user.id);
-  });
-  passport.deserializeUser(async (id: number, done) => {
-    console.log(`[PASSPORT] Deserializing user ID: ${id}`);
-    try {
-      const user = await storage.getUser(id);
-      if (!user) {
-        console.log(`[PASSPORT] User ${id} not found - session invalid`);
-        return done(null, false);
-      }
-      
-      // CRITICAL: Verify user exists with matching tenant to prevent cross-tenant contamination
-      const verifiedUser = await storage.getUserByUsernameAndTenant(user.username, user.tenantId);
-      if (!verifiedUser || verifiedUser.id !== user.id) {
-        console.log(`[PASSPORT SECURITY] User ${id} failed tenant verification - destroying session`);
-        return done(null, false);
-      }
-      
-      console.log(`[PASSPORT] Verified user: ${user.username} (ID: ${user.id}, Tenant: ${user.tenantId})`);
-      done(null, user);
-    } catch (error) {
-      console.error(`[PASSPORT] Error deserializing user ${id}:`, error);
-      done(error, null);
-    }
-  });
 
   app.post("/api/register", async (req, res, next) => {
     const existingUser = await storage.getUserByUsername(req.body.username);

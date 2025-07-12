@@ -1,0 +1,88 @@
+1. Switch to a Persistent, Tenant-Safe Session Store
+If you haven't already, stop using memory-based session stores.
+
+Use PostgreSQL or Redis-backed session store:
+In server.ts or auth.ts, use something like:
+
+ts
+Copy
+Edit
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
+
+const PgSession = connectPgSimple(session);
+
+app.use(
+  session({
+    store: new PgSession({
+      pool: pgPool, // your PostgreSQL pool
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: true,
+      sameSite: 'none',
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
+✅ This will ensure only valid sessions exist, and they’re safely isolated.
+
+2. Reset All Sessions Right Now
+If sessions are corrupted, clean them out:
+
+If using PostgreSQL:
+sql
+Copy
+Edit
+DELETE FROM session;
+If using Redis:
+bash
+Copy
+Edit
+redis-cli FLUSHALL
+This will log everyone out, which is good — it removes any poisoned or ghost sessions.
+
+3. Fix Deserialization Logic
+Ensure your deserialization logic confirms both userId and tenantId.
+
+In your session handling:
+
+ts
+Copy
+Edit
+app.use(async (req, res, next) => {
+  const userId = req.session.userId;
+  const tenantId = req.session.tenantId;
+
+  if (userId && tenantId) {
+    const user = await db.users.findFirst({
+      where: { id: userId, tenantId }, // ensure tenant match!
+    });
+    if (!user) {
+      req.session.destroy(() => {});
+    } else {
+      req.user = user;
+    }
+  }
+  next();
+});
+🚨 Many systems skip that tenantId check — it leads to this exact kind of cross-user contamination.
+
+4. Force Logout and Re-login
+After you fix the session store and logic:
+
+Have all users log out and back in
+
+This ensures fresh sessions get issued with correct user/tenant context
+
+5. Log Every Session Login
+Add a server log like:
+
+ts
+Copy
+Edit
+console.log(`[SESSION] User ${user.email} logged in under tenant ${tenantId}`);
+So you can track exactly who is being logged in and under what tenant.
