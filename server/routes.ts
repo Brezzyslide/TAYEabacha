@@ -8007,6 +8007,45 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
     }
   });
 
+  // Emergency demo data cleanup endpoint (ConsoleManager only)
+  app.post("/api/emergency-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { emergencyCleanupAllDemoData, verifyCleanupSuccess } = await import('./emergency-demo-data-cleanup');
+      
+      console.log(`[EMERGENCY CLEANUP] Initiated by user: ${req.user.username} (Tenant: ${req.user.tenantId})`);
+      
+      // Execute emergency cleanup
+      await emergencyCleanupAllDemoData();
+      
+      // Verify cleanup success
+      await verifyCleanupSuccess();
+      
+      // Log the activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "emergency_cleanup",
+        resourceType: "system",
+        resourceId: 0,
+        description: "Executed emergency demo data cleanup across all tenants",
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "Emergency demo data cleanup completed successfully. All tenants now have zero demo data.",
+        cleanedTenants: [8, 9, 10, 11, 12, 13, 14, 15]
+      });
+      
+    } catch (error: any) {
+      console.error('Emergency cleanup error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Emergency cleanup failed", 
+        error: error.message 
+      });
+    }
+  });
+
   // Serve static files from uploads directory  
   const expressStatic = await import('express');
   const pathModule = await import('path');
