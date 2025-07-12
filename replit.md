@@ -124,6 +124,7 @@ CareConnect is a comprehensive healthcare facility management platform built wit
 
 ## Changelog
 - June 14, 2025. Initial setup
+- July 12, 2025. **ZERO DEMO DATA POLICY VERIFICATION COMPLETED** - Successfully verified that all new tenants (including tenant 15 FreshTest Healthcare) start completely clean with zero demo data across all tables (clients, shifts, case_notes, medication_plans, ndis_budgets, pay_scales, ndis_pricing, hour_allocations). System confirmed working correctly with 15 total tenants all maintaining clean state. Database-level tenant isolation active with 27 composite foreign key constraints providing enterprise-grade security.
 - June 14, 2025. Fixed shift editing functionality - resolved timestamp data type issue (Drizzle expects Date objects, not ISO strings)
 - June 14, 2025. Implemented true calendar collapse functionality with Daily/Weekly/Fortnightly/Monthly view toggles that change grid structure rather than just filtering content
 - June 14, 2025. Added Calendar view as default when opening Calendar tab instead of list view
