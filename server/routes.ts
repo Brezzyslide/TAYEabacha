@@ -14,6 +14,8 @@ import { createSmartTimesheetEntry } from "./smart-timesheet-service";
 import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
+import { db } from "./lib/dbClient";
+import { sql } from "drizzle-orm";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -714,6 +716,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients", requireAuth, async (req: any, res) => {
     try {
       console.log(`[CLIENT API DEBUG] Request from user: ${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId}, Role: ${req.user.role})`);
+      
+      // CRITICAL DEBUG: Check which database we're connected to
+      try {
+        const dbCheck = await db.execute(sql`SELECT current_database() as db_name`);
+        console.log('🧠 [DB CONNECTION CHECK] Connected to database:', (dbCheck.rows[0] as any).db_name);
+        
+        // CRITICAL DEBUG: Count actual clients in database for this tenant before API call
+        const dbClientCount = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE tenant_id = ${req.user.tenantId} AND is_active = true`);
+        console.log(`🔍 [DB RAW COUNT] Direct database shows ${(dbClientCount.rows[0] as any).count} clients for tenant ${req.user.tenantId}`);
+      } catch (dbError) {
+        console.error('❌ [DB DEBUG ERROR]:', dbError);
+      }
       
       let clients;
       
@@ -7958,6 +7972,24 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
     } catch (error: any) {
       console.error("Health check error:", error);
       res.status(500).json({ message: "Failed to perform health check" });
+    }
+  });
+
+  // DATABASE DEBUG ENDPOINT - Check which database we're connected to
+  app.get("/api/debug/database", requireAuth, async (req: any, res) => {
+    try {
+      const dbCheck = await db.execute(sql`SELECT current_database() as db_name, current_user as db_user`);
+      const clientCount = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE tenant_id = ${req.user.tenantId}`);
+      
+      res.json({
+        database: (dbCheck.rows[0] as any).db_name,
+        user: (dbCheck.rows[0] as any).db_user,
+        tenantId: req.user.tenantId,
+        clientCount: (clientCount.rows[0] as any).count,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
   });
 
