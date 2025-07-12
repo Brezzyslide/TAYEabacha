@@ -713,6 +713,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clients API
   app.get("/api/clients", requireAuth, async (req: any, res) => {
     try {
+      console.log(`[CLIENT API DEBUG] Request from user: ${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId}, Role: ${req.user.role})`);
+      
       let clients;
       
       // Check if user is a support worker - they should only see assigned clients
@@ -726,6 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (assignedClientIds.length === 0) {
           // No clients assigned - return empty array
+          console.log(`[CLIENT API DEBUG] SupportWorker has no assigned clients - returning empty array`);
           return res.json([]);
         }
         
@@ -737,6 +740,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Admin, Coordinator, TeamLeader, ConsoleManager can see all clients
         clients = await storage.getClients(req.user.tenantId);
+        console.log(`[CLIENT API DEBUG] Admin/Manager user accessing all clients for tenant ${req.user.tenantId}: ${clients.length} clients found`);
+      }
+      
+      // CRITICAL DEBUG: Log exact client data being returned
+      console.log(`[CLIENT API DEBUG] Returning ${clients.length} clients to user ${req.user.username}:`);
+      if (clients.length > 0) {
+        console.table(clients.map(c => ({
+          id: c.id,
+          fullName: c.fullName,
+          ndisNumber: c.ndisNumber,
+          tenantId: c.tenantId
+        })));
+      } else {
+        console.log(`[CLIENT API DEBUG] No clients found - this should result in clean slate for user`);
       }
       
       res.json(clients);

@@ -76,10 +76,24 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => {
+    console.log(`[PASSPORT] Serializing user: ${user.id} (${user.username})`);
+    done(null, user.id);
+  });
   passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
+    console.log(`[PASSPORT] Deserializing user ID: ${id}`);
+    try {
+      const user = await storage.getUser(id);
+      if (!user) {
+        console.log(`[PASSPORT] User ${id} not found - session invalid`);
+        return done(null, false);
+      }
+      console.log(`[PASSPORT] Found user: ${user.username} (ID: ${user.id}, Tenant: ${user.tenantId})`);
+      done(null, user);
+    } catch (error) {
+      console.error(`[PASSPORT] Error deserializing user ${id}:`, error);
+      done(error, null);
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {
