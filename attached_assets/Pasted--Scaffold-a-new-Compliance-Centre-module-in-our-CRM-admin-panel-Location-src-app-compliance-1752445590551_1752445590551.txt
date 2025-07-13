@@ -1,0 +1,92 @@
+// 🔧 Scaffold a new Compliance Centre module in our CRM admin panel
+// Location: src/app/compliance-centre/
+
+// ✅ Requirements:
+// - Module accessible only to Admin, Compliance Officer, and Director roles
+// - Sidebar label: "Compliance Centre"
+// - All features must enforce multi-tenancy via `companyId`
+// - Upload features must tag and store files securely
+
+// 📁 Create Folder Structure:
+Create:
+- src/app/compliance-centre/page.tsx
+- src/app/compliance-centre/components/DownloadableForms.tsx
+- src/app/compliance-centre/components/MedicationAuthorityUploader.tsx
+- src/app/compliance-centre/components/EvacuationDrillForm.tsx
+- src/app/compliance-centre/components/EvacuationDrillLog.tsx
+- src/app/compliance-centre/forms/medication-authority.pdf
+- src/app/compliance-centre/forms/medication-purpose-form.pdf
+- src/app/compliance-centre/forms/evacuation-checklist.pdf
+
+// 📄 page.tsx
+- Render a tabbed layout using shadcn/ui Tabs
+- Tabs: "Forms", "Upload Medication Authority", "Evacuation Drill Log"
+- Each tab loads respective component
+
+// 📄 DownloadableForms.tsx
+- Show buttons to download:
+  - Medication Authority Form (PDF)
+  - Medication Purpose Form (PDF)
+  - Emergency Evacuation Checklist (PDF)
+- Use static PDF assets imported from /forms
+
+// 📄 MedicationAuthorityUploader.tsx
+- Create file uploader component with fields:
+  - Client selection dropdown (from client directory)
+  - Form type selection ("Authority" or "Purpose")
+  - Upload button (accept only PDF)
+- Save uploaded file with:
+  - companyId
+  - clientId
+  - form_type
+  - file_url
+  - uploaded_by
+  - uploaded_at
+- Store in Supabase table `compliance_documents`
+
+// 📄 EvacuationDrillForm.tsx
+- React Hook Form for logging drills:
+  - Site Name (text)
+  - Date of Drill (date)
+  - Participants (textarea)
+  - Issues Noted (textarea)
+  - Signed By (text)
+- Submit button saves to Supabase `evacuation_drills` table with companyId
+
+// 📄 EvacuationDrillLog.tsx
+- Display drill entries in a table format
+- Show all fields + export to CSV button
+
+// ✅ Permissions
+- Only allow access if user.role in ['admin', 'compliance_officer', 'director']
+
+// ✅ Database Tables Needed:
+Create Supabase table `compliance_documents`:
+- id: uuid (PK)
+- companyId: uuid
+- clientId: uuid (nullable)
+- form_type: text
+- file_url: text
+- uploaded_by: uuid
+- uploaded_at: timestamp
+
+Create Supabase table `evacuation_drills`:
+- id: uuid (PK)
+- companyId: uuid
+- site_name: text
+- drill_date: date
+- participants: text
+- issues_found: text
+- signed_by: text
+- created_at: timestamp
+
+// ✅ Style
+- Use existing CRM dark theme
+- Buttons via shadcn/ui
+- Layouts consistent with other admin views
+
+// 🎯 Outcome
+A working Compliance Centre visible to Admins, where they can:
+- Download official compliance forms
+- Upload signed medication forms for each client
+- Record evacuation drills and view/export logs
