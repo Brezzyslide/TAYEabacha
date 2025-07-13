@@ -8067,6 +8067,46 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
     }
   });
 
+  // File upload endpoint for compliance forms
+  app.post("/api/compliance/forms/upload", requireAuth, requireRole(["Admin", "ConsoleManager"]), upload.single('file'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const { formType } = req.body;
+      if (!formType) {
+        return res.status(400).json({ message: "Form type is required" });
+      }
+
+      // Create file URL - in production, you'd upload to S3 or similar
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      const newForm = await storage.createDownloadableForm({
+        tenantId: req.user.tenantId,
+        formType,
+        fileName: req.file.originalname,
+        fileUrl,
+        uploadedBy: req.user.id,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "upload_compliance_form",
+        resourceType: "compliance_form",
+        resourceId: newForm.id,
+        description: `Uploaded ${formType} form: ${req.file.originalname}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(newForm);
+    } catch (error: any) {
+      console.error("Upload form error:", error);
+      res.status(500).json({ message: "Failed to upload form" });
+    }
+  });
+
   app.post("/api/compliance/forms", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const { formType, fileName, fileUrl } = req.body;

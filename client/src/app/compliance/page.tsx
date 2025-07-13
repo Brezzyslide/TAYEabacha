@@ -1,11 +1,16 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Download, Upload, Plus, Eye, Trash2, AlertTriangle, FileText, Shield, Users } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 // Form Types
@@ -165,6 +170,125 @@ function ComplianceOverview() {
   );
 }
 
+function UploadFormDialog() {
+  const [open, setOpen] = useState(false);
+  const [formType, setFormType] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const uploadMutation = useMutation({
+    mutationFn: async (data: { file: File; formType: string }) => {
+      const formData = new FormData();
+      formData.append('file', data.file);
+      formData.append('formType', data.formType);
+
+      const response = await fetch('/api/compliance/forms/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Form uploaded successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/forms"] });
+      setOpen(false);
+      setFormType("");
+      setFile(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to upload form",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file || !formType) {
+      toast({
+        title: "Error",
+        description: "Please select a file and form type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    uploadMutation.mutate({ file, formType });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-tusk-600 hover:bg-tusk-700 text-white">
+          <Upload className="h-4 w-4 mr-2" />
+          Upload Form
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Upload Compliance Form</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="formType">Form Type</Label>
+            <Select value={formType} onValueChange={setFormType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select form type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="med_authority">Medication Authority</SelectItem>
+                <SelectItem value="rp_consent">Restrictive Practice Consent</SelectItem>
+                <SelectItem value="med_purpose">Medication Purpose Statement</SelectItem>
+                <SelectItem value="incident_report">Incident Report Template</SelectItem>
+                <SelectItem value="care_plan">Care Plan Template</SelectItem>
+                <SelectItem value="assessment">Assessment Form</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="file">File</Label>
+            <Input
+              id="file"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100"
+            />
+            <p className="text-xs text-slate-500">
+              Supported formats: PDF, DOC, DOCX (max 10MB)
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={uploadMutation.isPending}
+              className="bg-tusk-600 hover:bg-tusk-700 text-white"
+            >
+              {uploadMutation.isPending ? "Uploading..." : "Upload"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function DownloadableFormsTab() {
   const { data: forms = [], refetch } = useQuery<DownloadableForm[]>({
     queryKey: ["/api/compliance/forms"],
@@ -181,10 +305,7 @@ function DownloadableFormsTab() {
             Manage compliance forms available for download
           </p>
         </div>
-        <Button className="bg-tusk-600 hover:bg-tusk-700 text-white">
-          <Upload className="h-4 w-4 mr-2" />
-          Upload Form
-        </Button>
+        <UploadFormDialog />
       </div>
 
       <div className="grid gap-4">
