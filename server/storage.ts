@@ -2242,16 +2242,15 @@ export class DatabaseStorage implements IStorage {
 
   // Compliance Centre methods
 
-  // Downloadable Forms
-  async getDownloadableForms(tenantId: number): Promise<DownloadableForm[]> {
+  // Downloadable Forms - Global forms library accessible to all tenants
+  async getDownloadableForms(): Promise<DownloadableForm[]> {
     return await db.select().from(downloadableForms)
-      .where(eq(downloadableForms.tenantId, tenantId))
       .orderBy(desc(downloadableForms.uploadedAt));
   }
 
-  async getDownloadableForm(id: number, tenantId: number): Promise<DownloadableForm | undefined> {
+  async getDownloadableForm(id: number): Promise<DownloadableForm | undefined> {
     const [form] = await db.select().from(downloadableForms)
-      .where(and(eq(downloadableForms.id, id), eq(downloadableForms.tenantId, tenantId)));
+      .where(eq(downloadableForms.id, id));
     return form || undefined;
   }
 
@@ -2263,19 +2262,19 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateDownloadableForm(id: number, form: Partial<InsertDownloadableForm>, tenantId: number): Promise<DownloadableForm | undefined> {
+  async updateDownloadableForm(id: number, form: Partial<InsertDownloadableForm>): Promise<DownloadableForm | undefined> {
     const [updated] = await db
       .update(downloadableForms)
       .set(form)
-      .where(and(eq(downloadableForms.id, id), eq(downloadableForms.tenantId, tenantId)))
+      .where(eq(downloadableForms.id, id))
       .returning();
     return updated || undefined;
   }
 
-  async deleteDownloadableForm(id: number, tenantId: number): Promise<boolean> {
+  async deleteDownloadableForm(id: number): Promise<boolean> {
     const result = await db
       .delete(downloadableForms)
-      .where(and(eq(downloadableForms.id, id), eq(downloadableForms.tenantId, tenantId)));
+      .where(eq(downloadableForms.id, id));
     return (result.rowCount || 0) > 0;
   }
 

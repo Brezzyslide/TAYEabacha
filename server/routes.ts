@@ -8056,10 +8056,10 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
   // COMPLIANCE CENTRE ROUTES
   // ========================================
 
-  // Downloadable Forms Management
-  app.get("/api/compliance/forms", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+  // Downloadable Forms Management - Global library accessible to all tenants
+  app.get("/api/compliance/forms", requireAuth, async (req: any, res) => {
     try {
-      const forms = await storage.getDownloadableForms(req.user.tenantId);
+      const forms = await storage.getDownloadableForms();
       res.json(forms);
     } catch (error: any) {
       console.error("Get downloadable forms error:", error);
@@ -8083,7 +8083,6 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       const fileUrl = `/uploads/${req.file.filename}`;
       
       const newForm = await storage.createDownloadableForm({
-        tenantId: req.user.tenantId,
         formType,
         fileName: req.file.originalname,
         fileUrl,

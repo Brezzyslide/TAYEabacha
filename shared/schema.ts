@@ -1515,10 +1515,9 @@ export const insertPayslipSchema = createInsertSchema(payslips).omit({
   generatedAt: true,
 });
 
-// Compliance forms library table
+// Compliance forms library table - Global forms accessible to all tenants
 export const downloadableForms = pgTable("downloadable_forms", {
   id: serial("id").primaryKey(),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   formType: text("form_type").notNull(), // 'med_authority', 'rp_consent', 'med_purpose'
   fileName: text("file_name").notNull(),
   fileUrl: text("file_url").notNull(),
@@ -1552,10 +1551,6 @@ export const evacuationDrills = pgTable("evacuation_drills", {
 
 // Relations for compliance tables
 export const downloadableFormsRelations = relations(downloadableForms, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [downloadableForms.tenantId],
-    references: [tenants.id],
-  }),
   uploadedBy: one(users, {
     fields: [downloadableForms.uploadedBy],
     references: [users.id],

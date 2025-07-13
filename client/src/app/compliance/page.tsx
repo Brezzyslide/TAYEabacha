@@ -293,6 +293,7 @@ function DownloadableFormsTab() {
   const { data: forms = [], refetch } = useQuery<DownloadableForm[]>({
     queryKey: ["/api/compliance/forms"],
   });
+  const { user } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -302,10 +303,13 @@ function DownloadableFormsTab() {
             Downloadable Forms Library
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Manage compliance forms available for download
+            {user?.role?.toLowerCase() === 'consolemanager' 
+              ? "Manage global compliance forms available to all tenants"
+              : "Download compliance forms for your organization"
+            }
           </p>
         </div>
-        <UploadFormDialog />
+        {user?.role?.toLowerCase() === 'consolemanager' && <UploadFormDialog />}
       </div>
 
       <div className="grid gap-4">
