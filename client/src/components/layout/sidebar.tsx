@@ -73,7 +73,8 @@ export default function Sidebar() {
 
   if (!user) return null;
 
-  const isAdmin = user.role.toLowerCase() === "admin" || user.role.toLowerCase() === "consolemanager";
+  const userRole = user.role?.toLowerCase();
+  const isAdmin = userRole === "admin" || userRole === "consolemanager";
   const canManageCompaniesAccess = canManageCompanies(user);
 
   const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (

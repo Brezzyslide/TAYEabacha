@@ -455,8 +455,9 @@ function EvacuationDrillsTab() {
 export default function CompliancePage() {
   const { user } = useAuth();
   
-  // Check if user has admin access
-  const hasAdminAccess = user?.role === "Admin" || user?.role === "ConsoleManager";
+  // Check if user has admin access (case-insensitive)
+  const userRole = user?.role?.toLowerCase();
+  const hasAdminAccess = userRole === "admin" || userRole === "consolemanager";
   
   if (!hasAdminAccess) {
     return (
@@ -469,6 +470,9 @@ export default function CompliancePage() {
             </h3>
             <p className="text-slate-600 dark:text-slate-400">
               Only administrators can access the Compliance Centre.
+            </p>
+            <p className="text-xs text-slate-500 mt-2">
+              Current role: {user?.role || 'Unknown'}
             </p>
           </CardContent>
         </Card>
