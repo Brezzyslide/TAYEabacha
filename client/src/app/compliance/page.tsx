@@ -309,7 +309,7 @@ function DownloadableFormsTab() {
             }
           </p>
         </div>
-        {user?.role?.toLowerCase() === 'consolemanager' && <UploadFormDialog />}
+        {(user?.role?.toLowerCase() === 'consolemanager' || user?.role?.toLowerCase() === 'admin') && <UploadFormDialog />}
       </div>
 
       <div className="grid gap-4">
