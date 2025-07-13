@@ -3,6 +3,7 @@ import {
   medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
   shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries, leaveBalances, taxBrackets,
+  downloadableForms, completedMedicationAuthorityForms, evacuationDrills,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -16,7 +17,9 @@ import {
   type NdisPricing, type InsertNdisPricing, type NdisBudget, type InsertNdisBudget,
   type BudgetTransaction, type InsertBudgetTransaction, type CareSupportPlan, type InsertCareSupportPlan,
   type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest,
-  type PayScale, type Notification, type InsertNotification, type TaxBracket
+  type PayScale, type Notification, type InsertNotification, type TaxBracket,
+  type DownloadableForm, type InsertDownloadableForm, type CompletedMedicationAuthorityForm, type InsertCompletedMedicationAuthorityForm,
+  type EvacuationDrill, type InsertEvacuationDrill
 } from "@shared/schema";
 import { db, pool } from "./lib/dbClient";
 import { eq, and, desc, sql, or, exists } from "drizzle-orm";
@@ -213,6 +216,24 @@ export interface IStorage {
   // Tax Brackets
   getTaxBrackets(taxYear: number): Promise<any[]>;
   createTaxBracket(bracket: any): Promise<any>;
+
+  // Compliance Centre
+  getDownloadableForms(tenantId: number): Promise<DownloadableForm[]>;
+  getDownloadableForm(id: number, tenantId: number): Promise<DownloadableForm | undefined>;
+  createDownloadableForm(form: InsertDownloadableForm): Promise<DownloadableForm>;
+  updateDownloadableForm(id: number, form: Partial<InsertDownloadableForm>, tenantId: number): Promise<DownloadableForm | undefined>;
+  deleteDownloadableForm(id: number, tenantId: number): Promise<boolean>;
+  
+  getCompletedMedicationForms(tenantId: number): Promise<CompletedMedicationAuthorityForm[]>;
+  getCompletedMedicationFormsByClient(clientId: number, tenantId: number): Promise<CompletedMedicationAuthorityForm[]>;
+  createCompletedMedicationForm(form: InsertCompletedMedicationAuthorityForm): Promise<CompletedMedicationAuthorityForm>;
+  deleteCompletedMedicationForm(id: number, tenantId: number): Promise<boolean>;
+  
+  getEvacuationDrills(tenantId: number): Promise<EvacuationDrill[]>;
+  getEvacuationDrill(id: number, tenantId: number): Promise<EvacuationDrill | undefined>;
+  createEvacuationDrill(drill: InsertEvacuationDrill): Promise<EvacuationDrill>;
+  updateEvacuationDrill(id: number, drill: Partial<InsertEvacuationDrill>, tenantId: number): Promise<EvacuationDrill | undefined>;
+  deleteEvacuationDrill(id: number, tenantId: number): Promise<boolean>;
 
   // Session store
   sessionStore: any;
@@ -2217,6 +2238,139 @@ export class DatabaseStorage implements IStorage {
   async createTaxBracket(bracket: any): Promise<any> {
     const [created] = await db.insert(taxBrackets).values(bracket).returning();
     return created;
+  }
+
+  // Compliance Centre methods
+
+  // Downloadable Forms
+  async getDownloadableForms(tenantId: number): Promise<DownloadableForm[]> {
+    return await db.select().from(downloadableForms)
+      .where(eq(downloadableForms.tenantId, tenantId))
+      .orderBy(desc(downloadableForms.uploadedAt));
+  }
+
+  async getDownloadableForm(id: number, tenantId: number): Promise<DownloadableForm | undefined> {
+    const [form] = await db.select().from(downloadableForms)
+      .where(and(eq(downloadableForms.id, id), eq(downloadableForms.tenantId, tenantId)));
+    return form || undefined;
+  }
+
+  async createDownloadableForm(form: InsertDownloadableForm): Promise<DownloadableForm> {
+    const [created] = await db
+      .insert(downloadableForms)
+      .values(form)
+      .returning();
+    return created;
+  }
+
+  async updateDownloadableForm(id: number, form: Partial<InsertDownloadableForm>, tenantId: number): Promise<DownloadableForm | undefined> {
+    const [updated] = await db
+      .update(downloadableForms)
+      .set(form)
+      .where(and(eq(downloadableForms.id, id), eq(downloadableForms.tenantId, tenantId)))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteDownloadableForm(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(downloadableForms)
+      .where(and(eq(downloadableForms.id, id), eq(downloadableForms.tenantId, tenantId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Completed Medication Forms
+  async getCompletedMedicationForms(tenantId: number): Promise<CompletedMedicationAuthorityForm[]> {
+    return await db.select({
+      id: completedMedicationAuthorityForms.id,
+      tenantId: completedMedicationAuthorityForms.tenantId,
+      clientId: completedMedicationAuthorityForms.clientId,
+      fileName: completedMedicationAuthorityForms.fileName,
+      fileUrl: completedMedicationAuthorityForms.fileUrl,
+      uploadedBy: completedMedicationAuthorityForms.uploadedBy,
+      uploadedAt: completedMedicationAuthorityForms.uploadedAt,
+      clientName: clients.fullName,
+      uploaderName: users.fullName,
+    })
+    .from(completedMedicationAuthorityForms)
+    .leftJoin(clients, eq(completedMedicationAuthorityForms.clientId, clients.id))
+    .leftJoin(users, eq(completedMedicationAuthorityForms.uploadedBy, users.id))
+    .where(eq(completedMedicationAuthorityForms.tenantId, tenantId))
+    .orderBy(desc(completedMedicationAuthorityForms.uploadedAt));
+  }
+
+  async getCompletedMedicationFormsByClient(clientId: number, tenantId: number): Promise<CompletedMedicationAuthorityForm[]> {
+    return await db.select().from(completedMedicationAuthorityForms)
+      .where(and(
+        eq(completedMedicationAuthorityForms.clientId, clientId),
+        eq(completedMedicationAuthorityForms.tenantId, tenantId)
+      ))
+      .orderBy(desc(completedMedicationAuthorityForms.uploadedAt));
+  }
+
+  async createCompletedMedicationForm(form: InsertCompletedMedicationAuthorityForm): Promise<CompletedMedicationAuthorityForm> {
+    const [created] = await db
+      .insert(completedMedicationAuthorityForms)
+      .values(form)
+      .returning();
+    return created;
+  }
+
+  async deleteCompletedMedicationForm(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(completedMedicationAuthorityForms)
+      .where(and(eq(completedMedicationAuthorityForms.id, id), eq(completedMedicationAuthorityForms.tenantId, tenantId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Evacuation Drills
+  async getEvacuationDrills(tenantId: number): Promise<EvacuationDrill[]> {
+    return await db.select({
+      id: evacuationDrills.id,
+      tenantId: evacuationDrills.tenantId,
+      siteName: evacuationDrills.siteName,
+      drillDate: evacuationDrills.drillDate,
+      participants: evacuationDrills.participants,
+      issuesFound: evacuationDrills.issuesFound,
+      signedBy: evacuationDrills.signedBy,
+      createdBy: evacuationDrills.createdBy,
+      createdAt: evacuationDrills.createdAt,
+      creatorName: users.fullName,
+    })
+    .from(evacuationDrills)
+    .leftJoin(users, eq(evacuationDrills.createdBy, users.id))
+    .where(eq(evacuationDrills.tenantId, tenantId))
+    .orderBy(desc(evacuationDrills.drillDate));
+  }
+
+  async getEvacuationDrill(id: number, tenantId: number): Promise<EvacuationDrill | undefined> {
+    const [drill] = await db.select().from(evacuationDrills)
+      .where(and(eq(evacuationDrills.id, id), eq(evacuationDrills.tenantId, tenantId)));
+    return drill || undefined;
+  }
+
+  async createEvacuationDrill(drill: InsertEvacuationDrill): Promise<EvacuationDrill> {
+    const [created] = await db
+      .insert(evacuationDrills)
+      .values(drill)
+      .returning();
+    return created;
+  }
+
+  async updateEvacuationDrill(id: number, drill: Partial<InsertEvacuationDrill>, tenantId: number): Promise<EvacuationDrill | undefined> {
+    const [updated] = await db
+      .update(evacuationDrills)
+      .set(drill)
+      .where(and(eq(evacuationDrills.id, id), eq(evacuationDrills.tenantId, tenantId)))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteEvacuationDrill(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(evacuationDrills)
+      .where(and(eq(evacuationDrills.id, id), eq(evacuationDrills.tenantId, tenantId)));
+    return (result.rowCount || 0) > 0;
   }
 }
 

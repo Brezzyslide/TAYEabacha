@@ -8052,6 +8052,250 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
     }
   });
 
+  // ========================================
+  // COMPLIANCE CENTRE ROUTES
+  // ========================================
+
+  // Downloadable Forms Management
+  app.get("/api/compliance/forms", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const forms = await storage.getDownloadableForms(req.user.tenantId);
+      res.json(forms);
+    } catch (error: any) {
+      console.error("Get downloadable forms error:", error);
+      res.status(500).json({ message: "Failed to fetch forms" });
+    }
+  });
+
+  app.post("/api/compliance/forms", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { formType, fileName, fileUrl } = req.body;
+      
+      const newForm = await storage.createDownloadableForm({
+        tenantId: req.user.tenantId,
+        formType,
+        fileName,
+        fileUrl,
+        uploadedBy: req.user.id,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "upload_compliance_form",
+        resourceType: "compliance_form",
+        resourceId: newForm.id,
+        description: `Uploaded ${formType} form: ${fileName}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(newForm);
+    } catch (error: any) {
+      console.error("Create downloadable form error:", error);
+      res.status(500).json({ message: "Failed to upload form" });
+    }
+  });
+
+  app.put("/api/compliance/forms/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const updatedForm = await storage.updateDownloadableForm(parseInt(id), updates, req.user.tenantId);
+      
+      if (!updatedForm) {
+        return res.status(404).json({ message: "Form not found" });
+      }
+
+      res.json(updatedForm);
+    } catch (error: any) {
+      console.error("Update downloadable form error:", error);
+      res.status(500).json({ message: "Failed to update form" });
+    }
+  });
+
+  app.delete("/api/compliance/forms/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const success = await storage.deleteDownloadableForm(parseInt(id), req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Form not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Delete downloadable form error:", error);
+      res.status(500).json({ message: "Failed to delete form" });
+    }
+  });
+
+  // Completed Medication Authority Forms
+  app.get("/api/compliance/medication-forms", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const forms = await storage.getCompletedMedicationForms(req.user.tenantId);
+      res.json(forms);
+    } catch (error: any) {
+      console.error("Get completed medication forms error:", error);
+      res.status(500).json({ message: "Failed to fetch medication forms" });
+    }
+  });
+
+  app.get("/api/compliance/medication-forms/client/:clientId", requireAuth, async (req: any, res) => {
+    try {
+      const { clientId } = req.params;
+      const forms = await storage.getCompletedMedicationFormsByClient(parseInt(clientId), req.user.tenantId);
+      res.json(forms);
+    } catch (error: any) {
+      console.error("Get client medication forms error:", error);
+      res.status(500).json({ message: "Failed to fetch client medication forms" });
+    }
+  });
+
+  app.post("/api/compliance/medication-forms", requireAuth, async (req: any, res) => {
+    try {
+      const { clientId, fileName, fileUrl } = req.body;
+      
+      const newForm = await storage.createCompletedMedicationForm({
+        tenantId: req.user.tenantId,
+        clientId: parseInt(clientId),
+        fileName,
+        fileUrl,
+        uploadedBy: req.user.id,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "upload_medication_form",
+        resourceType: "medication_form",
+        resourceId: newForm.id,
+        description: `Uploaded medication authority form for client ${clientId}: ${fileName}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(newForm);
+    } catch (error: any) {
+      console.error("Create medication form error:", error);
+      res.status(500).json({ message: "Failed to upload medication form" });
+    }
+  });
+
+  app.delete("/api/compliance/medication-forms/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const success = await storage.deleteCompletedMedicationForm(parseInt(id), req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Medication form not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Delete medication form error:", error);
+      res.status(500).json({ message: "Failed to delete medication form" });
+    }
+  });
+
+  // Evacuation Drills Management
+  app.get("/api/compliance/evacuation-drills", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const drills = await storage.getEvacuationDrills(req.user.tenantId);
+      res.json(drills);
+    } catch (error: any) {
+      console.error("Get evacuation drills error:", error);
+      res.status(500).json({ message: "Failed to fetch evacuation drills" });
+    }
+  });
+
+  app.get("/api/compliance/evacuation-drills/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const drill = await storage.getEvacuationDrill(parseInt(id), req.user.tenantId);
+      
+      if (!drill) {
+        return res.status(404).json({ message: "Evacuation drill not found" });
+      }
+      
+      res.json(drill);
+    } catch (error: any) {
+      console.error("Get evacuation drill error:", error);
+      res.status(500).json({ message: "Failed to fetch evacuation drill" });
+    }
+  });
+
+  app.post("/api/compliance/evacuation-drills", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { siteName, drillDate, participants, issuesFound, signedBy } = req.body;
+      
+      const newDrill = await storage.createEvacuationDrill({
+        tenantId: req.user.tenantId,
+        siteName,
+        drillDate: new Date(drillDate),
+        participants,
+        issuesFound: issuesFound || null,
+        signedBy,
+        createdBy: req.user.id,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create_evacuation_drill",
+        resourceType: "evacuation_drill",
+        resourceId: newDrill.id,
+        description: `Created evacuation drill record for ${siteName} on ${drillDate}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(newDrill);
+    } catch (error: any) {
+      console.error("Create evacuation drill error:", error);
+      res.status(500).json({ message: "Failed to create evacuation drill" });
+    }
+  });
+
+  app.put("/api/compliance/evacuation-drills/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      if (updates.drillDate) {
+        updates.drillDate = new Date(updates.drillDate);
+      }
+      
+      const updatedDrill = await storage.updateEvacuationDrill(parseInt(id), updates, req.user.tenantId);
+      
+      if (!updatedDrill) {
+        return res.status(404).json({ message: "Evacuation drill not found" });
+      }
+
+      res.json(updatedDrill);
+    } catch (error: any) {
+      console.error("Update evacuation drill error:", error);
+      res.status(500).json({ message: "Failed to update evacuation drill" });
+    }
+  });
+
+  app.delete("/api/compliance/evacuation-drills/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      const success = await storage.deleteEvacuationDrill(parseInt(id), req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Evacuation drill not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Delete evacuation drill error:", error);
+      res.status(500).json({ message: "Failed to delete evacuation drill" });
+    }
+  });
+
   // Emergency demo data cleanup endpoint (ConsoleManager only)
   app.post("/api/emergency-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
     try {

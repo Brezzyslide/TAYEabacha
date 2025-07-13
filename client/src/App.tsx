@@ -44,6 +44,7 @@ import TimesheetDashboard from "@/app/timesheet/TimesheetDashboard";
 import BillingDashboard from "@/app/billing/BillingDashboard";
 import LandingPage from "@/pages/LandingPage";
 import EmergencyCleanup from "@/app/emergency/EmergencyCleanup";
+import CompliancePage from "@/app/compliance/page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -76,6 +77,7 @@ function Router() {
       <ProtectedRoute path="/timesheet" component={TimesheetDashboard} />
       <ProtectedRoute path="/billing" component={BillingDashboard} />
       <ProtectedRoute path="/billing-management" component={BillingDashboard} />
+      <ProtectedRoute path="/compliance" component={CompliancePage} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />

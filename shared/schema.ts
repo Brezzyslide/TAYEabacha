@@ -1515,6 +1515,97 @@ export const insertPayslipSchema = createInsertSchema(payslips).omit({
   generatedAt: true,
 });
 
+// Compliance forms library table
+export const downloadableForms = pgTable("downloadable_forms", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  formType: text("form_type").notNull(), // 'med_authority', 'rp_consent', 'med_purpose'
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  uploadedBy: integer("uploaded_by").notNull().references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+// Completed medication authority forms table
+export const completedMedicationAuthorityForms = pgTable("completed_medication_authority_forms", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  uploadedBy: integer("uploaded_by").notNull().references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+// Evacuation drills table
+export const evacuationDrills = pgTable("evacuation_drills", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  siteName: text("site_name").notNull(),
+  drillDate: timestamp("drill_date").notNull(),
+  participants: text("participants").notNull(),
+  issuesFound: text("issues_found"),
+  signedBy: text("signed_by").notNull(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relations for compliance tables
+export const downloadableFormsRelations = relations(downloadableForms, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [downloadableForms.tenantId],
+    references: [tenants.id],
+  }),
+  uploadedBy: one(users, {
+    fields: [downloadableForms.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+export const completedMedicationAuthorityFormsRelations = relations(completedMedicationAuthorityForms, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [completedMedicationAuthorityForms.tenantId],
+    references: [tenants.id],
+  }),
+  client: one(clients, {
+    fields: [completedMedicationAuthorityForms.clientId],
+    references: [clients.id],
+  }),
+  uploadedBy: one(users, {
+    fields: [completedMedicationAuthorityForms.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+export const evacuationDrillsRelations = relations(evacuationDrills, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [evacuationDrills.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [evacuationDrills.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for compliance tables
+export const insertDownloadableFormSchema = createInsertSchema(downloadableForms).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export const insertCompletedMedicationAuthorityFormSchema = createInsertSchema(completedMedicationAuthorityForms).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export const insertEvacuationDrillSchema = createInsertSchema(evacuationDrills).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  drillDate: z.coerce.date(),
+});
+
 // Types
 export type PayScale = typeof payScales.$inferSelect;
 export type InsertPayScale = z.infer<typeof insertPayScaleSchema>;
@@ -1527,5 +1618,13 @@ export type LeaveBalance = typeof leaveBalances.$inferSelect;
 export type InsertLeaveBalance = z.infer<typeof insertLeaveBalanceSchema>;
 export type Payslip = typeof payslips.$inferSelect;
 export type InsertPayslip = z.infer<typeof insertPayslipSchema>;
+
+// Compliance types
+export type DownloadableForm = typeof downloadableForms.$inferSelect;
+export type InsertDownloadableForm = z.infer<typeof insertDownloadableFormSchema>;
+export type CompletedMedicationAuthorityForm = typeof completedMedicationAuthorityForms.$inferSelect;
+export type InsertCompletedMedicationAuthorityForm = z.infer<typeof insertCompletedMedicationAuthorityFormSchema>;
+export type EvacuationDrill = typeof evacuationDrills.$inferSelect;
+export type InsertEvacuationDrill = z.infer<typeof insertEvacuationDrillSchema>;
 
 

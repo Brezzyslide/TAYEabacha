@@ -21,7 +21,8 @@ import {
   Play,
   DollarSign,
   Receipt,
-  CreditCard
+  CreditCard,
+  FileCheck
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,10 @@ const staffManagementNavigation = [
   { name: "Roles & Permissions", href: "/roles-permissions", icon: Shield },
   { name: "User Management", href: "/staff", icon: Users },
   { name: "Manage Staff Availability", href: "/manage-staff-availability", icon: Clock },
+];
+
+const complianceNavigation = [
+  { name: "Compliance Centre", href: "/compliance", icon: FileCheck },
 ];
 
 const companyManagementNavigation = [
@@ -132,6 +137,13 @@ export default function Sidebar() {
           "STAFF MANAGEMENT", 
           staffManagementNavigation, 
           "bg-warning/10 text-warning border-warning/20"
+        )}
+
+        {/* Compliance Section - Only for Admins */}
+        {isAdmin && renderNavigationSection(
+          "COMPLIANCE", 
+          complianceNavigation, 
+          "bg-emerald-50/80 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
         )}
 
         {/* Company Management Section - ConsoleManager Only */}

@@ -1,0 +1,135 @@
+// 🚧 Scaffold a new Compliance Centre module in our CRM admin panel
+// 📍 Location: src/app/compliance-centre/
+
+// ✅ Summary of Features to Implement:
+1. Admin-only tab to upload and manage these downloadable compliance forms:
+   - Medication Authority Form
+   - Restrictive Practice Consent Form
+   - Medication Purpose Form
+
+2. All staff with access (e.g. Admin, Team Leader) can download the latest uploaded version.
+
+3. Admins can upload scanned/filled **completed medication authority forms** against each client (for compliance record).
+
+4. Admins can also record and view **evacuation drill logs**.
+
+---
+
+// 📁 Folder Structure to Create:
+Create:
+- src/app/compliance-centre/page.tsx
+- src/app/compliance-centre/components/FormLibraryManager.tsx
+- src/app/compliance-centre/components/CompletedMedicationUploader.tsx
+- src/app/compliance-centre/components/EvacuationDrillForm.tsx
+- src/app/compliance-centre/components/EvacuationDrillLog.tsx
+
+---
+
+// 🧱 page.tsx
+- Use shadcn/ui Tabs layout with the following tabs:
+  - "Compliance Forms"
+  - "Upload Completed Medication Authority"
+  - "Evacuation Drill Log"
+- Each tab loads its respective component
+- This page must be protected via role check:
+  - Allow only roles: 'admin', 'compliance_officer', 'director'
+
+---
+
+// 📄 FormLibraryManager.tsx
+// 🗂️ Purpose: Admin uploads the base form once; others download it
+- Show 3 form sections:
+  - Medication Authority Form
+  - Restrictive Practice Consent Form
+  - Medication Purpose Form
+
+- For Admins:
+  - Upload field for each form (PDF only)
+  - Show upload date + uploader name
+  - Upload replaces previous version
+
+- For all roles with view access:
+  - Show Download button for each form
+  - Button fetches latest uploaded version from Supabase storage
+
+// 💾 Storage path per file:
+// `compliance/${companyId}/downloadable_forms/{form_type}.pdf`
+
+// 🗃️ Supabase table: downloadable_forms
+Fields:
+- id: uuid
+- companyId: uuid
+- form_type: text (‘med_authority’, ‘rp_consent’, ‘med_purpose’)
+- file_url: text
+- uploaded_by: uuid
+- uploaded_at: timestamp
+
+---
+
+// 📄 CompletedMedicationUploader.tsx
+// 🗂️ Purpose: Upload scanned, signed Medication Authority forms for specific clients
+- Fields:
+  - Select Client (dropdown)
+  - Upload PDF (completed form)
+  - Submit button
+
+- Upload stored in Supabase storage at:
+  `compliance/${companyId}/${clientId}/med_authority/completed-{timestamp}.pdf`
+
+- Supabase table: completed_medication_authority_forms
+Fields:
+- id: uuid
+- companyId: uuid
+- clientId: uuid
+- file_url: text
+- uploaded_by: uuid
+- uploaded_at: timestamp
+
+---
+
+// 📄 EvacuationDrillForm.tsx
+- Form to submit evacuation drill records
+Fields:
+- Site Name
+- Date of Drill
+- Participants (textarea)
+- Issues Found (textarea)
+- Signed By (text)
+- Submit button
+
+- Supabase table: evacuation_drills
+Fields:
+- id: uuid
+- companyId: uuid
+- site_name: text
+- drill_date: date
+- participants: text
+- issues_found: text
+- signed_by: text
+- created_at: timestamp
+
+---
+
+// 📄 EvacuationDrillLog.tsx
+- Show log of all drill records (scoped by companyId)
+- Table format: Site, Date, Signed By, Participants, Export to CSV
+
+---
+
+// 🔐 All features must enforce:
+// - Multi-tenancy: all records scoped by `companyId`
+// - Role-based access: page and upload only visible to Admin roles
+// - Supabase file security: access must match user’s tenant
+
+---
+
+// 🎨 Styling:
+// - Use shadcn/ui components and dark theme
+- Use button variants: primary, destructive, ghost
+- Keep all components consistent with existing admin modules
+
+// 🏁 Outcome:
+// A working Compliance Centre visible only to Admins, where:
+// - The latest versions of official compliance forms can be uploaded and shared
+- Completed authority forms are attached to client records
+- Evacuation drills are logged and exportable for audit
