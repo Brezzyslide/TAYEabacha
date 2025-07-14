@@ -26,3 +26,10 @@ export const pool = new Pool({
 });
 
 export const db = drizzle(pool, { schema });
+
+// Verify compliance tables are included in schema
+console.log("[SCHEMA DEBUG] Compliance tables in schema:", {
+  downloadableForms: !!schema.downloadableForms,
+  completedMedicationAuthorityForms: !!schema.completedMedicationAuthorityForms,
+  evacuationDrills: !!schema.evacuationDrills
+});
