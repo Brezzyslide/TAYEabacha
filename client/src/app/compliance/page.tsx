@@ -311,7 +311,7 @@ function DownloadableFormsTab() {
         </div>
         <div className="flex items-center gap-2">
           <div className="text-xs text-green-600">Debug: Role={user?.role}</div>
-          {(user?.role?.toLowerCase() === 'consolemanager' || user?.role?.toLowerCase() === 'admin') && <UploadFormDialog />}
+          <UploadFormDialog />
         </div>
       </div>
 
@@ -375,10 +375,7 @@ function DownloadableFormsTab() {
             <p className="text-slate-600 dark:text-slate-400 mb-4">
               Upload compliance forms to make them available for staff to download.
             </p>
-            <Button className="bg-tusk-600 hover:bg-tusk-700 text-white">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Your First Form
-            </Button>
+            <UploadFormDialog />
           </CardContent>
         </Card>
       )}
