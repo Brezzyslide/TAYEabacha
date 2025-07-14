@@ -1,198 +1,113 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Download, Upload, Plus, Eye, Trash2, AlertTriangle, FileText, Shield, Users } from "lucide-react";
+import { Download, FileText, Upload, Calendar, AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
 
-// Form Types
-const FORM_TYPES = {
-  med_authority: "Medication Authority",
-  rp_consent: "Restrictive Practice Consent",
-  med_purpose: "Medication Purpose Statement"
-};
+const uploadFormSchema = z.object({
+  formType: z.string().min(1, "Form type is required"),
+  file: z.any().refine((files) => files?.length > 0, "File is required"),
+});
 
-interface DownloadableForm {
-  id: number;
-  formType: string;
-  fileName: string;
-  fileUrl: string;
-  uploadedBy: number;
-  uploadedAt: string;
-}
+const FORM_TYPES = [
+  { value: "med_authority", label: "Medication Authority Form" },
+  { value: "med_administration", label: "Medication Administration Consent Form" },
+  { value: "med_purpose", label: "Medication Purpose Form" },
+  { value: "rp_consent", label: "Restrictive Practice Consent Form" },
+  { value: "rp_guide", label: "Restrictive Practice Guide" },
+  { value: "incident_report", label: "Incident Report Template" },
+  { value: "care_plan", label: "Care Plan Template" },
+  { value: "assessment", label: "Assessment Form" },
+];
 
-interface CompletedMedicationForm {
-  id: number;
-  clientId: number;
-  fileName: string;
-  fileUrl: string;
-  uploadedBy: number;
-  uploadedAt: string;
-  clientName?: string;
-  uploaderName?: string;
-}
+// Sample forms data when API fails
+const SAMPLE_FORMS = [
+  {
+    id: 1,
+    formType: "med_purpose",
+    fileName: "Medication Purpose Form - Office Professional Practice.pdf",
+    fileUrl: "/sample-forms/medication-purpose-form.pdf",
+    uploadedAt: "2025-07-14T10:00:00Z"
+  },
+  {
+    id: 2,
+    formType: "med_administration", 
+    fileName: "Medication Administration Record (Treatment Sheet).pdf",
+    fileUrl: "/sample-forms/medication-treatment-sheet.pdf",
+    uploadedAt: "2025-07-14T10:00:00Z"
+  },
+  {
+    id: 3,
+    formType: "rp_consent",
+    fileName: "Restrictive Practice Consent Form.pdf",
+    fileUrl: "/sample-forms/restrictive-practice-consent.pdf",
+    uploadedAt: "2025-07-14T10:00:00Z"
+  },
+  {
+    id: 4,
+    formType: "rp_guide",
+    fileName: "Restrictive Practice Implementation Guide.pdf",
+    fileUrl: "/sample-forms/restrictive-practice-guide.pdf",
+    uploadedAt: "2025-07-14T10:00:00Z"
+  }
+];
 
-interface EvacuationDrill {
-  id: number;
-  siteName: string;
-  drillDate: string;
-  participants: string;
-  issuesFound?: string;
-  signedBy: string;
-  createdBy: number;
-  createdAt: string;
-  creatorName?: string;
-}
-
-function ComplianceOverview() {
-  const { data: forms = [] } = useQuery<DownloadableForm[]>({
-    queryKey: ["/api/compliance/forms"],
-  });
-
-  const { data: medicationForms = [] } = useQuery<CompletedMedicationForm[]>({
-    queryKey: ["/api/compliance/medication-forms"],
-  });
-
-  const { data: evacuationDrills = [] } = useQuery<EvacuationDrill[]>({
-    queryKey: ["/api/compliance/evacuation-drills"],
-  });
-
-  const stats = [
-    {
-      title: "Downloadable Forms",
-      value: forms.length,
-      icon: FileText,
-      description: "Available compliance forms",
-      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-    },
-    {
-      title: "Completed Med Forms",
-      value: medicationForms.length,
-      icon: Shield,
-      description: "Client medication authorities",
-      color: "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
-    },
-    {
-      title: "Evacuation Drills",
-      value: evacuationDrills.length,
-      icon: Users,
-      description: "Safety drill records",
-      color: "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400"
-    }
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index} className="glass-card border-slate-200 dark:border-slate-700">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                      {stat.title}
-                    </p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                      {stat.value}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-500">
-                      {stat.description}
-                    </p>
-                  </div>
-                  <div className={`p-3 rounded-full ${stat.color}`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card className="glass-card border-slate-200 dark:border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-slate-900 dark:text-slate-100">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {medicationForms.slice(0, 5).map((form) => (
-              <div key={form.id} className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-4 w-4 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {form.fileName}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {form.clientName && `Client: ${form.clientName} • `}
-                      {format(new Date(form.uploadedAt), "MMM d, yyyy")}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  Medication Form
-                </Badge>
-              </div>
-            ))}
-            
-            {evacuationDrills.slice(0, 3).map((drill) => (
-              <div key={drill.id} className="flex items-center justify-between py-2">
-                <div className="flex items-center space-x-3">
-                  <Users className="h-4 w-4 text-orange-600" />
-                  <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {drill.siteName}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {format(new Date(drill.drillDate), "MMM d, yyyy")} • Signed by {drill.signedBy}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-xs">
-                  Evacuation Drill
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function UploadFormDialog() {
-  const [open, setOpen] = useState(false);
-  const [formType, setFormType] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+export default function CompliancePage() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+
+  // Query for downloadable forms (global library) - fallback to sample data if API fails
+  const { data: downloadableForms = [], isLoading: formsLoading, error: formsError } = useQuery({
+    queryKey: ["/api/compliance/forms"],
+    retry: false,
+  });
+
+  // Use sample data if API fails
+  const formsToDisplay = formsError ? SAMPLE_FORMS : downloadableForms;
+
+  // Query for completed medication forms (tenant-specific)
+  const { data: medicationForms = [], isLoading: medicationLoading } = useQuery({
+    queryKey: ["/api/compliance/medication-forms"],
+    retry: false,
+  });
+
+  // Query for evacuation drills (tenant-specific)
+  const { data: evacuationDrills = [], isLoading: drillsLoading } = useQuery({
+    queryKey: ["/api/compliance/evacuation-drills"],
+    retry: false,
+  });
+
+  const canUploadForms = user?.role === "Admin" || user?.role === "ConsoleManager";
+
+  const form = useForm({
+    resolver: zodResolver(uploadFormSchema),
+    defaultValues: {
+      formType: "",
+      file: undefined,
+    },
+  });
 
   const uploadMutation = useMutation({
-    mutationFn: async (data: { file: File; formType: string }) => {
+    mutationFn: async (data: any) => {
       const formData = new FormData();
-      formData.append('file', data.file);
+      formData.append('file', data.file[0]);
       formData.append('formType', data.formType);
-
-      const response = await fetch('/api/compliance/forms/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      return response.json();
+      
+      return apiRequest('POST', '/api/compliance/forms/upload', formData);
     },
     onSuccess: () => {
       toast({
@@ -200,466 +115,334 @@ function UploadFormDialog() {
         description: "Form uploaded successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/compliance/forms"] });
-      setOpen(false);
-      setFormType("");
-      setFile(null);
+      setShowUploadDialog(false);
+      form.reset();
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to upload form",
+        description: error.message || "Failed to upload form",
         variant: "destructive",
       });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file || !formType) {
+  const deleteMutation = useMutation({
+    mutationFn: async (formId: number) => {
+      return apiRequest('DELETE', `/api/compliance/forms/${formId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Form deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/forms"] });
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Please select a file and form type",
+        description: error.message || "Failed to delete form",
         variant: "destructive",
       });
-      return;
-    }
+    },
+  });
 
-    uploadMutation.mutate({ file, formType });
+  const onSubmit = (data: any) => {
+    uploadMutation.mutate(data);
+  };
+
+  const handleDownload = (form: any) => {
+    // In a real implementation, this would download from the server
+    const link = document.createElement('a');
+    link.href = form.fileUrl;
+    link.download = form.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const getFormTypeLabel = (formType: string) => {
+    const type = FORM_TYPES.find(t => t.value === formType);
+    return type ? type.label : formType.replace('_', ' ');
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-tusk-600 hover:bg-tusk-700 text-white">
-          <Upload className="h-4 w-4 mr-2" />
-          Upload Form
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Upload Compliance Form</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="formType">Form Type</Label>
-            <Select value={formType} onValueChange={setFormType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select form type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="med_authority">Medication Authority</SelectItem>
-                <SelectItem value="rp_consent">Restrictive Practice Consent</SelectItem>
-                <SelectItem value="med_purpose">Medication Purpose Statement</SelectItem>
-                <SelectItem value="incident_report">Incident Report Template</SelectItem>
-                <SelectItem value="care_plan">Care Plan Template</SelectItem>
-                <SelectItem value="assessment">Assessment Form</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="file">File</Label>
-            <Input
-              id="file"
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100"
-            />
-            <p className="text-xs text-slate-500">
-              Supported formats: PDF, DOC, DOCX (max 10MB)
-            </p>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={uploadMutation.isPending}
-              className="bg-tusk-600 hover:bg-tusk-700 text-white"
-            >
-              {uploadMutation.isPending ? "Uploading..." : "Upload"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function DownloadableFormsTab() {
-  const { data: forms = [], refetch } = useQuery<DownloadableForm[]>({
-    queryKey: ["/api/compliance/forms"],
-  });
-  const { user } = useAuth();
-
-  return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Downloadable Forms Library
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            {user?.role?.toLowerCase() === 'consolemanager' 
-              ? "Manage global compliance forms available to all tenants"
-              : "Download compliance forms for your organization"
-            }
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-xs text-green-600">Debug: Role={user?.role}</div>
-          <UploadFormDialog />
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          Compliance Centre
+        </h1>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">
+          Manage compliance documents, medication forms, and safety records
+        </p>
       </div>
 
-      <div className="grid gap-4">
-        {forms.map((form) => (
-          <Card key={form.id} className="glass-card border-slate-200 dark:border-slate-700">
-            <CardContent className="p-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="medication-forms">Medication Forms</TabsTrigger>
+          <TabsTrigger value="evacuation-drills">Evacuation Drills</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Stats Cards */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Available Forms</CardTitle>
+                <FileText className="h-4 w-4 text-slate-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formsToDisplay?.length || 0}</div>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Global forms library
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Medication Records</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-slate-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{medicationForms?.length || 0}</div>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Completed forms
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Safety Drills</CardTitle>
+                <Calendar className="h-4 w-4 text-slate-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{evacuationDrills?.length || 0}</div>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  This year
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Downloadable Forms Library */}
+          <Card>
+            <CardHeader>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                      {form.fileName}
-                    </h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {FORM_TYPES[form.formType as keyof typeof FORM_TYPES] || form.formType}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Uploaded {format(new Date(form.uploadedAt), "MMM d, yyyy 'at' h:mm a")}
-                    </p>
-                  </div>
+                <div>
+                  <CardTitle>Downloadable Forms Library</CardTitle>
+                  <CardDescription>
+                    Manage global compliance forms available to all tenants
+                  </CardDescription>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(form.fileUrl, '_blank')}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(form.fileUrl, '_blank')}
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    Download
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div className="flex items-center gap-2">
+                  {formsError && (
+                    <span className="text-sm text-amber-600">Using sample data</span>
+                  )}
+                  {canUploadForms && (
+                    <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Form
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Upload Compliance Form</DialogTitle>
+                          <DialogDescription>
+                            Upload a new compliance form to make it available to all tenants.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <Form {...form}>
+                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="formType"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Form Type</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select a form type" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {FORM_TYPES.map((type) => (
+                                        <SelectItem key={type.value} value={type.value}>
+                                          {type.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormDescription>
+                                    Choose the type of compliance form you're uploading.
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="file"
+                              render={({ field: { onChange, value, ...field } }) => (
+                                <FormItem>
+                                  <FormLabel>File</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="file"
+                                      accept=".pdf,.doc,.docx"
+                                      onChange={(e) => onChange(e.target.files)}
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Upload a PDF, DOC, or DOCX file (max 10MB).
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowUploadDialog(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button type="submit" disabled={uploadMutation.isPending}>
+                                {uploadMutation.isPending ? "Uploading..." : "Upload"}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {forms.length === 0 && (
-        <Card className="glass-card border-slate-200 dark:border-slate-700">
-          <CardContent className="p-8 text-center">
-            <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-              No forms uploaded yet
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              Upload compliance forms to make them available for staff to download.
-            </p>
-            <UploadFormDialog />
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function MedicationFormsTab() {
-  const { data: forms = [] } = useQuery<CompletedMedicationForm[]>({
-    queryKey: ["/api/compliance/medication-forms"],
-  });
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Completed Medication Forms
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Client-specific medication authority forms
-          </p>
-        </div>
-        <Button className="bg-green-600 hover:bg-green-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Medication Form
-        </Button>
-      </div>
-
-      <div className="grid gap-4">
-        {forms.map((form) => (
-          <Card key={form.id} className="glass-card border-slate-200 dark:border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-8 w-8 text-green-600" />
-                  <div>
-                    <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                      {form.fileName}
-                    </h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Client: {form.clientName || `Client ID ${form.clientId}`}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Uploaded by {form.uploaderName || 'Unknown'} • {format(new Date(form.uploadedAt), "MMM d, yyyy 'at' h:mm a")}
-                    </p>
-                  </div>
+            </CardHeader>
+            <CardContent>
+              {formsLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-slate-600">Loading forms...</div>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(form.fileUrl, '_blank')}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(form.fileUrl, '_blank')}
-                  >
-                    <Download className="h-4 w-4 mr-1" />
-                    Download
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+              ) : formsToDisplay?.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {formsToDisplay.map((form: any) => (
+                    <Card key={form.id} className="relative">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-1">
+                              {form.fileName}
+                            </h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 capitalize mb-2">
+                              {getFormTypeLabel(form.formType)}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(form.uploadedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDownload(form)}
+                            className="flex-1"
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                          {canUploadForms && !formsError && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => deleteMutation.mutate(form.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {forms.length === 0 && (
-        <Card className="glass-card border-slate-200 dark:border-slate-700">
-          <CardContent className="p-8 text-center">
-            <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-              No medication forms uploaded yet
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              Upload client-specific medication authority forms for compliance tracking.
-            </p>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Form
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function EvacuationDrillsTab() {
-  const { data: drills = [] } = useQuery<EvacuationDrill[]>({
-    queryKey: ["/api/compliance/evacuation-drills"],
-  });
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Evacuation Drills
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Safety evacuation drill records and documentation
-          </p>
-        </div>
-        <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Log New Drill
-        </Button>
-      </div>
-
-      <div className="grid gap-4">
-        {drills.map((drill) => (
-          <Card key={drill.id} className="glass-card border-slate-200 dark:border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Users className="h-8 w-8 text-orange-600" />
-                  <div>
-                    <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                      {drill.siteName}
-                    </h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {format(new Date(drill.drillDate), "EEEE, MMMM d, yyyy")}
-                    </p>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Participants: {drill.participants}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Signed by {drill.signedBy} • Created by {drill.creatorName || 'Unknown'}
-                    </p>
-                    {drill.issuesFound && (
-                      <div className="flex items-center mt-2 text-amber-600">
-                        <AlertTriangle className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Issues identified</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    View Details
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              {drill.issuesFound && (
-                <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <p className="text-sm text-amber-800 dark:text-amber-200">
-                    <strong>Issues Found:</strong> {drill.issuesFound}
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="mx-auto h-12 w-12 text-slate-400" />
+                  <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+                    No forms uploaded yet
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Upload compliance forms to make them available for staff to download.
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {drills.length === 0 && (
-        <Card className="glass-card border-slate-200 dark:border-slate-700">
-          <CardContent className="p-8 text-center">
-            <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-              No evacuation drills recorded yet
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              Log evacuation drills to maintain safety compliance records.
-            </p>
-            <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Log Your First Drill
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-export default function CompliancePage() {
-  const { user } = useAuth();
-  
-  // Check if user has admin access (case-insensitive)
-  const userRole = user?.role?.toLowerCase();
-  const hasAdminAccess = userRole === "admin" || userRole === "consolemanager";
-  
-  if (!hasAdminAccess) {
-    return (
-      <div className="p-6">
-        <Card className="glass-card border-slate-200 dark:border-slate-700">
-          <CardContent className="p-8 text-center">
-            <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-              Access Restricted
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400">
-              Only administrators can access the Compliance Centre.
-            </p>
-            <p className="text-xs text-slate-500 mt-2">
-              Current role: {user?.role || 'Unknown'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Compliance Centre
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Manage compliance documents, medication forms, and safety records
-          </p>
-        </div>
-      </div>
-
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-800">
-          <TabsTrigger 
-            value="overview"
-            className="data-[state=active]:bg-tusk-600 data-[state=active]:text-white"
-          >
-            Overview
-          </TabsTrigger>
-          <TabsTrigger 
-            value="forms"
-            className="data-[state=active]:bg-tusk-600 data-[state=active]:text-white"
-          >
-            Forms Library
-          </TabsTrigger>
-          <TabsTrigger 
-            value="medication"
-            className="data-[state=active]:bg-tusk-600 data-[state=active]:text-white"
-          >
-            Medication Forms
-          </TabsTrigger>
-          <TabsTrigger 
-            value="drills"
-            className="data-[state=active]:bg-tusk-600 data-[state=active]:text-white"
-          >
-            Evacuation Drills
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <ComplianceOverview />
         </TabsContent>
 
-        <TabsContent value="forms">
-          <DownloadableFormsTab />
+        <TabsContent value="medication-forms" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Completed Medication Authority Forms</CardTitle>
+              <CardDescription>
+                Track completed medication consent and authority documentation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {medicationLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-slate-600">Loading medication forms...</div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertTriangle className="mx-auto h-12 w-12 text-slate-400" />
+                  <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+                    No medication forms completed
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Completed medication authority forms will appear here
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="medication">
-          <MedicationFormsTab />
-        </TabsContent>
-
-        <TabsContent value="drills">
-          <EvacuationDrillsTab />
+        <TabsContent value="evacuation-drills" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Evacuation Drill Records</CardTitle>
+              <CardDescription>
+                Log and track mandatory evacuation drill compliance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {drillsLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-slate-600">Loading evacuation drills...</div>
+                </div>
+                ) : (
+                <div className="text-center py-8">
+                  <Calendar className="mx-auto h-12 w-12 text-slate-400" />
+                  <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+                    No evacuation drills recorded
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Evacuation drill records will appear here
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
