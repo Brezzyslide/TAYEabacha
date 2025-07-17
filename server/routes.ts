@@ -7686,10 +7686,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiKey: process.env.OPENAI_API_KEY,
       });
 
-      // Get complete care plan context including diagnosis and all existing sections
+      // Get complete care plan context including comprehensive client information
       let planContext = "";
       let clientDiagnosis = "Not specified";
       let clientName = "Client";
+      let comprehensiveClientInfo = "";
       
       if (planId) {
         try {
@@ -7701,10 +7702,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const client = clientResult[0];
               clientDiagnosis = client.primaryDiagnosis || 'Not specified';
               clientName = `${client.firstName} ${client.lastName}`;
-              planContext = `
-CLIENT INFORMATION:
+              
+              // Calculate age from date of birth
+              const age = client.dateOfBirth ? 
+                Math.floor((new Date().getTime() - new Date(client.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) 
+                : 'Not specified';
+              
+              // Build comprehensive client information
+              comprehensiveClientInfo = `
+CLIENT PROFILE:
 - Name: ${clientName}
-- Diagnosis: ${clientDiagnosis}
+- Age: ${age} years old
+- Primary Diagnosis: ${clientDiagnosis}
+- NDIS Number: ${client.ndisNumber || 'Not specified'}
+- Address: ${client.address || 'Not specified'}
+
+NDIS GOALS:
+${client.ndisGoals || 'No specific NDIS goals documented'}
+
+PREFERENCES & INTERESTS:
+${client.likesPreferences || 'No preferences documented'}
+
+DISLIKES & AVERSIONS:
+${client.dislikesAversions || 'No dislikes documented'}
+
+EMERGENCY CONTACT:
+- Name: ${client.emergencyContactName || 'Not specified'}
+- Phone: ${client.emergencyContactPhone || 'Not specified'}
+
+MEDICAL ALERTS:
+${client.allergiesMedicalAlerts || 'No medical alerts documented'}
+`;
+              
+              planContext = `
+${comprehensiveClientInfo}
 
 EXISTING CARE PLAN SECTIONS:
 ${plan.aboutMeData ? `About Me: ${JSON.stringify(plan.aboutMeData, null, 2)}` : ''}
@@ -7729,25 +7760,25 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       let systemPrompt = "";
       let userPrompt = "";
 
-      // Build comprehensive context from diagnosis and existing plan data
-      const contextualInfo = `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
+      // Build comprehensive context from all client data and existing plan data
+      const contextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
       const existingContext = planContext || "No existing plan context available.";
       
       // Create diagnosis-driven prompts that ALWAYS generate content
       switch (section) {
         case "aboutMe":
-          systemPrompt = `Generate professional "About Me" content for a care support plan. Focus on the client's diagnosis and create evidence-based content that supports daily care. Even if user input is minimal, use the diagnosis to create appropriate, practical content for support workers. Write in third person, professional tone. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate content based on diagnosis'}`;
+          systemPrompt = `Generate professional "About Me" content for a care support plan. Use the comprehensive client information including diagnosis, NDIS goals, preferences, dislikes, and personal details to create personalized, evidence-based content that supports daily care. Incorporate the client's specific interests, preferences, and support needs. Reference their actual likes/dislikes and NDIS goals where relevant. Write in third person, professional tone. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized About Me content using all available client information including preferences, NDIS goals, and personal details'}`;
           break;
         
         case "goals":
-          systemPrompt = `Generate NDIS-aligned goals based on the client's diagnosis. Create specific, measurable, achievable goals that address independence, community access, skill development, and capacity building appropriate for the diagnosis. Always generate content even if user input is minimal - use diagnosis-specific evidence-based goals. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate goals based on diagnosis'}`;
+          systemPrompt = `Generate NDIS-aligned goals incorporating the client's existing NDIS goals, diagnosis, and personal preferences. Build upon their documented NDIS goals and create additional specific, measurable, achievable goals that address independence, community access, skill development, and capacity building. Reference their interests and preferences to make goals personally meaningful. Always generate content even if user input is minimal. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate enhanced goals building on existing NDIS goals and client preferences'}`;
           break;
         
         case "adl":
-          systemPrompt = `Generate Activities of Daily Living support content based on the client's diagnosis. Create practical guidance for support workers covering personal care, mobility, household tasks, community access, and safety considerations typical for this diagnosis. Always generate content using diagnosis-specific support needs. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate ADL support based on diagnosis'}`;
+          systemPrompt = `Generate Activities of Daily Living support content using the client's diagnosis, preferences, dislikes, and NDIS goals. Create practical guidance for support workers covering personal care, mobility, household tasks, community access, and safety considerations. Incorporate their specific likes/interests and avoid or accommodate their documented dislikes. Reference their NDIS goals for community access and independence. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized ADL support incorporating client preferences and NDIS goals'}`;
           break;
         
         case "structure":
@@ -7756,13 +7787,13 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
           break;
         
         case "communication":
-          systemPrompt = `Generate communication support content based on the client's diagnosis. Create practical guidance for receptive and expressive communication strategies, AAC tools, and staff approaches typical for this diagnosis. Always generate content using diagnosis-specific communication needs. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate communication strategies based on diagnosis'}`;
+          systemPrompt = `Generate communication support content using the client's diagnosis, NDIS goals (especially communication-related goals), and preferences. Create practical guidance for receptive and expressive communication strategies, considering their documented dislikes (such as noise sensitivity) and incorporating their interests. Reference their specific NDIS communication goals and personal preferences. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized communication strategies incorporating NDIS goals and client preferences'}`;
           break;
         
         case "behaviour":
-          systemPrompt = `Generate behavior support content based on the client's diagnosis. Create PBS-aligned strategies including proactive approaches, de-escalation techniques, and positive behavior support methods typical for this diagnosis. Always generate content using diagnosis-specific behavior support needs. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate behavior support based on diagnosis'}`;
+          systemPrompt = `Generate behavior support content using the client's diagnosis, documented dislikes/triggers, preferences, and NDIS goals. Create PBS-aligned strategies that specifically address their documented triggers (such as noise, lack of choice/control, not being heard) and leverage their interests for positive engagement. Include proactive approaches based on their preferences and de-escalation techniques that avoid their known dislikes. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized behavior support incorporating documented triggers and preferences'}`;
           break;
         
         case "disaster":
@@ -7776,8 +7807,8 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
           break;
         
         default:
-          systemPrompt = `Generate professional care support content for the specified section based on the client's diagnosis. Create evidence-based, practical content for support workers. Always generate content even with minimal input using diagnosis-specific considerations. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate content based on diagnosis'}`;
+          systemPrompt = `Generate professional care support content for the specified section using comprehensive client information including diagnosis, NDIS goals, preferences, dislikes, and personal details. Create evidence-based, practical content for support workers that is personalized to this specific client. Always generate content even with minimal input. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate personalized content using all available client information'}`;
       }
 
       // Generate AI content with diagnosis-driven approach (temperature 0.3 for consistency)
@@ -7795,8 +7826,8 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       
       // Always return content - no guard rails or validation that could block generation
       if (!generatedContent || generatedContent.trim().length === 0) {
-        // Fallback scaffolding if AI somehow returns empty (should never happen with diagnosis-driven prompts)
-        const fallbackContent = `Based on the diagnosis of ${clientDiagnosis}, appropriate ${section} support strategies should be developed to address the specific needs and requirements typical for this condition. Please consult with healthcare professionals to develop comprehensive care approaches.`;
+        // Enhanced fallback content using available client information
+        const fallbackContent = `Based on ${clientName}'s diagnosis of ${clientDiagnosis} and their documented preferences and goals, appropriate ${section} support strategies should be developed to address their specific needs and requirements. Consider their individual preferences, NDIS goals, and personal circumstances when developing comprehensive care approaches.`;
         res.json({ content: fallbackContent });
       } else {
         res.json({ content: generatedContent.trim() });
