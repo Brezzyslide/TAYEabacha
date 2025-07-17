@@ -7775,13 +7775,20 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
           // Check if this is a targeted field generation request
           if (req.body.targetField && req.body.targetField !== 'preview') {
             const targetField = req.body.targetField;
+            
+            // Get client-specific data for prompts
+            const clientLikes = client?.likesPreferences || 'Enjoys music, Shopping, Making new friends, Dancing';
+            const clientDislikes = client?.dislikesAversions || 'Hates noise, Lack of choice and control, Not being heard';
+            const clientGoals = client?.ndisGoals || 'Improve distress tolerance, Improve speech clarity, Access community independently';
+            const emergencyContact = client?.emergencyContactName || 'xyz';
+            
             const fieldSpecificPrompts = {
-              personalHistory: `Write clinical personal history content for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY documented facts: birth year 1997, living in Melbourne area, emergency contact ${client?.emergencyContactName || 'xyz'}. Focus on factual background information. Do NOT include disclaimers or recommendations to consult professionals. Maximum 150 words.`,
-              interests: `Write interests content for ${clientName} focusing on his documented preferences: ${client?.likesPreferences || 'Enjoys music, Shopping, Making new friends, Dancing'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to structured interest-based activities that incorporate these specific hobbies. Explain how each interest can be therapeutic. Do NOT include disclaimers. Maximum 150 words.`,
-              preferences: `Write preferences content for ${clientName} using his documented likes: ${client?.likesPreferences || 'music, shopping, friends, dancing'} and avoiding his documented dislikes: ${client?.dislikesAversions || 'noise, lack of choice/control, not being heard'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to choice-based support that honors these preferences. Do NOT include disclaimers. Maximum 150 words.`,
+              personalHistory: `Write clinical personal history content for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY documented facts: birth year 1997, living in Melbourne area, emergency contact ${emergencyContact}. Focus on factual background information. Do NOT include disclaimers or recommendations to consult professionals. Maximum 150 words.`,
+              interests: `Write interests content for ${clientName} focusing on his documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to structured interest-based activities that incorporate these specific hobbies. Explain how each interest can be therapeutic. Do NOT include disclaimers. Maximum 150 words.`,
+              preferences: `Write preferences content for ${clientName} using his documented likes: ${clientLikes} and avoiding his documented dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to choice-based support that honors these preferences. Do NOT include disclaimers. Maximum 150 words.`,
               strengths: `Write strengths content for ${clientName} based on his ability to form friendships (enjoys making new friends), engage in social activities (dancing, music), and express preferences clearly. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches that build on these social and expressive abilities. Do NOT include disclaimers. Maximum 150 words.`,
-              challenges: `Write challenges content for ${clientName} focusing on his documented struggles with ${client?.dislikesAversions || 'noise sensitivity, lack of choice/control, not being heard'} and his NDIS goals of ${client?.ndisGoals || 'improving distress tolerance and speech clarity'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to interventions that address these specific challenges. Do NOT include disclaimers. Maximum 150 words.`,
-              familyBackground: `Write family background content for ${clientName} including his emergency contact ${client?.emergencyContactName || 'xyz'} and support network. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to family-inclusive support that involves his identified contacts in care planning. Do NOT include disclaimers. Maximum 150 words.`,
+              challenges: `Write challenges content for ${clientName} focusing on his documented struggles with: ${clientDislikes} and his NDIS goals of: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to interventions that address these specific challenges. Do NOT include disclaimers. Maximum 150 words.`,
+              familyBackground: `Write family background content for ${clientName} including his emergency contact ${emergencyContact} and support network. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to family-inclusive support that involves his identified contacts in care planning. Do NOT include disclaimers. Maximum 150 words.`,
               culturalConsiderations: `Write cultural considerations for ${clientName} acknowledging his individual preferences for music, dancing, and social connection as cultural expressions. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors his personal cultural practices and social preferences. Do NOT include disclaimers. Maximum 150 words.`
             };
             
@@ -7789,10 +7796,11 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
 1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
 2. Start with diagnosis phrasing: "Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to..." 
 3. Generate SPECIFIC content related to ${targetField} using documented client information
-4. Do NOT include disclaimers about consulting professionals
+4. Do NOT include disclaimers about consulting professionals or healthcare professionals
 5. Do NOT mention employment, work, or cultural assumptions
 6. Focus on practical care planning content
-7. Write in clinical but accessible language`;
+7. Write in clinical but accessible language
+8. NEVER say "Please consult with healthcare professionals"`;
             userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content using documented client information`;
           } else {
             // Original About Me generation
@@ -7897,7 +7905,7 @@ Maximum 400 words.`;
         messages: [
           { 
             role: "system", 
-            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements\n- DIAGNOSIS CONTENT: Always phrase diagnosis-related content as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."` 
+            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements\n- DIAGNOSIS CONTENT: Always phrase diagnosis-related content as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."\n- NEVER INCLUDE DISCLAIMERS: Do not say "Please consult with healthcare professionals" or any variation of consulting professionals\n- Write practical care content only, not legal advice` 
           },
           { role: "user", content: userPrompt }
         ],
@@ -7938,7 +7946,7 @@ Maximum 400 words.`;
         }
       }
       
-      const fallbackContent = `Based on the diagnosis of ${clientDiagnosis}, appropriate ${section || 'care support'} strategies should be developed to address the specific needs and requirements typical for this condition. Please consult with healthcare professionals to develop comprehensive care approaches.`;
+      const fallbackContent = `Based on the diagnosis of ${clientDiagnosis}, he will likely respond well to structured ${section || 'care support'} strategies that address the specific needs and requirements typical for this condition. Evidence-based approaches should focus on his individual documented preferences and NDIS goals.`;
       
       res.json({ 
         content: fallbackContent,
