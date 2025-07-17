@@ -7764,14 +7764,15 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       const contextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
       const existingContext = planContext || "No existing plan context available.";
       
-      // Debug logging for AI generation
-      console.log(`[AI DEBUG] About to generate for section: ${section}`);
-      console.log(`[AI DEBUG] Client name being used: "${clientName}"`);
-      console.log(`[AI DEBUG] Client diagnosis: "${clientDiagnosis}"`);
-      console.log(`[AI DEBUG] Plan ID: ${planId}`);
-      console.log(`[AI DEBUG] Client object exists: ${!!client}`);
-      console.log(`[AI DEBUG] Contextual info length: ${contextualInfo.length}`);
-      console.log(`[AI DEBUG] Contextual info preview: ${contextualInfo.substring(0, 200)}...`);
+      // Enhanced debug logging for Goals section
+      if (section === "goals" && req.body.targetField) {
+        console.log(`[GOALS NEW DEBUG] Section: ${section}, Target: ${req.body.targetField}`);
+        console.log(`[GOALS NEW DEBUG] Plan ID received: ${planId}`);
+        console.log(`[GOALS NEW DEBUG] Client name received: "${clientName}"`);
+        console.log(`[GOALS NEW DEBUG] Client diagnosis received: "${clientDiagnosis}"`);
+        console.log(`[GOALS NEW DEBUG] Client object exists: ${!!client}`);
+        console.log(`[GOALS NEW DEBUG] About to enter Goals generation logic...`);
+      }
       
       // Create diagnosis-driven prompts that ALWAYS generate content
       switch (section) {

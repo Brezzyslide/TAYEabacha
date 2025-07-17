@@ -125,21 +125,22 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   // Mutation for Generate Goals button (NDIS Goals field)
   const generateNdisGoalsMutation = useMutation({
     mutationFn: async () => {
-      console.log("[GOALS DEBUG] planData:", planData);
-      console.log("[GOALS DEBUG] planData?.id:", planData?.id);
-      console.log("[GOALS DEBUG] selectedClient:", selectedClient);
-      
-      // Try multiple fallbacks for plan ID
-      const fallbackPlanId = planData?.id || data?.id || data?.planId;
-      console.log("[GOALS DEBUG] Using plan ID:", fallbackPlanId);
-      
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+      const payload = {
         section: "goals",
         targetField: "ndisGoals",
-        planId: fallbackPlanId,
-        clientName: selectedClient?.fullName || "Client",
-        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
-      });
+        planId: planData?.id || data?.id,
+        clientName:
+          selectedClient?.fullName || planData?.clientName || data?.clientData?.fullName || "Client",
+        clientDiagnosis:
+          planData?.aboutMeData?.diagnosis ||
+          selectedClient?.primaryDiagnosis ||
+          data?.clientData?.primaryDiagnosis ||
+          "Not specified"
+      };
+      
+      console.log("[GOALS DEBUG] Enhanced payload:", payload);
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
       return await response.json();
     },
     onSuccess: (responseData) => {
@@ -162,17 +163,22 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   // Mutation for Add to Personal Aspirations button
   const generatePersonalAspirationsMutation = useMutation({
     mutationFn: async () => {
-      // Try multiple fallbacks for plan ID
-      const fallbackPlanId = planData?.id || data?.id || data?.planId;
-      console.log("[GOALS DEBUG] Using plan ID for aspirations:", fallbackPlanId);
-      
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+      const payload = {
         section: "goals",
         targetField: "personalAspirations",
-        planId: fallbackPlanId,
-        clientName: selectedClient?.fullName || "Client",
-        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
-      });
+        planId: planData?.id || data?.id,
+        clientName:
+          selectedClient?.fullName || planData?.clientName || data?.clientData?.fullName || "Client",
+        clientDiagnosis:
+          planData?.aboutMeData?.diagnosis ||
+          selectedClient?.primaryDiagnosis ||
+          data?.clientData?.primaryDiagnosis ||
+          "Not specified"
+      };
+      
+      console.log("[GOALS DEBUG] Enhanced aspirations payload:", payload);
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
       return await response.json();
     },
     onSuccess: (responseData) => {
