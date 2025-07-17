@@ -7782,14 +7782,36 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
             const clientGoals = client?.ndisGoals || 'Improve distress tolerance, Improve speech clarity, Access community independently';
             const emergencyContact = client?.emergencyContactName || 'xyz';
             
+            // Check if there's existing About Me content to build upon
+            const existingAboutMe = plan?.aboutMeData || {};
+            const hasExistingContent = (field) => existingAboutMe[field] && existingAboutMe[field].trim().length > 0;
+            
             const fieldSpecificPrompts = {
-              personalHistory: `Write clinical personal history for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY these documented facts: birth year 1997, emergency contact ${emergencyContact}. Keep factual and clinical. Maximum 100 words.`,
-              interests: `Write interests content for ${clientName} using his documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to these specific activities: music listening, shopping outings, social activities with friends, and dancing opportunities. Focus on how these interests can be therapeutic. Maximum 100 words.`,
-              preferences: `Write preferences content for ${clientName}. He likes: ${clientLikes}. He dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely prefer quiet environments during music time, choice-driven shopping experiences, small friend groups, and structured dance activities. Avoid noisy settings and ensure he has control over decisions. Maximum 100 words.`,
-              strengths: `Write strengths for ${clientName} based on his social abilities (enjoys making friends, dancing), creative interests (music), independence skills (shopping), and clear communication of preferences. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches using these social and expressive abilities. Maximum 100 words.`,
-              challenges: `Write challenges for ${clientName} focusing on: ${clientDislikes} and his NDIS goals: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely struggle with noise sensitivity, situations lacking choice/control, and feeling unheard. These challenges connect to his goals of improving distress tolerance and speech clarity. Maximum 100 words.`,
+              personalHistory: hasExistingContent('personalHistory') 
+                ? `Build upon existing personal history: "${existingAboutMe.personalHistory}". Add relevant clinical details for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Add complementary information using documented facts: birth year 1997, emergency contact ${emergencyContact}. Maximum 100 words.`
+                : `Write clinical personal history for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY these documented facts: birth year 1997, emergency contact ${emergencyContact}. Keep factual and clinical. Maximum 100 words.`,
+                
+              interests: hasExistingContent('interests')
+                ? `Build upon existing interests content: "${existingAboutMe.interests}". Add therapeutic explanations for ${clientName}'s documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to structured activities incorporating music, shopping, social connections, and dancing. Explain how these interests support his care goals. Maximum 100 words.`
+                : `Write interests content for ${clientName} using his documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to these specific activities: music listening, shopping outings, social activities with friends, and dancing opportunities. Focus on how these interests can be therapeutic. Maximum 100 words.`,
+                
+              preferences: hasExistingContent('preferences')
+                ? `Build upon existing preferences: "${existingAboutMe.preferences}". Add diagnosis-based insights for ${clientName}. He likes: ${clientLikes}. He dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely prefer quiet environments, choice-driven experiences, and structured social activities. Add therapeutic rationale for these preferences. Maximum 100 words.`
+                : `Write preferences content for ${clientName}. He likes: ${clientLikes}. He dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely prefer quiet environments during music time, choice-driven shopping experiences, small friend groups, and structured dance activities. Avoid noisy settings and ensure he has control over decisions. Maximum 100 words.`,
+                
+              strengths: hasExistingContent('strengths')
+                ? `Build upon existing strengths: "${existingAboutMe.strengths}". Add therapeutic perspective for ${clientName}'s abilities: social skills (making friends, dancing), creative interests (music), independence (shopping), and communication. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches. Add clinical insights about leveraging these strengths. Maximum 100 words.`
+                : `Write strengths for ${clientName} based on his social abilities (enjoys making friends, dancing), creative interests (music), independence skills (shopping), and clear communication of preferences. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches using these social and expressive abilities. Maximum 100 words.`,
+                
+              challenges: hasExistingContent('challenges')
+                ? `Build upon existing challenges: "${existingAboutMe.challenges}". Add diagnosis-based analysis for ${clientName}. Focus on: ${clientDislikes} and his NDIS goals: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely struggle with noise sensitivity and lack of control. Connect these challenges to his therapeutic goals. Maximum 100 words.`
+                : `Write challenges for ${clientName} focusing on: ${clientDislikes} and his NDIS goals: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely struggle with noise sensitivity, situations lacking choice/control, and feeling unheard. These challenges connect to his goals of improving distress tolerance and speech clarity. Maximum 100 words.`,
+                
               familyBackground: `Information about family background was not provided in ${clientName}'s profile. Only emergency contact information is available: ${emergencyContact}.`,
-              culturalConsiderations: `Write cultural considerations for ${clientName} acknowledging his individual preferences for music, dancing, and social connection. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors his personal interests in music and dance as forms of self-expression. Maximum 100 words.`
+              
+              culturalConsiderations: hasExistingContent('culturalConsiderations')
+                ? `Build upon existing cultural considerations: "${existingAboutMe.culturalConsiderations}". Add diagnosis-based perspective for ${clientName}'s cultural expressions through music, dancing, and social connection. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors these personal interests. Maximum 100 words.`
+                : `Write cultural considerations for ${clientName} acknowledging his individual preferences for music, dancing, and social connection. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors his personal interests in music and dance as forms of self-expression. Maximum 100 words.`
             };
             
             // Check if this is familyBackground and no family data exists
@@ -7798,15 +7820,17 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
               return;
             }
             
-            systemPrompt = `You are writing specific care plan content for the ${targetField} field. CRITICAL RULES:
+            systemPrompt = `You are writing additional care plan content for the ${targetField} field that builds upon existing content. CRITICAL RULES:
 1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
-2. Start with diagnosis phrasing: "Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to..." 
-3. Generate SPECIFIC content related to ${targetField} using documented client information
-4. Do NOT include disclaimers about consulting professionals or healthcare professionals
-5. Do NOT mention employment, work, or cultural assumptions
-6. Focus on practical care planning content
-7. Write in clinical but accessible language
-8. NEVER say "Please consult with healthcare professionals"`;
+2. If existing content is provided, ADD TO IT rather than replacing it - expand, enhance, and provide additional insights
+3. Start new content with diagnosis phrasing: "Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to..." 
+4. Generate SPECIFIC content related to ${targetField} using documented client information
+5. Connect new content to existing information when available
+6. Do NOT include disclaimers about consulting professionals or healthcare professionals
+7. Do NOT mention employment, work, or cultural assumptions
+8. Focus on practical care planning content that complements what's already written
+9. Write in clinical but accessible language
+10. NEVER say "Please consult with healthcare professionals"`;
             userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content using documented client information`;
           } else {
             // Original About Me generation
