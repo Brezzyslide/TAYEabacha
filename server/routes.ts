@@ -7701,7 +7701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (clientResult.length > 0) {
               const client = clientResult[0];
               clientDiagnosis = client.primaryDiagnosis || 'Not specified';
-              clientName = `${client.firstName} ${client.lastName}`;
+              clientName = `${client.firstName || 'Client'} ${client.lastName || ''}`.trim();
               
               // Calculate age from date of birth
               const age = client.dateOfBirth ? 
@@ -7767,18 +7767,18 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       // Create diagnosis-driven prompts that ALWAYS generate content
       switch (section) {
         case "aboutMe":
-          systemPrompt = `Generate professional "About Me" content for a care support plan. Use the comprehensive client information including diagnosis, NDIS goals, preferences, dislikes, and personal details to create personalized, evidence-based content that supports daily care. Incorporate the client's specific interests, preferences, and support needs. Reference their actual likes/dislikes and NDIS goals where relevant. Write in third person, professional tone. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized About Me content using all available client information including preferences, NDIS goals, and personal details'}`;
+          systemPrompt = `Generate professional "About Me" content for a care support plan. ONLY use factual information provided: client name, age, diagnosis, documented NDIS goals, documented preferences/interests, documented dislikes, and any user-provided input. DO NOT make assumptions about cultural background, living situation, family circumstances, or personal history unless explicitly documented. DO NOT use generic statements or assumptions. Focus strictly on the documented diagnosis and client-provided information. Write in third person, professional tone. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual About Me content using ONLY documented client information - no assumptions or generic statements'}`;
           break;
         
         case "goals":
-          systemPrompt = `Generate NDIS-aligned goals incorporating the client's existing NDIS goals, diagnosis, and personal preferences. Build upon their documented NDIS goals and create additional specific, measurable, achievable goals that address independence, community access, skill development, and capacity building. Reference their interests and preferences to make goals personally meaningful. Always generate content even if user input is minimal. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate enhanced goals building on existing NDIS goals and client preferences'}`;
+          systemPrompt = `Generate NDIS-aligned goals using ONLY the client's documented NDIS goals, diagnosis, and documented preferences. DO NOT create generic goals or make assumptions about what the client needs. Build specific, measurable goals that directly relate to their documented diagnosis and stated NDIS goals. Reference only their documented interests and documented preferences. DO NOT add goals that aren't supported by the provided information. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual goals using ONLY documented NDIS goals and client information - no generic assumptions'}`;
           break;
         
         case "adl":
-          systemPrompt = `Generate Activities of Daily Living support content using the client's diagnosis, preferences, dislikes, and NDIS goals. Create practical guidance for support workers covering personal care, mobility, household tasks, community access, and safety considerations. Incorporate their specific likes/interests and avoid or accommodate their documented dislikes. Reference their NDIS goals for community access and independence. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized ADL support incorporating client preferences and NDIS goals'}`;
+          systemPrompt = `Generate Activities of Daily Living support content using ONLY the client's documented diagnosis, documented preferences, documented dislikes, and documented NDIS goals. DO NOT make assumptions about their abilities, living situation, or support needs beyond what's documented. Focus on evidence-based ADL support specific to their diagnosis. Only reference their actual documented likes/dislikes and NDIS goals. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual ADL support using ONLY documented client information and diagnosis-specific needs'}`;
           break;
         
         case "structure":
@@ -7787,13 +7787,13 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
           break;
         
         case "communication":
-          systemPrompt = `Generate communication support content using the client's diagnosis, NDIS goals (especially communication-related goals), and preferences. Create practical guidance for receptive and expressive communication strategies, considering their documented dislikes (such as noise sensitivity) and incorporating their interests. Reference their specific NDIS communication goals and personal preferences. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized communication strategies incorporating NDIS goals and client preferences'}`;
+          systemPrompt = `Generate communication support content using ONLY the client's documented diagnosis, documented NDIS communication goals, and documented preferences/dislikes. DO NOT make assumptions about communication abilities or needs beyond what's documented. Focus on evidence-based communication strategies specific to their diagnosis. Only reference documented communication-related NDIS goals and documented sensitivities (like noise). Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual communication strategies using ONLY documented diagnosis and client information'}`;
           break;
         
         case "behaviour":
-          systemPrompt = `Generate behavior support content using the client's diagnosis, documented dislikes/triggers, preferences, and NDIS goals. Create PBS-aligned strategies that specifically address their documented triggers (such as noise, lack of choice/control, not being heard) and leverage their interests for positive engagement. Include proactive approaches based on their preferences and de-escalation techniques that avoid their known dislikes. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate personalized behavior support incorporating documented triggers and preferences'}`;
+          systemPrompt = `Generate behavior support content using ONLY the client's documented diagnosis, documented triggers/dislikes, documented preferences, and documented NDIS goals. DO NOT make assumptions about behavioral patterns beyond what's documented. Create PBS-aligned strategies that specifically address only their documented triggers and use only their documented interests. Focus on evidence-based approaches for their specific diagnosis. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual behavior support using ONLY documented triggers, preferences and diagnosis-specific strategies'}`;
           break;
         
         case "disaster":
@@ -7807,18 +7807,21 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
           break;
         
         default:
-          systemPrompt = `Generate professional care support content for the specified section using comprehensive client information including diagnosis, NDIS goals, preferences, dislikes, and personal details. Create evidence-based, practical content for support workers that is personalized to this specific client. Always generate content even with minimal input. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate personalized content using all available client information'}`;
+          systemPrompt = `Generate professional care support content for the specified section using ONLY documented client information: name, age, diagnosis, documented NDIS goals, documented preferences, documented dislikes, and user-provided input. DO NOT make assumptions or add generic content. Focus strictly on factual, evidence-based content specific to their documented diagnosis and client-provided information. Maximum 400 words.`;
+          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate factual content using ONLY documented client information - no assumptions'}`;
       }
 
-      // Generate AI content with diagnosis-driven approach (temperature 0.3 for consistency)
+      // Generate AI content with strict factual approach (temperature 0.1 for maximum consistency and accuracy)
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: systemPrompt },
+          { 
+            role: "system", 
+            content: `${systemPrompt}\n\nIMPORTANT RESTRICTIONS:\n- NEVER mention cultural background, race, ethnicity, or heritage unless explicitly documented\n- NEVER assume living situation, family circumstances, or personal history\n- NEVER use phrases like "resilient individual", "vibrant community", or generic personality descriptors\n- ONLY use documented facts: name, age, diagnosis, documented NDIS goals, documented preferences, documented dislikes\n- Be specific and factual, avoid broad generalizations` 
+          },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.3,
+        temperature: 0.1,
         max_tokens: 800,
       });
 
