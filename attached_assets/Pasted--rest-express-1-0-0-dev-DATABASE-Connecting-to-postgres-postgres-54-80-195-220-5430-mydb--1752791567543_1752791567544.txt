@@ -1,0 +1,56 @@
+> rest-express@1.0.0 dev
+[DATABASE] Connecting to: postgres://postgres:***@54.80.195.220:5430/mydb
+[SCHEMA DEBUG] Compliance tables in schema: {
+  downloadableForms: true,
+  completedMedicationAuthorityForms: true,
+  evacuationDrills: true
+}
+[SESSION STORE] PostgreSQL session store initialized
+[SESSION STORE] Using database pool connection
+[TIMEZONE] Server timezone set to: Australia/Sydney
+[TIMEZONE] Current server time: 18/07/2025, 8:26:21 am
+[AUTH CONFIG] Environment: development
+[AUTH CONFIG] Session store type: PGStore
+[AUTH CONFIG] Production mode: false
+[AUTH CONFIG] Cookie settings: { secure: false, sameSite: 'lax', httpOnly: true, maxAge: 86400000 }
+[MULTI-TENANT FIX] ALL DEMO DATA PROVISIONING PERMANENTLY DISABLED
+[MULTI-TENANT FIX] New tenants start completely clean - no automatic data creation
+[MULTI-TENANT FIX] Users must create all their own data (clients, shifts, etc.)
+[ZERO PROVISIONING] All tenant fixes and provisioning COMPLETELY DISABLED
+[ZERO PROVISIONING] All new tenants will have absolutely ZERO data
+[ZERO PROVISIONING] Users must create everything manually
+[COMPOSITE FK] Applying database-level tenant isolation constraints
+[COMPOSITE FK MIGRATION] Starting database-level tenant isolation enforcement...
+[COMPOSITE FK] Successfully loaded SQL from: /home/runner/workspace/server/simplified-composite-fk.sql
+[COMPOSITE FK MIGRATION] Step 1: Adding composite unique constraints...
+[COMPOSITE FK MIGRATION] Executing database schema updates...
+[COMPOSITE FK MIGRATION] Migration error: relation "users_id_tenant_unique" already exists
+[COMPOSITE FK MIGRATION] Non-critical constraint error, continuing...
+[COMPOSITE FK MIGRATION] ✅ Migration completed successfully!
+[COMPOSITE FK MIGRATION] Verifying composite foreign key constraints...
+[COMPOSITE FK MIGRATION] ✅ Found 29 composite foreign key constraints:
+  - activity_logs.tenant_id → tenants
+  - cancellation_requests.tenant_id → tenants
+  - case_notes.tenant_id, tenant_id → clients
+  - case_notes.tenant_id → tenants
+  - clients.tenant_id → tenants
+  - completed_medication_authority_forms.tenant_id → tenants
+  - evacuation_drills.tenant_id → tenants
+  - form_submissions.tenant_id → tenants
+  - form_templates.tenant_id → tenants
+  - hour_allocations.tenant_id → tenants
+  - hourly_observations.tenant_id → tenants
+  - incident_closures.tenant_id → tenants
+  - incident_reports.tenant_id → tenants
+  - leave_balances.tenant_id → tenants
+  - medication_plans.tenant_id → tenants
+  - medication_records.tenant_id, tenant_id → clients
+  - medication_records.tenant_id → tenants
+  - ndis_budgets.tenant_id, tenant_id → clients
+  - ndis_budgets.tenant_id → tenants
+  - ndis_pricing.tenant_id → tenants
+  - shift_cancellations.tenant_id → tenants
+  - shifts.tenant_id, tenant_id → clients
+  - shifts.tenant_id → tenants
+  - shifts.tenant_id, tenant_id → users
+  - staff_availability.tena
