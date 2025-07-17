@@ -8072,18 +8072,42 @@ ${client.allergiesMedicalAlerts || 'No medical alerts documented'}
             }
           }
 
-          systemPrompt = `Generate NDIS-aligned goals using ONLY the client's documented NDIS goals, diagnosis, and documented preferences. DO NOT create generic goals or make assumptions about what the client needs. Build specific, measurable goals that directly relate to their documented diagnosis and stated NDIS goals. Reference only their documented interests and documented preferences. DO NOT add goals that aren't supported by the provided information. 
+          // Build pseudo-overview context for enhanced Goals generation
+          const pseudoOverview = `
+Client: ${clientName}
+Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
+Likes: ${client?.likesPreferences || "Not specified"}
+Dislikes: ${client?.dislikesAversions || "Not specified"}
+Medical Alerts: ${client?.allergiesMedicalAlerts || "None"}
+About Me: ${plan?.aboutMeData?.content || "Not generated yet"}
+Existing NDIS Goals: ${plan?.goalsData?.ndisGoals || "None"}
+`.trim();
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+          systemPrompt = `You are writing a set of NDIS goals for a participant with known diagnosis and personal context.
 
-Maximum 400 words.`;
+Client name: ${clientName}
+Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
+Data summary:
+${pseudoOverview}
+
+🎯 Your task:
+1. Generate exactly **five therapeutic goals** that are clearly and directly linked to the client's diagnosis and support needs.
+2. Each goal must align with NDIS standards — focus on independence, capacity building, and functional outcomes.
+3. Then, **review any existing NDIS goals** already documented. Only include them **if they are not duplicates** of the five above.
+4. Avoid general statements. Do NOT invent goals — use only what's in the data above.
+5. Avoid clinical jargon and keep each goal simple and human-readable.
+
+📌 Output Format:
+- Bullet point list only.
+- No asterisks, no extra commentary, no headings.
+- Total list should be 5–10 goals max.`;
           
-          // Update contextual info with client data and final diagnosis
-          const updatedContextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual goals using ONLY documented NDIS goals and client information - no generic assumptions'}`;
+          userPrompt = `Generate NDIS goals using the comprehensive client context provided above. User input: ${userInput || 'Generate therapeutic goals based on diagnosis and documented client information'}`;
           
-          console.log(`[GOALS NEW DEBUG] Final contextual info being sent to AI:`, updatedContextualInfo);
-          console.log(`[GOALS NEW DEBUG] Final user prompt being sent to AI:`, userPrompt);
+          console.log(`[GOALS ENHANCED DEBUG] Pseudo-overview context:`, pseudoOverview);
+          console.log(`[GOALS ENHANCED DEBUG] Enhanced goals prompt being sent to AI:`, systemPrompt);
+          console.log(`[GOALS ENHANCED DEBUG] About Me content available:`, plan?.aboutMeData?.content ? 'Yes' : 'No');
+          console.log(`[GOALS ENHANCED DEBUG] Existing NDIS goals:`, plan?.goalsData?.ndisGoals || 'None');
           break;
         
         case "adl":
