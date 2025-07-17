@@ -356,8 +356,17 @@ export function CarePlanProvider({
   }, [existingPlan, clients]);
 
   // Auto-save mutation
+  const [lastSavedData, setLastSavedData] = useState<string>('');
+
   const autoSaveMutation = useMutation({
     mutationFn: async (data: CarePlanData) => {
+      // Check if data has actually changed to prevent duplicate saves
+      const currentDataString = JSON.stringify(data);
+      if (currentDataString === lastSavedData) {
+        console.log('Auto-save skipped - no changes detected');
+        return null;
+      }
+      
       const { clientData, ...saveData } = data;
       
       const response = await apiRequest('POST', '/api/care-support-plans/auto-save', {
@@ -367,12 +376,18 @@ export function CarePlanProvider({
         planTitle: data.planTitle || `Draft - ${new Date().toLocaleDateString()}`,
       });
       
+      setLastSavedData(currentDataString);
       return await response.json();
     },
     onMutate: () => {
       setSaveStatus('saving');
     },
     onSuccess: (savedPlan) => {
+      if (savedPlan === null) {
+        setSaveStatus('idle');
+        return; // Skip if no actual save occurred
+      }
+      
       setSaveStatus('saved');
       setLastSaveTime(new Date());
       
@@ -417,7 +432,7 @@ export function CarePlanProvider({
     },
   });
 
-  // Auto-save effect with debounce
+  // Auto-save effect with debounce (only on changes)
   useEffect(() => {
     if (!planData.clientId) return;
     
@@ -446,7 +461,7 @@ export function CarePlanProvider({
     return () => clearTimeout(saveTimeout);
   }, [planData]);
 
-  // Auto-save interval
+  // Backup auto-save interval (only if no recent activity)
   useEffect(() => {
     if (!planData.clientId) return;
     
@@ -465,13 +480,15 @@ export function CarePlanProvider({
                         planData.adlData.userInput ||
                         planData.communicationData.userInput;
       
-      if (hasContent && !autoSaveMutation.isPending) {
+      // Only auto-save if content exists, not already saving, and hasn't saved recently
+      const timeSinceLastSave = lastSaveTime ? Date.now() - lastSaveTime.getTime() : 30000;
+      if (hasContent && !autoSaveMutation.isPending && timeSinceLastSave > 15000) {
         autoSaveMutation.mutate(planData);
       }
-    }, 10000);
+    }, 30000); // Reduced frequency to 30 seconds
 
     return () => clearInterval(autoSaveInterval);
-  }, [planData]);
+  }, [planData, lastSaveTime]);
 
   const updateSection = useCallback((section: string, data: any) => {
     dispatch({ type: 'UPDATE_SECTION', section, data });
