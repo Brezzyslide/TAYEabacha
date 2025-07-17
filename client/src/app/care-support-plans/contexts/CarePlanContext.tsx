@@ -422,8 +422,16 @@ export function CarePlanProvider({
     if (!planData.clientId) return;
     
     const hasContent = planData.planTitle || 
-                      planData.aboutMeData.bulletPoints || 
+                      planData.aboutMeData.bulletPoints ||
+                      planData.aboutMeData.personalHistory ||
+                      planData.aboutMeData.interests ||
+                      planData.aboutMeData.preferences ||
+                      planData.aboutMeData.strengths ||
+                      planData.aboutMeData.challenges ||
+                      planData.aboutMeData.familyBackground ||
+                      planData.aboutMeData.culturalConsiderations ||
                       planData.goalsData.ndisGoals ||
+                      planData.goalsData.personalAspirations ||
                       planData.adlData.userInput ||
                       planData.communicationData.userInput;
     
@@ -444,8 +452,16 @@ export function CarePlanProvider({
     
     const autoSaveInterval = setInterval(() => {
       const hasContent = planData.planTitle || 
-                        planData.aboutMeData.bulletPoints || 
+                        planData.aboutMeData.bulletPoints ||
+                        planData.aboutMeData.personalHistory ||
+                        planData.aboutMeData.interests ||
+                        planData.aboutMeData.preferences ||
+                        planData.aboutMeData.strengths ||
+                        planData.aboutMeData.challenges ||
+                        planData.aboutMeData.familyBackground ||
+                        planData.aboutMeData.culturalConsiderations ||
                         planData.goalsData.ndisGoals ||
+                        planData.goalsData.personalAspirations ||
                         planData.adlData.userInput ||
                         planData.communicationData.userInput;
       
