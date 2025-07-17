@@ -139,7 +139,8 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       };
       
       console.log("[GOALS DEBUG] Enhanced payload:", payload);
-      console.log("[GOALS DEBUG] planData object:", planData);
+      console.log("DEBUG planData:", planData);
+      console.log("DEBUG diagnosis:", planData?.aboutMeData?.diagnosis);
       console.log("[GOALS DEBUG] data object:", data);
       console.log("[GOALS DEBUG] selectedClient object:", selectedClient);
       

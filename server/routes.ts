@@ -7289,6 +7289,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Function to extract diagnosis from AI-generated content
+  function extractDiagnosis(content: string): string | null {
+    if (!content) return null;
+    
+    // Common diagnosis patterns to look for
+    const diagnosisPatterns = [
+      /diagnosed with ([^,.]+)/i,
+      /diagnosis of ([^,.]+)/i,
+      /condition:?\s*([^,.]+)/i,
+      /disorder:?\s*([^,.]+)/i,
+      /syndrome:?\s*([^,.]+)/i,
+      /(Borderline Personality Disorder|BPD)/i,
+      /(Autism Spectrum Disorder|ASD)/i,
+      /(Intellectual Disability|ID)/i,
+      /(Schizophrenia)/i,
+      /(Bipolar Disorder)/i,
+      /(ADHD|Attention Deficit)/i,
+      /(Depression)/i,
+      /(Anxiety)/i
+    ];
+    
+    for (const pattern of diagnosisPatterns) {
+      const match = content.match(pattern);
+      if (match) {
+        return match[1] || match[0];
+      }
+    }
+    
+    return null;
+  }
+
   // Auto-save endpoint for drafts
   app.post("/api/care-support-plans/auto-save", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
@@ -7301,6 +7332,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'draft',
         updatedAt: new Date(),
       };
+      
+      // Extract and store diagnosis separately if About Me content contains it
+      if (planData.aboutMeData?.personalHistory) {
+        const extractedDiagnosis = extractDiagnosis(planData.aboutMeData.personalHistory);
+        if (extractedDiagnosis) {
+          planData.aboutMeData = {
+            ...planData.aboutMeData,
+            diagnosis: extractedDiagnosis
+          };
+          console.log(`[AUTO-SAVE] Extracted diagnosis: ${extractedDiagnosis}`);
+        }
+      }
       
       // Ensure no id field is passed to storage operations
       delete planData.id;
@@ -7764,12 +7807,19 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       const contextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
       const existingContext = planContext || "No existing plan context available.";
       
+      // Enhanced diagnosis lookup using extracted diagnosis from About Me section
+      let finalDiagnosis = clientDiagnosis;
+      if (plan?.aboutMeData?.diagnosis) {
+        finalDiagnosis = plan.aboutMeData.diagnosis;
+        console.log(`[GOALS NEW DEBUG] Using extracted diagnosis from About Me: ${finalDiagnosis}`);
+      }
+      
       // Enhanced debug logging for Goals section
       if (section === "goals" && req.body.targetField) {
         console.log(`[GOALS NEW DEBUG] Section: ${section}, Target: ${req.body.targetField}`);
         console.log(`[GOALS NEW DEBUG] Plan ID received: ${planId}`);
         console.log(`[GOALS NEW DEBUG] Client name received: "${clientName}"`);
-        console.log(`[GOALS NEW DEBUG] Client diagnosis received: "${clientDiagnosis}"`);
+        console.log(`[GOALS NEW DEBUG] Final diagnosis being used: "${finalDiagnosis}"`);
         console.log(`[GOALS NEW DEBUG] Client object exists: ${!!client}`);
         console.log(`[GOALS NEW DEBUG] About to enter Goals generation logic...`);
       }
@@ -7992,8 +8042,8 @@ DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on h
 
 Maximum 400 words.`;
           
-          // Update contextual info with client data
-          const updatedContextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
+          // Update contextual info with client data and final diagnosis
+          const updatedContextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
           userPrompt = `${updatedContextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual goals using ONLY documented NDIS goals and client information - no generic assumptions'}`;
           break;
         
@@ -8088,18 +8138,24 @@ Maximum 400 words.`;
     } catch (error) {
       console.error("AI generation error:", error);
       
-      // Provide diagnosis-based fallback even on error
+      // Provide diagnosis-based fallback even on error  
       const { section, planId } = req.body;
-      let clientDiagnosis = "Not specified";
+      let fallbackDiagnosis = "Not specified";
       
       if (planId) {
         try {
           const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
           if (planResult.length > 0) {
             const plan = planResult[0];
-            const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
-            if (clientResult.length > 0) {
-              clientDiagnosis = clientResult[0].primaryDiagnosis || 'Not specified';
+            
+            // Check for extracted diagnosis first
+            if (plan.aboutMeData?.diagnosis) {
+              fallbackDiagnosis = plan.aboutMeData.diagnosis;
+            } else {
+              const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
+              if (clientResult.length > 0) {
+                fallbackDiagnosis = clientResult[0].primaryDiagnosis || 'Not specified';
+              }
             }
           }
         } catch (dbError) {
@@ -8107,7 +8163,7 @@ Maximum 400 words.`;
         }
       }
       
-      const fallbackContent = `Information about ${section || 'this area'} was not provided in the client profile. Based on the diagnosis of ${clientDiagnosis}, appropriate ${section || 'care support'} strategies should be developed.`;
+      const fallbackContent = `Information about ${section || 'this area'} was not provided in the client profile. Based on the diagnosis of ${fallbackDiagnosis}, appropriate ${section || 'care support'} strategies should be developed.`;
       
       res.json({ 
         content: fallbackContent,
