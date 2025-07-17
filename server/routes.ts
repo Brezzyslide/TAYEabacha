@@ -7821,6 +7821,13 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
         console.log(`[GOALS NEW DEBUG] Client name received: "${clientName}"`);
         console.log(`[GOALS NEW DEBUG] Final diagnosis being used: "${finalDiagnosis}"`);
         console.log(`[GOALS NEW DEBUG] Client object exists: ${!!client}`);
+        console.log(`[GOALS NEW DEBUG] Client object details:`, client ? { 
+          id: client.id, 
+          fullName: client.fullName, 
+          firstName: client.firstName, 
+          lastName: client.lastName 
+        } : null);
+        console.log(`[GOALS NEW DEBUG] Request body clientName: "${req.body.clientName}"`);
         console.log(`[GOALS NEW DEBUG] About to enter Goals generation logic...`);
       }
       
@@ -8045,6 +8052,9 @@ Maximum 400 words.`;
           // Update contextual info with client data and final diagnosis
           const updatedContextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
           userPrompt = `${updatedContextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual goals using ONLY documented NDIS goals and client information - no generic assumptions'}`;
+          
+          console.log(`[GOALS NEW DEBUG] Final contextual info being sent to AI:`, updatedContextualInfo);
+          console.log(`[GOALS NEW DEBUG] Final user prompt being sent to AI:`, userPrompt);
           break;
         
         case "adl":
@@ -8129,10 +8139,22 @@ Maximum 400 words.`;
       // Always return content - no guard rails or validation that could block generation
       if (!generatedContent || generatedContent.trim().length === 0) {
         // Simple fallback using client's actual documented information
-        const fallbackContent = `${clientName} is diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured ${section} approaches that consider his documented preferences and NDIS goals.`;
+        const fallbackContent = `${clientName} is diagnosed with ${finalDiagnosis}. Based on his diagnosis, he will likely respond well to structured ${section} approaches that consider his documented preferences and NDIS goals.`;
         res.json({ content: fallbackContent });
       } else {
-        res.json({ content: generatedContent.trim() });
+        // Replace any placeholder client names with actual client name
+        let finalContent = generatedContent.trim();
+        if (clientName && clientName !== "Client" && clientName !== "Not specified") {
+          finalContent = finalContent
+            .replace(/\[Client Name\]/g, clientName)
+            .replace(/\[Client\]/g, clientName)
+            .replace(/Client Name/g, clientName);
+        }
+        
+        console.log(`[GOALS NEW DEBUG] Original AI content:`, generatedContent.trim());
+        console.log(`[GOALS NEW DEBUG] Final content after name replacement:`, finalContent);
+        
+        res.json({ content: finalContent });
       }
 
     } catch (error) {

@@ -143,6 +143,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       console.log("DEBUG diagnosis:", planData?.aboutMeData?.diagnosis);
       console.log("[GOALS DEBUG] data object:", data);
       console.log("[GOALS DEBUG] selectedClient object:", selectedClient);
+      console.log("[GOALS DEBUG] About to send request to backend with clientName:", payload.clientName);
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
       return await response.json();
