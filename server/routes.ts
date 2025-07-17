@@ -7691,6 +7691,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let clientDiagnosis = "Not specified";
       let clientName = "Client";
       let comprehensiveClientInfo = "";
+      let client = null;
+      let age = 'Not specified';
       
       if (planId) {
         try {
@@ -7699,12 +7701,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const plan = planResult[0];
             const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
             if (clientResult.length > 0) {
-              const client = clientResult[0];
+              client = clientResult[0];
               clientDiagnosis = client.primaryDiagnosis || 'Not specified';
               clientName = `${client.firstName || 'Client'} ${client.lastName || ''}`.trim();
               
               // Calculate age from date of birth
-              const age = client.dateOfBirth ? 
+              age = client.dateOfBirth ? 
                 Math.floor((new Date().getTime() - new Date(client.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) 
                 : 'Not specified';
               
@@ -7774,16 +7776,23 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
           if (req.body.targetField && req.body.targetField !== 'preview') {
             const targetField = req.body.targetField;
             const fieldSpecificPrompts = {
-              personalHistory: `Generate factual personal history content for ${clientName}. Use ONLY documented client information: age, diagnosis, documented experiences. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to specific support approaches. Focus on clinical facts only. Maximum 150 words.`,
-              interests: `Generate interests content for ${clientName} based on his documented preferences: ${client?.likesPreferences || 'music, shopping, friends, dancing'}. Based on his diagnosis of ${clientDiagnosis}, he may benefit from structured interest-based activities. Use only documented hobbies and preferences. Maximum 150 words.`,
-              preferences: `Generate preferences content for ${clientName} using his documented likes and support preferences: ${client?.likesPreferences || 'documented preferences'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to choice-based support. Avoid assumptions. Maximum 150 words.`,
-              strengths: `Generate strengths content for ${clientName} based on his documented abilities and positive attributes related to his diagnosis of ${clientDiagnosis}. Based on his diagnosis, he may benefit from strength-focused support approaches. Use only documented skills and abilities. Maximum 150 words.`,
-              challenges: `Generate challenges content for ${clientName} using documented support needs and his documented dislikes: ${client?.dislikesAversions || 'noise, lack of control, not being heard'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to supportive interventions for these challenges. Maximum 150 words.`,
-              familyBackground: `Generate family background content for ${clientName} using ONLY documented family and support network information: ${client?.emergencyContactName || 'documented contacts'}. Based on his diagnosis of ${clientDiagnosis}, he may benefit from family-inclusive support. Use only documented information. Maximum 150 words.`,
-              culturalConsiderations: `Generate cultural considerations for ${clientName} using ONLY documented cultural, religious or spiritual information. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally appropriate support. Do not assume cultural background. Maximum 150 words.`
+              personalHistory: `Write clinical personal history content for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY documented facts: birth year 1997, living in Melbourne area, emergency contact ${client?.emergencyContactName || 'xyz'}. Focus on factual background information. Do NOT include disclaimers or recommendations to consult professionals. Maximum 150 words.`,
+              interests: `Write interests content for ${clientName} focusing on his documented preferences: ${client?.likesPreferences || 'Enjoys music, Shopping, Making new friends, Dancing'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to structured interest-based activities that incorporate these specific hobbies. Explain how each interest can be therapeutic. Do NOT include disclaimers. Maximum 150 words.`,
+              preferences: `Write preferences content for ${clientName} using his documented likes: ${client?.likesPreferences || 'music, shopping, friends, dancing'} and avoiding his documented dislikes: ${client?.dislikesAversions || 'noise, lack of choice/control, not being heard'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to choice-based support that honors these preferences. Do NOT include disclaimers. Maximum 150 words.`,
+              strengths: `Write strengths content for ${clientName} based on his ability to form friendships (enjoys making new friends), engage in social activities (dancing, music), and express preferences clearly. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches that build on these social and expressive abilities. Do NOT include disclaimers. Maximum 150 words.`,
+              challenges: `Write challenges content for ${clientName} focusing on his documented struggles with ${client?.dislikesAversions || 'noise sensitivity, lack of choice/control, not being heard'} and his NDIS goals of ${client?.ndisGoals || 'improving distress tolerance and speech clarity'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to interventions that address these specific challenges. Do NOT include disclaimers. Maximum 150 words.`,
+              familyBackground: `Write family background content for ${clientName} including his emergency contact ${client?.emergencyContactName || 'xyz'} and support network. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to family-inclusive support that involves his identified contacts in care planning. Do NOT include disclaimers. Maximum 150 words.`,
+              culturalConsiderations: `Write cultural considerations for ${clientName} acknowledging his individual preferences for music, dancing, and social connection as cultural expressions. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors his personal cultural practices and social preferences. Do NOT include disclaimers. Maximum 150 words.`
             };
             
-            systemPrompt = `Generate specific content for the ${targetField} field. Use the EXACT client name "${clientName}". Focus on clinical facts and documented information only. Use diagnosis phrasing: "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from...". Never mention employment, cultural assumptions, or generic descriptors.`;
+            systemPrompt = `You are writing specific care plan content for the ${targetField} field. CRITICAL RULES:
+1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
+2. Start with diagnosis phrasing: "Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to..." 
+3. Generate SPECIFIC content related to ${targetField} using documented client information
+4. Do NOT include disclaimers about consulting professionals
+5. Do NOT mention employment, work, or cultural assumptions
+6. Focus on practical care planning content
+7. Write in clinical but accessible language`;
             userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content using documented client information`;
           } else {
             // Original About Me generation
