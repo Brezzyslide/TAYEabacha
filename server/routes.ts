@@ -7767,6 +7767,9 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       // Debug logging for AI generation
       console.log(`[AI DEBUG] About to generate for section: ${section}`);
       console.log(`[AI DEBUG] Client name being used: "${clientName}"`);
+      console.log(`[AI DEBUG] Client diagnosis: "${clientDiagnosis}"`);
+      console.log(`[AI DEBUG] Plan ID: ${planId}`);
+      console.log(`[AI DEBUG] Client object exists: ${!!client}`);
       console.log(`[AI DEBUG] Contextual info length: ${contextualInfo.length}`);
       console.log(`[AI DEBUG] Contextual info preview: ${contextualInfo.substring(0, 200)}...`);
       
