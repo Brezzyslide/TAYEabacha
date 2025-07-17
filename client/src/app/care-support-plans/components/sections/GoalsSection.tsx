@@ -125,6 +125,10 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   // Mutation for Generate Goals button (NDIS Goals field)
   const generateNdisGoalsMutation = useMutation({
     mutationFn: async () => {
+      console.log("[GOALS DEBUG] planData:", planData);
+      console.log("[GOALS DEBUG] planData?.id:", planData?.id);
+      console.log("[GOALS DEBUG] selectedClient:", selectedClient);
+      
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "goals",
         targetField: "ndisGoals",
