@@ -1,0 +1,34 @@
+[CLIENT API DEBUG] Returning 4 clients to user fred@fred.com:
+┌─────────┬─────┬─────────────────────┬──────────────────┬──────────┐
+│ (index) │ id  │ fullName            │ ndisNumber       │ tenantId │
+├─────────┼─────┼─────────────────────┼──────────────────┼──────────┤
+│ 0       │ 260 │ 'Chrisopher Camara' │ '111111'         │ 19       │
+│ 1       │ 259 │ 'Emma Williams'     │ 'NDIS001003_T19' │ 19       │
+│ 2       │ 258 │ 'Michael Chen'      │ 'NDIS001002_T19' │ 19       │
+│ 3       │ 257 │ 'Sarah Johnson'     │ 'NDIS001001_T19' │ 19       │
+└─────────┴─────┴─────────────────────┴──────────────────┴──────────┘
+8:40:04 AM [express] GET /api/clients 304 in 236ms :: [{"id":260,"clientId":"CLT726301","firstName":…
+[PASSPORT] Deserializing user ID: 18
+[PASSPORT] Verified user: fred@fred.com (ID: 18, Tenant: 19)
+[SESSION] User fred@fred.com logged in under tenant 19
+[ROLE CHECK] User role: admin, Required roles: TeamLeader, Coordinator, Admin, ConsoleManager
+[ROLE CHECK] PASSED - User 18 has sufficient permissions
+8:40:10 AM [express] POST /api/care-support-plans/auto-save 200 in 176ms :: {"id":92,"clientId":260,…
+[PASSPORT] Deserializing user ID: 18
+[PASSPORT] Verified user: fred@fred.com (ID: 18, Tenant: 19)
+[SESSION] User fred@fred.com logged in under tenant 19
+8:40:17 AM [express] POST /api/care-support-plans/generate-ai 200 in 1954ms :: {"content":"I'm unabl…
+[PASSPORT] Deserializing user ID: 18
+[PASSPORT] Verified user: fred@fred.com (ID: 18, Tenant: 19)
+[SESSION] User fred@fred.com logged in under tenant 19
+[ROLE CHECK] User role: admin, Required roles: TeamLeader, Coordinator, Admin, ConsoleManager
+[ROLE CHECK] PASSED - User 18 has sufficient permissions
+8:40:21 AM [express] POST /api/care-support-plans/auto-save 200 in 305ms :: {"id":92,"clientId":260,…
+[PASSPORT] Deserializing user ID: 18
+[PASSPORT] Deserializing user ID: 18
+[PASSPORT] Verified user: fred@fred.com (ID: 18, Tenant: 19)
+[PASSPORT] Verified user: fred@fred.com (ID: 18, Tenant: 19)
+[SESSION] User fred@fred.com logged in under tenant 19
+[SESSION] User fred@fred.com logged in under tenant 19
+8:40:30 AM [express] GET /api/notifications 304 in 176ms :: []
+8:40:30 AM [express] GET /api/notifications/unread-count 304 in 164ms :: {"count":"0"}
