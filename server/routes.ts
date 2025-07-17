@@ -7895,29 +7895,43 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
 10. NEVER say "Please consult with healthcare professionals"`;
             userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content using documented client information`;
           } else {
-            // Original About Me generation
-            systemPrompt = `You are writing a clinical "About Me" section for a care support plan. Follow these STRICT RULES:
+            // Enhanced About Me generation with improved structure
+            const ndisGoals = client?.ndisGoals || "No NDIS goals documented";
+            const preferences = client?.likesPreferences || "No preferences documented";
+            const dislikes = client?.dislikesAversions || "No dislikes documented";
+            
+            systemPrompt = `You are writing a clinical "About Me" section for an NDIS care support plan. Follow these STRICT RULES:
 
-1. USE EXACT CLIENT NAME - Never write "Client", "[Client Name]", or "the client"
-2. ONLY state documented medical facts: diagnosis and documented support needs
-3. ONLY reference documented NDIS goals exactly as written
-4. ONLY mention documented preferences/interests exactly as provided
-5. ONLY mention documented dislikes/triggers exactly as provided
-6. DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+✅ Required Structure:
+1. USE EXACT CLIENT NAME – Never write "Client", "[Client Name]", or generic terms like "the participant". Use: ${clientName}
+2. INCLUDE ONLY DOCUMENTED MEDICAL FACTS – Use only this diagnosed condition: "${finalDiagnosis}"
+3. INCLUDE ONLY DOCUMENTED NDIS GOALS – These are the exact NDIS goals: ${ndisGoals}
+4. INCLUDE ONLY DOCUMENTED PREFERENCES – Likes/interests: ${preferences}
+5. INCLUDE ONLY DOCUMENTED DISLIKES – Triggers/dislikes: ${dislikes}
+6. DIAGNOSIS PHRASES – When referring to the diagnosis, use phrases like:
+   - "Based on his diagnosis, he may benefit from..."
+   - "Based on her diagnosis, it is likely she will respond well to..."
 
-FORBIDDEN CONTENT - Never mention:
-- Employment, work, jobs, career, workplace
-- Cultural background, race, ethnicity, heritage, religion
-- Community involvement, activities, events
-- Living situation, family, relationships
-- Make NO assumptions about cultural or ethnic background
-- Do NOT mention specific cultural practices or traditions
-- Personal history, past experiences
-- Descriptive adjectives (resilient, independent, vibrant, committed)
-- Assumptions about abilities or circumstances
+🚫 Forbidden Content – Do NOT include:
+- Employment, work, jobs, or career references
+- Cultural background, ethnicity, race, heritage, or religion
+- Community events, involvement, or programs
+- Living situation, family structure, or relationships
+- Cultural practices or traditions
+- Personal history, trauma, or biographical details
+- Adjectives like "resilient", "vibrant", "capable", "strong"
+- Any assumptions about ability, social behaviour, or independence
 
-Write clinically and factually. Maximum 300 words.`;
-            userPrompt = `${contextualInfo}\n\nUser Input: ${userInput || 'Write clinical About Me section using ONLY documented facts'}`;
+Write in a professional, clinical tone. No narratives or storytelling. Maximum 300 words.`;
+            
+            userPrompt = `${contextualInfo}\n\n🧠 Additional Input from User (if any): ${userInput || 'Generate clinical About Me section using ONLY documented facts'}\n\nWrite clinical About Me content following the exact structure and restrictions above.`;
+            
+            console.log(`[ABOUT ME ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
+            console.log(`[ABOUT ME ENHANCED DEBUG] Final user prompt being sent to AI:`, userPrompt);
+            console.log(`[ABOUT ME ENHANCED DEBUG] Client data extracted - Name: ${clientName}, Diagnosis: ${finalDiagnosis}`);
+            console.log(`[ABOUT ME ENHANCED DEBUG] NDIS Goals: ${ndisGoals}`);
+            console.log(`[ABOUT ME ENHANCED DEBUG] Preferences: ${preferences}`);
+            console.log(`[ABOUT ME ENHANCED DEBUG] Dislikes: ${dislikes}`);
           }
           break;
         
