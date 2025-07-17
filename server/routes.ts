@@ -7693,12 +7693,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let comprehensiveClientInfo = "";
       let client = null;
       let age = 'Not specified';
+      let plan = null;
       
       if (planId) {
         try {
           const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
           if (planResult.length > 0) {
-            const plan = planResult[0];
+            plan = planResult[0];
             const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
             if (clientResult.length > 0) {
               client = clientResult[0];
