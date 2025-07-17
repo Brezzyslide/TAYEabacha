@@ -7708,29 +7708,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 Math.floor((new Date().getTime() - new Date(client.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) 
                 : 'Not specified';
               
-              // Build comprehensive client information
+              // Build comprehensive client information with debugging
+              console.log(`[AI DEBUG] Client name components: firstName="${client.firstName}", lastName="${client.lastName}"`);
+              console.log(`[AI DEBUG] Final clientName: "${clientName}"`);
+              
               comprehensiveClientInfo = `
-CLIENT PROFILE:
-- Name: ${clientName}
+CLIENT INFORMATION (USE EXACT NAME PROVIDED):
+- Client Name: ${clientName}
 - Age: ${age} years old
 - Primary Diagnosis: ${clientDiagnosis}
-- NDIS Number: ${client.ndisNumber || 'Not specified'}
-- Address: ${client.address || 'Not specified'}
 
-NDIS GOALS:
-${client.ndisGoals || 'No specific NDIS goals documented'}
+DOCUMENTED NDIS GOALS:
+${client.ndisGoals || 'No NDIS goals documented'}
 
-PREFERENCES & INTERESTS:
+DOCUMENTED PREFERENCES/INTERESTS:
 ${client.likesPreferences || 'No preferences documented'}
 
-DISLIKES & AVERSIONS:
+DOCUMENTED DISLIKES/TRIGGERS:
 ${client.dislikesAversions || 'No dislikes documented'}
 
-EMERGENCY CONTACT:
-- Name: ${client.emergencyContactName || 'Not specified'}
-- Phone: ${client.emergencyContactPhone || 'Not specified'}
-
-MEDICAL ALERTS:
+DOCUMENTED MEDICAL INFORMATION:
 ${client.allergiesMedicalAlerts || 'No medical alerts documented'}
 `;
               
@@ -7764,11 +7761,34 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       const contextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
       const existingContext = planContext || "No existing plan context available.";
       
+      // Debug logging for AI generation
+      console.log(`[AI DEBUG] About to generate for section: ${section}`);
+      console.log(`[AI DEBUG] Client name being used: "${clientName}"`);
+      console.log(`[AI DEBUG] Contextual info length: ${contextualInfo.length}`);
+      console.log(`[AI DEBUG] Contextual info preview: ${contextualInfo.substring(0, 200)}...`);
+      
       // Create diagnosis-driven prompts that ALWAYS generate content
       switch (section) {
         case "aboutMe":
-          systemPrompt = `Generate professional "About Me" content for a care support plan. ONLY use factual information provided: client name, age, diagnosis, documented NDIS goals, documented preferences/interests, documented dislikes, and any user-provided input. DO NOT make assumptions about cultural background, living situation, family circumstances, or personal history unless explicitly documented. DO NOT use generic statements or assumptions. Focus strictly on the documented diagnosis and client-provided information. Write in third person, professional tone. Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual About Me content using ONLY documented client information - no assumptions or generic statements'}`;
+          systemPrompt = `You are writing a clinical "About Me" section for a care support plan. Follow these STRICT RULES:
+
+1. USE EXACT CLIENT NAME - Never write "Client", "[Client Name]", or "the client"
+2. ONLY state documented medical facts: diagnosis and documented support needs
+3. ONLY reference documented NDIS goals exactly as written
+4. ONLY mention documented preferences/interests exactly as provided
+5. ONLY mention documented dislikes/triggers exactly as provided
+
+FORBIDDEN CONTENT - Never mention:
+- Employment, work, jobs, career, workplace
+- Cultural background, race, ethnicity, heritage
+- Community involvement, activities, events
+- Living situation, family, relationships
+- Personal history, past experiences
+- Descriptive adjectives (resilient, independent, vibrant, committed)
+- Assumptions about abilities or circumstances
+
+Write clinically and factually. Maximum 300 words.`;
+          userPrompt = `${contextualInfo}\n\nUser Input: ${userInput || 'Write clinical About Me section using ONLY documented facts'}`;
           break;
         
         case "goals":
@@ -7817,7 +7837,7 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
         messages: [
           { 
             role: "system", 
-            content: `${systemPrompt}\n\nIMPORTANT RESTRICTIONS:\n- NEVER mention cultural background, race, ethnicity, or heritage unless explicitly documented\n- NEVER assume living situation, family circumstances, or personal history\n- NEVER use phrases like "resilient individual", "vibrant community", or generic personality descriptors\n- ONLY use documented facts: name, age, diagnosis, documented NDIS goals, documented preferences, documented dislikes\n- Be specific and factual, avoid broad generalizations` 
+            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements` 
           },
           { role: "user", content: userPrompt }
         ],
