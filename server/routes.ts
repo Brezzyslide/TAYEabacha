@@ -7770,7 +7770,24 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
       // Create diagnosis-driven prompts that ALWAYS generate content
       switch (section) {
         case "aboutMe":
-          systemPrompt = `You are writing a clinical "About Me" section for a care support plan. Follow these STRICT RULES:
+          // Check if this is a targeted field generation request
+          if (req.body.targetField && req.body.targetField !== 'preview') {
+            const targetField = req.body.targetField;
+            const fieldSpecificPrompts = {
+              personalHistory: `Generate factual personal history content for ${clientName}. Use ONLY documented client information: age, diagnosis, documented experiences. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to specific support approaches. Focus on clinical facts only. Maximum 150 words.`,
+              interests: `Generate interests content for ${clientName} based on his documented preferences: ${client?.likesPreferences || 'music, shopping, friends, dancing'}. Based on his diagnosis of ${clientDiagnosis}, he may benefit from structured interest-based activities. Use only documented hobbies and preferences. Maximum 150 words.`,
+              preferences: `Generate preferences content for ${clientName} using his documented likes and support preferences: ${client?.likesPreferences || 'documented preferences'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to choice-based support. Avoid assumptions. Maximum 150 words.`,
+              strengths: `Generate strengths content for ${clientName} based on his documented abilities and positive attributes related to his diagnosis of ${clientDiagnosis}. Based on his diagnosis, he may benefit from strength-focused support approaches. Use only documented skills and abilities. Maximum 150 words.`,
+              challenges: `Generate challenges content for ${clientName} using documented support needs and his documented dislikes: ${client?.dislikesAversions || 'noise, lack of control, not being heard'}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to supportive interventions for these challenges. Maximum 150 words.`,
+              familyBackground: `Generate family background content for ${clientName} using ONLY documented family and support network information: ${client?.emergencyContactName || 'documented contacts'}. Based on his diagnosis of ${clientDiagnosis}, he may benefit from family-inclusive support. Use only documented information. Maximum 150 words.`,
+              culturalConsiderations: `Generate cultural considerations for ${clientName} using ONLY documented cultural, religious or spiritual information. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally appropriate support. Do not assume cultural background. Maximum 150 words.`
+            };
+            
+            systemPrompt = `Generate specific content for the ${targetField} field. Use the EXACT client name "${clientName}". Focus on clinical facts and documented information only. Use diagnosis phrasing: "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from...". Never mention employment, cultural assumptions, or generic descriptors.`;
+            userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content using documented client information`;
+          } else {
+            // Original About Me generation
+            systemPrompt = `You are writing a clinical "About Me" section for a care support plan. Follow these STRICT RULES:
 
 1. USE EXACT CLIENT NAME - Never write "Client", "[Client Name]", or "the client"
 2. ONLY state documented medical facts: diagnosis and documented support needs
@@ -7789,7 +7806,8 @@ FORBIDDEN CONTENT - Never mention:
 - Assumptions about abilities or circumstances
 
 Write clinically and factually. Maximum 300 words.`;
-          userPrompt = `${contextualInfo}\n\nUser Input: ${userInput || 'Write clinical About Me section using ONLY documented facts'}`;
+            userPrompt = `${contextualInfo}\n\nUser Input: ${userInput || 'Write clinical About Me section using ONLY documented facts'}`;
+          }
           break;
         
         case "goals":

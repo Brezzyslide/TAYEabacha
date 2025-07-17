@@ -108,17 +108,22 @@ export function AboutMeSectionRefactored() {
   };
 
   const handleGenerateTargetedContent = (targetField: string) => {
-    if (!aboutMeData.bulletPoints?.trim()) {
-      toast({
-        title: "Input Required",
-        description: "Please enter some bullet points about the client first.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Generate content specific to the target field using documented client information
+    const fieldPrompts = {
+      personalHistory: "Generate factual personal history content using ONLY documented client information",
+      interests: "Generate interests content based on documented client preferences and hobbies",
+      preferences: "Generate preferences content using documented client likes and support preferences",
+      strengths: "Generate strengths content based on documented abilities and positive attributes",
+      challenges: "Generate challenges content using documented support needs and areas of difficulty",
+      familyBackground: "Generate family background content using ONLY documented family and support network information",
+      culturalConsiderations: "Generate cultural considerations using ONLY documented cultural, religious or spiritual information"
+    };
+
+    const userInput = fieldPrompts[targetField as keyof typeof fieldPrompts] || 
+                     `Generate content for ${targetField} using documented client information`;
 
     generateTargetedContentMutation.mutate({ 
-      userInput: aboutMeData.bulletPoints, 
+      userInput, 
       targetField 
     });
   };
@@ -171,12 +176,12 @@ export function AboutMeSectionRefactored() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               After initial generation, use these buttons to add targeted content to specific fields, avoiding duplication from other populated areas.
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => handleGenerateTargetedContent('personalHistory')}
-                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                disabled={generateTargetedContentMutation.isPending}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="h-4 w-4" />
@@ -186,7 +191,7 @@ export function AboutMeSectionRefactored() {
                 variant="outline" 
                 size="sm"
                 onClick={() => handleGenerateTargetedContent('interests')}
-                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                disabled={generateTargetedContentMutation.isPending}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="h-4 w-4" />
@@ -196,7 +201,7 @@ export function AboutMeSectionRefactored() {
                 variant="outline" 
                 size="sm"
                 onClick={() => handleGenerateTargetedContent('preferences')}
-                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                disabled={generateTargetedContentMutation.isPending}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="h-4 w-4" />
@@ -206,7 +211,7 @@ export function AboutMeSectionRefactored() {
                 variant="outline" 
                 size="sm"
                 onClick={() => handleGenerateTargetedContent('strengths')}
-                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                disabled={generateTargetedContentMutation.isPending}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="h-4 w-4" />
@@ -216,7 +221,7 @@ export function AboutMeSectionRefactored() {
                 variant="outline" 
                 size="sm"
                 onClick={() => handleGenerateTargetedContent('challenges')}
-                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                disabled={generateTargetedContentMutation.isPending}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="h-4 w-4" />
@@ -226,11 +231,21 @@ export function AboutMeSectionRefactored() {
                 variant="outline" 
                 size="sm"
                 onClick={() => handleGenerateTargetedContent('familyBackground')}
-                disabled={generateTargetedContentMutation.isPending || !aboutMeData.bulletPoints?.trim()}
+                disabled={generateTargetedContentMutation.isPending}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="h-4 w-4" />
                 Add to Family Background
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('culturalConsiderations')}
+                disabled={generateTargetedContentMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Add to Cultural Considerations
               </Button>
             </div>
           </div>
