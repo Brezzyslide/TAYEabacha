@@ -24,7 +24,7 @@ interface SavedBehaviour {
 }
 
 export function BehaviourSectionRefactored() {
-  const { planData, updateField } = useCarePlan();
+  const { planData, updateField, state, clientData, selectedClient } = useCarePlan();
   const { toast } = useToast();
   
   const behaviourData = planData?.behaviourData || {
@@ -65,11 +65,19 @@ export function BehaviourSectionRefactored() {
     mutationFn: async ({ description, triggers }: { description: string; triggers: string }) => {
       setIsGeneratingBehaviour(true);
 
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+      // Enhanced payload structure like Goals section
+      const payload = {
         section: "behaviour",
         userInput: `Behaviour: ${description}\nTriggers: ${triggers}`,
         targetField: "behaviour_strategies",
-        planId: planId,
+        planId: planData?.id || state?.id,
+        clientName:
+          selectedClient?.fullName || planData?.clientName || clientData?.fullName || "Client",
+        clientDiagnosis:
+          planData?.aboutMeData?.diagnosis ||
+          selectedClient?.primaryDiagnosis ||
+          clientData?.primaryDiagnosis ||
+          "Not specified",
         existingContent: {
           description,
           triggers
@@ -83,7 +91,13 @@ REACTIVE STRATEGIES: Write a detailed paragraph about immediate response during 
 PROTECTIVE STRATEGIES: Write a detailed paragraph about post-behaviour procedures based on their diagnosis. Include specific safety assessment procedures relevant to their condition, recovery support methods that work for their diagnosis, documentation requirements, and follow-up actions that address their specific needs.
 
 Format as three clear paragraphs of flowing text. Each paragraph should be 150-250 words and directly reference their diagnosis and condition-specific strategies.`
-      });
+      };
+      
+      console.log("[BEHAVIOUR DEBUG] Enhanced payload:", payload);
+      console.log("[BEHAVIOUR DEBUG] planData:", planData);
+      console.log("[BEHAVIOUR DEBUG] About to send request to backend with planId:", payload.planId);
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
 
       return await response.json();
     },
@@ -115,17 +129,28 @@ Format as three clear paragraphs of flowing text. Each paragraph should be 150-2
         `Behaviour: ${b.description}\nTriggers: ${b.triggers}`
       ).join('\n\n');
 
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+      // Enhanced payload structure
+      const payload = {
         section: "behaviour",
         userInput: behavioursList,
         targetField: "deescalation_techniques",
+        planId: planData?.id || state?.id,
+        clientName:
+          selectedClient?.fullName || planData?.clientName || clientData?.fullName || "Client",
+        clientDiagnosis:
+          planData?.aboutMeData?.diagnosis ||
+          selectedClient?.primaryDiagnosis ||
+          clientData?.primaryDiagnosis ||
+          "Not specified",
         existingContent: {
           behaviours: allBehaviours
         },
         promptOverride: `Based on all the behaviours listed above, generate comprehensive de-escalation techniques that staff can use across all these behaviours. Write as flowing paragraphs without asterisks, bullet points, or headers.
 
 Write about universal de-escalation principles, communication techniques, environmental modifications, timing and approach strategies, safety protocols, and crisis intervention steps. Focus on techniques that work across multiple behaviours and provide clear guidance for staff. Keep under 200 words total as flowing text without formatting.`
-      });
+      };
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
 
       return await response.json();
     },
@@ -157,17 +182,28 @@ Write about universal de-escalation principles, communication techniques, enviro
         `Behaviour: ${b.name || b.description}\nDescription: ${b.description}\nTriggers: ${b.triggers}`
       ).join('\n\n');
 
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+      // Enhanced payload structure
+      const payload = {
         section: "behaviour",
         userInput: behavioursList,
         targetField: "pbs_tips",
+        planId: planData?.id || state?.id,
+        clientName:
+          selectedClient?.fullName || planData?.clientName || clientData?.fullName || "Client",
+        clientDiagnosis:
+          planData?.aboutMeData?.diagnosis ||
+          selectedClient?.primaryDiagnosis ||
+          clientData?.primaryDiagnosis ||
+          "Not specified",
         existingContent: {
           behaviours: allBehaviours
         },
         promptOverride: `Based on all the behaviours listed above, generate Positive Behaviour Support (PBS) tips that promote positive behaviours and prevent challenging ones. Write as flowing paragraphs without asterisks, bullet points, or headers.
 
 Write about positive reinforcement strategies, environmental design for success, skill building opportunities, replacement behaviour teaching, proactive support systems, and quality of life improvements. Focus on evidence-based PBS principles that support the person's dignity and autonomy while reducing challenging behaviours. Keep under 200 words total as flowing text without formatting.`
-      });
+      };
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
 
       return await response.json();
     },

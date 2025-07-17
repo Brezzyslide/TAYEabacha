@@ -10,7 +10,7 @@ import { useCarePlan } from "../../contexts/CarePlanContext";
 
 export function ADLSectionRefactored() {
   const { toast } = useToast();
-  const { state, updateField, clientData } = useCarePlan();
+  const { state, updateField, clientData, planData, selectedClient } = useCarePlan();
   
   const adlData = state.adlData || {
     userInput: '',
@@ -55,15 +55,29 @@ export function ADLSectionRefactored() {
         recommendations: adlData.recommendations || ""
       };
 
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+      // Enhanced payload structure like Goals section
+      const payload = {
         section: "adl",
         userInput,
-        clientName: clientData?.fullName || "Client",
-        clientDiagnosis: clientData?.primaryDiagnosis || "Not specified",
-        maxWords: 200,
         targetField,
+        planId: planData?.id || state?.id,
+        clientName:
+          selectedClient?.fullName || planData?.clientName || clientData?.fullName || "Client",
+        clientDiagnosis:
+          planData?.aboutMeData?.diagnosis ||
+          selectedClient?.primaryDiagnosis ||
+          clientData?.primaryDiagnosis ||
+          "Not specified",
+        maxWords: 200,
         existingContent
-      });
+      };
+      
+      console.log("[ADL DEBUG] Enhanced payload:", payload);
+      console.log("[ADL DEBUG] planData:", planData);
+      console.log("[ADL DEBUG] selectedClient:", selectedClient);
+      console.log("[ADL DEBUG] About to send request to backend with planId:", payload.planId);
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
       return await response.json();
     },
     onSuccess: (responseData, { targetField }) => {

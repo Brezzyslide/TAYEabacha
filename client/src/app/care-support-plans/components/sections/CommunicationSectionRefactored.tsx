@@ -40,7 +40,7 @@ const COMMUNICATION_STRENGTHS = [
 ];
 
 export function CommunicationSectionRefactored() {
-  const { planData, updateField } = useCarePlan();
+  const { planData, updateField, state, clientData, selectedClient } = useCarePlan();
   const { toast } = useToast();
   
   const communicationData = planData?.communicationData || {
@@ -105,15 +105,28 @@ export function CommunicationSectionRefactored() {
 
       const contextString = contextInfo.length > 0 ? `\n\nContext: ${contextInfo.join('; ')}` : '';
 
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+      // Enhanced payload structure like Goals section
+      const payload = {
         section: "communication",
         userInput: `${userInput}${contextString}`,
-        clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
-        maxWords: 200,
         targetField,
+        planId: planData?.id || state?.id,
+        clientName:
+          selectedClient?.fullName || planData?.clientName || clientData?.fullName || "Client",
+        clientDiagnosis:
+          planData?.aboutMeData?.diagnosis ||
+          selectedClient?.primaryDiagnosis ||
+          clientData?.primaryDiagnosis ||
+          "Not specified",
+        maxWords: 200,
         existingContent
-      });
+      };
+      
+      console.log("[COMMUNICATION DEBUG] Enhanced payload:", payload);
+      console.log("[COMMUNICATION DEBUG] planData:", planData);
+      console.log("[COMMUNICATION DEBUG] About to send request to backend with planId:", payload.planId);
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
       return await response.json();
     },
     onSuccess: (responseData, { targetField }) => {
