@@ -7895,22 +7895,36 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
 10. NEVER say "Please consult with healthcare professionals"`;
             userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content using documented client information`;
           } else {
-            // Enhanced About Me generation with improved structure
+            // Enhanced About Me generation with comprehensive overview data
             const ndisGoals = client?.ndisGoals || "No NDIS goals documented";
             const preferences = client?.likesPreferences || "No preferences documented";
             const dislikes = client?.dislikesAversions || "No dislikes documented";
+            
+            // Extract overview information from plan data or fallback to "Not specified"
+            const gender = plan?.aboutMeData?.gender || "Not specified";
+            const communicationNotes = plan?.aboutMeData?.communicationNotes || "";
+            const supportNeeds = (plan?.aboutMeData?.supportNeeds || []).join(", ") || "";
+            
+            // Get current medications (placeholder for now - would need medication plan query)
+            const currentMeds = "";
             
             systemPrompt = `You are writing a clinical "About Me" section for an NDIS care support plan. Follow these STRICT RULES:
 
 ✅ Required Structure:
 1. USE EXACT CLIENT NAME – Never write "Client", "[Client Name]", or generic terms like "the participant". Use: ${clientName}
 2. INCLUDE ONLY DOCUMENTED MEDICAL FACTS – Use only this diagnosed condition: "${finalDiagnosis}"
-3. INCLUDE ONLY DOCUMENTED NDIS GOALS – These are the exact NDIS goals: ${ndisGoals}
+3. INCLUDE ONLY DOCUMENTED NDIS GOALS – If available, they will be listed elsewhere.
 4. INCLUDE ONLY DOCUMENTED PREFERENCES – Likes/interests: ${preferences}
 5. INCLUDE ONLY DOCUMENTED DISLIKES – Triggers/dislikes: ${dislikes}
 6. DIAGNOSIS PHRASES – When referring to the diagnosis, use phrases like:
    - "Based on his diagnosis, he may benefit from..."
    - "Based on her diagnosis, it is likely she will respond well to..."
+
+📋 Overview Information:
+- Gender: ${gender}
+- Support Needs: ${supportNeeds}
+- Communication Notes: ${communicationNotes}
+- Current Medications: ${currentMeds}
 
 🚫 Forbidden Content – Do NOT include:
 - Employment, work, jobs, or career references
@@ -7932,6 +7946,7 @@ Write in a professional, clinical tone. No narratives or storytelling. Maximum 3
             console.log(`[ABOUT ME ENHANCED DEBUG] NDIS Goals: ${ndisGoals}`);
             console.log(`[ABOUT ME ENHANCED DEBUG] Preferences: ${preferences}`);
             console.log(`[ABOUT ME ENHANCED DEBUG] Dislikes: ${dislikes}`);
+            console.log(`[ABOUT ME ENHANCED DEBUG] Overview data - Gender: ${gender}, Support Needs: ${supportNeeds}, Communication Notes: ${communicationNotes}`);
           }
           break;
         

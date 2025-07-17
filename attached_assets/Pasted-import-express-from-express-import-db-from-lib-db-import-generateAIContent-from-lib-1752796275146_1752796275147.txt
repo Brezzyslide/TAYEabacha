@@ -1,0 +1,99 @@
+import express from "express"
+import { db } from "@/lib/db"
+import { generateAIContent } from "@/lib/ai"
+
+const router = express.Router()
+
+router.post("/api/care-support-plans/generate-ai", async (req, res) => {
+  try {
+    const {
+      section,
+      planId,
+      userPrompt = ""
+    } = req.body
+
+    if (!planId || section !== "aboutMe") {
+      return res.status(400).json({ error: "Missing planId or invalid section" })
+    }
+
+    // Fetch care plan and client
+    const plan = await db.careSupportPlans.findById(planId)
+    if (!plan) return res.status(404).json({ error: "Care Plan not found." })
+
+    const client = await db.clients.findById(plan.clientId)
+    if (!client) return res.status(404).json({ error: "Client not found." })
+
+    // Fetch medication info (optional)
+    const medicationPlan = await db.medicationPlans.findFirst({
+      where: { clientId: client.id },
+      orderBy: { createdAt: "desc" }
+    })
+
+    // Extract data for the prompt
+    const fullName = client.fullName
+    const diagnosis = client.primaryDiagnosis || plan.aboutMeData?.diagnosis || "Not specified"
+    const gender = plan.aboutMeData?.gender || "Not specified"
+    const communicationNotes = plan.aboutMeData?.communicationNotes || ""
+    const supportNeeds = (plan.aboutMeData?.supportNeeds || []).join(", ")
+    const currentMeds = (medicationPlan?.medications || []).join(", ") || ""
+
+    const prompt = `
+You are writing a clinical "About Me" section for an NDIS care support plan. Follow these STRICT RULES:
+
+✅ Required Structure:
+1. USE EXACT CLIENT NAME – Never write "Client", "[Client Name]", or generic terms like "the participant". Use: ${fullName}
+2. INCLUDE ONLY DOCUMENTED MEDICAL FACTS – Use only this diagnosed condition: "${diagnosis}"
+3. INCLUDE ONLY DOCUMENTED NDIS GOALS – If available, they will be listed elsewhere.
+4. INCLUDE ONLY DOCUMENTED PREFERENCES – Likes/interests: ${plan.clientPreferences?.likes?.join(", ") || ""}
+5. INCLUDE ONLY DOCUMENTED DISLIKES – Triggers/dislikes: ${plan.clientPreferences?.dislikes?.join(", ") || ""}
+6. DIAGNOSIS PHRASES – When referring to the diagnosis, use phrases like:
+   - "Based on his diagnosis, he may benefit from..."
+   - "Based on her diagnosis, it is likely she will respond well to..."
+
+📋 Overview Information:
+- Gender: ${gender}
+- Support Needs: ${supportNeeds}
+- Communication Notes: ${communicationNotes}
+- Current Medications: ${currentMeds}
+
+🧠 Additional Input from User (if any):  
+${userPrompt}
+
+🚫 Forbidden Content – Do NOT include:
+- Employment, work, jobs, or career references
+- Cultural background, ethnicity, race, heritage, or religion
+- Community events, involvement, or programs
+- Living situation, family structure, or relationships
+- Cultural practices or traditions
+- Personal history, trauma, or biographical details
+- Adjectives like “resilient”, “vibrant”, “capable”, “strong”
+- Any assumptions about ability, social behaviour, or independence
+
+Write in a professional, clinical tone. No narratives or storytelling. Maximum 300 words.
+`.trim()
+
+    const content = await generateAIContent({ prompt })
+    if (!content) return res.status(500).json({ error: "AI generation failed" })
+
+    // Save generated content and lock in diagnosis/gender/etc
+    await db.careSupportPlans.update({
+      where: { id: planId },
+      data: {
+        aboutMeData: {
+          content,
+          diagnosis,
+          gender,
+          communicationNotes,
+          supportNeeds: plan.aboutMeData?.supportNeeds || []
+        }
+      }
+    })
+
+    res.status(200).json({ content })
+  } catch (error) {
+    console.error("[ABOUT_ME_GENERATION_ERROR]", error)
+    res.status(500).json({ error: "Server error during AI generation." })
+  }
+})
+
+export default router
