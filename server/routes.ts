@@ -7814,21 +7814,21 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
         console.log(`[GOALS NEW DEBUG] Using extracted diagnosis from About Me: ${finalDiagnosis}`);
       }
       
-      // Enhanced debug logging for Goals section
-      if (section === "goals" && req.body.targetField) {
-        console.log(`[GOALS NEW DEBUG] Section: ${section}, Target: ${req.body.targetField}`);
-        console.log(`[GOALS NEW DEBUG] Plan ID received: ${planId}`);
-        console.log(`[GOALS NEW DEBUG] Client name received: "${clientName}"`);
-        console.log(`[GOALS NEW DEBUG] Final diagnosis being used: "${finalDiagnosis}"`);
-        console.log(`[GOALS NEW DEBUG] Client object exists: ${!!client}`);
-        console.log(`[GOALS NEW DEBUG] Client object details:`, client ? { 
+      // Enhanced debug logging for ALL sections
+      console.log(`[AI DEBUG] Section: ${section}, Target: ${req.body.targetField || 'N/A'}`);
+      console.log(`[AI DEBUG] Plan ID received: ${planId}`);
+      console.log(`[AI DEBUG] Client name received: "${clientName}"`);
+      console.log(`[AI DEBUG] Final diagnosis being used: "${finalDiagnosis}"`);
+      console.log(`[AI DEBUG] Client object exists: ${!!client}`);
+      console.log(`[AI DEBUG] Comprehensive info available: ${!!comprehensiveClientInfo}`);
+      console.log(`[AI DEBUG] Plan context available: ${!!planContext}`);
+      if (client) {
+        console.log(`[AI DEBUG] Client object details:`, { 
           id: client.id, 
           fullName: client.fullName, 
           firstName: client.firstName, 
           lastName: client.lastName 
-        } : null);
-        console.log(`[GOALS NEW DEBUG] Request body clientName: "${req.body.clientName}"`);
-        console.log(`[GOALS NEW DEBUG] About to enter Goals generation logic...`);
+        });
       }
       
       // Create diagnosis-driven prompts that ALWAYS generate content
@@ -8063,7 +8063,13 @@ Maximum 400 words.`;
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual ADL support using ONLY documented client information and diagnosis-specific needs'}`;
+          
+          // Use comprehensive client info and final diagnosis like Goals section
+          const updatedContextualInfoADL = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+          userPrompt = `${updatedContextualInfoADL}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual ADL support using ONLY documented client information and diagnosis-specific needs'}`;
+          
+          console.log(`[ADL DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoADL);
+          console.log(`[ADL DEBUG] Final user prompt being sent to AI:`, userPrompt);
           break;
         
         case "structure":
@@ -8072,7 +8078,12 @@ Maximum 400 words.`;
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate structure guidance based on diagnosis'}`;
+          
+          // Use comprehensive client info and final diagnosis like Goals section
+          const updatedContextualInfoStructure = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+          userPrompt = `${updatedContextualInfoStructure}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate structure guidance based on diagnosis'}`;
+          
+          console.log(`[STRUCTURE DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoStructure);
           break;
         
         case "communication":
@@ -8081,7 +8092,12 @@ Maximum 400 words.`;
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual communication strategies using ONLY documented diagnosis and client information'}`;
+          
+          // Use comprehensive client info and final diagnosis like Goals section
+          const updatedContextualInfoComm = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+          userPrompt = `${updatedContextualInfoComm}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual communication strategies using ONLY documented diagnosis and client information'}`;
+          
+          console.log(`[COMMUNICATION DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoComm);
           break;
         
         case "behaviour":
@@ -8090,7 +8106,12 @@ Maximum 400 words.`;
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual behavior support using ONLY documented triggers, preferences and diagnosis-specific strategies'}`;
+          
+          // Use comprehensive client info and final diagnosis like Goals section
+          const updatedContextualInfoBehaviour = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+          userPrompt = `${updatedContextualInfoBehaviour}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual behavior support using ONLY documented triggers, preferences and diagnosis-specific strategies'}`;
+          
+          console.log(`[BEHAVIOUR DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoBehaviour);
           break;
         
         case "disaster":
@@ -8099,7 +8120,12 @@ Maximum 400 words.`;
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate disaster management based on diagnosis'}`;
+          
+          // Use comprehensive client info and final diagnosis like Goals section
+          const updatedContextualInfoDisaster = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+          userPrompt = `${updatedContextualInfoDisaster}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate disaster management based on diagnosis'}`;
+          
+          console.log(`[DISASTER DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoDisaster);
           break;
         
         case "mealtime":
@@ -8108,7 +8134,12 @@ Maximum 400 words.`;
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate mealtime management based on diagnosis'}`;
+          
+          // Use comprehensive client info and final diagnosis like Goals section
+          const updatedContextualInfoMealtime = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+          userPrompt = `${updatedContextualInfoMealtime}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate mealtime management based on diagnosis'}`;
+          
+          console.log(`[MEALTIME DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoMealtime);
           break;
         
         default:
@@ -8117,7 +8148,12 @@ Maximum 400 words.`;
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate factual content using ONLY documented client information - no assumptions'}`;
+          
+          // Use comprehensive client info and final diagnosis like Goals section
+          const updatedContextualInfoDefault = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+          userPrompt = `${updatedContextualInfoDefault}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate factual content using ONLY documented client information - no assumptions'}`;
+          
+          console.log(`[${section.toUpperCase()} DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoDefault);
       }
 
       // Generate AI content with strict factual approach (temperature 0.1 for maximum consistency and accuracy)
