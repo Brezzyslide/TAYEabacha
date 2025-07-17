@@ -7920,12 +7920,57 @@ Extract meaningful personal aspirations from these documented elements, focusing
           }
           
           // Original Goals section generation (for general "Generate Goals" button)
+          // Ensure we have client context for Goals section
+          if (!client && planId) {
+            try {
+              const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
+              if (planResult.length > 0) {
+                plan = planResult[0];
+                const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
+                if (clientResult.length > 0) {
+                  client = clientResult[0];
+                  clientDiagnosis = client.primaryDiagnosis || 'Not specified';
+                  clientName = `${client.firstName || 'Client'} ${client.lastName || ''}`.trim();
+                  
+                  // Calculate age from date of birth
+                  age = client.dateOfBirth ? 
+                    Math.floor((new Date().getTime() - new Date(client.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) 
+                    : 'Not specified';
+                  
+                  comprehensiveClientInfo = `
+CLIENT INFORMATION (USE EXACT NAME PROVIDED):
+- Client Name: ${clientName}
+- Age: ${age} years old
+- Primary Diagnosis: ${clientDiagnosis}
+
+DOCUMENTED NDIS GOALS:
+${client.ndisGoals || 'No NDIS goals documented'}
+
+DOCUMENTED PREFERENCES/INTERESTS:
+${client.likesPreferences || 'No preferences documented'}
+
+DOCUMENTED DISLIKES/TRIGGERS:
+${client.dislikesAversions || 'No dislikes documented'}
+
+DOCUMENTED MEDICAL INFORMATION:
+${client.allergiesMedicalAlerts || 'No medical alerts documented'}
+`;
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching client context for Goals:", error);
+            }
+          }
+
           systemPrompt = `Generate NDIS-aligned goals using ONLY the client's documented NDIS goals, diagnosis, and documented preferences. DO NOT create generic goals or make assumptions about what the client needs. Build specific, measurable goals that directly relate to their documented diagnosis and stated NDIS goals. Reference only their documented interests and documented preferences. DO NOT add goals that aren't supported by the provided information. 
 
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 Maximum 400 words.`;
-          userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual goals using ONLY documented NDIS goals and client information - no generic assumptions'}`;
+          
+          // Update contextual info with client data
+          const updatedContextualInfo = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${clientDiagnosis}`;
+          userPrompt = `${updatedContextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual goals using ONLY documented NDIS goals and client information - no generic assumptions'}`;
           break;
         
         case "adl":
