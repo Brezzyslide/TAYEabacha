@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Loader2, Target, Plus, X, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useCarePlan } from "../contexts/CarePlanContext";
 
 interface Goal {
   id: string;
@@ -29,6 +30,7 @@ interface GoalsSectionProps {
 }
 
 export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
+  const { planData } = useCarePlan();
   const goalsData = data.goalsData || {};
   const selectedClient = data.clientData;
   
@@ -126,7 +128,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "goals",
         targetField: "ndisGoals",
-        planId: data.id,
+        planId: planData?.id,
         clientName: selectedClient?.fullName || "Client",
         clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
       });
@@ -155,7 +157,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "goals",
         targetField: "personalAspirations",
-        planId: data.id,
+        planId: planData?.id,
         clientName: selectedClient?.fullName || "Client",
         clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
       });
