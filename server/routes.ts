@@ -7810,8 +7810,8 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
               familyBackground: `Information about family background was not provided in ${clientName}'s profile. Only emergency contact information is available: ${emergencyContact}.`,
               
               culturalConsiderations: hasExistingContent('culturalConsiderations')
-                ? `Build upon existing cultural considerations: "${existingAboutMe.culturalConsiderations}". Add diagnosis-based perspective for ${clientName}'s cultural expressions through music, dancing, and social connection. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors these personal interests. Maximum 100 words.`
-                : `Write cultural considerations for ${clientName} acknowledging his individual preferences for music, dancing, and social connection. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors his personal interests in music and dance as forms of self-expression. Maximum 100 words.`
+                ? `Build upon existing cultural considerations: "${existingAboutMe.culturalConsiderations}". Add diagnosis-based perspective for ${clientName}'s individual support needs. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to person-centered approaches that respect his individual preferences and communication style. Do NOT make assumptions about ethnicity, race, or cultural background - focus only on documented preferences and individual needs. Maximum 100 words.`
+                : `Write cultural considerations for ${clientName} focusing on individual person-centered support. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to approaches that honor his documented preferences for choice and control. Do NOT assume any specific cultural, ethnic, or religious background. Focus only on his individual communication needs and documented preferences. Avoid cultural stereotypes or assumptions. Maximum 100 words.`
             };
             
             // Check if this is familyBackground and no family data exists
@@ -7827,7 +7827,7 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
 4. Generate SPECIFIC content related to ${targetField} using documented client information
 5. Connect new content to existing information when available
 6. Do NOT include disclaimers about consulting professionals or healthcare professionals
-7. Do NOT mention employment, work, or cultural assumptions
+7. Do NOT mention employment, work, or make cultural/ethnic/religious assumptions
 8. Focus on practical care planning content that complements what's already written
 9. Write in clinical but accessible language
 10. NEVER say "Please consult with healthcare professionals"`;
@@ -7845,9 +7845,11 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
 
 FORBIDDEN CONTENT - Never mention:
 - Employment, work, jobs, career, workplace
-- Cultural background, race, ethnicity, heritage
+- Cultural background, race, ethnicity, heritage, religion
 - Community involvement, activities, events
 - Living situation, family, relationships
+- Make NO assumptions about cultural or ethnic background
+- Do NOT mention specific cultural practices or traditions
 - Personal history, past experiences
 - Descriptive adjectives (resilient, independent, vibrant, committed)
 - Assumptions about abilities or circumstances
