@@ -1,0 +1,128 @@
+🎯 Ultimate Goal
+Ensure each section of the Smart Care Plan intelligently pulls from:
+
+✅ Data collected when the client was created (/clients table)
+
+✅ Diagnosis and personal details from the locked Client Profile
+
+✅ Manual user prompts in each section (e.g., About Me)
+
+✅ Previously generated GPT content (from other sections like About Me, Goals, etc.)
+
+✅ Structured context — not just freestyle GPT calls, but controlled feeding
+
+🧱 Modular Chain Architecture – Recommended Structure
+Here’s how you should architect the logic between sections:
+
+🧩 1. Client Info (Base Layer – Available at Plan Start)
+Pull directly from /clients table via clientId
+
+Fields available: fullName, NDISNumber, DOB, gender, primaryDiagnosis, culturalBackground, medications, medicalAlerts
+
+📋 Suggested DB Mapping for Replit Agent:
+ts
+Copy
+Edit
+const client = await db.clients.findById(plan.clientId)
+
+const baseClientContext = {
+  fullName: client.fullName,
+  diagnosis: client.primaryDiagnosis,
+  dob: client.dob,
+  age: calculateAge(client.dob),
+  gender: client.gender,
+  alerts: client.medicalAlerts || [],
+  medications: client.medications || []
+}
+🧠 2. About Me (Diagnosis-Locked + Prompt-Based Generation)
+Input: Manual user prompt
+
+Feed: baseClientContext
+
+Output: About Me text + extract diagnosis and store as plan.aboutMeData.diagnosis
+
+Prompt logic for GPT:
+
+ts
+Copy
+Edit
+"You are writing a personalised 'About Me' section for a care plan. Use this client's real details:
+
+- Name: ${baseClientContext.fullName}
+- Age: ${baseClientContext.age}
+- Diagnosis: ${baseClientContext.diagnosis}
+- Cultural Background: ${baseClientContext.culturalBackground}
+
+User Prompt:
+${userPrompt}
+
+Include real-world communication style, preferences, and how diagnosis affects their daily life."
+Then store:
+
+ts
+Copy
+Edit
+await db.careSupportPlans.update({
+  where: { id: planId },
+  data: {
+    aboutMeData: {
+      content: generatedText,
+      diagnosis: baseClientContext.diagnosis
+    }
+  }
+})
+🏁 3. Goals and Outcomes
+Feed:
+
+About Me content
+
+Diagnosis
+
+Existing documented NDIS goals (optional)
+
+Output:
+
+5 diagnosis-specific therapeutic goals
+
+Plus AI-generated ones from About Me (if relevant)
+
+Prompt:
+
+ts
+Copy
+Edit
+"Generate NDIS-aligned goals for ${baseClientContext.fullName}, based on:
+- Diagnosis: ${baseClientContext.diagnosis}
+- About Me: ${plan.aboutMeData.content}
+
+Generate 5 therapeutic goals that align directly with their diagnosis.
+Then add 2–3 extra goals if appropriate, derived from personality or preferences mentioned."
+🛁 4. ADLs, Structure & Routine, Communication, Behaviour Support, etc.
+Each section feeds like this:
+
+Section	Inputs
+ADLs	About Me + Diagnosis + User prompt
+Structure & Routine	User enters activities; GPT adds context from diagnosis or About Me
+Communication	User fills expressive/receptive; GPT adds strategy based on diagnosis
+Behaviour Support	User describes behaviours; GPT uses diagnosis to generate strategies
+Disaster Plan	Diagnosis + client risk factors → GPT generates preparation strategies
+Mealtime Mgmt	Manual flags + diagnosis + meds → GPT gives tailored support plan
+
+Each GPT prompt must be template-driven, using:
+
+baseClientContext
+
+plan.aboutMeData.content
+
+user input for that section
+
+🧠 TL;DR AI Logic Chain Per Section
+txt
+Copy
+Edit
+[Client Profile Data] → [About Me (GPT)] → [Goals (GPT + Diagnosis)] → [ADL, Routine, Comm...] → [Each section gets smarter]
+✅ What To Tell Replit Agent
+“For every care plan section, you must fetch the client data (clients table) using plan.clientId.
+Use the locked diagnosis from client.primaryDiagnosis or plan.aboutMeData.diagnosis.
+When generating each section, pass these + any existing GPT outputs and user prompts.
+Do not ask for info we already know. Use what’s been locked in earlier sections.”
