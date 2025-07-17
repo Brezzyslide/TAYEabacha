@@ -8058,18 +8058,29 @@ Maximum 400 words.`;
           break;
         
         case "adl":
-          systemPrompt = `Generate Activities of Daily Living support content using ONLY the client's documented diagnosis, documented preferences, documented dislikes, and documented NDIS goals. DO NOT make assumptions about their abilities, living situation, or support needs beyond what's documented. Focus on evidence-based ADL support specific to their diagnosis. Only reference their actual documented likes/dislikes and NDIS goals.
+          systemPrompt = `Generate Activities of Daily Living support content that incorporates BOTH the client's specific documented diagnosis AND the detailed user assessment about their ADL abilities and challenges. 
+
+CRITICAL: Use the user assessment as your PRIMARY source for ADL abilities, challenges, and support needs. The diagnosis provides context for WHY these challenges exist and informs evidence-based intervention strategies.
+
+Your response must:
+1. Reference specific ADL challenges mentioned in the user assessment (e.g., motivation issues, incontinence episodes, need for prompting)
+2. Address specific ADL tasks mentioned (e.g., cleaning, hygiene, laundry, social interaction)
+3. Incorporate specific support strategies mentioned (e.g., prompting, modeling, encouragement)
+4. Use the diagnosis to explain evidence-based approaches for these specific challenges
+5. Include practical staff instructions for the specific situations described
 
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
-Maximum 400 words.`;
+Write detailed, practical guidance that directly addresses the specific ADL assessment provided in the user input. Maximum 400 words.`;
           
           // Use comprehensive client info and final diagnosis like Goals section
           const updatedContextualInfoADL = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfoADL}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual ADL support using ONLY documented client information and diagnosis-specific needs'}`;
+          userPrompt = `${updatedContextualInfoADL}\n\nExisting Context:\n${existingContext}\n\nSPECIFIC ADL ASSESSMENT: ${userInput || 'No specific ADL assessment provided'}\n\nGenerate ADL support content that directly addresses the specific challenges, abilities, and support needs described in the ADL assessment above, using the diagnosis to inform evidence-based intervention strategies.`;
           
-          console.log(`[ADL DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoADL);
-          console.log(`[ADL DEBUG] Final user prompt being sent to AI:`, userPrompt);
+          console.log(`[ADL ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
+          console.log(`[ADL ENHANCED DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoADL);
+          console.log(`[ADL ENHANCED DEBUG] Final user prompt being sent to AI:`, userPrompt);
+          console.log(`[ADL ENHANCED DEBUG] User input extracted:`, userInput);
           break;
         
         case "structure":
