@@ -7777,6 +7777,7 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
 3. ONLY reference documented NDIS goals exactly as written
 4. ONLY mention documented preferences/interests exactly as provided
 5. ONLY mention documented dislikes/triggers exactly as provided
+6. DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
 
 FORBIDDEN CONTENT - Never mention:
 - Employment, work, jobs, career, workplace
@@ -7792,42 +7793,74 @@ Write clinically and factually. Maximum 300 words.`;
           break;
         
         case "goals":
-          systemPrompt = `Generate NDIS-aligned goals using ONLY the client's documented NDIS goals, diagnosis, and documented preferences. DO NOT create generic goals or make assumptions about what the client needs. Build specific, measurable goals that directly relate to their documented diagnosis and stated NDIS goals. Reference only their documented interests and documented preferences. DO NOT add goals that aren't supported by the provided information. Maximum 400 words.`;
+          systemPrompt = `Generate NDIS-aligned goals using ONLY the client's documented NDIS goals, diagnosis, and documented preferences. DO NOT create generic goals or make assumptions about what the client needs. Build specific, measurable goals that directly relate to their documented diagnosis and stated NDIS goals. Reference only their documented interests and documented preferences. DO NOT add goals that aren't supported by the provided information. 
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual goals using ONLY documented NDIS goals and client information - no generic assumptions'}`;
           break;
         
         case "adl":
-          systemPrompt = `Generate Activities of Daily Living support content using ONLY the client's documented diagnosis, documented preferences, documented dislikes, and documented NDIS goals. DO NOT make assumptions about their abilities, living situation, or support needs beyond what's documented. Focus on evidence-based ADL support specific to their diagnosis. Only reference their actual documented likes/dislikes and NDIS goals. Maximum 400 words.`;
+          systemPrompt = `Generate Activities of Daily Living support content using ONLY the client's documented diagnosis, documented preferences, documented dislikes, and documented NDIS goals. DO NOT make assumptions about their abilities, living situation, or support needs beyond what's documented. Focus on evidence-based ADL support specific to their diagnosis. Only reference their actual documented likes/dislikes and NDIS goals.
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual ADL support using ONLY documented client information and diagnosis-specific needs'}`;
           break;
         
         case "structure":
-          systemPrompt = `Generate structure and routine content based on the client's diagnosis. Create practical guidance for daily structure, routine management, transitions, and environmental considerations typical for this diagnosis. Always generate content using diagnosis-specific structure needs. Maximum 400 words.`;
+          systemPrompt = `Generate structure and routine content based on the client's diagnosis. Create practical guidance for daily structure, routine management, transitions, and environmental considerations typical for this diagnosis. Always generate content using diagnosis-specific structure needs.
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate structure guidance based on diagnosis'}`;
           break;
         
         case "communication":
-          systemPrompt = `Generate communication support content using ONLY the client's documented diagnosis, documented NDIS communication goals, and documented preferences/dislikes. DO NOT make assumptions about communication abilities or needs beyond what's documented. Focus on evidence-based communication strategies specific to their diagnosis. Only reference documented communication-related NDIS goals and documented sensitivities (like noise). Maximum 400 words.`;
+          systemPrompt = `Generate communication support content using ONLY the client's documented diagnosis, documented NDIS communication goals, and documented preferences/dislikes. DO NOT make assumptions about communication abilities or needs beyond what's documented. Focus on evidence-based communication strategies specific to their diagnosis. Only reference documented communication-related NDIS goals and documented sensitivities (like noise).
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual communication strategies using ONLY documented diagnosis and client information'}`;
           break;
         
         case "behaviour":
-          systemPrompt = `Generate behavior support content using ONLY the client's documented diagnosis, documented triggers/dislikes, documented preferences, and documented NDIS goals. DO NOT make assumptions about behavioral patterns beyond what's documented. Create PBS-aligned strategies that specifically address only their documented triggers and use only their documented interests. Focus on evidence-based approaches for their specific diagnosis. Maximum 400 words.`;
+          systemPrompt = `Generate behavior support content using ONLY the client's documented diagnosis, documented triggers/dislikes, documented preferences, and documented NDIS goals. DO NOT make assumptions about behavioral patterns beyond what's documented. Create PBS-aligned strategies that specifically address only their documented triggers and use only their documented interests. Focus on evidence-based approaches for their specific diagnosis.
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual behavior support using ONLY documented triggers, preferences and diagnosis-specific strategies'}`;
           break;
         
         case "disaster":
-          systemPrompt = `Generate disaster management content based on the client's diagnosis. Create emergency preparedness, evacuation procedures, communication plans, and recovery support strategies considering the specific needs of this diagnosis. Always generate content using diagnosis-specific emergency needs. Maximum 400 words.`;
+          systemPrompt = `Generate disaster management content based on the client's diagnosis. Create emergency preparedness, evacuation procedures, communication plans, and recovery support strategies considering the specific needs of this diagnosis. Always generate content using diagnosis-specific emergency needs.
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate disaster management based on diagnosis'}`;
           break;
         
         case "mealtime":
-          systemPrompt = `Generate mealtime management content based on the client's diagnosis. Create practical guidance for eating support, dietary considerations, safety protocols, and mealtime strategies typical for this diagnosis. Always generate content using diagnosis-specific mealtime needs. Maximum 400 words.`;
+          systemPrompt = `Generate mealtime management content based on the client's diagnosis. Create practical guidance for eating support, dietary considerations, safety protocols, and mealtime strategies typical for this diagnosis. Always generate content using diagnosis-specific mealtime needs.
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate mealtime management based on diagnosis'}`;
           break;
         
         default:
-          systemPrompt = `Generate professional care support content for the specified section using ONLY documented client information: name, age, diagnosis, documented NDIS goals, documented preferences, documented dislikes, and user-provided input. DO NOT make assumptions or add generic content. Focus strictly on factual, evidence-based content specific to their documented diagnosis and client-provided information. Maximum 400 words.`;
+          systemPrompt = `Generate professional care support content for the specified section using ONLY documented client information: name, age, diagnosis, documented NDIS goals, documented preferences, documented dislikes, and user-provided input. DO NOT make assumptions or add generic content. Focus strictly on factual, evidence-based content specific to their documented diagnosis and client-provided information.
+
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+
+Maximum 400 words.`;
           userPrompt = `${contextualInfo}\n\nExisting Context:\n${existingContext}\n\nSection: ${section}\nUser Input: ${userInput || 'Generate factual content using ONLY documented client information - no assumptions'}`;
       }
 
@@ -7837,7 +7870,7 @@ Write clinically and factually. Maximum 300 words.`;
         messages: [
           { 
             role: "system", 
-            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements` 
+            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements\n- DIAGNOSIS CONTENT: Always phrase diagnosis-related content as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."` 
           },
           { role: "user", content: userPrompt }
         ],
