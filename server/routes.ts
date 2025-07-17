@@ -7860,6 +7860,65 @@ Write clinically and factually. Maximum 300 words.`;
           break;
         
         case "goals":
+          // Check if this is a targeted field generation request for Goals section
+          if (req.body.targetField && req.body.targetField !== 'preview') {
+            const targetField = req.body.targetField;
+            
+            if (targetField === 'ndisGoals') {
+              // Generate Goals button - populate NDIS Goals using documented client NDIS goals + About Me content
+              systemPrompt = `You are populating the NDIS Goals field using AUTHENTIC documented information only. CRITICAL RULES:
+1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
+2. Use ONLY the client's documented NDIS goals exactly as written
+3. Connect to About Me content already generated to show consistency
+4. Based on his diagnosis of ${clientDiagnosis}, explain how these goals align with therapeutic needs
+5. Do NOT create new goals - only use documented ones
+6. Do NOT include disclaimers about consulting professionals
+7. Keep clinical and factual
+8. Maximum 200 words.`;
+              
+              userPrompt = `Use these DOCUMENTED NDIS goals: "${client?.ndisGoals || 'No NDIS goals documented'}"
+
+About Me content generated: ${plan?.aboutMeData ? JSON.stringify(plan.aboutMeData, null, 2) : 'No About Me content available'}
+
+Format these documented NDIS goals professionally, explaining how they connect to the client's diagnosis and About Me information already documented.`;
+              
+            } else if (targetField === 'personalAspirations') {
+              // Add to Personal Aspirations button - break down content from previous sections
+              systemPrompt = `You are populating Personal Aspirations by breaking down content from previous care plan sections. CRITICAL RULES:
+1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
+2. Extract personal aspirations from About Me content (interests, preferences, strengths)
+3. Based on his diagnosis of ${clientDiagnosis}, translate documented interests into aspirational goals
+4. Break down his documented preferences into meaningful personal aspirations
+5. Do NOT create aspirations not supported by documented information
+6. Do NOT include disclaimers about consulting professionals
+7. Focus on person-centered aspirations derived from documented data
+8. Maximum 200 words.`;
+              
+              userPrompt = `Break down this About Me content into Personal Aspirations:
+${plan?.aboutMeData ? JSON.stringify(plan.aboutMeData, null, 2) : 'No About Me content available'}
+
+Client's documented interests: ${client?.likesPreferences || 'No preferences documented'}
+Client's documented preferences: ${client?.dislikesAversions || 'No dislikes documented'}
+
+Extract meaningful personal aspirations from these documented elements, focusing on what ${clientName} might aspire to achieve based on his documented interests and strengths.`;
+            }
+            
+            // Handle the targeted field generation
+            const response = await openai.chat.completions.create({
+              model: "gpt-4o", 
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+              ],
+              temperature: 0.3,
+              max_tokens: 400,
+            });
+            
+            const generatedContent = response.choices[0].message.content;
+            return res.json({ content: generatedContent?.trim() || `Information for ${targetField} was not available in the client's documented data.` });
+          }
+          
+          // Original Goals section generation (for general "Generate Goals" button)
           systemPrompt = `Generate NDIS-aligned goals using ONLY the client's documented NDIS goals, diagnosis, and documented preferences. DO NOT create generic goals or make assumptions about what the client needs. Build specific, measurable goals that directly relate to their documented diagnosis and stated NDIS goals. Reference only their documented interests and documented preferences. DO NOT add goals that aren't supported by the provided information. 
 
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."

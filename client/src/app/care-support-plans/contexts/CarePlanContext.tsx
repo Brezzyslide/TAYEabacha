@@ -23,6 +23,7 @@ interface CarePlanData {
   };
   goalsData: {
     ndisGoals: string;
+    personalAspirations: string;
     overallObjective: string;
     goals: any[];
     generatedGoals: string;
@@ -157,6 +158,7 @@ const initialPlanData: CarePlanData = {
   },
   goalsData: {
     ndisGoals: '',
+    personalAspirations: '',
     overallObjective: '',
     goals: [],
     generatedGoals: '',

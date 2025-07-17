@@ -34,6 +34,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   
   const [formData, setFormData] = useState(() => ({
     ndisGoals: goalsData.ndisGoals || "",
+    personalAspirations: goalsData.personalAspirations || "",
     overallObjective: goalsData.overallObjective || "",
     goals: goalsData.goals || [],
     generatedGoals: goalsData.generatedGoals || "",
@@ -45,6 +46,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   useEffect(() => {
     setFormData({
       ndisGoals: goalsData.ndisGoals || "",
+      personalAspirations: goalsData.personalAspirations || "",
       overallObjective: goalsData.overallObjective || "",
       goals: goalsData.goals || [],
       generatedGoals: goalsData.generatedGoals || "",
@@ -116,6 +118,72 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
     }
 
     generateGoalsMutation.mutate(data.goalInput);
+  };
+
+  // Mutation for Generate Goals button (NDIS Goals field)
+  const generateNdisGoalsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "goals",
+        targetField: "ndisGoals",
+        planId: data.id,
+        clientName: selectedClient?.fullName || "Client",
+        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
+      console.log("NDIS Goals AI Response:", responseData);
+      handleInputChange("ndisGoals", responseData.content || "");
+      toast({
+        title: "NDIS Goals Generated",
+        description: "AI has populated NDIS Goals using documented client information.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate NDIS goals. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for Add to Personal Aspirations button
+  const generatePersonalAspirationsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        section: "goals",
+        targetField: "personalAspirations",
+        planId: data.id,
+        clientName: selectedClient?.fullName || "Client",
+        clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
+      });
+      return await response.json();
+    },
+    onSuccess: (responseData) => {
+      console.log("Personal Aspirations AI Response:", responseData);
+      handleInputChange("personalAspirations", responseData.content || "");
+      toast({
+        title: "Personal Aspirations Generated",
+        description: "AI has populated Personal Aspirations based on About Me content.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate personal aspirations. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerateNdisGoals = () => {
+    generateNdisGoalsMutation.mutate();
+  };
+
+  const handleGeneratePersonalAspirations = () => {
+    generatePersonalAspirationsMutation.mutate();
   };
 
   const addNewGoal = () => {
@@ -269,6 +337,57 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
               placeholder="Copy the exact goals from the client's NDIS plan for reference."
               rows={4}
             />
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => handleGenerateNdisGoals()}
+                disabled={generateNdisGoalsMutation.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {generateNdisGoalsMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Target className="h-4 w-4 mr-2" />
+                    Generate Goals
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="personalAspirations">Personal Aspirations</Label>
+            <Textarea
+              id="personalAspirations"
+              value={formData.personalAspirations}
+              onChange={(e) => handleInputChange("personalAspirations", e.target.value)}
+              placeholder="Personal aspirations and goals derived from the client's interests and preferences."
+              rows={4}
+            />
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => handleGeneratePersonalAspirations()}
+                disabled={generatePersonalAspirationsMutation.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {generatePersonalAspirationsMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Add to Personal Aspirations
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
