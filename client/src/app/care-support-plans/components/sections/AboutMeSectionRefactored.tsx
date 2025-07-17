@@ -33,11 +33,16 @@ export function AboutMeSectionRefactored() {
         culturalConsiderations: aboutMeData.culturalConsiderations || ""
       };
 
+      // Debug client data
+      console.log("[FRONTEND DEBUG] Client data available:", clientData);
+      console.log("[FRONTEND DEBUG] Plan data available:", planData);
+
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "aboutMe",
         userInput,
         clientName: clientData?.fullName || "Client",
         clientDiagnosis: clientData?.primaryDiagnosis || "Not specified",
+        planId: planData?.id, // Include planId so backend can fetch proper client data
         maxWords: 200,
         targetField,
         existingContent
