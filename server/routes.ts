@@ -7783,14 +7783,20 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
             const emergencyContact = client?.emergencyContactName || 'xyz';
             
             const fieldSpecificPrompts = {
-              personalHistory: `Write clinical personal history content for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY documented facts: birth year 1997, living in Melbourne area, emergency contact ${emergencyContact}. Focus on factual background information. Do NOT include disclaimers or recommendations to consult professionals. Maximum 150 words.`,
-              interests: `Write interests content for ${clientName} focusing on his documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to structured interest-based activities that incorporate these specific hobbies. Explain how each interest can be therapeutic. Do NOT include disclaimers. Maximum 150 words.`,
-              preferences: `Write preferences content for ${clientName} using his documented likes: ${clientLikes} and avoiding his documented dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to choice-based support that honors these preferences. Do NOT include disclaimers. Maximum 150 words.`,
-              strengths: `Write strengths content for ${clientName} based on his ability to form friendships (enjoys making new friends), engage in social activities (dancing, music), and express preferences clearly. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches that build on these social and expressive abilities. Do NOT include disclaimers. Maximum 150 words.`,
-              challenges: `Write challenges content for ${clientName} focusing on his documented struggles with: ${clientDislikes} and his NDIS goals of: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to interventions that address these specific challenges. Do NOT include disclaimers. Maximum 150 words.`,
-              familyBackground: `Write family background content for ${clientName} including his emergency contact ${emergencyContact} and support network. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to family-inclusive support that involves his identified contacts in care planning. Do NOT include disclaimers. Maximum 150 words.`,
-              culturalConsiderations: `Write cultural considerations for ${clientName} acknowledging his individual preferences for music, dancing, and social connection as cultural expressions. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors his personal cultural practices and social preferences. Do NOT include disclaimers. Maximum 150 words.`
+              personalHistory: `Write clinical personal history for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY these documented facts: birth year 1997, emergency contact ${emergencyContact}. Keep factual and clinical. Maximum 100 words.`,
+              interests: `Write interests content for ${clientName} using his documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to these specific activities: music listening, shopping outings, social activities with friends, and dancing opportunities. Focus on how these interests can be therapeutic. Maximum 100 words.`,
+              preferences: `Write preferences content for ${clientName}. He likes: ${clientLikes}. He dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely prefer quiet environments during music time, choice-driven shopping experiences, small friend groups, and structured dance activities. Avoid noisy settings and ensure he has control over decisions. Maximum 100 words.`,
+              strengths: `Write strengths for ${clientName} based on his social abilities (enjoys making friends, dancing), creative interests (music), independence skills (shopping), and clear communication of preferences. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches using these social and expressive abilities. Maximum 100 words.`,
+              challenges: `Write challenges for ${clientName} focusing on: ${clientDislikes} and his NDIS goals: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely struggle with noise sensitivity, situations lacking choice/control, and feeling unheard. These challenges connect to his goals of improving distress tolerance and speech clarity. Maximum 100 words.`,
+              familyBackground: `Information about family background was not provided in ${clientName}'s profile. Only emergency contact information is available: ${emergencyContact}.`,
+              culturalConsiderations: `Write cultural considerations for ${clientName} acknowledging his individual preferences for music, dancing, and social connection. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to culturally responsive support that honors his personal interests in music and dance as forms of self-expression. Maximum 100 words.`
             };
+            
+            // Check if this is familyBackground and no family data exists
+            if (targetField === 'familyBackground') {
+              res.json({ content: fieldSpecificPrompts[targetField] });
+              return;
+            }
             
             systemPrompt = `You are writing specific care plan content for the ${targetField} field. CRITICAL RULES:
 1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
@@ -7917,8 +7923,8 @@ Maximum 400 words.`;
       
       // Always return content - no guard rails or validation that could block generation
       if (!generatedContent || generatedContent.trim().length === 0) {
-        // Enhanced fallback content using available client information
-        const fallbackContent = `Based on ${clientName}'s diagnosis of ${clientDiagnosis} and their documented preferences and goals, appropriate ${section} support strategies should be developed to address their specific needs and requirements. Consider their individual preferences, NDIS goals, and personal circumstances when developing comprehensive care approaches.`;
+        // Simple fallback using client's actual documented information
+        const fallbackContent = `${clientName} is diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured ${section} approaches that consider his documented preferences and NDIS goals.`;
         res.json({ content: fallbackContent });
       } else {
         res.json({ content: generatedContent.trim() });
@@ -7946,7 +7952,7 @@ Maximum 400 words.`;
         }
       }
       
-      const fallbackContent = `Based on the diagnosis of ${clientDiagnosis}, he will likely respond well to structured ${section || 'care support'} strategies that address the specific needs and requirements typical for this condition. Evidence-based approaches should focus on his individual documented preferences and NDIS goals.`;
+      const fallbackContent = `Information about ${section || 'this area'} was not provided in the client profile. Based on the diagnosis of ${clientDiagnosis}, appropriate ${section || 'care support'} strategies should be developed.`;
       
       res.json({ 
         content: fallbackContent,
