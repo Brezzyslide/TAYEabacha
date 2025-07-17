@@ -1,0 +1,84 @@
+// File: /server/routes/care-support-plans.ts
+import express from "express"
+import { db } from "@/lib/db"
+import { generateAIContent } from "@/lib/ai"
+
+const router = express.Router()
+
+router.post("/api/care-support-plans/generate-ai", async (req, res) => {
+  try {
+    const {
+      section,
+      targetField,
+      planId,
+      clientName = "Client",
+      clientDiagnosis = "Not specified"
+    } = req.body
+
+    // Sanity check
+    if (!planId || !targetField) {
+      return res.status(400).json({ error: "Missing plan ID or target field." })
+    }
+
+    // Fetch plan and linked client
+    const plan = await db.careSupportPlans.findById(planId)
+    if (!plan) return res.status(404).json({ error: "Care Plan not found." })
+
+    const client = await db.clients.findById(plan.clientId)
+    const aboutMe = plan?.aboutMeData?.content || ""
+    const ndisGoals = plan?.goals?.ndisGoals || []
+
+    let prompt = ""
+
+    // 🧠 Define prompt logic based on targetField
+    if (targetField === "ndisGoals") {
+      prompt = `
+You are generating NDIS goals based on authentic, locked clinical information.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+About Me: ${aboutMe}
+
+🎯 Your task:
+1. Begin by generating **exactly five goals** that are **directly related to the client's diagnosis**. These must be therapeutic in nature and aligned with NDIS frameworks.
+2. After that, review any previously documented goals (such as existing NDIS goals already in the plan) and include them **only if they are not duplicates**.
+3. Do not invent goals not supported by diagnosis, About Me, or existing content.
+4. Maintain a clear, human-readable list structure.
+
+Respond with a concise, bullet-point format. Do not include headers or labels.
+      `.trim()
+    }
+
+    if (targetField === "personalAspirations") {
+      prompt = `
+You are populating the Personal Aspirations section using authentic, existing content.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+About Me: ${aboutMe}
+
+🎯 Your task:
+1. Extract meaningful aspirations from the About Me content.
+2. Convert client preferences, interests, and routines into goal-like personal aspirations.
+3. Avoid clinical or diagnostic tone — this should reflect the person's individual hopes and lifestyle goals.
+4. Return a simple list, person-centered, and tied to documented client identity.
+
+Format your output as a bullet-point list. No extra text.
+      `.trim()
+    }
+
+    // 🧠 Generate AI content
+    const aiResponse = await generateAIContent({ prompt })
+
+    if (!aiResponse) {
+      return res.status(500).json({ error: "AI generation failed." })
+    }
+
+    res.status(200).json({ content: aiResponse })
+  } catch (error) {
+    console.error("AI generation error:", error)
+    res.status(500).json({ error: "Server error during AI generation." })
+  }
+})
+
+export default router

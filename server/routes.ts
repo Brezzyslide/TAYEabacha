@@ -7864,47 +7864,67 @@ Write clinically and factually. Maximum 300 words.`;
           break;
         
         case "goals":
-          // Check if this is a targeted field generation request for Goals section
+          // Simplified Goals generation with better error handling
           if (req.body.targetField && req.body.targetField !== 'preview') {
             const targetField = req.body.targetField;
             
+            // Enhanced fallback: if no client context, try to fetch it directly
+            if (!client && planId) {
+              try {
+                const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
+                if (planResult.length > 0) {
+                  plan = planResult[0];
+                  const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
+                  if (clientResult.length > 0) {
+                    client = clientResult[0];
+                    clientDiagnosis = client.primaryDiagnosis || 'Not specified';
+                    clientName = `${client.firstName || 'Client'} ${client.lastName || ''}`.trim();
+                    console.log(`[GOALS FIX] Successfully fetched client: ${clientName}, diagnosis: ${clientDiagnosis}`);
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching client for Goals:", error);
+              }
+            }
+            
             if (targetField === 'ndisGoals') {
-              // Generate Goals button - populate NDIS Goals using documented client NDIS goals + About Me content
-              systemPrompt = `You are populating the NDIS Goals field using AUTHENTIC documented information only. CRITICAL RULES:
-1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
-2. Use ONLY the client's documented NDIS goals exactly as written
-3. Connect to About Me content already generated to show consistency
-4. Based on his diagnosis of ${clientDiagnosis}, explain how these goals align with therapeutic needs
-5. Do NOT create new goals - only use documented ones
-6. Do NOT include disclaimers about consulting professionals
-7. Keep clinical and factual
-8. Maximum 200 words.`;
+              systemPrompt = `You are generating NDIS goals based on authentic, clinical information.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+About Me: ${plan?.aboutMeData ? JSON.stringify(plan.aboutMeData, null, 2) : 'No About Me content available'}
+
+🎯 Your task:
+1. Begin by generating **exactly five goals** that are **directly related to the client's diagnosis**. These must be therapeutic in nature and aligned with NDIS frameworks.
+2. After that, review any previously documented goals and include them **only if they are not duplicates**.
+3. Do not invent goals not supported by diagnosis, About Me, or existing content.
+4. Maintain a clear, human-readable list structure.
+
+Respond with a concise, bullet-point format. Do not include headers or labels.`;
               
-              userPrompt = `Use these DOCUMENTED NDIS goals: "${client?.ndisGoals || 'No NDIS goals documented'}"
-
-About Me content generated: ${plan?.aboutMeData ? JSON.stringify(plan.aboutMeData, null, 2) : 'No About Me content available'}
-
-Format these documented NDIS goals professionally, explaining how they connect to the client's diagnosis and About Me information already documented.`;
+              userPrompt = `Use documented NDIS goals: "${client?.ndisGoals || 'No NDIS goals documented'}"
+              
+Generate therapeutic NDIS goals for ${clientName} based on diagnosis: ${clientDiagnosis}`;
               
             } else if (targetField === 'personalAspirations') {
-              // Add to Personal Aspirations button - break down content from previous sections
-              systemPrompt = `You are populating Personal Aspirations by breaking down content from previous care plan sections. CRITICAL RULES:
-1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
-2. Extract personal aspirations from About Me content (interests, preferences, strengths)
-3. Based on his diagnosis of ${clientDiagnosis}, translate documented interests into aspirational goals
-4. Break down his documented preferences into meaningful personal aspirations
-5. Do NOT create aspirations not supported by documented information
-6. Do NOT include disclaimers about consulting professionals
-7. Focus on person-centered aspirations derived from documented data
-8. Maximum 200 words.`;
-              
-              userPrompt = `Break down this About Me content into Personal Aspirations:
-${plan?.aboutMeData ? JSON.stringify(plan.aboutMeData, null, 2) : 'No About Me content available'}
+              systemPrompt = `You are populating the Personal Aspirations section using authentic, existing content.
 
-Client's documented interests: ${client?.likesPreferences || 'No preferences documented'}
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+About Me: ${plan?.aboutMeData ? JSON.stringify(plan.aboutMeData, null, 2) : 'No About Me content available'}
+
+🎯 Your task:
+1. Extract meaningful aspirations from the About Me content.
+2. Convert client preferences, interests, and routines into goal-like personal aspirations.
+3. Avoid clinical or diagnostic tone — this should reflect the person's individual hopes and lifestyle goals.
+4. Return a simple list, person-centered, and tied to documented client identity.
+
+Format your output as a bullet-point list. No extra text.`;
+              
+              userPrompt = `Client's documented interests: ${client?.likesPreferences || 'No preferences documented'}
 Client's documented preferences: ${client?.dislikesAversions || 'No dislikes documented'}
 
-Extract meaningful personal aspirations from these documented elements, focusing on what ${clientName} might aspire to achieve based on his documented interests and strengths.`;
+Extract meaningful personal aspirations for ${clientName} from documented information.`;
             }
             
             // Handle the targeted field generation

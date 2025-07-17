@@ -129,10 +129,14 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       console.log("[GOALS DEBUG] planData?.id:", planData?.id);
       console.log("[GOALS DEBUG] selectedClient:", selectedClient);
       
+      // Try multiple fallbacks for plan ID
+      const fallbackPlanId = planData?.id || data?.id || data?.planId;
+      console.log("[GOALS DEBUG] Using plan ID:", fallbackPlanId);
+      
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "goals",
         targetField: "ndisGoals",
-        planId: planData?.id,
+        planId: fallbackPlanId,
         clientName: selectedClient?.fullName || "Client",
         clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
       });
@@ -158,10 +162,14 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
   // Mutation for Add to Personal Aspirations button
   const generatePersonalAspirationsMutation = useMutation({
     mutationFn: async () => {
+      // Try multiple fallbacks for plan ID
+      const fallbackPlanId = planData?.id || data?.id || data?.planId;
+      console.log("[GOALS DEBUG] Using plan ID for aspirations:", fallbackPlanId);
+      
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "goals",
         targetField: "personalAspirations",
-        planId: planData?.id,
+        planId: fallbackPlanId,
         clientName: selectedClient?.fullName || "Client",
         clientDiagnosis: selectedClient?.primaryDiagnosis || "Not specified"
       });
