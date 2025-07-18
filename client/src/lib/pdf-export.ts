@@ -13,7 +13,7 @@ export interface PDFExportOptions {
 export interface PDFSection {
   title: string;
   content: string | { [key: string]: any };
-  type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support';
+  type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support' | 'about_me' | 'adl_support' | 'communication_support' | 'structure_routine' | 'disaster_management' | 'mealtime_management';
 }
 
 export class PDFExportUtility {
@@ -144,6 +144,18 @@ export class PDFExportUtility {
       this.addTable(section.content);
     } else if (section.type === 'behaviour_support' && typeof section.content === 'object') {
       this.addBehaviourSupport(section.content);
+    } else if (section.type === 'about_me' && typeof section.content === 'object') {
+      this.addAboutMeBoxes(section.content);
+    } else if (section.type === 'adl_support' && typeof section.content === 'object') {
+      this.addADLSupportBoxes(section.content);
+    } else if (section.type === 'communication_support' && typeof section.content === 'object') {
+      this.addCommunicationSupportBoxes(section.content);
+    } else if (section.type === 'structure_routine' && typeof section.content === 'object') {
+      this.addStructureRoutineBoxes(section.content);
+    } else if (section.type === 'disaster_management' && typeof section.content === 'object') {
+      this.addDisasterManagementBoxes(section.content);
+    } else if (section.type === 'mealtime_management' && typeof section.content === 'object') {
+      this.addMealtimeManagementBoxes(section.content);
     } else {
       this.addText(String(section.content));
     }
@@ -359,6 +371,122 @@ export class PDFExportUtility {
     this.pdf.setTextColor(0, 0, 0);
   }
 
+  private addAboutMeBoxes(aboutMeData: any) {
+    const sections = [
+      { key: 'personalHistory', title: '📝 Personal History', color: 'proactive' as const },
+      { key: 'interests', title: '💝 Interests', color: 'reactive' as const },
+      { key: 'preferences', title: '⭐ Preferences', color: 'proactive' as const },
+      { key: 'strengths', title: '💪 Strengths', color: 'reactive' as const },
+      { key: 'challenges', title: '🎯 Challenges', color: 'protective' as const },
+      { key: 'familyBackground', title: '👨‍👩‍👧‍👦 Family Background', color: 'proactive' as const },
+      { key: 'culturalConsiderations', title: '🌍 Cultural Considerations', color: 'reactive' as const }
+    ];
+
+    sections.forEach((section) => {
+      const content = aboutMeData[section.key];
+      if (content) {
+        this.addColoredStrategyBox(section.title, content, section.color);
+      }
+    });
+  }
+
+  private addADLSupportBoxes(adlData: any) {
+    const sections = [
+      { key: 'personalCare', title: '🚿 Personal Care', color: 'proactive' as const },
+      { key: 'mobility', title: '🚶 Mobility', color: 'proactive' as const },
+      { key: 'household', title: '🏠 Household Tasks', color: 'reactive' as const },
+      { key: 'community', title: '🌆 Community Access', color: 'reactive' as const },
+      { key: 'safety', title: '🛡️ Safety Considerations', color: 'protective' as const },
+      { key: 'independence', title: '⭐ Independence Level', color: 'proactive' as const }
+    ];
+
+    sections.forEach((section) => {
+      const content = adlData[section.key];
+      if (content) {
+        this.addColoredStrategyBox(section.title, content, section.color);
+      }
+    });
+  }
+
+  private addCommunicationSupportBoxes(communicationData: any) {
+    const sections = [
+      { key: 'primaryMethods', title: '💬 Primary Methods', color: 'proactive' as const },
+      { key: 'comprehensionLevel', title: '🧠 Comprehension Level', color: 'proactive' as const },
+      { key: 'expressionAbilities', title: '🗣️ Expression Abilities', color: 'reactive' as const },
+      { key: 'receptiveStrategies', title: '👂 Receptive Strategies', color: 'reactive' as const },
+      { key: 'expressiveStrategies', title: '💭 Expressive Strategies', color: 'proactive' as const }
+    ];
+
+    sections.forEach((section) => {
+      let content = communicationData[section.key];
+      if (Array.isArray(content)) {
+        content = content.join(', ');
+      }
+      if (content) {
+        this.addColoredStrategyBox(section.title, content, section.color);
+      }
+    });
+  }
+
+  private addStructureRoutineBoxes(structureData: any) {
+    // Weekly Schedule
+    if (structureData.routines && Array.isArray(structureData.routines)) {
+      // Group routines by day
+      const routinesByDay: { [key: string]: any[] } = {};
+      structureData.routines.forEach((routine: any) => {
+        if (!routinesByDay[routine.day]) {
+          routinesByDay[routine.day] = [];
+        }
+        routinesByDay[routine.day].push(routine);
+      });
+      
+      // Display each day as a colored box
+      Object.entries(routinesByDay).forEach(([day, routines]) => {
+        const routineText = routines.map((routine: any) => {
+          const timeRange = `${routine.startTime} - ${routine.endTime}`;
+          return `${timeRange}: ${routine.description} (${routine.category})`;
+        }).join('\n');
+        
+        this.addColoredStrategyBox(`📅 ${day}`, routineText, 'proactive');
+      });
+    }
+  }
+
+  private addDisasterManagementBoxes(disasterData: any) {
+    const sections = [
+      { key: 'evacuationPlan', title: '🚪 Evacuation Plan', color: 'protective' as const },
+      { key: 'emergencyContacts', title: '📞 Emergency Contacts', color: 'protective' as const },
+      { key: 'communicationMethod', title: '📢 Communication Method', color: 'reactive' as const },
+      { key: 'medicalInformation', title: '🏥 Medical Information', color: 'protective' as const },
+      { key: 'recoveryPlan', title: '🔄 Recovery Plan', color: 'proactive' as const }
+    ];
+
+    sections.forEach((section) => {
+      const content = disasterData[section.key];
+      if (content) {
+        this.addColoredStrategyBox(section.title, content, section.color);
+      }
+    });
+  }
+
+  private addMealtimeManagementBoxes(mealtimeData: any) {
+    const sections = [
+      { key: 'chokingRisk', title: '🚨 Choking Risk Management', color: 'protective' as const },
+      { key: 'aspirationRisk', title: '🫁 Aspiration Risk Management', color: 'protective' as const },
+      { key: 'swallowingRisk', title: '💧 Swallowing Assessment', color: 'reactive' as const },
+      { key: 'dietaryRisk', title: '🥗 Dietary Requirements', color: 'proactive' as const },
+      { key: 'assistanceRisk', title: '🤝 Assistance Level', color: 'reactive' as const },
+      { key: 'environmentalRisk', title: '🍽️ Environmental Setup', color: 'proactive' as const }
+    ];
+
+    sections.forEach((section) => {
+      const content = mealtimeData[section.key];
+      if (content) {
+        this.addColoredStrategyBox(section.title, content, section.color);
+      }
+    });
+  }
+
   private savePDF(filename: string): void {
     this.pdf.save(filename);
   }
@@ -398,17 +526,11 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'table'
   });
 
-  // Section 1: About Me
+  // Section 1: About Me with colored boxes
   sections.push({
     title: 'About Me',
-    content: [
-      plan.aboutMeData?.personalHistory ? `Personal History: ${plan.aboutMeData.personalHistory}` : 'Personal History: Not provided',
-      plan.aboutMeData?.interests ? `Interests: ${plan.aboutMeData.interests}` : 'Interests: Not provided',
-      plan.aboutMeData?.preferences ? `Preferences: ${plan.aboutMeData.preferences}` : 'Preferences: Not provided',
-      plan.aboutMeData?.strengths ? `Strengths: ${plan.aboutMeData.strengths}` : 'Strengths: Not provided',
-      plan.aboutMeData?.challenges ? `Challenges: ${plan.aboutMeData.challenges}` : 'Challenges: Not provided'
-    ],
-    type: 'list'
+    content: plan.aboutMeData || {},
+    type: 'about_me'
   });
 
   // Section 2: Goals & Outcomes
@@ -421,57 +543,25 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'list'
   });
 
-  // Section 3: Activities of Daily Living Support
+  // Section 3: Activities of Daily Living Support with colored boxes
   sections.push({
     title: 'Activities of Daily Living Support',
-    content: {
-      'Personal Care': plan.adlData?.personalCare || 'Not specified',
-      'Mobility': plan.adlData?.mobility || 'Not specified',
-      'Household Tasks': plan.adlData?.household || 'Not specified',
-      'Community Access': plan.adlData?.community || 'Not specified',
-      'Safety Considerations': plan.adlData?.safety || 'Not specified',
-      'Independence Level': plan.adlData?.independence || 'Not specified'
-    },
-    type: 'table'
+    content: plan.adlData || {},
+    type: 'adl_support'
   });
 
-  // Section 4: Structure & Routine
-  const scheduleContent: string[] = [];
-  if (plan.structureData?.weeklySchedule) {
-    try {
-      const schedule = typeof plan.structureData.weeklySchedule === 'string' 
-        ? JSON.parse(plan.structureData.weeklySchedule) 
-        : plan.structureData.weeklySchedule;
-      
-      Object.entries(schedule).forEach(([day, activities]: [string, any]) => {
-        if (Array.isArray(activities) && activities.length > 0) {
-          scheduleContent.push(`${day}: ${activities.map((a: any) => `${a.time} - ${a.activity} (${a.category})`).join(', ')}`);
-        }
-      });
-    } catch (error) {
-      scheduleContent.push('Schedule data format error');
-    }
-  }
-  
+  // Section 4: Structure & Routine with colored boxes
   sections.push({
     title: 'Structure & Routine',
-    content: scheduleContent.length > 0 ? scheduleContent : ['No weekly schedule specified'],
-    type: 'list'
+    content: plan.structureData || {},
+    type: 'structure_routine'
   });
 
-  // Section 5: Communication Support
+  // Section 5: Communication Support with colored boxes
   sections.push({
     title: 'Communication Support',
-    content: {
-      'Primary Methods': Array.isArray(plan.communicationData?.primaryMethods) 
-        ? plan.communicationData.primaryMethods.join(', ') 
-        : plan.communicationData?.primaryMethods || 'Not specified',
-      'Comprehension Level': plan.communicationData?.comprehensionLevel || 'Not specified',
-      'Expression Abilities': plan.communicationData?.expressionAbilities || 'Not specified',
-      'Receptive Strategies': plan.communicationData?.receptiveStrategies || 'Not specified',
-      'Expressive Strategies': plan.communicationData?.expressiveStrategies || 'Not specified'
-    },
-    type: 'table'
+    content: plan.communicationData || {},
+    type: 'communication_support'
   });
 
   // Section 6: Behaviour Support - Custom handling with colored boxes
@@ -481,31 +571,18 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'behaviour_support'
   });
 
-  // Section 7: Disaster Management
+  // Section 7: Disaster Management with colored boxes
   sections.push({
     title: 'Disaster Management',
-    content: {
-      'Evacuation Plan': plan.disasterData?.evacuationPlan || 'Not specified',
-      'Emergency Contacts': plan.disasterData?.emergencyContacts || 'Not specified',
-      'Communication Method': plan.disasterData?.communicationMethod || 'Not specified',
-      'Medical Information': plan.disasterData?.medicalInformation || 'Not specified',
-      'Recovery Plan': plan.disasterData?.recoveryPlan || 'Not specified'
-    },
-    type: 'table'
+    content: plan.disasterData || {},
+    type: 'disaster_management'
   });
 
-  // Section 8: Mealtime Management
+  // Section 8: Mealtime Management with colored boxes
   sections.push({
     title: 'Mealtime Management',
-    content: {
-      'Choking Risk Management': plan.mealtimeData?.chokingRisk || 'Not specified',
-      'Aspiration Risk Management': plan.mealtimeData?.aspirationRisk || 'Not specified',
-      'Swallowing Assessment': plan.mealtimeData?.swallowingRisk || 'Not specified',
-      'Dietary Requirements': plan.mealtimeData?.dietaryRisk || 'Not specified',
-      'Assistance Level': plan.mealtimeData?.assistanceRisk || 'Not specified',
-      'Environmental Setup': plan.mealtimeData?.environmentalRisk || 'Not specified'
-    },
-    type: 'table'
+    content: plan.mealtimeData || {},
+    type: 'mealtime_management'
   });
 
   // Section 9: Review & Summary
