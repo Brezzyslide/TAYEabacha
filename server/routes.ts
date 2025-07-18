@@ -7908,35 +7908,49 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
             // Get current medications (placeholder for now - would need medication plan query)
             const currentMeds = "";
             
-            systemPrompt = `You are writing a clinical "About Me" section for an NDIS care support plan. Follow these STRICT RULES:
+            const universalPromptHeader = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
-✅ Required Structure:
-1. USE EXACT CLIENT NAME – Never write "Client", "[Client Name]", or generic terms like "the participant". Use: ${clientName}
-2. INCLUDE ONLY DOCUMENTED MEDICAL FACTS – Use only this diagnosed condition: "${finalDiagnosis}"
-3. INCLUDE ONLY DOCUMENTED NDIS GOALS – If available, they will be listed elsewhere.
-4. INCLUDE ONLY DOCUMENTED PREFERENCES – Likes/interests: ${preferences}
-5. INCLUDE ONLY DOCUMENTED DISLIKES – Triggers/dislikes: ${dislikes}
-6. DIAGNOSIS PHRASES – When referring to the diagnosis, use phrases like:
-   - "Based on his diagnosis, he may benefit from..."
-   - "Based on her diagnosis, it is likely she will respond well to..."
+This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
 
-📋 Overview Information:
-- Gender: ${gender}
-- Support Needs: ${supportNeeds}
-- Communication Notes: ${communicationNotes}
-- Current Medications: ${currentMeds}
+🛑 UNIVERSAL RESTRICTIONS (Apply to ALL Sections)
 
-🚫 Forbidden Content – Do NOT include:
-- Employment, work, jobs, or career references
-- Cultural background, ethnicity, race, heritage, or religion
-- Community events, involvement, or programs
-- Living situation, family structure, or relationships
-- Cultural practices or traditions
-- Personal history, trauma, or biographical details
-- Adjectives like "resilient", "vibrant", "capable", "strong"
-- Any assumptions about ability, social behaviour, or independence
+1. ALWAYS use the client's full name — never write "Client", "[Client Name]", or generic pronouns
+2. NEVER mention: 
+   - Employment, jobs, workplace, or career aspirations
+   - Cultural background, race, religion, ethnicity, or heritage
+   - Community involvement, social events, or location-specific references
+   - Living arrangements, housing, family, or relationship history
+   - Past experiences or speculative personal history
+3. NEVER use adjectives like: resilient, strong, determined, independent, vibrant, brave, happy, or positive
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. NEVER include legal language or professional disclaimers like "please consult a medical team"
+7. DIAGNOSIS PHRASE FORMAT:
+   - "Based on his diagnosis, he will likely respond well to..."
+   - "Based on her diagnosis, she may benefit from..."
+   - "Due to the nature of the diagnosis, staff are encouraged to..."
 
-Write in a professional, clinical tone. No narratives or storytelling. Maximum 300 words.`;
+✍️ GENERAL WRITING STYLE
+- Clinical
+- Objective
+- Direct
+- No asterisks, emojis, or markdown
+- Maximum: 400 words per section
+
+This section must provide clear, practical support guidance for staff — with content tailored to the client's documented diagnosis and preferences.
+
+---
+
+🎯 ABOUT ME SECTION SPECIFIC REQUIREMENTS:
+- Write a clinical summary of who the person is and their support needs
+- Include their diagnosis and how it affects their daily life
+- Reference documented NDIS goals and preferences only
+- Use only documented information: ${finalDiagnosis}, preferences: ${preferences}, dislikes: ${dislikes}
+- Overview data: Gender: ${gender}, Support Needs: ${supportNeeds}, Communication Notes: ${communicationNotes}
+
+Return ONLY the generated about me content. Do not include headings, formatting, or extra explanation.`;
+            
+            systemPrompt = universalPromptHeader;
             
             userPrompt = `${contextualInfo}\n\n🧠 Additional Input from User (if any): ${userInput || 'Generate clinical About Me section using ONLY documented facts'}\n\nWrite clinical About Me content following the exact structure and restrictions above.`;
             
@@ -8099,24 +8113,49 @@ About Me: ${plan?.aboutMeData?.content || "Not generated yet"}
 Existing NDIS Goals: ${plan?.goalsData?.ndisGoals || "None"}
 `.trim();
 
-          systemPrompt = `You are writing a set of NDIS goals for a participant with known diagnosis and personal context.
+          const universalPromptHeaderGoals = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
+This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
+
+🛑 UNIVERSAL RESTRICTIONS (Apply to ALL Sections)
+
+1. ALWAYS use the client's full name — never write "Client", "[Client Name]", or generic pronouns
+2. NEVER mention: 
+   - Employment, jobs, workplace, or career aspirations
+   - Cultural background, race, religion, ethnicity, or heritage
+   - Community involvement, social events, or location-specific references
+   - Living arrangements, housing, family, or relationship history
+   - Past experiences or speculative personal history
+3. NEVER use adjectives like: resilient, strong, determined, independent, vibrant, brave, happy, or positive
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. NEVER include legal language or professional disclaimers like "please consult a medical team"
+7. DIAGNOSIS PHRASE FORMAT:
+   - "Based on his diagnosis, he will likely respond well to..."
+   - "Based on her diagnosis, she may benefit from..."
+   - "Due to the nature of the diagnosis, staff are encouraged to..."
+
+✍️ GENERAL WRITING STYLE
+- Clinical
+- Objective
+- Direct
+- No asterisks, emojis, or markdown
+- Maximum: 400 words per section
+
+This section must provide clear, practical support guidance for staff — with content tailored to the client's documented diagnosis and preferences.
+
+---
+
+🎯 GOALS SECTION SPECIFIC REQUIREMENTS:
 Client name: ${clientName}
 Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
-Data summary:
-${pseudoOverview}
+Data summary: ${pseudoOverview}
 
-🎯 Your task:
-1. Generate exactly **five therapeutic goals** that are clearly and directly linked to the client's diagnosis and support needs.
-2. Each goal must align with NDIS standards — focus on independence, capacity building, and functional outcomes.
-3. Then, **review any existing NDIS goals** already documented. Only include them **if they are not duplicates** of the five above.
-4. Avoid general statements. Do NOT invent goals — use only what's in the data above.
-5. Avoid clinical jargon and keep each goal simple and human-readable.
+Generate exactly five therapeutic goals that are clearly linked to the client's diagnosis and support needs. Each goal must align with NDIS standards focusing on independence, capacity building, and functional outcomes. Review any existing NDIS goals and only include if not duplicates. Use only documented data above.
 
-📌 Output Format:
-- Bullet point list only.
-- No asterisks, no extra commentary, no headings.
-- Total list should be 5–10 goals max.`;
+📌 Output Format: Bullet point list only, no asterisks, no extra commentary, no headings. Total list should be 5–10 goals max.`;
+          
+          systemPrompt = universalPromptHeaderGoals;
           
           userPrompt = `Generate NDIS goals using the comprehensive client context provided above. User input: ${userInput || 'Generate therapeutic goals based on diagnosis and documented client information'}`;
           
@@ -8137,31 +8176,47 @@ Likes & Preferences: ${client?.likesPreferences || "N/A"}
 Dislikes & Aversions: ${client?.dislikesAversions || "N/A"}
 `.trim();
 
-          systemPrompt = `You are writing a structured ADL (Activities of Daily Living) support section for a care support plan.
+          const universalPromptHeaderADL = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
+This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
+
+🛑 UNIVERSAL RESTRICTIONS (Apply to ALL Sections)
+
+1. ALWAYS use the client's full name — never write "Client", "[Client Name]", or generic pronouns
+2. NEVER mention: 
+   - Employment, jobs, workplace, or career aspirations
+   - Cultural background, race, religion, ethnicity, or heritage
+   - Community involvement, social events, or location-specific references
+   - Living arrangements, housing, family, or relationship history
+   - Past experiences or speculative personal history
+3. NEVER use adjectives like: resilient, strong, determined, independent, vibrant, brave, happy, or positive
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. NEVER include legal language or professional disclaimers like "please consult a medical team"
+7. DIAGNOSIS PHRASE FORMAT:
+   - "Based on his diagnosis, he will likely respond well to..."
+   - "Based on her diagnosis, she may benefit from..."
+   - "Due to the nature of the diagnosis, staff are encouraged to..."
+
+✍️ GENERAL WRITING STYLE
+- Clinical
+- Objective
+- Direct
+- No asterisks, emojis, or markdown
+- Maximum: 400 words per section
+
+This section must provide clear, practical support guidance for staff — with content tailored to the client's documented diagnosis and preferences.
+
+---
+
+🎯 ADL SECTION SPECIFIC REQUIREMENTS:
 Client Name: ${clientName}
 Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
+Information Available: ${adlContext}
 
-🎯 Your task:
-Using ONLY the data provided below, generate a structured ADL support description.
-
-Information Available:
-${adlContext}
-
-Your writing must:
-1. Clearly state specific ADL challenges based on the user-provided assessment.
-2. Highlight areas needing support (e.g., hygiene, meal prep, cleaning, motivation).
-3. Explain support strategies that are practical and relevant to the challenges (e.g., prompting, visual cues, repetition).
-4. Reference the diagnosis only where clinically appropriate (e.g., "Based on his diagnosis, he may benefit from…").
-5. Avoid generic or speculative statements — only write based on real documented content.
-
-📌 Format Guidelines:
-- Write in paragraph form (no lists)
-- Tone: Clinical, instructional, and practical
-- Max length: 400 words
-- No assumptions about employment, family, culture, or past life
-- Do NOT invent challenges or preferences not mentioned in the assessment
-- Do NOT write fluff or motivational filler`;
+Generate structured ADL support description using ONLY the data provided. Clearly state specific ADL challenges based on user assessment. Highlight areas needing support (hygiene, meal prep, cleaning, motivation). Explain practical support strategies (prompting, visual cues, repetition). Write in paragraph form, clinical tone, do NOT invent challenges not mentioned in assessment.`;
+          
+          systemPrompt = universalPromptHeaderADL;
           
           userPrompt = `Generate structured ADL support content using the comprehensive ADL context provided above. User input: ${userInput || 'Generate ADL support based on documented assessment and client information'}`;
           
@@ -8183,36 +8238,47 @@ Preferences: ${client?.likesPreferences || "Not documented"}
 Dislikes: ${client?.dislikesAversions || "Not documented"}
 `.trim();
 
-          systemPrompt = `You are generating the Structure & Routine section for a clinical Care Support Plan. This must be based strictly on the client's **documented diagnosis**. Do not invent lifestyle preferences or unrelated habits.
+          const universalPromptHeaderStructure = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
-🎯 Your task:
-1. Use the diagnosis to describe the general structural and routine needs common to individuals with that condition.
-2. Provide practical guidance on:
-   - Morning and evening routines
-   - Task transitions (e.g., moving between locations, activities)
-   - Predictability, visual cues, and prompts
-   - Managing changes or unexpected disruptions
-   - Environmental adjustments (e.g., noise, lighting, space)
+This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
 
-3. Ensure that all recommendations are **diagnosis-aligned** and designed for disability support workers to follow.
-4. Do not include any personal interests, family references, or unsupported background.
-5. Keep the tone clinical, respectful, and staff-facing.
+🛑 UNIVERSAL RESTRICTIONS (Apply to ALL Sections)
 
-📌 DIAGNOSIS PHRASING:
-Use language like:
-- "Based on his diagnosis, he will likely respond well to structured routines and visual prompts…"
-- "Based on her diagnosis, she may benefit from consistent morning routines and low-stimulus transitions…"
+1. ALWAYS use the client's full name — never write "Client", "[Client Name]", or generic pronouns
+2. NEVER mention: 
+   - Employment, jobs, workplace, or career aspirations
+   - Cultural background, race, religion, ethnicity, or heritage
+   - Community involvement, social events, or location-specific references
+   - Living arrangements, housing, family, or relationship history
+   - Past experiences or speculative personal history
+3. NEVER use adjectives like: resilient, strong, determined, independent, vibrant, brave, happy, or positive
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. NEVER include legal language or professional disclaimers like "please consult a medical team"
+7. DIAGNOSIS PHRASE FORMAT:
+   - "Based on his diagnosis, he will likely respond well to..."
+   - "Based on her diagnosis, she may benefit from..."
+   - "Due to the nature of the diagnosis, staff are encouraged to..."
 
-🚫 DO NOT:
-- Mention family, work, school, or hobbies
-- Refer to "client" or placeholder names — always use full client name
-- Include guesses or assumptions about the person's preferences or lifestyle
+✍️ GENERAL WRITING STYLE
+- Clinical
+- Objective
+- Direct
+- No asterisks, emojis, or markdown
+- Maximum: 400 words per section
 
-Client Information Available:
-${structureContext}
+This section must provide clear, practical support guidance for staff — with content tailored to the client's documented diagnosis and preferences.
 
-📏 Length: Maximum 400 words
+---
+
+🎯 STRUCTURE & ROUTINE SECTION SPECIFIC REQUIREMENTS:
+Client Information Available: ${structureContext}
+
+Use the diagnosis to describe structural and routine needs common to individuals with that condition. Provide practical guidance on: morning/evening routines, task transitions, predictability/visual cues/prompts, managing changes/disruptions, environmental adjustments (noise, lighting, space). Ensure recommendations are diagnosis-aligned for disability support workers. Do NOT invent lifestyle preferences or include personal interests, family references, or unsupported background.
+
 Output only the generated content. No labels, headings, or explanation.`;
+          
+          systemPrompt = universalPromptHeaderStructure;
           
           userPrompt = `Generate structure and routine guidance using the comprehensive client context provided above. User input: ${userInput || 'Generate diagnosis-based structure and routine guidance for support workers'}`;
           
@@ -8234,34 +8300,47 @@ Dislikes & Aversions: ${client?.dislikesAversions || "Not documented"}
 Communication Data: ${plan?.communicationData?.summary || "Not yet documented"}
 `.trim();
 
-          systemPrompt = `You are generating a clinical Communication section for a Care Support Plan. Follow these strict instructions:
+          const universalPromptHeaderComm = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
-1. USE EXACT CLIENT NAME: Do not write "Client" or placeholders.
-2. ONLY use documented sources:
-   - Diagnosis (from client.primaryDiagnosis or aboutMeData.diagnosis)
-   - NDIS goals related to communication (from client.ndisGoals)
-   - Likes/dislikes or sensitivities (from client.likesPreferences and dislikesAversions)
-3. DO NOT make any assumptions about communication abilities or needs.
-4. ONLY reference communication needs/goals/sensitivities that are already recorded.
-5. Focus on evidence-based communication strategies appropriate to the diagnosis and sensitivities (e.g. if the client is noise-sensitive, or has auditory processing delay).
-6. For content referencing diagnosis, use phrasing like:
-   - "Based on his diagnosis, he may benefit from…"
-   - "Based on her diagnosis, she will likely respond well to…"
+This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
 
-🎯 Your task:
-- Write a clinical summary of the person's communication needs and the recommended support strategies.
-- Tailor strategies to match diagnosis + goals + sensitivities (do not invent anything).
-- Ensure the response is staff-facing and practical.
-- Stay under 400 words.
+🛑 UNIVERSAL RESTRICTIONS (Apply to ALL Sections)
 
-NEVER MENTION:
-- Work, employment, family, culture, or living situation
-- Unsupported claims like "She enjoys" or "He finds it difficult to…"
+1. ALWAYS use the client's full name — never write "Client", "[Client Name]", or generic pronouns
+2. NEVER mention: 
+   - Employment, jobs, workplace, or career aspirations
+   - Cultural background, race, religion, ethnicity, or heritage
+   - Community involvement, social events, or location-specific references
+   - Living arrangements, housing, family, or relationship history
+   - Past experiences or speculative personal history
+3. NEVER use adjectives like: resilient, strong, determined, independent, vibrant, brave, happy, or positive
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. NEVER include legal language or professional disclaimers like "please consult a medical team"
+7. DIAGNOSIS PHRASE FORMAT:
+   - "Based on his diagnosis, he will likely respond well to..."
+   - "Based on her diagnosis, she may benefit from..."
+   - "Due to the nature of the diagnosis, staff are encouraged to..."
 
-Client Information Available:
-${communicationContext}
+✍️ GENERAL WRITING STYLE
+- Clinical
+- Objective
+- Direct
+- No asterisks, emojis, or markdown
+- Maximum: 400 words per section
+
+This section must provide clear, practical support guidance for staff — with content tailored to the client's documented diagnosis and preferences.
+
+---
+
+🎯 COMMUNICATION SECTION SPECIFIC REQUIREMENTS:
+Client Information Available: ${communicationContext}
+
+Write a clinical summary of the person's communication needs and recommended support strategies. Use ONLY documented sources: diagnosis, NDIS goals related to communication, documented sensitivities. Focus on evidence-based communication strategies appropriate to diagnosis and sensitivities. Tailor strategies to match diagnosis + goals + sensitivities. Do NOT make assumptions about communication abilities or invent content.
 
 Return ONLY the generated communication section content. Do not include headings, formatting, or extra explanation.`;
+          
+          systemPrompt = universalPromptHeaderComm;
           
           userPrompt = `Generate clinical communication support content using the comprehensive client context provided above. User input: ${userInput || 'Generate evidence-based communication strategies using documented information only'}`;
           
@@ -8284,37 +8363,47 @@ Documented NDIS Goals: ${client?.ndisGoals || "Not documented"}
 Behaviour Data: ${plan?.behaviourData?.summary || "Not yet documented"}
 `.trim();
 
-          systemPrompt = `You are generating the Behaviour Support section of a Care Support Plan. Your content must be strictly informed by the client's **documented diagnosis**, **documented triggers/dislikes**, **documented preferences/interests**, and **documented NDIS goals**.
+          const universalPromptHeaderBehaviour = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
-🎯 Your task:
-1. Identify and address ONLY the behavioural triggers that are explicitly documented (e.g., loud noise, changes in routine).
-2. Use only documented preferences to shape proactive strategies.
-3. Align every support strategy with evidence-based practices tailored to the client's diagnosis.
-4. Propose:
-   - Proactive supports (what staff should consistently do to prevent escalation)
-   - Reactive strategies (what to do if escalation begins)
-   - Protective actions (what to do if behaviour becomes unsafe)
+This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
 
-5. Do not include assumptions, invented behaviours, or generalised traits. Only work with the data provided.
+🛑 UNIVERSAL RESTRICTIONS (Apply to ALL Sections)
 
-📌 DIAGNOSIS PHRASING:
-Use lines like:
-- "Based on his diagnosis, he may benefit from proactive strategies that reduce overstimulation…"
-- "Based on her diagnosis, she will likely respond well to structured redirection and predictable transitions…"
+1. ALWAYS use the client's full name — never write "Client", "[Client Name]", or generic pronouns
+2. NEVER mention: 
+   - Employment, jobs, workplace, or career aspirations
+   - Cultural background, race, religion, ethnicity, or heritage
+   - Community involvement, social events, or location-specific references
+   - Living arrangements, housing, family, or relationship history
+   - Past experiences or speculative personal history
+3. NEVER use adjectives like: resilient, strong, determined, independent, vibrant, brave, happy, or positive
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. NEVER include legal language or professional disclaimers like "please consult a medical team"
+7. DIAGNOSIS PHRASE FORMAT:
+   - "Based on his diagnosis, he will likely respond well to..."
+   - "Based on her diagnosis, she may benefit from..."
+   - "Due to the nature of the diagnosis, staff are encouraged to..."
 
-🚫 DO NOT:
-- Mention family, work, background, or education
-- Invent triggers, goals, or preferences not recorded
-- Use placeholder terms like "the client" — always use the full name
-- Use vague descriptors (e.g., "challenging behaviours") unless they were documented as such
+✍️ GENERAL WRITING STYLE
+- Clinical
+- Objective
+- Direct
+- No asterisks, emojis, or markdown
+- Maximum: 400 words per section
 
-Client Information Available:
-${behaviourContext}
+This section must provide clear, practical support guidance for staff — with content tailored to the client's documented diagnosis and preferences.
 
-📏 Output:
-- Use clean paragraph formatting with line breaks
-- Maximum 400 words
-- No titles, explanations, or preamble`;
+---
+
+🎯 BEHAVIOUR SUPPORT SECTION SPECIFIC REQUIREMENTS:
+Client Information Available: ${behaviourContext}
+
+Identify and address ONLY behavioural triggers that are explicitly documented. Use only documented preferences to shape proactive strategies. Align support strategies with evidence-based practices tailored to diagnosis. Propose: Proactive supports (staff prevention actions), Reactive strategies (escalation response), Protective actions (unsafe behaviour response). Do NOT include assumptions, invented behaviours, or generalised traits. Use only documented data.
+
+📏 Output: Clean paragraph formatting with line breaks. No titles, explanations, or preamble.`;
+          
+          systemPrompt = universalPromptHeaderBehaviour;
           
           userPrompt = `Generate behaviour support content using the comprehensive client context provided above. User input: ${userInput || 'Generate PBS-aligned behaviour support strategies using documented triggers, preferences, and diagnosis'}`;
           
