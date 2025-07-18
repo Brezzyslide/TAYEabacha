@@ -8187,17 +8187,53 @@ Maximum 400 words.`;
           break;
         
         case "communication":
-          systemPrompt = `Generate communication support content using ONLY the client's documented diagnosis, documented NDIS communication goals, and documented preferences/dislikes. DO NOT make assumptions about communication abilities or needs beyond what's documented. Focus on evidence-based communication strategies specific to their diagnosis. Only reference documented communication-related NDIS goals and documented sensitivities (like noise).
+          // Build comprehensive communication context
+          const communicationContext = `
+Client: ${clientName}
+Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
+About Me: ${plan?.aboutMeData?.content || "Not generated"}
+NDIS Goals: ${client?.ndisGoals || "No NDIS goals documented"}
+Likes & Preferences: ${client?.likesPreferences || "Not documented"}
+Dislikes & Aversions: ${client?.dislikesAversions || "Not documented"}
+Communication Data: ${plan?.communicationData?.summary || "Not yet documented"}
+`.trim();
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+          systemPrompt = `You are generating a clinical Communication section for a Care Support Plan. Follow these strict instructions:
 
-Maximum 400 words.`;
+1. USE EXACT CLIENT NAME: Do not write "Client" or placeholders.
+2. ONLY use documented sources:
+   - Diagnosis (from client.primaryDiagnosis or aboutMeData.diagnosis)
+   - NDIS goals related to communication (from client.ndisGoals)
+   - Likes/dislikes or sensitivities (from client.likesPreferences and dislikesAversions)
+3. DO NOT make any assumptions about communication abilities or needs.
+4. ONLY reference communication needs/goals/sensitivities that are already recorded.
+5. Focus on evidence-based communication strategies appropriate to the diagnosis and sensitivities (e.g. if the client is noise-sensitive, or has auditory processing delay).
+6. For content referencing diagnosis, use phrasing like:
+   - "Based on his diagnosis, he may benefit from…"
+   - "Based on her diagnosis, she will likely respond well to…"
+
+🎯 Your task:
+- Write a clinical summary of the person's communication needs and the recommended support strategies.
+- Tailor strategies to match diagnosis + goals + sensitivities (do not invent anything).
+- Ensure the response is staff-facing and practical.
+- Stay under 400 words.
+
+NEVER MENTION:
+- Work, employment, family, culture, or living situation
+- Unsupported claims like "She enjoys" or "He finds it difficult to…"
+
+Client Information Available:
+${communicationContext}
+
+Return ONLY the generated communication section content. Do not include headings, formatting, or extra explanation.`;
           
-          // Use comprehensive client info and final diagnosis like Goals section
-          const updatedContextualInfoComm = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfoComm}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual communication strategies using ONLY documented diagnosis and client information'}`;
+          userPrompt = `Generate clinical communication support content using the comprehensive client context provided above. User input: ${userInput || 'Generate evidence-based communication strategies using documented information only'}`;
           
-          console.log(`[COMMUNICATION DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoComm);
+          console.log(`[COMMUNICATION ENHANCED DEBUG] Communication context being sent to AI:`, communicationContext);
+          console.log(`[COMMUNICATION ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
+          console.log(`[COMMUNICATION ENHANCED DEBUG] About Me content available:`, plan?.aboutMeData?.content ? 'Yes' : 'No');
+          console.log(`[COMMUNICATION ENHANCED DEBUG] NDIS goals available:`, client?.ndisGoals ? 'Yes' : 'No');
+          console.log(`[COMMUNICATION ENHANCED DEBUG] Communication data available:`, plan?.communicationData?.summary ? 'Yes' : 'No');
           break;
         
         case "behaviour":
