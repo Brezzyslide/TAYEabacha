@@ -253,11 +253,11 @@ export class PDFExportUtility {
         }
         
         if (behavior.reactiveStrategy) {
-          this.addColoredStrategyBox('🔴 REACTIVE STRATEGIES - Immediate Response During Behavior', behavior.reactiveStrategy, 'reactive');
+          this.addColoredStrategyBox('🟡 REACTIVE STRATEGIES - Immediate Response During Behavior', behavior.reactiveStrategy, 'reactive');
         }
         
         if (behavior.protectiveStrategy) {
-          this.addColoredStrategyBox('🔵 PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategy, 'protective');
+          this.addColoredStrategyBox('🔴 PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategy, 'protective');
         }
         
         this.currentY += 12; // Extra spacing between behaviors
@@ -305,15 +305,15 @@ export class PDFExportUtility {
         titleTextColor = [255, 255, 255]; // White title text
         break;
       case 'reactive':
-        fillColor = [255, 241, 242]; // Very light red background
-        borderColor = [239, 68, 68]; // Red border
-        titleBgColor = [220, 38, 38]; // Dark red title background
+        fillColor = [255, 251, 235]; // Very light yellow background
+        borderColor = [245, 158, 11]; // Yellow/amber border
+        titleBgColor = [217, 119, 6]; // Dark yellow/amber title background
         titleTextColor = [255, 255, 255]; // White title text
         break;
       case 'protective':
-        fillColor = [240, 249, 255]; // Very light blue background
-        borderColor = [59, 130, 246]; // Blue border
-        titleBgColor = [37, 99, 235]; // Dark blue title background
+        fillColor = [255, 241, 242]; // Very light red background
+        borderColor = [239, 68, 68]; // Red border
+        titleBgColor = [220, 38, 38]; // Dark red title background
         titleTextColor = [255, 255, 255]; // White title text
         break;
     }
@@ -435,28 +435,6 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'table'
   });
 
-  // Section 5: Communication Support
-  sections.push({
-    title: 'Communication Support',
-    content: {
-      'Primary Methods': Array.isArray(plan.communicationData?.primaryMethods) 
-        ? plan.communicationData.primaryMethods.join(', ') 
-        : plan.communicationData?.primaryMethods || 'Not specified',
-      'Comprehension Level': plan.communicationData?.comprehensionLevel || 'Not specified',
-      'Expression Abilities': plan.communicationData?.expressionAbilities || 'Not specified',
-      'Receptive Strategies': plan.communicationData?.receptiveStrategies || 'Not specified',
-      'Expressive Strategies': plan.communicationData?.expressiveStrategies || 'Not specified'
-    },
-    type: 'table'
-  });
-
-  // Section 6: Behaviour Support - Custom handling with colored boxes
-  sections.push({
-    title: 'Behaviour Support',
-    content: plan.behaviourData || {},
-    type: 'behaviour_support'
-  });
-
   // Section 4: Structure & Routine
   const scheduleContent: string[] = [];
   if (plan.structureData?.weeklySchedule) {
@@ -479,6 +457,28 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     title: 'Structure & Routine',
     content: scheduleContent.length > 0 ? scheduleContent : ['No weekly schedule specified'],
     type: 'list'
+  });
+
+  // Section 5: Communication Support
+  sections.push({
+    title: 'Communication Support',
+    content: {
+      'Primary Methods': Array.isArray(plan.communicationData?.primaryMethods) 
+        ? plan.communicationData.primaryMethods.join(', ') 
+        : plan.communicationData?.primaryMethods || 'Not specified',
+      'Comprehension Level': plan.communicationData?.comprehensionLevel || 'Not specified',
+      'Expression Abilities': plan.communicationData?.expressionAbilities || 'Not specified',
+      'Receptive Strategies': plan.communicationData?.receptiveStrategies || 'Not specified',
+      'Expressive Strategies': plan.communicationData?.expressiveStrategies || 'Not specified'
+    },
+    type: 'table'
+  });
+
+  // Section 6: Behaviour Support - Custom handling with colored boxes
+  sections.push({
+    title: 'Behaviour Support',
+    content: plan.behaviourData || {},
+    type: 'behaviour_support'
   });
 
   // Section 7: Disaster Management
