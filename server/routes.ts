@@ -8273,12 +8273,58 @@ Return ONLY the generated communication section content. Do not include headings
           break;
         
         case "behaviour":
-          systemPrompt = `Generate behavior support content using ONLY the client's documented diagnosis, documented triggers/dislikes, documented preferences, and documented NDIS goals. DO NOT make assumptions about behavioral patterns beyond what's documented. Create PBS-aligned strategies that specifically address only their documented triggers and use only their documented interests. Focus on evidence-based approaches for their specific diagnosis.
+          // Build comprehensive behaviour support context
+          const behaviourContext = `
+Client: ${clientName}
+Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
+About Me: ${plan?.aboutMeData?.content || "Not generated"}
+Documented Triggers/Dislikes: ${client?.dislikesAversions || "Not documented"}
+Documented Preferences/Interests: ${client?.likesPreferences || "Not documented"}
+Documented NDIS Goals: ${client?.ndisGoals || "Not documented"}
+Behaviour Data: ${plan?.behaviourData?.summary || "Not yet documented"}
+`.trim();
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+          systemPrompt = `You are generating the Behaviour Support section of a Care Support Plan. Your content must be strictly informed by the client's **documented diagnosis**, **documented triggers/dislikes**, **documented preferences/interests**, and **documented NDIS goals**.
 
-Maximum 400 words.`;
+🎯 Your task:
+1. Identify and address ONLY the behavioural triggers that are explicitly documented (e.g., loud noise, changes in routine).
+2. Use only documented preferences to shape proactive strategies.
+3. Align every support strategy with evidence-based practices tailored to the client's diagnosis.
+4. Propose:
+   - Proactive supports (what staff should consistently do to prevent escalation)
+   - Reactive strategies (what to do if escalation begins)
+   - Protective actions (what to do if behaviour becomes unsafe)
+
+5. Do not include assumptions, invented behaviours, or generalised traits. Only work with the data provided.
+
+📌 DIAGNOSIS PHRASING:
+Use lines like:
+- "Based on his diagnosis, he may benefit from proactive strategies that reduce overstimulation…"
+- "Based on her diagnosis, she will likely respond well to structured redirection and predictable transitions…"
+
+🚫 DO NOT:
+- Mention family, work, background, or education
+- Invent triggers, goals, or preferences not recorded
+- Use placeholder terms like "the client" — always use the full name
+- Use vague descriptors (e.g., "challenging behaviours") unless they were documented as such
+
+Client Information Available:
+${behaviourContext}
+
+📏 Output:
+- Use clean paragraph formatting with line breaks
+- Maximum 400 words
+- No titles, explanations, or preamble`;
           
+          userPrompt = `Generate behaviour support content using the comprehensive client context provided above. User input: ${userInput || 'Generate PBS-aligned behaviour support strategies using documented triggers, preferences, and diagnosis'}`;
+          
+          console.log(`[BEHAVIOUR ENHANCED DEBUG] Behaviour context being sent to AI:`, behaviourContext);
+          console.log(`[BEHAVIOUR ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
+          console.log(`[BEHAVIOUR ENHANCED DEBUG] About Me content available:`, plan?.aboutMeData?.content ? 'Yes' : 'No');
+          console.log(`[BEHAVIOUR ENHANCED DEBUG] Documented triggers available:`, client?.dislikesAversions ? 'Yes' : 'No');
+          console.log(`[BEHAVIOUR ENHANCED DEBUG] Documented preferences available:`, client?.likesPreferences ? 'Yes' : 'No');
+          console.log(`[BEHAVIOUR ENHANCED DEBUG] NDIS goals available:`, client?.ndisGoals ? 'Yes' : 'No');
+          console.log(`[BEHAVIOUR ENHANCED DEBUG] Behaviour data available:`, plan?.behaviourData?.summary ? 'Yes' : 'No');
           // Use comprehensive client info and final diagnosis like Goals section
           const updatedContextualInfoBehaviour = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
           userPrompt = `${updatedContextualInfoBehaviour}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual behavior support using ONLY documented triggers, preferences and diagnosis-specific strategies'}`;
