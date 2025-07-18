@@ -8127,29 +8127,49 @@ ${pseudoOverview}
           break;
         
         case "adl":
-          systemPrompt = `Generate Activities of Daily Living support content that incorporates BOTH the client's specific documented diagnosis AND the detailed user assessment about their ADL abilities and challenges. 
+          // Build ADL context with comprehensive client data
+          const adlContext = `
+Client: ${clientName}
+Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
+About Me: ${plan?.aboutMeData?.content || "Not generated"}
+User ADL Assessment: ${plan?.adlData?.assessment || "No user ADL assessment provided"}
+Likes & Preferences: ${client?.likesPreferences || "N/A"}
+Dislikes & Aversions: ${client?.dislikesAversions || "N/A"}
+`.trim();
 
-CRITICAL: Use the user assessment as your PRIMARY source for ADL abilities, challenges, and support needs. The diagnosis provides context for WHY these challenges exist and informs evidence-based intervention strategies.
+          systemPrompt = `You are writing a structured ADL (Activities of Daily Living) support section for a care support plan.
 
-Your response must:
-1. Reference specific ADL challenges mentioned in the user assessment (e.g., motivation issues, incontinence episodes, need for prompting)
-2. Address specific ADL tasks mentioned (e.g., cleaning, hygiene, laundry, social interaction)
-3. Incorporate specific support strategies mentioned (e.g., prompting, modeling, encouragement)
-4. Use the diagnosis to explain evidence-based approaches for these specific challenges
-5. Include practical staff instructions for the specific situations described
+Client Name: ${clientName}
+Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+🎯 Your task:
+Using ONLY the data provided below, generate a structured ADL support description.
 
-Write detailed, practical guidance that directly addresses the specific ADL assessment provided in the user input. Maximum 400 words.`;
+Information Available:
+${adlContext}
+
+Your writing must:
+1. Clearly state specific ADL challenges based on the user-provided assessment.
+2. Highlight areas needing support (e.g., hygiene, meal prep, cleaning, motivation).
+3. Explain support strategies that are practical and relevant to the challenges (e.g., prompting, visual cues, repetition).
+4. Reference the diagnosis only where clinically appropriate (e.g., "Based on his diagnosis, he may benefit from…").
+5. Avoid generic or speculative statements — only write based on real documented content.
+
+📌 Format Guidelines:
+- Write in paragraph form (no lists)
+- Tone: Clinical, instructional, and practical
+- Max length: 400 words
+- No assumptions about employment, family, culture, or past life
+- Do NOT invent challenges or preferences not mentioned in the assessment
+- Do NOT write fluff or motivational filler`;
           
-          // Use comprehensive client info and final diagnosis like Goals section
-          const updatedContextualInfoADL = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfoADL}\n\nExisting Context:\n${existingContext}\n\nSPECIFIC ADL ASSESSMENT: ${userInput || 'No specific ADL assessment provided'}\n\nGenerate ADL support content that directly addresses the specific challenges, abilities, and support needs described in the ADL assessment above, using the diagnosis to inform evidence-based intervention strategies.`;
+          userPrompt = `Generate structured ADL support content using the comprehensive ADL context provided above. User input: ${userInput || 'Generate ADL support based on documented assessment and client information'}`;
           
+          console.log(`[ADL ENHANCED DEBUG] ADL context being sent to AI:`, adlContext);
           console.log(`[ADL ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
-          console.log(`[ADL ENHANCED DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoADL);
-          console.log(`[ADL ENHANCED DEBUG] Final user prompt being sent to AI:`, userPrompt);
           console.log(`[ADL ENHANCED DEBUG] User input extracted:`, userInput);
+          console.log(`[ADL ENHANCED DEBUG] About Me content available:`, plan?.aboutMeData?.content ? 'Yes' : 'No');
+          console.log(`[ADL ENHANCED DEBUG] ADL assessment available:`, plan?.adlData?.assessment ? 'Yes' : 'No');
           break;
         
         case "structure":
