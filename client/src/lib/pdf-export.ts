@@ -223,15 +223,16 @@ export class PDFExportUtility {
       this.currentY += 5;
     }
     
-    // Add saved behaviors with colored strategy boxes
-    if (behaviourData.savedBehaviours && Array.isArray(behaviourData.savedBehaviours)) {
-      for (const behavior of behaviourData.savedBehaviours) {
-        this.checkPageBreak(15);
+    // Add saved behaviors with colored strategy boxes - use 'behaviours' array
+    if (behaviourData.behaviours && Array.isArray(behaviourData.behaviours)) {
+      for (const behavior of behaviourData.behaviours) {
+        this.checkPageBreak(20);
         
         // Add behavior name and description
         this.pdf.setFontSize(12);
         this.pdf.setFont('helvetica', 'bold');
-        this.pdf.text(`Behavior: ${behavior.name || 'Unnamed'}`, this.margin + 5, this.currentY);
+        this.pdf.setTextColor(0, 0, 0);
+        this.pdf.text(`Behaviour: ${behavior.name || 'Unnamed'}`, this.margin + 5, this.currentY);
         this.currentY += 8;
         
         if (behavior.description) {
@@ -243,33 +244,45 @@ export class PDFExportUtility {
         
         if (behavior.triggers) {
           this.addText(`Triggers: ${behavior.triggers}`);
-          this.currentY += 5;
+          this.currentY += 8;
         }
         
         // Add colored strategy boxes with enhanced visual separation
-        if (behavior.proactiveStrategies) {
-          this.addColoredStrategyBox('🟢 PROACTIVE STRATEGIES - Prevention & Early Intervention', behavior.proactiveStrategies, 'proactive');
+        if (behavior.proactiveStrategy) {
+          this.addColoredStrategyBox('🟢 PROACTIVE STRATEGIES - Prevention & Early Intervention', behavior.proactiveStrategy, 'proactive');
         }
         
-        if (behavior.reactiveStrategies) {
-          this.addColoredStrategyBox('🔴 REACTIVE STRATEGIES - Immediate Response During Behavior', behavior.reactiveStrategies, 'reactive');
+        if (behavior.reactiveStrategy) {
+          this.addColoredStrategyBox('🔴 REACTIVE STRATEGIES - Immediate Response During Behavior', behavior.reactiveStrategy, 'reactive');
         }
         
-        if (behavior.protectiveStrategies) {
-          this.addColoredStrategyBox('🔵 PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategies, 'protective');
+        if (behavior.protectiveStrategy) {
+          this.addColoredStrategyBox('🔵 PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategy, 'protective');
         }
         
-        this.currentY += 10; // Extra spacing between behaviors
+        this.currentY += 12; // Extra spacing between behaviors
       }
     }
     
     // Add global strategies
     if (behaviourData.deEscalationTechniques) {
-      this.addColoredStrategyBox('De-escalation Techniques', behaviourData.deEscalationTechniques, 'reactive');
+      this.checkPageBreak(15);
+      this.addColoredStrategyBox('💡 GENERAL DE-ESCALATION TECHNIQUES', behaviourData.deEscalationTechniques, 'reactive');
     }
     
     if (behaviourData.positiveBehaviourSupport) {
-      this.addColoredStrategyBox('PBS Approach', behaviourData.positiveBehaviourSupport, 'proactive');
+      this.checkPageBreak(15);
+      this.addColoredStrategyBox('⭐ POSITIVE BEHAVIOUR SUPPORT (PBS) APPROACH', behaviourData.positiveBehaviourSupport, 'proactive');
+    }
+    
+    // Add any additional general content
+    if (behaviourData.generatedContent) {
+      this.checkPageBreak(10);
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setTextColor(0, 0, 0);
+      this.addText(`Additional Guidance: ${behaviourData.generatedContent}`);
+      this.currentY += 5;
     }
   }
 
