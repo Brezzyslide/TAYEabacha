@@ -8173,17 +8173,53 @@ Your writing must:
           break;
         
         case "structure":
-          systemPrompt = `Generate structure and routine content based on the client's diagnosis. Create practical guidance for daily structure, routine management, transitions, and environmental considerations typical for this diagnosis. Always generate content using diagnosis-specific structure needs.
+          // Build structure and routine context
+          const structureContext = `
+Client: ${clientName}
+Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
+About Me: ${plan?.aboutMeData?.content || "Not generated"}
+Structure Data: ${plan?.structureData?.summary || "Not yet documented"}
+Preferences: ${client?.likesPreferences || "Not documented"}
+Dislikes: ${client?.dislikesAversions || "Not documented"}
+`.trim();
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+          systemPrompt = `You are generating the Structure & Routine section for a clinical Care Support Plan. This must be based strictly on the client's **documented diagnosis**. Do not invent lifestyle preferences or unrelated habits.
 
-Maximum 400 words.`;
+🎯 Your task:
+1. Use the diagnosis to describe the general structural and routine needs common to individuals with that condition.
+2. Provide practical guidance on:
+   - Morning and evening routines
+   - Task transitions (e.g., moving between locations, activities)
+   - Predictability, visual cues, and prompts
+   - Managing changes or unexpected disruptions
+   - Environmental adjustments (e.g., noise, lighting, space)
+
+3. Ensure that all recommendations are **diagnosis-aligned** and designed for disability support workers to follow.
+4. Do not include any personal interests, family references, or unsupported background.
+5. Keep the tone clinical, respectful, and staff-facing.
+
+📌 DIAGNOSIS PHRASING:
+Use language like:
+- "Based on his diagnosis, he will likely respond well to structured routines and visual prompts…"
+- "Based on her diagnosis, she may benefit from consistent morning routines and low-stimulus transitions…"
+
+🚫 DO NOT:
+- Mention family, work, school, or hobbies
+- Refer to "client" or placeholder names — always use full client name
+- Include guesses or assumptions about the person's preferences or lifestyle
+
+Client Information Available:
+${structureContext}
+
+📏 Length: Maximum 400 words
+Output only the generated content. No labels, headings, or explanation.`;
           
-          // Use comprehensive client info and final diagnosis like Goals section
-          const updatedContextualInfoStructure = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfoStructure}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate structure guidance based on diagnosis'}`;
+          userPrompt = `Generate structure and routine guidance using the comprehensive client context provided above. User input: ${userInput || 'Generate diagnosis-based structure and routine guidance for support workers'}`;
           
-          console.log(`[STRUCTURE DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoStructure);
+          console.log(`[STRUCTURE ENHANCED DEBUG] Structure context being sent to AI:`, structureContext);
+          console.log(`[STRUCTURE ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
+          console.log(`[STRUCTURE ENHANCED DEBUG] About Me content available:`, plan?.aboutMeData?.content ? 'Yes' : 'No');
+          console.log(`[STRUCTURE ENHANCED DEBUG] Structure data available:`, plan?.structureData?.summary ? 'Yes' : 'No');
           break;
         
         case "communication":
