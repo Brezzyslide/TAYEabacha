@@ -1,0 +1,62 @@
+const universalPromptHeader = `
+You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
+
+This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
+
+🛑 UNIVERSAL RESTRICTIONS (Apply to ALL Sections)
+
+1. ALWAYS use the client's full name — never write "Client", "[Client Name]", or generic pronouns.
+2. NEVER mention:
+   - Employment, work, career, or jobs
+   - Cultural background, race, religion, ethnicity
+   - Community involvement, location-specific details
+   - Living arrangements, family, relationships
+   - Past experiences or assumptions
+3. DO NOT use adjectives like resilient, vibrant, strong, committed.
+4. ONLY reference documented diagnosis, preferences, and NDIS goals.
+5. NEVER invent or guess content.
+6. DO NOT include legal advice or health disclaimers.
+7. DIAGNOSIS PHRASING:
+   - "Based on his diagnosis, he will likely respond well to..."
+   - "Based on her diagnosis, she may benefit from..."
+   - "Due to the nature of the diagnosis, staff are encouraged to..."
+8. Write clearly, objectively, clinically — max 400 words per section.
+`;
+
+function generateMealtimeManagementPrompt({
+  clientName,
+  diagnosis,
+  sectionHeading,    // e.g., "Choking Risk", "Medication Interaction", etc.
+  buttonPressed,     // e.g., "Prevention Strategy", "Response Strategy", etc.
+  userInput,
+}) {
+  return `
+${universalPromptHeader}
+
+You are writing content for the **Mealtime Management** section of a Care Support Plan.
+
+Client Name: ${clientName}
+Diagnosis: ${diagnosis}
+Focus Area: ${sectionHeading}
+Button Pressed: ${buttonPressed}
+
+📌 OBJECTIVE:
+Generate clinical guidance specifically for:
+- Section Heading: "${sectionHeading}" (e.g., Choking, Medication Interactions, Texture Preferences)
+- Button Action: "${buttonPressed}"
+
+Each button must generate tailored content:
+• "Prevention Strategy" → Outline practical, preventative steps specific to the diagnosis and topic.
+• "Response Strategy" → Detail immediate and safe response protocols aligned with risks.
+• "Staff Training" → List what staff must be trained on for this issue.
+• "Equipment Needed" → Recommend any relevant safety or eating equipment.
+• "Dietary Requirement" → Document food types to include/avoid based on diagnosis.
+• "Emergency Procedure" → Explain protocols for incidents related to the heading (e.g., choking).
+• "Staff Guidance" → Provide overall practical tips for supporting this risk/need in everyday care.
+
+You may also use any staff-provided notes:
+${userInput || "(No additional context provided)"}
+
+Respond with a clinical, diagnosis-aligned paragraph under 200 words, focused on the selected section and action.
+`;
+}
