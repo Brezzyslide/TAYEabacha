@@ -7994,24 +7994,40 @@ Respond with a concise, bullet-point format. Do not include headers or labels.`;
 Generate therapeutic NDIS goals for ${clientName} based on diagnosis: ${clientDiagnosis}`;
               
             } else if (targetField === 'personalAspirations') {
-              systemPrompt = `You are populating the Personal Aspirations section using authentic, existing content.
+              // Build Personal Identity Context for aspirations
+              const personalContext = `
+Client: ${clientName}
+Likes/Preferences: ${client?.likesPreferences || "Not provided"}
+Dislikes/Aversions: ${client?.dislikesAversions || "Not provided"}
+About Me Summary: ${plan?.aboutMeData?.content || "Not generated yet"}
+Structure & Routine: ${plan?.structureData?.dailyActivities || "Not yet documented"}
+Communication Notes: ${plan?.communicationData?.summary || "Not available"}
+`.trim();
 
-Client Name: ${clientName}
-Diagnosis: ${clientDiagnosis}
-About Me: ${plan?.aboutMeData ? JSON.stringify(plan.aboutMeData, null, 2) : 'No About Me content available'}
+              systemPrompt = `You are generating a short list of **personal aspirations** for a person receiving NDIS support.
+
+Client name: ${clientName}
+
+Use only the information below to derive their individual hopes, interests, and preferences:
+
+${personalContext}
 
 🎯 Your task:
-1. Extract meaningful aspirations from the About Me content.
-2. Convert client preferences, interests, and routines into goal-like personal aspirations.
-3. Avoid clinical or diagnostic tone — this should reflect the person's individual hopes and lifestyle goals.
-4. Return a simple list, person-centered, and tied to documented client identity.
+1. Extract personal aspirations based on About Me, preferences, and daily routine.
+2. Focus on goals tied to identity, lifestyle, interests, enjoyment — not clinical outcomes.
+3. Do NOT include anything medical or diagnostic.
+4. Avoid assumptions about culture, employment, relationships, or past history.
+5. Reflect how the person wants to live, grow, or engage — using only documented content.
 
-Format your output as a bullet-point list. No extra text.`;
+📌 Output Format:
+- Bullet point list
+- Each item must be person-centred, specific, and written in a human tone
+- Do not include headers or extra formatting`;
               
-              userPrompt = `Client's documented interests: ${client?.likesPreferences || 'No preferences documented'}
-Client's documented preferences: ${client?.dislikesAversions || 'No dislikes documented'}
-
-Extract meaningful personal aspirations for ${clientName} from documented information.`;
+              userPrompt = `Generate personal aspirations for ${clientName} using the comprehensive personal context provided above.`;
+              
+              console.log(`[PERSONAL ASPIRATIONS DEBUG] Personal context being sent to AI:`, personalContext);
+              console.log(`[PERSONAL ASPIRATIONS DEBUG] Enhanced prompt being sent to AI:`, systemPrompt);
             }
             
             // Handle the targeted field generation
