@@ -13,7 +13,7 @@ export interface PDFExportOptions {
 export interface PDFSection {
   title: string;
   content: string | { [key: string]: any };
-  type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support' | 'about_me' | 'adl_support' | 'communication_support' | 'structure_routine' | 'disaster_management' | 'mealtime_management';
+  type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support' | 'about_me' | 'goals_outcomes' | 'adl_support' | 'communication_support' | 'structure_routine' | 'disaster_management' | 'mealtime_management';
 }
 
 export class PDFExportUtility {
@@ -146,6 +146,8 @@ export class PDFExportUtility {
       this.addBehaviourSupport(section.content);
     } else if (section.type === 'about_me' && typeof section.content === 'object') {
       this.addAboutMeBoxes(section.content);
+    } else if (section.type === 'goals_outcomes' && typeof section.content === 'object') {
+      this.addGoalsOutcomesBoxes(section.content);
     } else if (section.type === 'adl_support' && typeof section.content === 'object') {
       this.addADLSupportBoxes(section.content);
     } else if (section.type === 'communication_support' && typeof section.content === 'object') {
@@ -390,6 +392,21 @@ export class PDFExportUtility {
     });
   }
 
+  private addGoalsOutcomesBoxes(goalsData: any) {
+    const sections = [
+      { key: 'ndisGoals', title: '🎯 NDIS Goals', color: 'proactive' as const },
+      { key: 'personalAspirations', title: '💭 Personal Aspirations', color: 'reactive' as const },
+      { key: 'overallObjective', title: '🌟 Overall Objective', color: 'proactive' as const }
+    ];
+
+    sections.forEach((section) => {
+      const content = goalsData[section.key];
+      if (content) {
+        this.addColoredStrategyBox(section.title, content, section.color);
+      }
+    });
+  }
+
   private addADLSupportBoxes(adlData: any) {
     const sections = [
       { key: 'personalCare', title: '🚿 Personal Care', color: 'proactive' as const },
@@ -533,14 +550,11 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'about_me'
   });
 
-  // Section 2: Goals & Outcomes
+  // Section 2: Goals & Outcomes with colored boxes
   sections.push({
     title: 'Goals & Outcomes',
-    content: [
-      plan.goalsData?.ndisGoals ? `NDIS Goals: ${plan.goalsData.ndisGoals}` : 'NDIS Goals: Not provided',
-      plan.goalsData?.overallObjective ? `Overall Objective: ${plan.goalsData.overallObjective}` : 'Overall Objective: Not provided'
-    ],
-    type: 'list'
+    content: plan.goalsData || {},
+    type: 'goals_outcomes'
   });
 
   // Section 3: Activities of Daily Living Support with colored boxes
