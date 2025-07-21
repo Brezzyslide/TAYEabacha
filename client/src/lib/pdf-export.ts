@@ -393,18 +393,144 @@ export class PDFExportUtility {
   }
 
   private addGoalsOutcomesBoxes(goalsData: any) {
-    const sections = [
-      { key: 'ndisGoals', title: '🎯 NDIS Goals', color: 'proactive' as const },
-      { key: 'personalAspirations', title: '💭 Personal Aspirations', color: 'reactive' as const },
-      { key: 'overallObjective', title: '🌟 Overall Objective', color: 'proactive' as const }
-    ];
+    // Check if there's any goals data to display
+    const hasNdisGoals = goalsData.ndisGoals;
+    const hasPersonalAspirations = goalsData.personalAspirations;
+    const hasOverallObjective = goalsData.overallObjective;
+    
+    if (!hasNdisGoals && !hasPersonalAspirations && !hasOverallObjective) {
+      this.checkPageBreak(10);
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setTextColor(100, 100, 100);
+      this.addText('No goals and outcomes data provided.');
+      this.currentY += 5;
+      return;
+    }
+    
+    this.addGoalsOutcomesTable(goalsData);
+  }
 
-    sections.forEach((section) => {
-      const content = goalsData[section.key];
+  private addGoalsOutcomesTable(goalsData: any) {
+    this.checkPageBreak(30);
+    
+    // Table dimensions
+    const tableStartX = this.margin;
+    const tableWidth = this.contentWidth;
+    const colWidths = {
+      category: tableWidth * 0.25,
+      content: tableWidth * 0.75
+    };
+    
+    let currentX = tableStartX;
+    const rowHeight = 12;
+    const headerHeight = 10;
+    
+    // Draw table header with blue background
+    this.pdf.setFillColor(43, 75, 115); // Deep navy blue
+    this.pdf.rect(currentX, this.currentY, tableWidth, headerHeight, 'F');
+    
+    // Header text in white
+    this.pdf.setFontSize(9);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setTextColor(255, 255, 255);
+    
+    // Header columns
+    this.pdf.text('Goal Category', currentX + 2, this.currentY + 6);
+    currentX += colWidths.category;
+    this.pdf.text('Details', currentX + 2, this.currentY + 6);
+    
+    this.currentY += headerHeight;
+    
+    // Draw table border
+    this.pdf.setDrawColor(43, 75, 115);
+    this.pdf.setLineWidth(0.5);
+    this.pdf.rect(tableStartX, this.currentY - headerHeight, tableWidth, headerHeight, 'S');
+    
+    // Table rows
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setTextColor(60, 60, 60);
+    this.pdf.setFontSize(8);
+    
+    const goalCategories = [
+      { key: 'ndisGoals', label: '🎯 NDIS Goals', color: [34, 197, 94] }, // Green
+      { key: 'personalAspirations', label: '💭 Personal Aspirations', color: [245, 158, 11] }, // Amber
+      { key: 'overallObjective', label: '🌟 Overall Objective', color: [34, 197, 94] } // Green
+    ];
+    
+    let rowIndex = 0;
+    goalCategories.forEach((category) => {
+      const content = goalsData[category.key];
       if (content) {
-        this.addColoredStrategyBox(section.title, content, section.color);
+        this.checkPageBreak(rowHeight + 2);
+        
+        const isEvenRow = rowIndex % 2 === 0;
+        if (isEvenRow) {
+          this.pdf.setFillColor(248, 250, 252); // Very light blue background
+          this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+        }
+        
+        currentX = tableStartX;
+        const textY = this.currentY + 6;
+        
+        // Category column with colored indicator
+        this.pdf.setFillColor(category.color[0], category.color[1], category.color[2]);
+        this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+        
+        this.pdf.setFontSize(8);
+        this.pdf.setFont('helvetica', 'bold');
+        this.pdf.setTextColor(60, 60, 60);
+        this.pdf.text(category.label, currentX + 6, textY);
+        currentX += colWidths.category;
+        
+        // Content column with text wrapping
+        this.pdf.setFont('helvetica', 'normal');
+        const contentLines = this.pdf.splitTextToSize(content, colWidths.content - 4);
+        
+        if (contentLines.length > 1) {
+          // Handle multi-line content
+          let lineY = textY;
+          contentLines.forEach((line: string, lineIndex: number) => {
+            if (lineIndex > 0) {
+              this.checkPageBreak(5);
+              lineY += 4;
+              // Extend row height for multi-line content
+              if (isEvenRow) {
+                this.pdf.setFillColor(248, 250, 252);
+                this.pdf.rect(tableStartX, this.currentY + (lineIndex * 4), tableWidth, 4, 'F');
+              }
+            }
+            this.pdf.text(line, currentX + 2, lineY);
+          });
+          // Adjust current Y for multi-line content
+          this.currentY += (contentLines.length - 1) * 4;
+        } else {
+          this.pdf.text(content, currentX + 2, textY);
+        }
+        
+        // Draw row border
+        this.pdf.setDrawColor(200, 200, 200);
+        this.pdf.setLineWidth(0.2);
+        const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+        this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+        
+        this.currentY += rowHeight;
+        rowIndex++;
       }
     });
+    
+    // Draw final table border
+    this.pdf.setDrawColor(43, 75, 115);
+    this.pdf.setLineWidth(0.5);
+    const totalRows = rowIndex;
+    this.pdf.rect(tableStartX, this.currentY - (totalRows * rowHeight) - headerHeight, tableWidth, (totalRows * rowHeight) + headerHeight, 'S');
+    
+    this.currentY += 10; // Extra spacing after table
+    
+    // Reset styles
+    this.pdf.setTextColor(0, 0, 0);
+    this.pdf.setDrawColor(0, 0, 0);
+    this.pdf.setLineWidth(0.2);
   }
 
   private addADLSupportBoxes(adlData: any) {
