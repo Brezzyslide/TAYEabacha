@@ -396,9 +396,11 @@ export class PDFExportUtility {
     // Check if there's any goals data to display
     const hasNdisGoals = goalsData.ndisGoals;
     const hasPersonalAspirations = goalsData.personalAspirations;
+    const hasShortTermGoals = goalsData.shortTermGoals;
+    const hasLongTermGoals = goalsData.longTermGoals;
     const hasOverallObjective = goalsData.overallObjective;
     
-    if (!hasNdisGoals && !hasPersonalAspirations && !hasOverallObjective) {
+    if (!hasNdisGoals && !hasPersonalAspirations && !hasShortTermGoals && !hasLongTermGoals && !hasOverallObjective) {
       this.checkPageBreak(10);
       this.pdf.setFontSize(10);
       this.pdf.setFont('helvetica', 'italic');
@@ -453,8 +455,10 @@ export class PDFExportUtility {
     this.pdf.setFontSize(8);
     
     const goalCategories = [
-      { key: 'ndisGoals', label: '🎯 NDIS Goals', color: [34, 197, 94] }, // Green
+      { key: 'ndisGoals', label: '🎯 NDIS Support Goals', color: [34, 197, 94] }, // Green
       { key: 'personalAspirations', label: '💭 Personal Aspirations', color: [245, 158, 11] }, // Amber
+      { key: 'shortTermGoals', label: '📅 Short-Term Goals (3-6 months)', color: [59, 130, 246] }, // Blue
+      { key: 'longTermGoals', label: '📈 Long-Term Goals (6+ months)', color: [16, 185, 129] }, // Emerald
       { key: 'overallObjective', label: '🌟 Overall Objective', color: [34, 197, 94] } // Green
     ];
     
