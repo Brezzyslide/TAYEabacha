@@ -446,27 +446,144 @@ export class PDFExportUtility {
   }
 
   private addStructureRoutineBoxes(structureData: any) {
-    // Weekly Schedule
-    if (structureData.routines && Array.isArray(structureData.routines)) {
-      // Group routines by day
-      const routinesByDay: { [key: string]: any[] } = {};
-      structureData.routines.forEach((routine: any) => {
-        if (!routinesByDay[routine.day]) {
-          routinesByDay[routine.day] = [];
-        }
-        routinesByDay[routine.day].push(routine);
-      });
-      
-      // Display each day as a colored box
-      Object.entries(routinesByDay).forEach(([day, routines]) => {
-        const routineText = routines.map((routine: any) => {
-          const timeRange = `${routine.startTime} - ${routine.endTime}`;
-          return `${timeRange}: ${routine.description} (${routine.category})`;
-        }).join('\n');
-        
-        this.addColoredStrategyBox(`📅 ${day}`, routineText, 'proactive');
-      });
+    // Check for routine_entries or routines array
+    const routineEntries = structureData.routine_entries || structureData.routines;
+    
+    if (routineEntries && Array.isArray(routineEntries) && routineEntries.length > 0) {
+      this.addStructureRoutineTable(routineEntries);
+    } else {
+      // Display no data message
+      this.checkPageBreak(10);
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setTextColor(100, 100, 100);
+      this.addText('No routine activities recorded.');
+      this.currentY += 5;
     }
+  }
+
+  private addStructureRoutineTable(routineEntries: any[]) {
+    this.checkPageBreak(30);
+    
+    // Table dimensions
+    const tableStartX = this.margin;
+    const tableWidth = this.contentWidth;
+    const colWidths = {
+      day: tableWidth * 0.15,
+      time: tableWidth * 0.20,
+      activity: tableWidth * 0.40,
+      category: tableWidth * 0.15,
+      priority: tableWidth * 0.10
+    };
+    
+    let currentX = tableStartX;
+    const rowHeight = 8;
+    const headerHeight = 10;
+    
+    // Draw table header with blue background
+    this.pdf.setFillColor(43, 75, 115); // Deep navy blue
+    this.pdf.rect(currentX, this.currentY, tableWidth, headerHeight, 'F');
+    
+    // Header text in white
+    this.pdf.setFontSize(9);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setTextColor(255, 255, 255);
+    
+    // Header columns
+    this.pdf.text('Day', currentX + 2, this.currentY + 6);
+    currentX += colWidths.day;
+    this.pdf.text('Time', currentX + 2, this.currentY + 6);
+    currentX += colWidths.time;
+    this.pdf.text('Activity Description', currentX + 2, this.currentY + 6);
+    currentX += colWidths.activity;
+    this.pdf.text('Category', currentX + 2, this.currentY + 6);
+    currentX += colWidths.category;
+    this.pdf.text('Priority', currentX + 2, this.currentY + 6);
+    
+    this.currentY += headerHeight;
+    
+    // Draw table border
+    this.pdf.setDrawColor(43, 75, 115);
+    this.pdf.setLineWidth(0.5);
+    this.pdf.rect(tableStartX, this.currentY - headerHeight, tableWidth, headerHeight, 'S');
+    
+    // Table rows
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setTextColor(60, 60, 60);
+    this.pdf.setFontSize(8);
+    
+    routineEntries.forEach((entry, index) => {
+      this.checkPageBreak(rowHeight + 2);
+      
+      const isEvenRow = index % 2 === 0;
+      if (isEvenRow) {
+        this.pdf.setFillColor(248, 250, 252); // Very light blue background
+        this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+      }
+      
+      currentX = tableStartX;
+      const textY = this.currentY + 5;
+      
+      // Day
+      const day = entry.day || 'N/A';
+      this.pdf.text(day, currentX + 2, textY);
+      currentX += colWidths.day;
+      
+      // Time Range
+      let timeRange = 'N/A';
+      if (entry.startTime && entry.endTime) {
+        timeRange = `${entry.startTime}-${entry.endTime}`;
+      } else if (entry.time) {
+        timeRange = entry.time;
+      }
+      this.pdf.text(timeRange, currentX + 2, textY);
+      currentX += colWidths.time;
+      
+      // Activity Description (with text wrapping)
+      const activity = entry.description || entry.activity || 'No description';
+      const activityLines = this.pdf.splitTextToSize(activity, colWidths.activity - 4);
+      if (activityLines.length > 1) {
+        // Handle multi-line activities
+        activityLines.forEach((line: string, lineIndex: number) => {
+          if (lineIndex > 0) {
+            this.checkPageBreak(5);
+            this.currentY += 4;
+          }
+          this.pdf.text(line, currentX + 2, textY + (lineIndex * 4));
+        });
+      } else {
+        this.pdf.text(activity, currentX + 2, textY);
+      }
+      currentX += colWidths.activity;
+      
+      // Category
+      const category = entry.category || '';
+      this.pdf.text(category, currentX + 2, textY);
+      currentX += colWidths.category;
+      
+      // Priority
+      const priority = entry.priority || '';
+      this.pdf.text(priority, currentX + 2, textY);
+      
+      // Draw row border
+      this.pdf.setDrawColor(200, 200, 200);
+      this.pdf.setLineWidth(0.2);
+      this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'S');
+      
+      this.currentY += rowHeight;
+    });
+    
+    // Draw final table border
+    this.pdf.setDrawColor(43, 75, 115);
+    this.pdf.setLineWidth(0.5);
+    this.pdf.rect(tableStartX, this.currentY - (routineEntries.length * rowHeight) - headerHeight, tableWidth, (routineEntries.length * rowHeight) + headerHeight, 'S');
+    
+    this.currentY += 10; // Extra spacing after table
+    
+    // Reset styles
+    this.pdf.setTextColor(0, 0, 0);
+    this.pdf.setDrawColor(0, 0, 0);
+    this.pdf.setLineWidth(0.2);
   }
 
   private addDisasterManagementBoxes(disasterData: any) {

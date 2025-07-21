@@ -1,0 +1,102 @@
+TASK OBJECTIVE:
+
+Update the care support plan PDF export logic to ensure that all 8 core sections, including structured entries like routine_entries, are included in the final exported PDF. Activities entered through the "Structure & Routine" section (like day/time/scheduled activities) must be displayed in full detail.
+
+REQUIREMENTS:
+
+Data Source:
+All sections must be fetched from the care_support_plans table. The following fields must be included in the export:
+
+about_me_data
+
+goals_data
+
+adl_data
+
+structure_data.routine_entries
+
+communication_data
+
+behaviour_data
+
+disaster_data
+
+mealtime_data
+
+Handle Nested Fields:
+
+For structure_data, extract the routine_entries[] array and render it as a table.
+
+Each routine entry includes:
+
+Day
+
+Time Range (start - end)
+
+Activity Description
+
+Category (optional)
+
+Priority
+
+Layout Requirements (for PDF or React-to-PDF):
+
+Add a heading: Structure and Routine
+
+Below the heading, display a table with the following columns:
+
+sql
+Copy
+Edit
+| Day      | Time        | Activity Description                  | Category       | Priority       |
+|----------|-------------|----------------------------------------|----------------|----------------|
+| Tuesday  | 10:51-10:51 | GENERAL WRITING STYLE - Clinical...   | (If present)   | Medium Priority|
+Loop through all entries under routine_entries and render them in this format.
+
+For All Other Sections:
+
+Display content as a block section under its heading (e.g., "About Me", "Goals", "ADL Support", etc.)
+
+For fields that are missing or null, display “No data provided.”
+
+Formatting Rules:
+
+Use a clean, printable layout (A4 PDF).
+
+Use Australian date format DD/MM/YYYY.
+
+Include:
+
+Client Name
+
+NDIS Number
+
+Company Branding Header
+
+Export Timestamp in the footer
+
+Use consistent font, spacing, and section breaks.
+
+Fail Gracefully:
+
+If routine_entries is missing or empty, display:
+
+“No routine activities recorded.”
+
+Add to Export Route:
+Update the export endpoint /api/care-support-plans/:id/export/pdf to include the above data when building the document.
+
+Example Output Preview (in PDF):
+
+sql
+Copy
+Edit
+STRUCTURE AND ROUTINE
+
+| Day      | Time        | Activity Description                  | Category       | Priority       |
+|----------|-------------|----------------------------------------|----------------|----------------|
+| Tuesday  | 10:51-10:51 | GENERAL WRITING STYLE - Clinical...   | Routine        | Medium Priority|
+✅ BONUS (Optional but ideal):
+If using react-pdf or puppeteer, ensure table rows wrap if activity description is long.
+
+Respect mobile/desktop printing constraints.
