@@ -1,0 +1,157 @@
+📝 Objective:
+Fix the current PDF export system for the Care Support Plan so that all sections render with clean formatting, proper headings, valid characters, and full data (especially structured routines). Eliminate corruption symbols and ensure this is production-ready for sharing with families, coordinators, and auditors.
+
+🔧 Issues to Fix & Implementation Details:
+
+1. ✅ Fix Corrupted Characters (e.g. Ø=Ü, Ø<ß, +P)
+Problem:
+PDF headings contain broken symbols due to incorrect encoding or styled bullets.
+
+Fix:
+
+Replace all special bullets/headings with plain UTF-8 text.
+
+Do not use fancy bullets or encoded styles — stick with:
+
+html
+Copy
+Edit
+<h2>About Me</h2>
+<h3>Strengths</h3>
+Ensure:
+
+Font used in export is Arial, Helvetica, or Roboto.
+
+Export rendering engine (React-PDF, Puppeteer, etc.) uses UTF-8-safe HTML or JSX.
+
+2. ✅ Properly Render Structure & Routine Table
+Problem:
+structure_data.routine_entries[] shows as placeholder text with malformed symbols — not readable to staff or families.
+
+Fix:
+
+Loop over plan.structure_data.routine_entries and render a proper table with these columns:
+
+Day, Time, Activity Description, Category (if exists), Priority
+
+Example Table Layout:
+
+html
+Copy
+Edit
+<table>
+  <thead>
+    <tr>
+      <th>Day</th><th>Time</th><th>Activity Description</th><th>Category</th><th>Priority</th>
+    </tr>
+  </thead>
+  <tbody>
+    {plan.structure_data.routine_entries.map(entry => (
+      <tr>
+        <td>{entry.day}</td>
+        <td>{entry.start_time} - {entry.end_time}</td>
+        <td>{entry.activity}</td>
+        <td>{entry.category || '—'}</td>
+        <td>{entry.priority}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+3. ✅ Standardise Section Headings and Subheadings
+Problem:
+Headings like “Strengths”, “Preferences”, “Challenges” are misrendered or mashed into paragraphs.
+
+Fix:
+
+Use clean, semantic heading structure in the PDF template:
+
+html
+Copy
+Edit
+<h2>About Me</h2>
+<h3>Interests</h3>
+<h3>Preferences</h3>
+<h3>Strengths</h3>
+<h3>Challenges</h3>
+<h3>Family Background</h3>
+Ensure:
+
+Heading styling matches the rest of the PDF layout.
+
+No hardcoded bullet characters or styled symbols (e.g. Ø, þ, ß)
+
+4. ✅ Empty Sections Must Render Clearly
+Problem:
+Sections like Disaster Management and Mealtime Management show a flat line of text or are skipped altogether.
+
+Fix:
+
+If a section is empty or not filled:
+
+ts
+Copy
+Edit
+if (!plan.disaster_data) {
+  return <p style={{ fontStyle: 'italic', color: '#666' }}>No disaster management procedures recorded.</p>;
+}
+Add padding and background if needed to make it visually clear it was reviewed but not filled.
+
+5. ✅ Font & Layout Rules
+Use Arial, Helvetica, or Roboto consistently
+
+Stick to black text on white for print readiness
+
+Use page headers:
+
+pgsql
+Copy
+Edit
+Company Name | Generated: {date} | Page {X} of {Y}
+Use footer:
+
+pgsql
+Copy
+Edit
+Exported by: {user.email} | Exported on: {datetime}
+6. ✅ Ensure Content From All Sections is Included
+Loop through these keys from the care plan object:
+
+ts
+Copy
+Edit
+about_me_data
+goals_data
+adl_data
+structure_data.routine_entries
+communication_data
+behaviour_data
+disaster_data
+mealtime_data
+Each must render with heading, content, and proper styling. Skip none, even if empty — just show a placeholder.
+
+✅ Export Endpoint to Modify:
+ts
+Copy
+Edit
+GET /api/care-support-plans/:id/export/pdf
+Update its internal logic to apply all above fixes before returning the PDF.
+
+✅ Test Cases Required:
+Plan with full structure_data entries
+
+Plan with missing sections (disaster_data, mealtime_data)
+
+Long activity descriptions and multiple-day routines
+
+Fonts across all page headings and body copy
+
+Outcome:
+A polished, legible, professional care plan export that:
+
+Looks clean and formal
+
+Includes all content
+
+Has no corrupted characters or layout errors
+
+Is fully ready for NDIS audits, families, and support teams

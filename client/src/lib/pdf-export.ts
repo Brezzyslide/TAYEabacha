@@ -166,13 +166,39 @@ export class PDFExportUtility {
   }
 
   private addText(text: string): void {
-    const lines = this.pdf.splitTextToSize(text, this.contentWidth - 10);
+    // Clean text to prevent encoding issues
+    const cleanText = this.sanitizeText(text);
+    const lines = this.pdf.splitTextToSize(cleanText, this.contentWidth - 10);
     
     for (const line of lines) {
       this.checkPageBreak(7);
       this.pdf.text(line, this.margin + 5, this.currentY);
       this.currentY += 6;
     }
+  }
+
+  private sanitizeText(text: string): string {
+    if (!text || typeof text !== 'string') return '';
+    
+    return text
+      // Remove specific problematic character sequences
+      .replace(/Ø=Ü/g, '')
+      .replace(/Ø<ß/g, '')
+      .replace(/\+P/g, '')
+      // Replace smart quotes and dashes with standard ASCII
+      .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
+      .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+      .replace(/[\u2013\u2014]/g, '-') // En/em dashes
+      .replace(/\u2026/g, '...') // Ellipsis
+      // Standardize bullet points to simple dash
+      .replace(/[•⦁▪▫◦‣⁃]/g, '-')
+      // Remove control characters and non-printable characters
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+      // Replace non-breaking space and other whitespace variants
+      .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ')
+      // Normalize multiple whitespace to single space
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   private addList(items: string[]): void {
@@ -192,14 +218,18 @@ export class PDFExportUtility {
     const rightColumnWidth = this.contentWidth - leftColumnWidth - 10;
     
     for (const [key, value] of Object.entries(tableData)) {
+      // Sanitize both key and value
+      const cleanKey = this.sanitizeText(key);
+      const cleanValue = this.sanitizeText(String(value));
+      
       // Calculate required space for this row
-      const valueLines = this.pdf.splitTextToSize(String(value), rightColumnWidth);
+      const valueLines = this.pdf.splitTextToSize(cleanValue, rightColumnWidth);
       const requiredSpace = Math.max(12, valueLines.length * 6 + 8);
       this.checkPageBreak(requiredSpace);
       
-      // Add key (bold)
+      // Add key (bold) - use clean key
       this.pdf.setFont('helvetica', 'bold');
-      this.pdf.text(`${key}:`, this.margin + 5, this.currentY);
+      this.pdf.text(`${cleanKey}:`, this.margin + 5, this.currentY);
       
       // Add value (normal, with text wrapping)
       this.pdf.setFont('helvetica', 'normal');
@@ -263,15 +293,15 @@ export class PDFExportUtility {
         
         // Add colored strategy boxes with enhanced visual separation
         if (behavior.proactiveStrategy) {
-          this.addColoredStrategyBox('🟢 PROACTIVE STRATEGIES - Prevention & Early Intervention', behavior.proactiveStrategy, 'proactive');
+          this.addColoredStrategyBox('PROACTIVE STRATEGIES - Prevention & Early Intervention', behavior.proactiveStrategy, 'proactive');
         }
         
         if (behavior.reactiveStrategy) {
-          this.addColoredStrategyBox('🟡 REACTIVE STRATEGIES - Immediate Response During Behavior', behavior.reactiveStrategy, 'reactive');
+          this.addColoredStrategyBox('REACTIVE STRATEGIES - Immediate Response During Behavior', behavior.reactiveStrategy, 'reactive');
         }
         
         if (behavior.protectiveStrategy) {
-          this.addColoredStrategyBox('🔴 PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategy, 'protective');
+          this.addColoredStrategyBox('PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategy, 'protective');
         }
         
         this.currentY += 12; // Extra spacing between behaviors
@@ -281,12 +311,12 @@ export class PDFExportUtility {
     // Add global strategies
     if (behaviourData.deEscalationTechniques) {
       this.checkPageBreak(15);
-      this.addColoredStrategyBox('💡 GENERAL DE-ESCALATION TECHNIQUES', behaviourData.deEscalationTechniques, 'reactive');
+      this.addColoredStrategyBox('GENERAL DE-ESCALATION TECHNIQUES', behaviourData.deEscalationTechniques, 'reactive');
     }
     
     if (behaviourData.positiveBehaviourSupport) {
       this.checkPageBreak(15);
-      this.addColoredStrategyBox('⭐ POSITIVE BEHAVIOUR SUPPORT (PBS) APPROACH', behaviourData.positiveBehaviourSupport, 'proactive');
+      this.addColoredStrategyBox('POSITIVE BEHAVIOUR SUPPORT (PBS) APPROACH', behaviourData.positiveBehaviourSupport, 'proactive');
     }
     
     // Add any additional general content
@@ -301,7 +331,11 @@ export class PDFExportUtility {
   }
 
   private addColoredStrategyBox(title: string, content: string, color: 'proactive' | 'reactive' | 'protective'): void {
-    const contentLines = this.pdf.splitTextToSize(content, this.contentWidth - 25);
+    // Sanitize both title and content to prevent encoding issues
+    const cleanTitle = this.sanitizeText(title);
+    const cleanContent = this.sanitizeText(content);
+    
+    const contentLines = this.pdf.splitTextToSize(cleanContent, this.contentWidth - 25);
     const requiredSpace = 25 + (contentLines.length * 5);
     this.checkPageBreak(requiredSpace);
     
@@ -351,7 +385,7 @@ export class PDFExportUtility {
     this.pdf.setFontSize(10);
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setTextColor(titleTextColor[0], titleTextColor[1], titleTextColor[2]);
-    this.pdf.text(title, this.margin + 10, this.currentY + 6);
+    this.pdf.text(cleanTitle, this.margin + 10, this.currentY + 6);
     this.currentY += 15;
     
     // Add content with better formatting
@@ -374,22 +408,38 @@ export class PDFExportUtility {
   }
 
   private addAboutMeBoxes(aboutMeData: any) {
+    // Clean section definitions without special characters that could cause encoding issues
     const sections = [
-      { key: 'personalHistory', title: '📝 Personal History', color: 'proactive' as const },
-      { key: 'interests', title: '💝 Interests', color: 'reactive' as const },
-      { key: 'preferences', title: '⭐ Preferences', color: 'proactive' as const },
-      { key: 'strengths', title: '💪 Strengths', color: 'reactive' as const },
-      { key: 'challenges', title: '🎯 Challenges', color: 'protective' as const },
-      { key: 'familyBackground', title: '👨‍👩‍👧‍👦 Family Background', color: 'proactive' as const },
-      { key: 'culturalConsiderations', title: '🌍 Cultural Considerations', color: 'reactive' as const }
+      { key: 'personalHistory', title: 'Personal History', color: 'proactive' as const },
+      { key: 'interests', title: 'Interests', color: 'reactive' as const },
+      { key: 'preferences', title: 'Preferences', color: 'proactive' as const },
+      { key: 'strengths', title: 'Strengths', color: 'reactive' as const },
+      { key: 'challenges', title: 'Challenges', color: 'protective' as const },
+      { key: 'familyBackground', title: 'Family Background', color: 'proactive' as const },
+      { key: 'culturalConsiderations', title: 'Cultural Considerations', color: 'reactive' as const }
     ];
 
     sections.forEach((section) => {
       const content = aboutMeData[section.key];
       if (content) {
-        this.addColoredStrategyBox(section.title, content, section.color);
+        // Sanitize content before adding to PDF
+        const cleanContent = this.sanitizeText(content);
+        if (cleanContent.trim()) {
+          this.addColoredStrategyBox(section.title, cleanContent, section.color);
+        }
       }
     });
+
+    // If no sections have content, add a placeholder message
+    const hasContent = sections.some(section => aboutMeData[section.key]);
+    if (!hasContent) {
+      this.checkPageBreak(10);
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setTextColor(100, 100, 100);
+      this.addText('No personal information recorded.');
+      this.currentY += 5;
+    }
   }
 
   private addGoalsOutcomesBoxes(goalsData: any) {
@@ -455,17 +505,18 @@ export class PDFExportUtility {
     this.pdf.setFontSize(8);
     
     const goalCategories = [
-      { key: 'ndisGoals', label: '🎯 NDIS Support Goals', color: [34, 197, 94] }, // Green
-      { key: 'personalAspirations', label: '💭 Personal Aspirations', color: [245, 158, 11] }, // Amber
-      { key: 'shortTermGoals', label: '📅 Short-Term Goals (3-6 months)', color: [59, 130, 246] }, // Blue
-      { key: 'longTermGoals', label: '📈 Long-Term Goals (6+ months)', color: [16, 185, 129] }, // Emerald
-      { key: 'overallObjective', label: '🌟 Overall Objective', color: [34, 197, 94] } // Green
+      { key: 'ndisGoals', label: 'NDIS Support Goals', color: [34, 197, 94] }, // Green
+      { key: 'personalAspirations', label: 'Personal Aspirations', color: [245, 158, 11] }, // Amber
+      { key: 'shortTermGoals', label: 'Short-Term Goals (3-6 months)', color: [59, 130, 246] }, // Blue
+      { key: 'longTermGoals', label: 'Long-Term Goals (6+ months)', color: [16, 185, 129] }, // Emerald
+      { key: 'overallObjective', label: 'Overall Objective', color: [34, 197, 94] } // Green
     ];
     
     let rowIndex = 0;
     goalCategories.forEach((category) => {
       const content = goalsData[category.key];
       if (content) {
+        const cleanContent = this.sanitizeText(content);
         this.checkPageBreak(rowHeight + 2);
         
         const isEvenRow = rowIndex % 2 === 0;
@@ -538,30 +589,46 @@ export class PDFExportUtility {
   }
 
   private addADLSupportBoxes(adlData: any) {
+    // Clean section definitions without special characters
     const sections = [
-      { key: 'personalCare', title: '🚿 Personal Care', color: 'proactive' as const },
-      { key: 'mobility', title: '🚶 Mobility', color: 'proactive' as const },
-      { key: 'household', title: '🏠 Household Tasks', color: 'reactive' as const },
-      { key: 'community', title: '🌆 Community Access', color: 'reactive' as const },
-      { key: 'safety', title: '🛡️ Safety Considerations', color: 'protective' as const },
-      { key: 'independence', title: '⭐ Independence Level', color: 'proactive' as const }
+      { key: 'personalCare', title: 'Personal Care', color: 'proactive' as const },
+      { key: 'mobility', title: 'Mobility', color: 'proactive' as const },
+      { key: 'household', title: 'Household Tasks', color: 'reactive' as const },
+      { key: 'community', title: 'Community Access', color: 'reactive' as const },
+      { key: 'safety', title: 'Safety Considerations', color: 'protective' as const },
+      { key: 'independence', title: 'Independence Level', color: 'proactive' as const }
     ];
 
     sections.forEach((section) => {
       const content = adlData[section.key];
       if (content) {
-        this.addColoredStrategyBox(section.title, content, section.color);
+        const cleanContent = this.sanitizeText(content);
+        if (cleanContent.trim()) {
+          this.addColoredStrategyBox(section.title, cleanContent, section.color);
+        }
       }
     });
+
+    // If no sections have content, add a placeholder message
+    const hasContent = sections.some(section => adlData[section.key]);
+    if (!hasContent) {
+      this.checkPageBreak(10);
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setTextColor(100, 100, 100);
+      this.addText('No activities of daily living support information recorded.');
+      this.currentY += 5;
+    }
   }
 
   private addCommunicationSupportBoxes(communicationData: any) {
+    // Clean section definitions without special characters
     const sections = [
-      { key: 'primaryMethods', title: '💬 Primary Methods', color: 'proactive' as const },
-      { key: 'comprehensionLevel', title: '🧠 Comprehension Level', color: 'proactive' as const },
-      { key: 'expressionAbilities', title: '🗣️ Expression Abilities', color: 'reactive' as const },
-      { key: 'receptiveStrategies', title: '👂 Receptive Strategies', color: 'reactive' as const },
-      { key: 'expressiveStrategies', title: '💭 Expressive Strategies', color: 'proactive' as const }
+      { key: 'primaryMethods', title: 'Primary Methods', color: 'proactive' as const },
+      { key: 'comprehensionLevel', title: 'Comprehension Level', color: 'proactive' as const },
+      { key: 'expressionAbilities', title: 'Expression Abilities', color: 'reactive' as const },
+      { key: 'receptiveStrategies', title: 'Receptive Strategies', color: 'reactive' as const },
+      { key: 'expressiveStrategies', title: 'Expressive Strategies', color: 'proactive' as const }
     ];
 
     sections.forEach((section) => {
@@ -570,9 +637,30 @@ export class PDFExportUtility {
         content = content.join(', ');
       }
       if (content) {
-        this.addColoredStrategyBox(section.title, content, section.color);
+        const cleanContent = this.sanitizeText(content);
+        if (cleanContent.trim()) {
+          this.addColoredStrategyBox(section.title, cleanContent, section.color);
+        }
       }
     });
+
+    // If no sections have content, add a placeholder message
+    const hasContent = sections.some(section => {
+      let content = communicationData[section.key];
+      if (Array.isArray(content)) {
+        content = content.join(', ');
+      }
+      return content && content.trim();
+    });
+    
+    if (!hasContent) {
+      this.checkPageBreak(10);
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'italic');
+      this.pdf.setTextColor(100, 100, 100);
+      this.addText('No communication support information recorded.');
+      this.currentY += 5;
+    }
   }
 
   private addStructureRoutineBoxes(structureData: any) {
@@ -779,11 +867,11 @@ export class PDFExportUtility {
     this.pdf.setFontSize(8);
     
     const disasterCategories = [
-      { key: 'evacuationPlan', label: '🚪 Evacuation Plan', color: [220, 38, 127] }, // Red/Protective
-      { key: 'emergencyContacts', label: '📞 Emergency Contacts', color: [220, 38, 127] }, // Red/Protective
-      { key: 'communicationMethod', label: '📢 Communication Method', color: [245, 158, 11] }, // Amber/Reactive
-      { key: 'medicalInformation', label: '🏥 Medical Information', color: [220, 38, 127] }, // Red/Protective
-      { key: 'recoveryPlan', label: '🔄 Recovery Plan', color: [34, 197, 94] } // Green/Proactive
+      { key: 'evacuationPlan', label: 'Evacuation Plan', color: [220, 38, 127] }, // Red/Protective
+      { key: 'emergencyContacts', label: 'Emergency Contacts', color: [220, 38, 127] }, // Red/Protective
+      { key: 'communicationMethod', label: 'Communication Method', color: [245, 158, 11] }, // Amber/Reactive
+      { key: 'medicalInformation', label: 'Medical Information', color: [220, 38, 127] }, // Red/Protective
+      { key: 'recoveryPlan', label: 'Recovery Plan', color: [34, 197, 94] } // Green/Proactive
     ];
     
     let rowIndex = 0;
@@ -925,12 +1013,12 @@ export class PDFExportUtility {
     this.pdf.setFontSize(8);
     
     const mealtimeCategories = [
-      { key: 'chokingRisk', label: '🚨 Choking Risk Management', color: [220, 38, 127] }, // Red/Protective
-      { key: 'aspirationRisk', label: '🫁 Aspiration Risk Management', color: [220, 38, 127] }, // Red/Protective
-      { key: 'swallowingRisk', label: '💧 Swallowing Assessment', color: [245, 158, 11] }, // Amber/Reactive
-      { key: 'dietaryRisk', label: '🥗 Dietary Requirements', color: [34, 197, 94] }, // Green/Proactive
-      { key: 'assistanceRisk', label: '🤝 Assistance Level', color: [245, 158, 11] }, // Amber/Reactive
-      { key: 'environmentalRisk', label: '🍽️ Environmental Setup', color: [34, 197, 94] } // Green/Proactive
+      { key: 'chokingRisk', label: 'Choking Risk Management', color: [220, 38, 127] }, // Red/Protective
+      { key: 'aspirationRisk', label: 'Aspiration Risk Management', color: [220, 38, 127] }, // Red/Protective
+      { key: 'swallowingRisk', label: 'Swallowing Assessment', color: [245, 158, 11] }, // Amber/Reactive
+      { key: 'dietaryRisk', label: 'Dietary Requirements', color: [34, 197, 94] }, // Green/Proactive
+      { key: 'assistanceRisk', label: 'Assistance Level', color: [245, 158, 11] }, // Amber/Reactive
+      { key: 'environmentalRisk', label: 'Environmental Setup', color: [34, 197, 94] } // Green/Proactive
     ];
     
     let rowIndex = 0;
