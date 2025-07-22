@@ -887,12 +887,7 @@ export class PDFExportUtility {
     const hasRecoveryPlan = disasterData.recoveryPlan;
     
     if (!hasEvacuationPlan && !hasEmergencyContacts && !hasCommunicationMethod && !hasMedicalInformation && !hasRecoveryPlan) {
-      this.checkPageBreak(10);
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'italic');
-      this.pdf.setTextColor(100, 100, 100);
-      this.addText('No disaster management procedures recorded.');
-      this.currentY += 5;
+      this.addEmptyCalloutBox('Disaster Management');
       return;
     }
     
@@ -1033,12 +1028,7 @@ export class PDFExportUtility {
     const hasEnvironmentalRisk = mealtimeData.environmentalRisk;
     
     if (!hasChokingRisk && !hasAspirationRisk && !hasSwallowingRisk && !hasDietaryRisk && !hasAssistanceRisk && !hasEnvironmentalRisk) {
-      this.checkPageBreak(10);
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'italic');
-      this.pdf.setTextColor(100, 100, 100);
-      this.addText('No mealtime management procedures recorded.');
-      this.currentY += 5;
+      this.addEmptyCalloutBox('Mealtime Management');
       return;
     }
     
