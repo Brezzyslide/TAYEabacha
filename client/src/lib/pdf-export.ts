@@ -702,12 +702,7 @@ export class PDFExportUtility {
     // If no sections have content, add a placeholder message
     const hasContent = sections.some(section => adlData[section.key]);
     if (!hasContent) {
-      this.checkPageBreak(10);
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'italic');
-      this.pdf.setTextColor(100, 100, 100);
-      this.addText('No activities of daily living support information recorded.');
-      this.currentY += 5;
+      this.addEmptyCalloutBox('Activities of Daily Living');
     }
   }
 
@@ -744,12 +739,7 @@ export class PDFExportUtility {
     });
     
     if (!hasContent) {
-      this.checkPageBreak(10);
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'italic');
-      this.pdf.setTextColor(100, 100, 100);
-      this.addText('No communication support information recorded.');
-      this.currentY += 5;
+      this.addEmptyCalloutBox('Communication Support');
     }
   }
 
@@ -760,13 +750,7 @@ export class PDFExportUtility {
     if (routineEntries && Array.isArray(routineEntries) && routineEntries.length > 0) {
       this.addStructureRoutineTable(routineEntries);
     } else {
-      // Display no data message
-      this.checkPageBreak(10);
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'italic');
-      this.pdf.setTextColor(100, 100, 100);
-      this.addText('No routine activities recorded.');
-      this.currentY += 5;
+      this.addEmptyCalloutBox('Structure & Routine');
     }
   }
 
