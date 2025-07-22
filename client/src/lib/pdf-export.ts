@@ -7,6 +7,7 @@ export interface PDFExportOptions {
   companyName: string;
   staffName: string;
   submissionDate: string;
+  planId?: string;
   filename?: string;
 }
 
@@ -21,7 +22,7 @@ export class PDFExportUtility {
   private currentY: number = 0;
   private pageHeight: number = 210; // A4 landscape height in mm
   private pageWidth: number = 297; // A4 landscape width in mm
-  private margin: number = 20;
+  private margin: number = 10; // 1cm margins as requested
   private contentWidth: number;
   private headerHeight: number = 40;
   private footerHeight: number = 15;
@@ -121,9 +122,19 @@ export class PDFExportUtility {
       const timestamp = now.toISOString().split('T')[0] + ' ' + 
                        now.toTimeString().split(' ')[0].substring(0, 5);
       
-      // Footer with company name on each page
-      this.pdf.text(`${options.companyName} | Generated: ${timestamp}`, this.margin + 5, footerY + 8);
-      this.pdf.text(`Page ${i} of ${pageCount}`, this.pageWidth - this.margin - 20, footerY + 8);
+      // Header format: Company Name | Exported: {date} | Page {X} of {Y}
+      const headerText = `${options.companyName} | Exported: ${timestamp} | Page ${i} of ${pageCount}`;
+      const headerWidth = this.pdf.getTextWidth(headerText);
+      const headerX = (this.pageWidth - headerWidth) / 2;
+      this.pdf.text(headerText, headerX, footerY + 8);
+      
+      // Footer format: Staff: {email} | Plan ID: {plan_id}
+      if (options.planId) {
+        const footerText = `Staff: ${options.staffName} | Plan ID: ${options.planId}`;
+        const footerWidth = this.pdf.getTextWidth(footerText);
+        const footerX = (this.pageWidth - footerWidth) / 2;
+        this.pdf.text(footerText, footerX, footerY + 12);
+      }
     }
   }
 
@@ -171,16 +182,72 @@ export class PDFExportUtility {
     this.currentY += 15; // More spacing between sections
   }
 
-  private addText(text: string): void {
-    // Clean text to prevent encoding issues
+  private addText(text: string, isTitle = false): void {
+    if (!text) return;
+    
     const cleanText = this.sanitizeText(text);
+    
+    // Handle title formatting with bold fonts and horizontal lines
+    if (isTitle) {
+      this.pdf.setFontSize(12);
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setTextColor(50, 50, 50);
+      this.checkPageBreak(12);
+      this.pdf.text(cleanText, this.margin + 5, this.currentY);
+      this.currentY += 8;
+      
+      // Add horizontal line after title
+      this.pdf.setDrawColor(200, 200, 200);
+      this.pdf.setLineWidth(0.5);
+      this.pdf.line(this.margin + 5, this.currentY, this.margin + this.contentWidth - 5, this.currentY);
+      this.currentY += 10;
+      this.pdf.setDrawColor(0, 0, 0);
+      
+      // Reset to normal text style
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setTextColor(60, 60, 60);
+      return;
+    }
+    
+    // Regular paragraph text with proper spacing
     const lines = this.pdf.splitTextToSize(cleanText, this.contentWidth - 10);
     
     for (const line of lines) {
       this.checkPageBreak(7);
-      this.pdf.text(line, this.margin + 5, this.currentY);
+      this.pdf.text(line, this.margin + 8, this.currentY);
       this.currentY += 6;
     }
+    
+    // Add paragraph spacing after regular text
+    this.currentY += 3;
+  }
+
+  private addEmptyCalloutBox(title: string): void {
+    this.checkPageBreak(20);
+    
+    // Create shaded callout box for empty sections
+    const boxHeight = 15;
+    this.pdf.setFillColor(248, 250, 252); // Light blue/gray background
+    this.pdf.setDrawColor(200, 200, 200);
+    this.pdf.setLineWidth(0.5);
+    this.pdf.rect(this.margin + 5, this.currentY, this.contentWidth - 10, boxHeight, 'FD');
+    
+    // Add centered italic text
+    this.pdf.setFontSize(10);
+    this.pdf.setFont('helvetica', 'italic');
+    this.pdf.setTextColor(120, 120, 120);
+    const message = `No ${title.toLowerCase()} information provided.`;
+    const textWidth = this.pdf.getTextWidth(message);
+    const textX = this.margin + ((this.contentWidth - textWidth) / 2);
+    this.pdf.text(message, textX, this.currentY + 9);
+    
+    this.currentY += boxHeight + 8;
+    
+    // Reset styles
+    this.pdf.setFontSize(10);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setTextColor(60, 60, 60);
   }
 
   private sanitizeText(text: string): string {
@@ -341,8 +408,20 @@ export class PDFExportUtility {
     const cleanTitle = this.sanitizeText(title);
     const cleanContent = this.sanitizeText(content);
     
-    const contentLines = this.pdf.splitTextToSize(cleanContent, this.contentWidth - 25);
-    const requiredSpace = 25 + (contentLines.length * 5);
+    // Split content into paragraphs for better formatting
+    const paragraphs = cleanContent.split(/\n\s*\n|\. (?=[A-Z])|(?<=\.)\s+(?=[A-Z])/).filter(p => p.trim());
+    const allLines: string[] = [];
+    
+    paragraphs.forEach((paragraph, index) => {
+      const paragraphLines = this.pdf.splitTextToSize(paragraph.trim(), this.contentWidth - 30);
+      allLines.push(...paragraphLines);
+      // Add spacing between paragraphs (except last one)
+      if (index < paragraphs.length - 1) {
+        allLines.push(''); // Empty line for paragraph spacing
+      }
+    });
+    
+    const requiredSpace = 25 + (allLines.length * 5) + (paragraphs.length * 3);
     this.checkPageBreak(requiredSpace);
     
     // Enhanced colors with better contrast and professional appearance
@@ -372,7 +451,7 @@ export class PDFExportUtility {
         break;
     }
     
-    const boxHeight = 18 + (contentLines.length * 5);
+    const boxHeight = 18 + (allLines.length * 5);
     
     // Draw main colored background box
     this.pdf.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
@@ -399,10 +478,15 @@ export class PDFExportUtility {
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setTextColor(60, 60, 60); // Dark gray for better readability
     
-    for (const line of contentLines) {
+    for (const line of allLines) {
       this.checkPageBreak(6);
-      this.pdf.text(line, this.margin + 10, this.currentY);
-      this.currentY += 5;
+      if (line.trim() === '') {
+        // Empty line for paragraph spacing
+        this.currentY += 3;
+      } else {
+        this.pdf.text(line, this.margin + 10, this.currentY);
+        this.currentY += 5;
+      }
     }
     
     this.currentY += 8; // Extra spacing after box
@@ -1216,6 +1300,7 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     companyName: companyName,
     staffName: user?.username || 'Unknown Staff',
     submissionDate: plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+    planId: plan.id || 'Unknown',
     filename: `care-plan-${plan.planTitle?.replace(/[^a-zA-Z0-9]/g, '-') || 'untitled'}.pdf`
   };
 
