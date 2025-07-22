@@ -36,13 +36,7 @@ export class PDFExportUtility {
   async generateStructuredPDF(options: PDFExportOptions, sections: PDFSection[]): Promise<void> {
     // Add header only on first page
     this.addHeaderFirstPageOnly(options);
-    this.currentY = this.headerHeight + 15; // Extra spacing after header
-
-    // Remove duplicate title since it's already in the header
-    // this.pdf.setFontSize(18);
-    // this.pdf.setFont('helvetica', 'bold');
-    // this.pdf.text(options.title, this.margin, this.currentY);
-    // this.currentY += 15;
+    this.currentY = this.headerHeight + 5; // Reduced spacing after header
 
     for (const section of sections) {
       this.addSection(section);
@@ -179,7 +173,7 @@ export class PDFExportUtility {
       this.addText(String(section.content));
     }
 
-    this.currentY += 15; // More spacing between sections
+    this.currentY += 8; // Reduced spacing between sections
   }
 
   private addText(text: string, isTitle = false): void {
@@ -200,7 +194,7 @@ export class PDFExportUtility {
       this.pdf.setDrawColor(200, 200, 200);
       this.pdf.setLineWidth(0.5);
       this.pdf.line(this.margin + 5, this.currentY, this.margin + this.contentWidth - 5, this.currentY);
-      this.currentY += 10;
+      this.currentY += 6;
       this.pdf.setDrawColor(0, 0, 0);
       
       // Reset to normal text style
@@ -219,35 +213,13 @@ export class PDFExportUtility {
       this.currentY += 6;
     }
     
-    // Add paragraph spacing after regular text
-    this.currentY += 3;
+    // Add minimal paragraph spacing after regular text
+    this.currentY += 2;
   }
 
   private addEmptyCalloutBox(title: string): void {
-    this.checkPageBreak(20);
-    
-    // Create shaded callout box for empty sections
-    const boxHeight = 15;
-    this.pdf.setFillColor(248, 250, 252); // Light blue/gray background
-    this.pdf.setDrawColor(200, 200, 200);
-    this.pdf.setLineWidth(0.5);
-    this.pdf.rect(this.margin + 5, this.currentY, this.contentWidth - 10, boxHeight, 'FD');
-    
-    // Add centered italic text
-    this.pdf.setFontSize(10);
-    this.pdf.setFont('helvetica', 'italic');
-    this.pdf.setTextColor(120, 120, 120);
-    const message = `No ${title.toLowerCase()} information provided.`;
-    const textWidth = this.pdf.getTextWidth(message);
-    const textX = this.margin + ((this.contentWidth - textWidth) / 2);
-    this.pdf.text(message, textX, this.currentY + 9);
-    
-    this.currentY += boxHeight + 8;
-    
-    // Reset styles
-    this.pdf.setFontSize(10);
-    this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setTextColor(60, 60, 60);
+    // Skip empty sections entirely to reduce PDF length
+    return;
   }
 
   private sanitizeText(text: string): string {
@@ -295,29 +267,31 @@ export class PDFExportUtility {
       const cleanKey = this.sanitizeText(key);
       const cleanValue = this.sanitizeText(String(value));
       
-      // Calculate required space for this row
+      // Calculate required space for this row - reduced from original
       const valueLines = this.pdf.splitTextToSize(cleanValue, rightColumnWidth);
-      const requiredSpace = Math.max(12, valueLines.length * 6 + 8);
+      const requiredSpace = Math.max(8, valueLines.length * 5 + 4);
       this.checkPageBreak(requiredSpace);
       
-      // Add key (bold) - use clean key
+      // Add key (bold) - properly aligned
       this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setFontSize(10);
       this.pdf.text(`${cleanKey}:`, this.margin + 5, this.currentY);
       
-      // Add value (normal, with text wrapping)
+      // Add value (normal, with text wrapping) - properly aligned
       this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setFontSize(10);
       
       let valueY = this.currentY;
       for (let i = 0; i < valueLines.length; i++) {
         if (i > 0) {
-          valueY += 6;
-          this.checkPageBreak(7);
+          valueY += 5;
+          this.checkPageBreak(5);
         }
         this.pdf.text(valueLines[i], this.margin + leftColumnWidth + 5, valueY);
       }
       
-      // Move currentY to the end of this row
-      this.currentY = valueY + 10; // Extra spacing between table rows
+      // Move currentY to the end of this row with minimal spacing
+      this.currentY = valueY + 4; // Further reduced spacing between table rows
     }
   }
 
@@ -377,7 +351,7 @@ export class PDFExportUtility {
           this.addColoredStrategyBox('PROTECTIVE STRATEGIES - Post-Behavior Safety & Recovery', behavior.protectiveStrategy, 'protective');
         }
         
-        this.currentY += 12; // Extra spacing between behaviors
+        this.currentY += 6; // Reduced spacing between behaviors
       }
     }
     
@@ -489,7 +463,7 @@ export class PDFExportUtility {
       }
     }
     
-    this.currentY += 8; // Extra spacing after box
+    this.currentY += 5; // Minimal spacing after box
     
     // Reset drawing properties
     this.pdf.setDrawColor(0, 0, 0);
@@ -602,11 +576,21 @@ export class PDFExportUtility {
       { key: 'overallObjective', label: 'Overall Objective', color: [34, 197, 94] } // Green
     ];
     
+    // Track added content to prevent repetition
+    const addedContent = new Set<string>();
+    
     let rowIndex = 0;
     goalCategories.forEach((category) => {
       const content = goalsData[category.key];
       if (content) {
         const cleanContent = this.sanitizeText(content);
+        
+        // Skip if this exact content was already added
+        if (addedContent.has(cleanContent)) {
+          return;
+        }
+        addedContent.add(cleanContent);
+        
         this.checkPageBreak(rowHeight + 2);
         
         const isEvenRow = rowIndex % 2 === 0;
