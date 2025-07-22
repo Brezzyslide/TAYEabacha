@@ -35,12 +35,13 @@ export class PDFExportUtility {
   async generateStructuredPDF(options: PDFExportOptions, sections: PDFSection[]): Promise<void> {
     // Add header only on first page
     this.addHeaderFirstPageOnly(options);
-    this.currentY = this.headerHeight + 10;
+    this.currentY = this.headerHeight + 15; // Extra spacing after header
 
-    this.pdf.setFontSize(18);
-    this.pdf.setFont('helvetica', 'bold');
-    this.pdf.text(options.title, this.margin, this.currentY);
-    this.currentY += 15;
+    // Remove duplicate title since it's already in the header
+    // this.pdf.setFontSize(18);
+    // this.pdf.setFont('helvetica', 'bold');
+    // this.pdf.text(options.title, this.margin, this.currentY);
+    // this.currentY += 15;
 
     for (const section of sections) {
       this.addSection(section);
@@ -79,12 +80,15 @@ export class PDFExportUtility {
     const titleX = (this.pageWidth - titleWidth) / 2;
     this.pdf.text(options.title, titleX, 31);
     
-    // Staff and dates with lighter text
+    // Staff and dates with better positioning and alignment
     this.pdf.setFontSize(9);
     this.pdf.setTextColor(191, 219, 254); // Very light blue
+    
+    // Left side: Staff and submission date
     this.pdf.text(`Staff: ${options.staffName}`, this.margin + 8, 38);
     this.pdf.text(`Submission Date: ${options.submissionDate}`, this.margin + 8, 43);
 
+    // Right side: Export timestamp with proper alignment
     const now = new Date();
     const exportTime = now.toLocaleString('en-AU', {
       year: 'numeric',
@@ -94,7 +98,9 @@ export class PDFExportUtility {
       minute: '2-digit',
       hour12: false
     });
-    this.pdf.text(`Exported: ${exportTime}`, this.pageWidth - this.margin - 55, 38);
+    const exportText = `Exported: ${exportTime}`;
+    const exportTextWidth = this.pdf.getTextWidth(exportText);
+    this.pdf.text(exportText, this.pageWidth - this.margin - exportTextWidth - 5, 38);
     
     this.headerAdded = true;
   }
