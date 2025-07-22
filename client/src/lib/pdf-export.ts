@@ -879,14 +879,18 @@ export class PDFExportUtility {
   }
 
   private addDisasterManagementBoxes(disasterData: any) {
-    // Check if there's any disaster management data to display
+    // Check if there are any disaster plans to display
+    const disasterPlans = disasterData.disasterPlans || [];
+    const hasDisasterPlans = Array.isArray(disasterPlans) && disasterPlans.length > 0;
+    
+    // Also check for legacy individual fields
     const hasEvacuationPlan = disasterData.evacuationPlan;
     const hasEmergencyContacts = disasterData.emergencyContacts;
     const hasCommunicationMethod = disasterData.communicationMethod;
     const hasMedicalInformation = disasterData.medicalInformation;
     const hasRecoveryPlan = disasterData.recoveryPlan;
     
-    if (!hasEvacuationPlan && !hasEmergencyContacts && !hasCommunicationMethod && !hasMedicalInformation && !hasRecoveryPlan) {
+    if (!hasDisasterPlans && !hasEvacuationPlan && !hasEmergencyContacts && !hasCommunicationMethod && !hasMedicalInformation && !hasRecoveryPlan) {
       this.addEmptyCalloutBox('Disaster Management');
       return;
     }
@@ -935,6 +939,97 @@ export class PDFExportUtility {
     this.pdf.setTextColor(60, 60, 60);
     this.pdf.setFontSize(8);
     
+    let rowIndex = 0;
+    
+    // First, handle disaster plans array (new format)
+    const disasterPlans = disasterData.disasterPlans || [];
+    if (Array.isArray(disasterPlans) && disasterPlans.length > 0) {
+      disasterPlans.forEach((plan: any) => {
+        if (plan.preparation || plan.evacuation || plan.postEvent || plan.clientNeeds) {
+          this.checkPageBreak(rowHeight + 2);
+          
+          const isEvenRow = rowIndex % 2 === 0;
+          if (isEvenRow) {
+            this.pdf.setFillColor(248, 250, 252); // Very light blue background
+            this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+          }
+          
+          currentX = tableStartX;
+          const textY = this.currentY + 6;
+          
+          // Category column with colored indicator
+          const disasterTypeColors = {
+            'fire': [220, 38, 127], // Red/Protective
+            'flood': [34, 197, 94], // Green/Proactive  
+            'earthquake': [245, 158, 11], // Amber/Reactive
+            'medical': [220, 38, 127], // Red/Protective
+            'heatwave': [245, 158, 11] // Amber/Reactive
+          };
+          
+          const categoryColor = disasterTypeColors[plan.type as keyof typeof disasterTypeColors] || [220, 38, 127];
+          this.pdf.setFillColor(categoryColor[0], categoryColor[1], categoryColor[2]);
+          this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+          
+          this.pdf.setFontSize(8);
+          this.pdf.setFont('helvetica', 'bold');
+          this.pdf.setTextColor(60, 60, 60);
+          
+          const disasterTypeLabels = {
+            'fire': 'Fire/Bushfire',
+            'flood': 'Flood',
+            'earthquake': 'Earthquake', 
+            'medical': 'Medical Emergency',
+            'heatwave': 'Heatwave'
+          };
+          
+          const categoryLabel = disasterTypeLabels[plan.type as keyof typeof disasterTypeLabels] || plan.type;
+          this.pdf.text(categoryLabel, currentX + 6, textY);
+          currentX += colWidths.category;
+          
+          // Content column with combined plan details
+          this.pdf.setFont('helvetica', 'normal');
+          let contentText = '';
+          if (plan.preparation) contentText += `Preparation: ${plan.preparation}`;
+          if (plan.evacuation) contentText += (contentText ? ' | ' : '') + `Evacuation: ${plan.evacuation}`;
+          if (plan.postEvent) contentText += (contentText ? ' | ' : '') + `Post-Event: ${plan.postEvent}`;
+          if (plan.clientNeeds) contentText += (contentText ? ' | ' : '') + `Client Needs: ${plan.clientNeeds}`;
+          
+          const contentLines = this.pdf.splitTextToSize(contentText, colWidths.content - 4);
+          
+          if (contentLines.length > 1) {
+            // Handle multi-line content
+            let lineY = textY;
+            contentLines.forEach((line: string, lineIndex: number) => {
+              if (lineIndex > 0) {
+                this.checkPageBreak(5);
+                lineY += 4;
+                // Extend row height for multi-line content
+                if (isEvenRow) {
+                  this.pdf.setFillColor(248, 250, 252);
+                  this.pdf.rect(tableStartX, this.currentY + (lineIndex * 4), tableWidth, 4, 'F');
+                }
+              }
+              this.pdf.text(line, currentX + 2, lineY);
+            });
+            // Adjust current Y for multi-line content
+            this.currentY += (contentLines.length - 1) * 4;
+          } else {
+            this.pdf.text(contentText, currentX + 2, textY);
+          }
+          
+          // Draw row border
+          this.pdf.setDrawColor(200, 200, 200);
+          this.pdf.setLineWidth(0.2);
+          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+          this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+          
+          this.currentY += rowHeight;
+          rowIndex++;
+        }
+      });
+    }
+    
+    // Then handle legacy individual fields (old format)
     const disasterCategories = [
       { key: 'evacuationPlan', label: 'Evacuation Plan', color: [220, 38, 127] }, // Red/Protective
       { key: 'emergencyContacts', label: 'Emergency Contacts', color: [220, 38, 127] }, // Red/Protective
@@ -943,7 +1038,6 @@ export class PDFExportUtility {
       { key: 'recoveryPlan', label: 'Recovery Plan', color: [34, 197, 94] } // Green/Proactive
     ];
     
-    let rowIndex = 0;
     disasterCategories.forEach((category) => {
       const content = disasterData[category.key];
       if (content) {
@@ -1019,7 +1113,18 @@ export class PDFExportUtility {
   }
 
   private addMealtimeManagementBoxes(mealtimeData: any) {
-    // Check if there's any mealtime management data to display
+    // Check if there are any risk parameters to display (new format)
+    const riskParameters = mealtimeData.riskParameters || [];
+    const hasRiskParameters = Array.isArray(riskParameters) && riskParameters.length > 0;
+    
+    // Also check for other mealtime data fields
+    const hasDietaryRequirements = mealtimeData.dietaryRequirements;
+    const hasTextureModifications = mealtimeData.textureModifications;
+    const hasAssistanceLevel = mealtimeData.assistanceLevel;
+    const hasMealtimeEnvironment = mealtimeData.mealtimeEnvironment;
+    const hasEmergencyProcedures = mealtimeData.emergencyProcedures;
+    
+    // Also check for legacy individual fields
     const hasChokingRisk = mealtimeData.chokingRisk;
     const hasAspirationRisk = mealtimeData.aspirationRisk;
     const hasSwallowingRisk = mealtimeData.swallowingRisk;
@@ -1027,7 +1132,9 @@ export class PDFExportUtility {
     const hasAssistanceRisk = mealtimeData.assistanceRisk;
     const hasEnvironmentalRisk = mealtimeData.environmentalRisk;
     
-    if (!hasChokingRisk && !hasAspirationRisk && !hasSwallowingRisk && !hasDietaryRisk && !hasAssistanceRisk && !hasEnvironmentalRisk) {
+    if (!hasRiskParameters && !hasDietaryRequirements && !hasTextureModifications && !hasAssistanceLevel && 
+        !hasMealtimeEnvironment && !hasEmergencyProcedures && !hasChokingRisk && !hasAspirationRisk && 
+        !hasSwallowingRisk && !hasDietaryRisk && !hasAssistanceRisk && !hasEnvironmentalRisk) {
       this.addEmptyCalloutBox('Mealtime Management');
       return;
     }
@@ -1076,6 +1183,164 @@ export class PDFExportUtility {
     this.pdf.setTextColor(60, 60, 60);
     this.pdf.setFontSize(8);
     
+    let rowIndex = 0;
+    
+    // First, handle risk parameters array (new format)
+    const riskParameters = mealtimeData.riskParameters || [];
+    if (Array.isArray(riskParameters) && riskParameters.length > 0) {
+      riskParameters.forEach((risk: any) => {
+        if (risk.preventionStrategy || risk.responseStrategy || risk.equipmentNeeded || risk.staffTraining) {
+          this.checkPageBreak(rowHeight + 2);
+          
+          const isEvenRow = rowIndex % 2 === 0;
+          if (isEvenRow) {
+            this.pdf.setFillColor(248, 250, 252); // Very light blue background
+            this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+          }
+          
+          currentX = tableStartX;
+          const textY = this.currentY + 6;
+          
+          // Category column with colored indicator based on severity
+          const severityColors = {
+            'low': [34, 197, 94], // Green/Low
+            'medium': [245, 158, 11], // Amber/Medium
+            'high': [220, 38, 127] // Red/High
+          };
+          
+          const categoryColor = severityColors[risk.severity as keyof typeof severityColors] || [245, 158, 11];
+          this.pdf.setFillColor(categoryColor[0], categoryColor[1], categoryColor[2]);
+          this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+          
+          this.pdf.setFontSize(8);
+          this.pdf.setFont('helvetica', 'bold');
+          this.pdf.setTextColor(60, 60, 60);
+          
+          const riskTypeLabels = {
+            'choking': 'Choking Risk',
+            'aspiration': 'Aspiration Risk',
+            'swallowing': 'Swallowing Difficulties',
+            'allergies': 'Food Allergies',
+            'medications': 'Medication Interactions',
+            'behavioral': 'Behavioral Concerns',
+            'cultural': 'Cultural/Religious',
+            'texture': 'Texture Intolerance'
+          };
+          
+          const categoryLabel = riskTypeLabels[risk.type as keyof typeof riskTypeLabels] || risk.type || 'Risk Management';
+          this.pdf.text(categoryLabel, currentX + 6, textY);
+          currentX += colWidths.category;
+          
+          // Content column with combined risk management details
+          this.pdf.setFont('helvetica', 'normal');
+          let contentText = '';
+          if (risk.preventionStrategy) contentText += `Prevention: ${risk.preventionStrategy}`;
+          if (risk.responseStrategy) contentText += (contentText ? ' | ' : '') + `Response: ${risk.responseStrategy}`;
+          if (risk.equipmentNeeded) contentText += (contentText ? ' | ' : '') + `Equipment: ${risk.equipmentNeeded}`;
+          if (risk.staffTraining) contentText += (contentText ? ' | ' : '') + `Training: ${risk.staffTraining}`;
+          
+          const contentLines = this.pdf.splitTextToSize(contentText, colWidths.content - 4);
+          
+          if (contentLines.length > 1) {
+            // Handle multi-line content
+            let lineY = textY;
+            contentLines.forEach((line: string, lineIndex: number) => {
+              if (lineIndex > 0) {
+                this.checkPageBreak(5);
+                lineY += 4;
+                // Extend row height for multi-line content
+                if (isEvenRow) {
+                  this.pdf.setFillColor(248, 250, 252);
+                  this.pdf.rect(tableStartX, this.currentY + (lineIndex * 4), tableWidth, 4, 'F');
+                }
+              }
+              this.pdf.text(line, currentX + 2, lineY);
+            });
+            // Adjust current Y for multi-line content
+            this.currentY += (contentLines.length - 1) * 4;
+          } else {
+            this.pdf.text(contentText, currentX + 2, textY);
+          }
+          
+          // Draw row border
+          this.pdf.setDrawColor(200, 200, 200);
+          this.pdf.setLineWidth(0.2);
+          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+          this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+          
+          this.currentY += rowHeight;
+          rowIndex++;
+        }
+      });
+    }
+    
+    // Add general mealtime fields as separate rows if they exist
+    const generalMealtimeFields = [
+      { key: 'dietaryRequirements', label: 'Dietary Requirements', color: [34, 197, 94] },
+      { key: 'textureModifications', label: 'Texture Modifications', color: [245, 158, 11] },
+      { key: 'assistanceLevel', label: 'Assistance Level', color: [245, 158, 11] },
+      { key: 'mealtimeEnvironment', label: 'Mealtime Environment', color: [34, 197, 94] },
+      { key: 'emergencyProcedures', label: 'Emergency Procedures', color: [220, 38, 127] }
+    ];
+    
+    generalMealtimeFields.forEach((field) => {
+      const content = mealtimeData[field.key];
+      if (content && content.trim()) {
+        this.checkPageBreak(rowHeight + 2);
+        
+        const isEvenRow = rowIndex % 2 === 0;
+        if (isEvenRow) {
+          this.pdf.setFillColor(248, 250, 252);
+          this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+        }
+        
+        currentX = tableStartX;
+        const textY = this.currentY + 6;
+        
+        // Category column with colored indicator
+        this.pdf.setFillColor(field.color[0], field.color[1], field.color[2]);
+        this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+        
+        this.pdf.setFontSize(8);
+        this.pdf.setFont('helvetica', 'bold');
+        this.pdf.setTextColor(60, 60, 60);
+        this.pdf.text(field.label, currentX + 6, textY);
+        currentX += colWidths.category;
+        
+        // Content column with text wrapping
+        this.pdf.setFont('helvetica', 'normal');
+        const contentLines = this.pdf.splitTextToSize(content, colWidths.content - 4);
+        
+        if (contentLines.length > 1) {
+          let lineY = textY;
+          contentLines.forEach((line: string, lineIndex: number) => {
+            if (lineIndex > 0) {
+              this.checkPageBreak(5);
+              lineY += 4;
+              if (isEvenRow) {
+                this.pdf.setFillColor(248, 250, 252);
+                this.pdf.rect(tableStartX, this.currentY + (lineIndex * 4), tableWidth, 4, 'F');
+              }
+            }
+            this.pdf.text(line, currentX + 2, lineY);
+          });
+          this.currentY += (contentLines.length - 1) * 4;
+        } else {
+          this.pdf.text(content, currentX + 2, textY);
+        }
+        
+        // Draw row border
+        this.pdf.setDrawColor(200, 200, 200);
+        this.pdf.setLineWidth(0.2);
+        const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+        this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+        
+        this.currentY += rowHeight;
+        rowIndex++;
+      }
+    });
+    
+    // Then handle legacy individual fields (old format)
     const mealtimeCategories = [
       { key: 'chokingRisk', label: 'Choking Risk Management', color: [220, 38, 127] }, // Red/Protective
       { key: 'aspirationRisk', label: 'Aspiration Risk Management', color: [220, 38, 127] }, // Red/Protective
@@ -1085,7 +1350,6 @@ export class PDFExportUtility {
       { key: 'environmentalRisk', label: 'Environmental Setup', color: [34, 197, 94] } // Green/Proactive
     ];
     
-    let rowIndex = 0;
     mealtimeCategories.forEach((category) => {
       const content = mealtimeData[category.key];
       if (content) {
