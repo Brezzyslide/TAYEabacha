@@ -7888,8 +7888,8 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
               familyBackground: `Information about family background was not provided in ${clientName}'s profile. Only emergency contact information is available: ${emergencyContact}.`,
               
               culturalConsiderations: hasExistingContent('culturalConsiderations')
-                ? `Build upon existing cultural considerations: "${existingAboutMe.culturalConsiderations}". Add diagnosis-based perspective for ${clientName}'s individual support needs. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to person-centered approaches that respect ${pronouns.possessive} individual preferences and communication style. Do NOT make assumptions about ethnicity, race, or cultural background - focus only on documented preferences and individual needs. Maximum 100 words.`
-                : `Write cultural considerations for ${clientName} focusing on individual person-centered support. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to approaches that honor ${pronouns.possessive} documented preferences for choice and control. Do NOT assume any specific cultural, ethnic, or religious background. Focus only on ${pronouns.possessive} individual communication needs and documented preferences. Avoid cultural stereotypes or assumptions. Maximum 100 words.`
+                ? `Build upon existing family and religious considerations: "${existingAboutMe.culturalConsiderations}". Add practical family dynamics, religious observances, or cultural traditions that impact ${clientName}'s care. Include: family involvement in decision-making, religious practices (prayer times, dietary requirements), cultural holidays, family communication patterns, or spiritual needs. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, consider how family structure and religious factors influence support delivery. Use only documented family/religious information. Maximum 100 words.`
+                : `Write family and religious considerations for ${clientName}. Address practical aspects: family involvement in care decisions, religious observances (prayer times, dietary requirements, religious holidays), cultural traditions affecting daily routines, family communication preferences, or spiritual practices. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, explain how family dynamics and religious needs should be incorporated into support planning. If no specific family or religious information is documented, clearly state this. Focus on family structure and religious considerations only. Maximum 100 words.`
             };
             
             // Check if this is familyBackground and no family data exists
@@ -8612,19 +8612,7 @@ Maximum 400 words.`;
               pattern: new RegExp(`\\b[Hh]er\\b(?=.*${clientName.split(' ')[0]})`, 'g'),
               replacement: pronouns.objective
             },
-            // Special pattern: Fix sentences that start with wrong pronoun but reference client correctly later
-            // This addresses the specific issue: "Based on his diagnosis... Sarah Johnson may benefit"
-            {
-              pattern: new RegExp(`(Based on ${pronouns.possessive === 'his' ? 'her' : 'his'} diagnosis[^.]*?)\\b(${clientName.split(' ')[0]})\\b`, 'g'),
-              replacement: (match, prefix, name) => {
-                // Replace the incorrect diagnosis reference and ensure client name usage is consistent
-                const correctedPrefix = prefix.replace(
-                  pronouns.possessive === 'his' ? /her diagnosis/ : /his diagnosis/, 
-                  `${pronouns.possessive} diagnosis`
-                );
-                return `${correctedPrefix}${name}`;
-              }
-            },
+
             {
               pattern: /\bhis preferences\b/g,
               replacement: `${pronouns.possessive} preferences`
