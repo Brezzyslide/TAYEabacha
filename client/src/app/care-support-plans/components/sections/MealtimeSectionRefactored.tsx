@@ -123,9 +123,15 @@ export function MealtimeSectionRefactored() {
       // Update the generated content in mealtimeData for preview
       handleInputChange('generatedContent', generatedText);
 
+      // Also automatically populate the content into the target field
+      const currentContent = riskData[riskType]?.[targetField] || "";
+      const separator = currentContent ? "\n\n" : "";
+      const updatedContent = currentContent + separator + generatedText;
+      handleRiskDataChange(riskType, targetField, updatedContent);
+
       toast({
-        title: "AI Content Generated",
-        description: `Content generated for ${riskInfo?.name} ${targetField}`,
+        title: "AI Content Generated & Applied",
+        description: `Content generated and added to ${riskInfo?.name} ${targetField}`,
       });
     } catch (error: any) {
       toast({
