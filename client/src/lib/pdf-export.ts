@@ -863,6 +863,16 @@ export class PDFExportUtility {
   }
 
   private addDisasterManagementBoxes(disasterData: any) {
+    // CRITICAL BUG FIX: Detect if disaster data is contaminated with mealtime risk assessment data
+    // This prevents mealtime risk assessments from appearing in disaster management section
+    const isContaminatedWithMealtimeData = this.detectMealtimeDataContamination(disasterData);
+    
+    if (isContaminatedWithMealtimeData) {
+      console.warn('DISASTER DATA CONTAMINATION DETECTED: Mealtime risk assessment data found in disaster section, showing empty section to prevent confusion');
+      this.addEmptyCalloutBox('Disaster Management');
+      return;
+    }
+    
     // Check if there are any disaster plans to display
     const disasterPlans = disasterData.disasterPlans || [];
     const hasDisasterPlans = Array.isArray(disasterPlans) && disasterPlans.length > 0;
@@ -880,6 +890,37 @@ export class PDFExportUtility {
     }
     
     this.addDisasterManagementTable(disasterData);
+  }
+
+  private detectMealtimeDataContamination(disasterData: any): boolean {
+    // Check if disaster data contains mealtime risk assessment keys/content
+    if (!disasterData || typeof disasterData !== 'object') return false;
+    
+    // Check for mealtime-specific risk assessment keys
+    const mealtimeRiskKeys = ['choking', 'aspiration', 'swallowing', 'allergies', 'medications', 'behavioral', 'cultural', 'texture'];
+    const riskAssessments = disasterData.riskAssessments || {};
+    
+    // If riskAssessments contains mealtime risk types, this is contaminated data
+    if (typeof riskAssessments === 'object' && Object.keys(riskAssessments).length > 0) {
+      for (const riskType of Object.keys(riskAssessments)) {
+        if (mealtimeRiskKeys.includes(riskType)) {
+          return true; // Contamination detected
+        }
+      }
+    }
+    
+    // Check for direct mealtime risk assessment fields in disaster data
+    for (const mealtimeKey of mealtimeRiskKeys) {
+      if (disasterData[mealtimeKey] && typeof disasterData[mealtimeKey] === 'object') {
+        const riskData = disasterData[mealtimeKey];
+        // If it has mealtime-specific fields, it's contaminated
+        if (riskData.preventionStrategy || riskData.responseStrategy || riskData.equipmentNeeded || riskData.staffTraining) {
+          return true; // Contamination detected
+        }
+      }
+    }
+    
+    return false; // No contamination detected
   }
 
   private addDisasterManagementTable(disasterData: any) {
@@ -1579,9 +1620,20 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
   });
 
   // Section 7: Disaster Management with colored boxes
+  // CRITICAL DATA INTEGRITY CHECK: Validate disaster data before PDF export
+  const disasterDataForPDF = plan.disasterData || {};
+  
+  // Debug logging to help identify data contamination
+  console.log('PDF Export - Disaster Data Structure:', {
+    hasDisasterPlans: Array.isArray(disasterDataForPDF.disasterPlans) && disasterDataForPDF.disasterPlans.length > 0,
+    hasRiskAssessments: !!disasterDataForPDF.riskAssessments,
+    riskAssessmentKeys: disasterDataForPDF.riskAssessments ? Object.keys(disasterDataForPDF.riskAssessments) : [],
+    topLevelKeys: Object.keys(disasterDataForPDF)
+  });
+  
   sections.push({
     title: 'Disaster Management',
-    content: plan.disasterData || {},
+    content: disasterDataForPDF,
     type: 'disaster_management'
   });
 
