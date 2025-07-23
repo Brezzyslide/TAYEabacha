@@ -8719,8 +8719,51 @@ Return ONLY the generated communication section content. Do not include headings
           break;
         
         case "behaviour":
-          // Build comprehensive behaviour support context
-          const behaviourContext = `
+          // Check if this is a field-specific strategy generation
+          const targetField = req.body.targetField;
+          if (targetField && (targetField.includes('strategy') || targetField.includes('_strategy'))) {
+            // Field-specific strategy generation
+            const existingContent = req.body.existingContent || {};
+            const behaviourDescription = existingContent.description || 'Behaviour not specified';
+            const behaviourTriggers = existingContent.triggers || 'Triggers not specified';
+            const existingStrategy = existingContent.existingStrategy || '';
+            
+            let strategyType = '';
+            if (targetField.includes('proactive')) {
+              strategyType = 'proactive/preventative';
+            } else if (targetField.includes('reactive')) {
+              strategyType = 'reactive/immediate response';
+            } else if (targetField.includes('protective')) {
+              strategyType = 'protective/post-behaviour';
+            }
+            
+            systemPrompt = `You are writing field-specific behaviour support strategies for a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
+
+🛑 UNIVERSAL RESTRICTIONS
+1. ALWAYS use the client's exact name "${clientName}" — never write "Client" or "[Client Name]"
+2. NEVER mention employment, cultural background, living arrangements, or speculative history
+3. NEVER use adjectives like resilient, strong, determined, independent, vibrant
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
+7. DIAGNOSIS PHRASE FORMAT: "Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely respond well to..."
+
+✍️ WRITING STYLE: Clinical, objective, direct. No asterisks, emojis, headers, or bullet points. 150-200 words of flowing text.
+
+🎯 STRATEGY TYPE: ${strategyType}
+
+Generate specific ${strategyType} strategies for the behaviour "${behaviourDescription}" with triggers "${behaviourTriggers}". Use the client's documented diagnosis "${finalDiagnosis}" to inform evidence-based strategies. ${existingStrategy ? `Build upon existing strategy: "${existingStrategy}"` : 'Create new strategy content.'} Focus on practical staff instructions specific to this behaviour and diagnosis.`;
+
+            userPrompt = req.body.promptOverride || `Generate ${strategyType} strategies for ${clientName} based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}. Behaviour: ${behaviourDescription}. Triggers: ${behaviourTriggers}. Provide evidence-based staff instructions for this specific scenario.`;
+            
+            console.log(`[BEHAVIOUR STRATEGY DEBUG] Strategy type: ${strategyType}`);
+            console.log(`[BEHAVIOUR STRATEGY DEBUG] Behaviour: ${behaviourDescription}`);
+            console.log(`[BEHAVIOUR STRATEGY DEBUG] Triggers: ${behaviourTriggers}`);
+            console.log(`[BEHAVIOUR STRATEGY DEBUG] Existing strategy: ${existingStrategy ? 'Yes' : 'No'}`);
+            
+          } else {
+            // General behaviour section generation (existing logic)
+            const behaviourContext = `
 Client: ${clientName}
 Diagnosis: ${plan?.aboutMeData?.diagnosis || finalDiagnosis}
 About Me: ${plan?.aboutMeData?.content || "Not generated"}
@@ -8730,7 +8773,7 @@ Documented NDIS Goals: ${client?.ndisGoals || "Not documented"}
 Behaviour Data: ${plan?.behaviourData?.summary || "Not yet documented"}
 `.trim();
 
-          const universalPromptHeaderBehaviour = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
+            const universalPromptHeaderBehaviour = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
 This document will be viewed by health professionals, support workers, and NDIS reviewers. It must be written with clinical clarity, professional tone, and strict adherence to documented facts.
 
@@ -8769,23 +8812,24 @@ Client Information Available: ${behaviourContext}
 Identify and address ONLY behavioural triggers that are explicitly documented. Use only documented preferences to shape proactive strategies. Align support strategies with evidence-based practices tailored to diagnosis. Propose: Proactive supports (staff prevention actions), Reactive strategies (escalation response), Protective actions (unsafe behaviour response). Do NOT include assumptions, invented behaviours, or generalised traits. Use only documented data.
 
 📏 Output: Clean paragraph formatting with line breaks. No titles, explanations, or preamble.`;
-          
-          systemPrompt = universalPromptHeaderBehaviour;
-          
-          userPrompt = `Generate behaviour support content using the comprehensive client context provided above. User input: ${userInput || 'Generate PBS-aligned behaviour support strategies using documented triggers, preferences, and diagnosis'}`;
-          
-          console.log(`[BEHAVIOUR ENHANCED DEBUG] Behaviour context being sent to AI:`, behaviourContext);
-          console.log(`[BEHAVIOUR ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
-          console.log(`[BEHAVIOUR ENHANCED DEBUG] About Me content available:`, plan?.aboutMeData?.content ? 'Yes' : 'No');
-          console.log(`[BEHAVIOUR ENHANCED DEBUG] Documented triggers available:`, client?.dislikesAversions ? 'Yes' : 'No');
-          console.log(`[BEHAVIOUR ENHANCED DEBUG] Documented preferences available:`, client?.likesPreferences ? 'Yes' : 'No');
-          console.log(`[BEHAVIOUR ENHANCED DEBUG] NDIS goals available:`, client?.ndisGoals ? 'Yes' : 'No');
-          console.log(`[BEHAVIOUR ENHANCED DEBUG] Behaviour data available:`, plan?.behaviourData?.summary ? 'Yes' : 'No');
-          // Use comprehensive client info and final diagnosis like Goals section
-          const updatedContextualInfoBehaviour = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfoBehaviour}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual behavior support using ONLY documented triggers, preferences and diagnosis-specific strategies'}`;
-          
-          console.log(`[BEHAVIOUR DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoBehaviour);
+            
+            systemPrompt = universalPromptHeaderBehaviour;
+            
+            userPrompt = `Generate behaviour support content using the comprehensive client context provided above. User input: ${userInput || 'Generate PBS-aligned behaviour support strategies using documented triggers, preferences, and diagnosis'}`;
+            
+            console.log(`[BEHAVIOUR ENHANCED DEBUG] Behaviour context being sent to AI:`, behaviourContext);
+            console.log(`[BEHAVIOUR ENHANCED DEBUG] Enhanced system prompt being sent to AI:`, systemPrompt);
+            console.log(`[BEHAVIOUR ENHANCED DEBUG] About Me content available:`, plan?.aboutMeData?.content ? 'Yes' : 'No');
+            console.log(`[BEHAVIOUR ENHANCED DEBUG] Documented triggers available:`, client?.dislikesAversions ? 'Yes' : 'No');
+            console.log(`[BEHAVIOUR ENHANCED DEBUG] Documented preferences available:`, client?.likesPreferences ? 'Yes' : 'No');
+            console.log(`[BEHAVIOUR ENHANCED DEBUG] NDIS goals available:`, client?.ndisGoals ? 'Yes' : 'No');
+            console.log(`[BEHAVIOUR ENHANCED DEBUG] Behaviour data available:`, plan?.behaviourData?.summary ? 'Yes' : 'No');
+            // Use comprehensive client info and final diagnosis like Goals section
+            const updatedContextualInfoBehaviour = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+            userPrompt = `${updatedContextualInfoBehaviour}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate factual behavior support using ONLY documented triggers, preferences and diagnosis-specific strategies'}`;
+            
+            console.log(`[BEHAVIOUR DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoBehaviour);
+          }
           break;
         
         case "disaster":

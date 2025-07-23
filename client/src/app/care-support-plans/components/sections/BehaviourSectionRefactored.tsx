@@ -55,69 +55,72 @@ export function BehaviourSectionRefactored() {
   const [isGeneratingBehaviour, setIsGeneratingBehaviour] = useState(false);
   const [isGeneratingDeescalation, setIsGeneratingDeescalation] = useState(false);
   const [isGeneratingPBS, setIsGeneratingPBS] = useState(false);
-  const [behaviourAIContent, setBehaviourAIContent] = useState('');
   
   // View details state
   const [viewingBehaviour, setViewingBehaviour] = useState<SavedBehaviour | null>(null);
 
-  // Individual Behaviour AI Generation
-  const generateBehaviourContentMutation = useMutation({
-    mutationFn: async ({ description, triggers }: { description: string; triggers: string }) => {
+  // Field-Specific Strategy AI Generation
+  const generateSpecificStrategyMutation = useMutation({
+    mutationFn: async (strategyType: 'proactive' | 'reactive' | 'protective') => {
       setIsGeneratingBehaviour(true);
 
-      // Enhanced payload structure like Goals section
+      const strategyPrompts = {
+        proactive: `Based on the client's specific diagnosis and the behaviour described (${currentBehaviour.description}) with the triggers identified (${currentBehaviour.triggers}), generate detailed proactive/preventative strategies. Write evidence-based strategies specific to their condition that focus on preventing this behaviour before it occurs. Include environmental modifications, routine adjustments, early warning signs, and targeted interventions that work for their diagnosis. Write as flowing paragraphs without headers or bullet points, 150-200 words.`,
+        reactive: `Based on the client's specific diagnosis and the behaviour described (${currentBehaviour.description}) with the triggers identified (${currentBehaviour.triggers}), generate detailed reactive/immediate response strategies. Write evidence-based strategies specific to their condition for responding during the behaviour. Include safety protocols, communication approaches, de-escalation techniques, and immediate interventions that work for their diagnosis. Write as flowing paragraphs without headers or bullet points, 150-200 words.`,
+        protective: `Based on the client's specific diagnosis and the behaviour described (${currentBehaviour.description}) with the triggers identified (${currentBehaviour.triggers}), generate detailed protective/post-behaviour strategies. Write evidence-based strategies specific to their condition for actions after the behaviour occurs. Include safety assessments, recovery support, documentation requirements, and follow-up procedures that work for their diagnosis. Write as flowing paragraphs without headers or bullet points, 150-200 words.`
+      };
+
+      // Enhanced payload structure
       const payload = {
         section: "behaviour",
-        userInput: `Behaviour: ${description}\nTriggers: ${triggers}`,
-        targetField: "behaviour_strategies",
+        userInput: `Behaviour: ${currentBehaviour.description}\nTriggers: ${currentBehaviour.triggers}\nExisting Strategy: ${currentBehaviour[`${strategyType}Strategy`] || 'None'}`,
+        targetField: `${strategyType}_strategy`,
         planId: planData?.id || state?.id,
-        clientName:
-          selectedClient?.fullName || planData?.clientName || clientData?.fullName || "Client",
-        clientDiagnosis:
-          planData?.aboutMeData?.diagnosis ||
-          selectedClient?.primaryDiagnosis ||
-          clientData?.primaryDiagnosis ||
-          "Not specified",
+        clientName: clientData?.fullName || "Client",
+        clientDiagnosis: planData?.aboutMeData?.diagnosis || clientData?.primaryDiagnosis || "Not specified",
         existingContent: {
-          description,
-          triggers
+          description: currentBehaviour.description,
+          triggers: currentBehaviour.triggers,
+          existingStrategy: currentBehaviour[`${strategyType}Strategy`] || ''
         },
-        promptOverride: `Based on the client's specific diagnosis and the behaviour described (${description}) with triggers (${triggers}), generate three detailed staff instruction paragraphs. Use the diagnosis to inform evidence-based strategies specific to their condition.
-
-PROACTIVE STRATEGIES: Write a detailed paragraph about preventing this behaviour based on their diagnosis. Include specific early warning signs related to their condition, evidence-based environmental modifications, targeted preventative interventions that work for their diagnosis, and routine adjustments that support their specific needs.
-
-REACTIVE STRATEGIES: Write a detailed paragraph about immediate response during the behaviour, considering their diagnosis. Include specific response protocols that work for their condition, safety considerations relevant to their diagnosis, evidence-based communication approaches for their specific needs, and de-escalation steps that are effective for their condition.
-
-PROTECTIVE STRATEGIES: Write a detailed paragraph about post-behaviour procedures based on their diagnosis. Include specific safety assessment procedures relevant to their condition, recovery support methods that work for their diagnosis, documentation requirements, and follow-up actions that address their specific needs.
-
-Format as three clear paragraphs of flowing text. Each paragraph should be 150-250 words and directly reference their diagnosis and condition-specific strategies.`
+        promptOverride: strategyPrompts[strategyType]
       };
       
-      console.log("[BEHAVIOUR DEBUG] Enhanced payload:", payload);
-      console.log("[BEHAVIOUR DEBUG] planData:", planData);
-      console.log("[BEHAVIOUR DEBUG] About to send request to backend with planId:", payload.planId);
-      
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
-
-      return await response.json();
+      return { strategyType, content: await response.json() };
     },
-    onSuccess: (responseData) => {
-      setBehaviourAIContent(responseData.generatedContent || responseData.content || "");
+    onSuccess: ({ strategyType, content }) => {
+      const generatedContent = content.generatedContent || content.content || "";
+      const existingStrategy = currentBehaviour[`${strategyType}Strategy`];
+      const combinedStrategy = existingStrategy ? 
+        `${existingStrategy}\n\n${generatedContent}` : 
+        generatedContent;
+      
+      setCurrentBehaviour(prev => ({
+        ...prev,
+        [`${strategyType}Strategy`]: combinedStrategy
+      }));
+      
       setIsGeneratingBehaviour(false);
       toast({
-        title: "AI Content Generated",
-        description: "Staff instructions for behaviour management strategies generated successfully",
+        title: "Strategy Generated",
+        description: `${strategyType.charAt(0).toUpperCase() + strategyType.slice(1)} strategy content has been added to the field.`,
       });
     },
     onError: (error: any) => {
       setIsGeneratingBehaviour(false);
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate behaviour strategies",
+        description: error.message || "Failed to generate strategy content",
         variant: "destructive",
       });
     },
   });
+
+  // Handler function for field-specific generation
+  const handleGenerateSpecificStrategy = (strategyType: 'proactive' | 'reactive' | 'protective') => {
+    generateSpecificStrategyMutation.mutate(strategyType);
+  };
 
   // De-escalation Techniques AI Generation
   const generateDeescalationMutation = useMutation({
@@ -248,47 +251,7 @@ Write about positive reinforcement strategies, environmental design for success,
     });
   };
 
-  const populateStrategy = (strategyType: 'proactiveStrategy' | 'reactiveStrategy' | 'protectiveStrategy') => {
-    if (!behaviourAIContent) {
-      toast({
-        title: "No AI Content",
-        description: "Please generate AI content first.",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    // Extract the relevant strategy from AI content
-    const strategyMap = {
-      proactiveStrategy: 'PROACTIVE STRATEGIES',
-      reactiveStrategy: 'REACTIVE STRATEGIES', 
-      protectiveStrategy: 'PROTECTIVE STRATEGIES'
-    };
-
-    const sectionName = strategyMap[strategyType];
-    const content = extractStrategyFromAI(behaviourAIContent, sectionName);
-
-    setCurrentBehaviour(prev => ({
-      ...prev,
-      [strategyType]: content
-    }));
-
-    toast({
-      title: "Strategy Populated",
-      description: `${sectionName.toLowerCase()} has been populated from AI content`,
-    });
-  };
-
-  const extractStrategyFromAI = (content: string, sectionName: string): string => {
-    const sections = content.split(/(?=PROACTIVE STRATEGIES|REACTIVE STRATEGIES|PROTECTIVE STRATEGIES)/);
-    const targetSection = sections.find(section => section.includes(sectionName));
-    
-    if (targetSection) {
-      return targetSection.replace(sectionName, '').replace(/:/g, '').trim();
-    }
-    
-    return content.substring(0, 200) + '...'; // Fallback
-  };
 
   const addBehaviour = () => {
     if (!currentBehaviour.description.trim() || !currentBehaviour.triggers.trim()) {
@@ -322,7 +285,6 @@ Write about positive reinforcement strategies, environmental design for success,
       reactiveStrategy: '',
       protectiveStrategy: ''
     });
-    setBehaviourAIContent('');
 
     toast({
       title: "Behaviour Added",
@@ -415,63 +377,67 @@ Write about positive reinforcement strategies, environmental design for success,
             />
           </div>
 
-          {/* AI Generation Button */}
-          <Button 
-            onClick={handleGenerateBehaviourStrategies}
-            disabled={isGeneratingBehaviour || !currentBehaviour.description.trim() || !currentBehaviour.triggers.trim()}
-            className="w-full"
-          >
-            {isGeneratingBehaviour ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating Staff Instructions...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Staff Instructions for This Behaviour
-              </>
-            )}
-          </Button>
+          {/* Field-Specific AI Generation Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Button 
+              onClick={() => handleGenerateSpecificStrategy('proactive')}
+              disabled={isGeneratingBehaviour || !currentBehaviour.description.trim() || !currentBehaviour.triggers.trim()}
+              variant="outline"
+              size="sm"
+            >
+              {isGeneratingBehaviour ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Target className="h-4 w-4 mr-2 text-green-600" />
+                  Add to Proactive Strategy
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={() => handleGenerateSpecificStrategy('reactive')}
+              disabled={isGeneratingBehaviour || !currentBehaviour.description.trim() || !currentBehaviour.triggers.trim()}
+              variant="outline"
+              size="sm"
+            >
+              {isGeneratingBehaviour ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2 text-yellow-600" />
+                  Add to Reactive Strategy
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={() => handleGenerateSpecificStrategy('protective')}
+              disabled={isGeneratingBehaviour || !currentBehaviour.description.trim() || !currentBehaviour.triggers.trim()}
+              variant="outline"
+              size="sm"
+            >
+              {isGeneratingBehaviour ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4 mr-2 text-red-600" />
+                  Add to Protective Strategy
+                </>
+              )}
+            </Button>
+          </div>
 
-          {/* AI Preview and Populate Buttons */}
-          {behaviourAIContent && (
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                AI Generated Staff Instructions
-              </h4>
-              <div className="text-sm mb-4 max-h-32 overflow-y-auto bg-white dark:bg-gray-900 p-3 rounded border">
-                {behaviourAIContent}
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => populateStrategy('proactiveStrategy')}
-                >
-                  <Target className="h-3 w-3 mr-1" />
-                  Populate Proactive
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => populateStrategy('reactiveStrategy')}
-                >
-                  <Zap className="h-3 w-3 mr-1" />
-                  Populate Reactive
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => populateStrategy('protectiveStrategy')}
-                >
-                  <Shield className="h-3 w-3 mr-1" />
-                  Populate Protective
-                </Button>
-              </div>
-            </div>
-          )}
+
 
           {/* Strategy Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
