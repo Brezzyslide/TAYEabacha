@@ -334,6 +334,11 @@ export async function runStartupSecurityChecks(): Promise<void> {
     // 3. Verify tenant isolation integrity
     await validateTenantIsolationIntegrity();
     
+    // 4. Apply comprehensive tenant fixes including care plan system
+    console.log("[SECURITY] Applying comprehensive tenant fixes...");
+    const { applyComprehensiveTenantFixes } = await import('./comprehensive-tenant-fixes');
+    await applyComprehensiveTenantFixes();
+    
     console.log("[SECURITY] All enhanced security checks passed");
     
   } catch (error) {
