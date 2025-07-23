@@ -8972,9 +8972,13 @@ Identify and address ONLY behavioural triggers that are explicitly documented. U
 9. Do NOT include disclaimers about consulting professionals
 10. Write in clinical but accessible language for emergency planning`;
             
-            userPrompt = globalFieldPrompts[globalField] || `Generate comprehensive ${globalField} content for global disaster management using documented client information and all disaster plans`;
+            // Use comprehensive client info and final diagnosis like other sections
+            const updatedContextualInfoGlobal = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+            userPrompt = `${updatedContextualInfoGlobal}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInputData || 'Generate global disaster management content based on diagnosis and all disaster plans'}\n\n${globalFieldPrompts[globalField] || `Generate comprehensive ${globalField} content for global disaster management using documented client information and all disaster plans`}`;
             
             console.log(`[GLOBAL DISASTER DEBUG] Generating ${globalField} global content`);
+            console.log(`[GLOBAL DISASTER DEBUG] Final diagnosis being used: ${finalDiagnosis}`);
+            console.log(`[GLOBAL DISASTER DEBUG] Comprehensive client info: ${updatedContextualInfoGlobal}`);
             console.log(`[GLOBAL DISASTER DEBUG] User input: ${userInputData}`);
           } else {
             // General disaster management generation
