@@ -8484,12 +8484,18 @@ Maximum 400 words.`;
       }
 
       // Generate AI content with strict factual approach (temperature 0.1 for maximum consistency and accuracy)
+      // Special handling for culturalConsiderations field - allow family/religious content
+      const isCulturalConsiderations = req.body.targetField === 'culturalConsiderations';
+      const culturalRestrictions = isCulturalConsiderations 
+        ? `- FOR CULTURAL CONSIDERATIONS FIELD: Focus specifically on family dynamics, religious practices, and cultural traditions that impact care delivery\n- Include practical aspects: family involvement, religious observances, prayer times, dietary requirements, cultural holidays\n- Use only documented family/religious information, clearly state if none documented`
+        : `- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history`;
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements\n- DIAGNOSIS CONTENT: Always phrase diagnosis-related content as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."\n- PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}\n- NEVER INCLUDE DISCLAIMERS: Do not say "Please consult with healthcare professionals" or any variation of consulting professionals\n- Write practical care content only, not legal advice` 
+            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n${culturalRestrictions}\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements\n- DIAGNOSIS CONTENT: Always phrase diagnosis-related content as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."\n- PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}\n- NEVER INCLUDE DISCLAIMERS: Do not say "Please consult with healthcare professionals" or any variation of consulting professionals\n- Write practical care content only, not legal advice` 
           },
           { role: "user", content: userPrompt }
         ],
