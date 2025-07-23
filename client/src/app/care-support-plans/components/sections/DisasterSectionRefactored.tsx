@@ -131,72 +131,56 @@ export function DisasterSectionRefactored() {
     });
   };
 
-  // AI Content Generation for Disaster-Specific Fields
-  const generateDisasterContentMutation = useMutation({
-    mutationFn: async ({ disasterType, targetField }: { disasterType: string, targetField: string }) => {
-      if (!disasterData.userInput?.trim()) {
-        throw new Error("Please enter disaster management information first.");
-      }
-
+  // Field-Specific AI Generation for Individual Disaster Plan Fields
+  const generateFieldSpecificMutation = useMutation({
+    mutationFn: async ({ targetField }: { targetField: string }) => {
       setIsGenerating(true);
       setGeneratingField(targetField);
       
-      const disasterLabel = DISASTER_TYPES.find(d => d.value === disasterType)?.label || disasterType;
-      const userInput = disasterData.userInput;
-
-      const existingPlans = disasterData.disasterPlans || [];
-      const existingPlanContext = existingPlans.length > 0 
-        ? `Existing disaster plans: ${existingPlans.map((p: any) => DISASTER_TYPES.find(d => d.value === p.type)?.label).join(', ')}`
-        : "No existing disaster plans";
-
-      // Include current disaster plan content for context
-      const currentPlanContext = currentDisaster.preparation || currentDisaster.evacuation || currentDisaster.postEvent || currentDisaster.clientNeeds
-        ? `\n\nCurrent ${disasterLabel} plan progress:\n${currentDisaster.preparation ? `Preparation: ${currentDisaster.preparation}\n` : ''}${currentDisaster.evacuation ? `Evacuation: ${currentDisaster.evacuation}\n` : ''}${currentDisaster.postEvent ? `Post-Event: ${currentDisaster.postEvent}\n` : ''}${currentDisaster.clientNeeds ? `Client Needs: ${currentDisaster.clientNeeds}\n` : ''}`
-        : "";
-
-      const clientDiagnosis = planData?.clientData?.primaryDiagnosis || "Not specified";
-      const diagnosisGuidance = clientDiagnosis !== "Not specified" 
-        ? `\n\nIMPORTANT: Factor in the client's diagnosis (${clientDiagnosis}) when generating recommendations. Consider specific needs, vulnerabilities, medications, mobility requirements, communication challenges, and safety considerations related to this condition during ${disasterLabel.toLowerCase()} scenarios.`
-        : "";
-
-      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
-        section: "disaster",
-        userInput: `Client Info: ${userInput}\n\nDisaster Type: ${disasterLabel}\nTarget Field: ${targetField}\n\n${existingPlanContext}${currentPlanContext}${diagnosisGuidance}`,
-        clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: clientDiagnosis,
-        maxWords: 200,
-        targetField: `${disasterType}_${targetField}`,
-        existingContent: {}
-      });
-      return await response.json();
-    },
-    onSuccess: (responseData, { targetField }) => {
-      const generatedText = responseData.content || "";
+      const disasterLabel = DISASTER_TYPES.find(d => d.value === currentDisaster.type)?.label || currentDisaster.type;
       
-      if (targetField === 'preview') {
-        handleInputChange('generatedContent', generatedText);
-        toast({
-          title: "Content Generated",
-          description: "Review the AI-generated content and choose which field to populate.",
-        });
-      } else {
-        handleDisasterInputChange(targetField, generatedText);
-        
-        const fieldLabels: { [key: string]: string } = {
-          preparation: "Preparation Phase",
-          evacuation: "Evacuation Procedure", 
-          postEvent: "Post-Event Action",
-          clientNeeds: "Specific Client Needs"
-        };
-        
-        toast({
-          title: "AI Content Generated",
-          description: `${fieldLabels[targetField]} content has been generated.`,
-        });
-      }
+      // Enhanced payload structure following established pattern
+      const payload = {
+        section: "disaster",
+        userInput: disasterData.userInput || 'Disaster management information',
+        targetField: `${currentDisaster.type}_${targetField}`,
+        planId: planData?.id,
+        clientName: planData?.selectedClient?.fullName || planData?.clientData?.fullName || "Client",
+        clientDiagnosis: planData?.aboutMeData?.diagnosis || planData?.selectedClient?.primaryDiagnosis || "Not specified",
+        existingContent: {
+          disasterType: currentDisaster.type,
+          disasterLabel: disasterLabel,
+          currentContent: currentDisaster[targetField as keyof typeof currentDisaster] || '',
+          userInput: disasterData.userInput || ''
+        }
+      };
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
+      return { targetField, content: await response.json() };
+    },
+    onSuccess: ({ targetField, content }) => {
+      const generatedContent = content.generatedContent || content.content || "";
+      const existingContent = currentDisaster[targetField as keyof typeof currentDisaster] as string;
+      const combinedContent = existingContent ? 
+        `${existingContent}\n\n${generatedContent}` : 
+        generatedContent;
+      
+      handleDisasterInputChange(targetField, combinedContent);
       
       setIsGenerating(false);
       setGeneratingField('');
+      
+      const fieldLabels: { [key: string]: string } = {
+        preparation: "Preparation Phase",
+        evacuation: "Evacuation Procedure", 
+        postEvent: "Post-Event Action",
+        clientNeeds: "Specific Client Needs"
+      };
+      
+      toast({
+        title: "Content Generated",
+        description: `${fieldLabels[targetField]} content has been added to the field.`,
+      });
     },
     onError: (error: any) => {
       setIsGenerating(false);
@@ -208,6 +192,11 @@ export function DisasterSectionRefactored() {
       });
     },
   });
+
+  // Handler function for field-specific generation
+  const handleGenerateFieldSpecific = (targetField: string) => {
+    generateFieldSpecificMutation.mutate({ targetField });
+  };
 
   // AI Content Generation for Global Centre
   const generateGlobalContentMutation = useMutation({
@@ -435,14 +424,15 @@ export function DisasterSectionRefactored() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'preparation')}
+                  onClick={() => handleGenerateFieldSpecific('preparation')}
                   disabled={isGenerating || !disasterData.userInput?.trim()}
                 >
                   {isGenerating && generatingField === 'preparation' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                   )}
+                  Add to Preparation
                 </Button>
               </div>
               <Textarea
@@ -461,14 +451,15 @@ export function DisasterSectionRefactored() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'evacuation')}
+                  onClick={() => handleGenerateFieldSpecific('evacuation')}
                   disabled={isGenerating || !disasterData.userInput?.trim()}
                 >
                   {isGenerating && generatingField === 'evacuation' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                   )}
+                  Add to Evacuation
                 </Button>
               </div>
               <Textarea
@@ -487,14 +478,15 @@ export function DisasterSectionRefactored() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'postEvent')}
+                  onClick={() => handleGenerateFieldSpecific('postEvent')}
                   disabled={isGenerating || !disasterData.userInput?.trim()}
                 >
                   {isGenerating && generatingField === 'postEvent' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                   )}
+                  Add to Post-Event
                 </Button>
               </div>
               <Textarea
@@ -513,14 +505,15 @@ export function DisasterSectionRefactored() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleGenerateDisasterContent(currentDisaster.type, 'clientNeeds')}
+                  onClick={() => handleGenerateFieldSpecific('clientNeeds')}
                   disabled={isGenerating || !disasterData.userInput?.trim()}
                 >
                   {isGenerating && generatingField === 'clientNeeds' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                   )}
+                  Add to Client Needs
                 </Button>
               </div>
               <Textarea
@@ -662,10 +655,11 @@ export function DisasterSectionRefactored() {
                   disabled={isGenerating || !disasterData.userInput?.trim()}
                 >
                   {isGenerating && generatingField === 'shelterArrangements' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                   )}
+                  Add to Shelter
                 </Button>
               </div>
               <Textarea
@@ -687,10 +681,11 @@ export function DisasterSectionRefactored() {
                   disabled={isGenerating || !disasterData.userInput?.trim()}
                 >
                   {isGenerating && generatingField === 'postDisasterSupport' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                   )}
+                  Add to Support
                 </Button>
               </div>
               <Textarea
@@ -712,10 +707,11 @@ export function DisasterSectionRefactored() {
                   disabled={isGenerating || !disasterData.userInput?.trim()}
                 >
                   {isGenerating && generatingField === 'evacuationPlanAudit' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                   )}
+                  Add to Audit
                 </Button>
               </div>
               <Textarea

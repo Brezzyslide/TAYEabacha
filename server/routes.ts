@@ -8869,18 +8869,68 @@ Identify and address ONLY behavioural triggers that are explicitly documented. U
           break;
         
         case "disaster":
-          systemPrompt = `Generate disaster management content based on the client's diagnosis. Create emergency preparedness, evacuation procedures, communication plans, and recovery support strategies considering the specific needs of this diagnosis. Always generate content using diagnosis-specific emergency needs.
+          // Enhanced disaster management with field-specific generation
+          if (req.body.targetField && req.body.targetField.includes('_')) {
+            const fieldParts = req.body.targetField.split('_');
+            const disasterType = fieldParts[0];
+            const targetField = fieldParts[1];
+            
+            // Map disaster types for better prompts
+            const disasterTypeLabels = {
+              'fire': 'Fire/Bushfire',
+              'flood': 'Flood',
+              'earthquake': 'Earthquake',
+              'medical': 'Medical Emergency',
+              'heatwave': 'Heatwave'
+            };
+            
+            const disasterLabel = disasterTypeLabels[disasterType] || disasterType;
+            const existingContent = req.body.existingContent?.currentContent || '';
+            const userInputData = req.body.existingContent?.userInput || userInput || '';
+            
+            // Field-specific prompts for disaster management
+            const fieldSpecificPrompts = {
+              preparation: `Generate comprehensive preparation phase content for ${disasterLabel} emergencies. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely require specific preparation strategies including: essential supplies positioning, communication device preparation, medication security, mobility equipment checks, and personalized evacuation kit assembly. Focus on practical steps staff should take before ${disasterLabel.toLowerCase()} events to ensure ${clientName} is prepared. Consider ${pronouns.possessive} documented preferences and any mobility or communication needs. Provide step-by-step guidance for emergency preparation. Maximum 150-200 words.`,
+              
+              evacuation: `Generate detailed evacuation procedure content for ${disasterLabel} situations. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need specific evacuation support including: clear communication of evacuation steps, physical assistance requirements, transportation arrangements, essential item gathering, and reassurance techniques. Address ${clientName}'s specific needs during the evacuation process. Consider documented preferences and any mobility limitations. Provide clear, actionable evacuation steps for staff to follow. Maximum 150-200 words.`,
+              
+              postEvent: `Generate comprehensive post-event action content for after ${disasterLabel} emergencies. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely require specific post-disaster support including: safety assessment procedures, emotional support strategies, routine re-establishment, damage assessment involvement, and recovery planning. Focus on how to support ${clientName} in the aftermath of ${disasterLabel.toLowerCase()} events. Address psychological and practical recovery needs. Consider documented coping strategies and preferences. Maximum 150-200 words.`,
+              
+              clientNeeds: `Generate specific client needs content for ${disasterLabel} emergency situations. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely have specific needs including: communication requirements during emergencies, mobility support needs, medication management priorities, sensory considerations, and emotional support requirements. Detail ${clientName}'s unique needs that staff must address during ${disasterLabel.toLowerCase()} emergencies. Focus on diagnosis-specific vulnerabilities and documented preferences. Provide clear guidance for personalized emergency support. Maximum 150-200 words.`
+            };
+            
+            systemPrompt = `You are generating field-specific disaster management content for the ${targetField} field. CRITICAL RULES:
+1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
+2. Generate content specific to ${disasterLabel} scenarios and the ${targetField} phase
+3. Begin with diagnosis phrasing: "Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely..."
+4. Focus specifically on ${targetField} content - do not include other phases
+5. Use documented client information and disaster management input
+6. Generate practical, actionable content for staff
+7. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive}
+8. If existing content is provided, ADD TO IT rather than replacing it
+9. Do NOT include disclaimers about consulting professionals
+10. Write in clinical but accessible language`;
+            
+            userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content for ${disasterLabel} emergencies using documented client information`;
+            
+            console.log(`[DISASTER FIELD-SPECIFIC DEBUG] Generating ${targetField} content for ${disasterType} (${disasterLabel})`);
+            console.log(`[DISASTER FIELD-SPECIFIC DEBUG] Existing content: ${existingContent}`);
+            console.log(`[DISASTER FIELD-SPECIFIC DEBUG] User input: ${userInputData}`);
+          } else {
+            // General disaster management generation
+            systemPrompt = `Generate comprehensive disaster management content based on the client's diagnosis. Create emergency preparedness, evacuation procedures, communication plans, and recovery support strategies considering the specific needs of this diagnosis. Always generate content using diagnosis-specific emergency needs.
 
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..." 
 PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 Maximum 400 words.`;
-          
-          // Use comprehensive client info and final diagnosis like Goals section
-          const updatedContextualInfoDisaster = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfoDisaster}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate disaster management based on diagnosis'}`;
-          
-          console.log(`[DISASTER DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoDisaster);
+            
+            // Use comprehensive client info and final diagnosis like Goals section
+            const updatedContextualInfoDisaster = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+            userPrompt = `${updatedContextualInfoDisaster}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate disaster management based on diagnosis'}`;
+            
+            console.log(`[DISASTER DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoDisaster);
+          }
           break;
         
         case "mealtime":
