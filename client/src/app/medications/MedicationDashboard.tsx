@@ -160,15 +160,23 @@ export default function MedicationDashboard() {
     },
   });
 
-  // Fetch medication records
+  // Fetch medication records with debug logging
   const { data: medicationRecords = [], isLoading: recordsLoading } = useQuery({
     queryKey: ["/api/medication-records"],
     queryFn: async () => {
+      console.log("[MEDICATION DEBUG] Fetching medication records...");
       const res = await fetch("/api/medication-records", {
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Failed to fetch medication records');
-      return res.json();
+      console.log("[MEDICATION DEBUG] Response status:", res.status);
+      if (!res.ok) {
+        console.error("[MEDICATION DEBUG] Fetch failed:", res.statusText);
+        throw new Error('Failed to fetch medication records');
+      }
+      const data = await res.json();
+      console.log("[MEDICATION DEBUG] Records received:", data.length, "records");
+      console.log("[MEDICATION DEBUG] Sample record:", data[0]);
+      return data;
     },
   });
 

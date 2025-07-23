@@ -71,8 +71,12 @@ export function MealtimeSectionRefactored() {
 
   // Initialize risk data from saved care plan data
   useEffect(() => {
+    console.log("[MEALTIME DEBUG] Effect triggered with riskAssessments:", (mealtimeData as any).riskAssessments);
     if ((mealtimeData as any).riskAssessments) {
+      console.log("[MEALTIME DEBUG] Setting risk data from saved data");
       setRiskData((mealtimeData as any).riskAssessments);
+    } else {
+      console.log("[MEALTIME DEBUG] No saved risk assessments found, using defaults");
     }
   }, [(mealtimeData as any).riskAssessments]);
 
@@ -89,6 +93,8 @@ export function MealtimeSectionRefactored() {
 
   // Handle individual risk data changes - SAVE TO CARE PLAN CONTEXT
   const handleRiskDataChange = (riskType: string, field: string, value: string) => {
+    console.log("[MEALTIME DEBUG] Risk data change:", { riskType, field, value });
+    
     const updatedRiskData = {
       ...riskData,
       [riskType]: {
@@ -97,17 +103,23 @@ export function MealtimeSectionRefactored() {
       }
     };
     
+    console.log("[MEALTIME DEBUG] Updated risk data:", updatedRiskData);
+    
     // Update local state for immediate UI updates
     setRiskData(updatedRiskData);
     
     // CRITICAL: Save to care plan context so data persists and appears in PDF export
+    const updatedMealtimeData = {
+      ...mealtimeData,
+      riskAssessments: updatedRiskData // Save risk assessments to care plan
+    };
+    
+    console.log("[MEALTIME DEBUG] Dispatching to context:", updatedMealtimeData);
+    
     dispatch({
       type: 'UPDATE_SECTION',
       section: 'mealtimeData',
-      data: {
-        ...mealtimeData,
-        riskAssessments: updatedRiskData // Save risk assessments to care plan
-      }
+      data: updatedMealtimeData
     });
   };
 

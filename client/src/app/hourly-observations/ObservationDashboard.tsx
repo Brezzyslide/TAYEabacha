@@ -946,11 +946,26 @@ export default function ObservationDashboard() {
 
   const handleIndividualPDF = async (observation: any) => {
     try {
-      const response = await apiRequest("GET", `/api/observations/${observation.id}/pdf`);
+      console.log("[OBSERVATION PDF DEBUG] Starting PDF export for observation:", observation.id);
       
-      // Convert base64 to blob and download
-      const pdfBlob = new Blob([Uint8Array.from(atob(response.pdf), c => c.charCodeAt(0))], { type: 'application/pdf' });
-      const url = URL.createObjectURL(pdfBlob);
+      // Use fetch directly to handle binary response properly
+      const response = await fetch(`/api/observations/${observation.id}/pdf`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      console.log("[OBSERVATION PDF DEBUG] Response status:", response.status);
+      
+      if (!response.ok) {
+        console.error("[OBSERVATION PDF DEBUG] Response not ok:", response.statusText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Get PDF as blob directly from response
+      const blob = await response.blob();
+      console.log("[OBSERVATION PDF DEBUG] Blob created, size:", blob.size);
+      
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       const clientName = getClientName(observation.clientId);
@@ -959,8 +974,10 @@ export default function ObservationDashboard() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      console.log("[OBSERVATION PDF DEBUG] PDF download completed");
     } catch (error) {
-      console.error("Individual PDF export failed:", error);
+      console.error("[OBSERVATION PDF DEBUG] PDF export failed:", error);
     }
   };
 

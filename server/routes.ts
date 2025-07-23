@@ -2071,26 +2071,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       
-      for (const [key, value] of Object.entries(noteData)) {
-        if (currentY > pageHeight - 30) {
-          pdf.addPage();
+      const addPageBreakIfNeeded = (additionalHeight: number = 15) => {
+        if (currentY > pageHeight - additionalHeight) {
+          pdf.addPage('l', 'a4'); // Landscape A4
           currentY = 30;
+          return true;
         }
+        return false;
+      };
+
+      for (const [key, value] of Object.entries(noteData)) {
+        addPageBreakIfNeeded(30);
         
         // Key
         pdf.setFont('helvetica', 'bold');
         pdf.text(`${key}:`, margin + 5, currentY);
         
-        // Value with wrapping
+        // Value with wrapping and proper page breaks
         pdf.setFont('helvetica', 'normal');
-        const lines = pdf.splitTextToSize(String(value), contentWidth - 90);
+        const lines = pdf.splitTextToSize(String(value || 'Not specified'), contentWidth - 90);
+        
         for (let i = 0; i < lines.length; i++) {
           if (i > 0) {
             currentY += 6;
-            if (currentY > pageHeight - 30) {
-              pdf.addPage();
-              currentY = 30;
-            }
+            addPageBreakIfNeeded();
           }
           pdf.text(lines[i], margin + 85, currentY);
         }
@@ -3267,10 +3271,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pdf.setTextColor(128, 128, 128);
       pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName}`, margin, footerY);
       
-      const pdfOutput = pdf.output('datauristring');
-      const base64Data = pdfOutput.split(',')[1];
+      // Return PDF as binary buffer for proper download
+      const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
       
-      res.json({ pdf: base64Data });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="observation-${observationId}-${new Date().toISOString().split('T')[0]}.pdf"`);
+      res.send(pdfBuffer);
     } catch (error) {
       console.error("Individual observation PDF export error:", error);
       res.status(500).json({ message: "Failed to export observation PDF" });
