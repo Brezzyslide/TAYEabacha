@@ -272,18 +272,20 @@ export function DisasterSectionRefactored() {
         ? `Current disaster plans: ${existingPlans.map((p: any) => `${DISASTER_TYPES.find(d => d.value === p.type)?.label} - ${p.preparation?.substring(0, 50)}...`).join('; ')}`
         : "No disaster plans created yet";
 
-      const clientDiagnosis = planData?.clientData?.primaryDiagnosis || "Not specified";
-      const diagnosisContext = clientDiagnosis !== "Not specified" 
-        ? `\n\nDIAGNOSIS CONSIDERATIONS: Client has ${clientDiagnosis}. Generate recommendations that specifically address how this condition affects disaster management needs, including medication requirements, mobility limitations, communication challenges, sensory sensitivities, cognitive considerations, and specialized equipment or support staff requirements during emergencies.`
+      // Use extracted diagnosis from About Me section like other sections
+      const extractedDiagnosis = (planData?.aboutMeData as any)?.diagnosis || planData?.clientData?.primaryDiagnosis || "Not specified";
+      const diagnosisContext = extractedDiagnosis !== "Not specified" 
+        ? `\n\nDIAGNOSIS CONSIDERATIONS: Client has ${extractedDiagnosis}. Generate recommendations that specifically address how this condition affects disaster management needs, including medication requirements, mobility limitations, communication challenges, sensory sensitivities, cognitive considerations, and specialized equipment or support staff requirements during emergencies.`
         : "";
 
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "disaster",
         userInput: `${userInput}\n\n${planContext}${diagnosisContext}`,
         clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: clientDiagnosis,
+        clientDiagnosis: extractedDiagnosis,
         maxWords: 200,
         targetField: `global_${targetField}`,
+        planId: planData?.id,
         existingContent: {}
       });
       return await response.json();
