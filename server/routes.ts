@@ -8998,9 +8998,10 @@ Maximum 400 words.`;
           break;
         
         case "mealtime":
-          if (targetField && targetField.includes('_') && !targetField.startsWith('global_')) {
+          if (req.body.targetField && req.body.targetField.includes('_') && !req.body.targetField.startsWith('global_')) {
             // Risk-specific field generation (choking_prevention, aspiration_response, etc.)
-            const [riskType, fieldName] = targetField.split('_');
+            const targetFieldMealtime = req.body.targetField;
+            const [riskType, fieldName] = targetFieldMealtime.split('_');
             
             const riskSpecificPrompts = {
               choking: {
@@ -9055,9 +9056,9 @@ Maximum 400 words.`;
             
             console.log(`[MEALTIME FIELD-SPECIFIC DEBUG] Generating ${fieldName} content for ${riskType} risk`);
             console.log(`[MEALTIME FIELD-SPECIFIC DEBUG] User input: ${userInputData}`);
-          } else if (targetField && targetField.startsWith('global_')) {
+          } else if (req.body.targetField && req.body.targetField.startsWith('global_')) {
             // Global Meal Management Centre field-specific generation
-            const globalField = targetField.replace('global_', '');
+            const globalField = req.body.targetField.replace('global_', '');
             
             const globalFieldPrompts = {
               nutritionalGuidance: `Generate comprehensive nutritional guidance for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need nutritional guidance including: dietary requirements assessment, nutritional supplementation needs, caloric intake monitoring, hydration management, vitamin/mineral considerations, meal timing optimization, and therapeutic diet modifications. Consider all documented mealtime risks and dietary restrictions. Address ${pronouns.possessive} specific nutritional needs and health optimization. Maximum 150-200 words.`,
