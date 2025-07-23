@@ -9040,6 +9040,9 @@ Maximum 400 words.`;
             const mappedField = fieldMappings[fieldName] || fieldName;
             const riskPrompts = riskSpecificPrompts[riskType];
             
+            // Define userInputData for logging and context
+            const userInputData = req.body.userInput || userInput || 'Mealtime assessment information';
+            
             systemPrompt = `You are generating field-specific mealtime management content for the ${fieldName} field. CRITICAL RULES:
 1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
 2. Generate content specific to ${riskType} risk management and the ${fieldName} field
@@ -9052,10 +9055,14 @@ Maximum 400 words.`;
 9. Do NOT include disclaimers about consulting professionals
 10. Write in clinical but accessible language`;
             
-            userPrompt = riskPrompts?.[mappedField] || `Generate ${fieldName} content for ${riskType} risk management using documented client information`;
+            // Use comprehensive client info and final diagnosis like other sections
+            const updatedContextualInfoMealtime = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+            const riskSpecificPrompt = riskPrompts?.[mappedField] || `Generate ${fieldName} content for ${riskType} risk management based on ${finalDiagnosis} diagnosis`;
+            userPrompt = `${updatedContextualInfoMealtime}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInputData}\n\n${riskSpecificPrompt}`;
             
             console.log(`[MEALTIME FIELD-SPECIFIC DEBUG] Generating ${fieldName} content for ${riskType} risk`);
             console.log(`[MEALTIME FIELD-SPECIFIC DEBUG] User input: ${userInputData}`);
+            console.log(`[MEALTIME FIELD-SPECIFIC DEBUG] Final contextual info: ${updatedContextualInfoMealtime}`);
           } else if (req.body.targetField && req.body.targetField.startsWith('global_')) {
             // Global Meal Management Centre field-specific generation
             const globalField = req.body.targetField.replace('global_', '');
