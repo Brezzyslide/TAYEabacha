@@ -6,6 +6,9 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { useCarePlan } from '../../contexts/CarePlanContext';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   CheckCircle, 
   Circle, 
@@ -36,9 +39,12 @@ const SECTION_INFO = [
 ];
 
 export function ReviewSectionRefactored() {
-  const { planData, getSectionStatus, clientData } = useCarePlan();
+  const { planData, getSectionStatus, clientData, updateBasicInfo } = useCarePlan();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
+  const [isFinalizingPlan, setIsFinalizingPlan] = useState(false);
 
   // Calculate completion statistics
   const completedSections = SECTION_INFO.filter(section => 
@@ -63,6 +69,40 @@ export function ReviewSectionRefactored() {
       console.error('Export failed:', error);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleFinalizePlan = async () => {
+    setIsFinalizingPlan(true);
+    try {
+      // Update status to completed in context
+      updateBasicInfo('status', 'completed');
+      
+      // Save the plan with completed status
+      const { clientData, ...saveData } = planData;
+      
+      await apiRequest("PUT", `/api/care-support-plans/${planData.id}`, {
+        ...saveData,
+        status: 'completed'
+      });
+      
+      // Invalidate queries to refresh the care plans list
+      queryClient.invalidateQueries({ queryKey: ["/api/care-support-plans"] });
+      
+      // Show success message
+      toast({
+        title: "Plan Finalized",
+        description: "Care support plan has been completed successfully!",
+      });
+    } catch (error) {
+      console.error('Finalization failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to finalize care support plan",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFinalizingPlan(false);
     }
   };
 
@@ -211,10 +251,35 @@ export function ReviewSectionRefactored() {
           )}
           
           {completedSections === totalSections && (
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-              <p className="text-sm text-green-800 dark:text-green-200">
-                <strong>Congratulations!</strong> Your care support plan is complete and ready for export.
-              </p>
+            <div className="mt-4 space-y-4">
+              <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Congratulations!</strong> Your care support plan is complete and ready for export.
+                </p>
+              </div>
+              
+              {planData.status === 'draft' && (
+                <div className="flex justify-center">
+                  <Button 
+                    onClick={handleFinalizePlan}
+                    disabled={isFinalizingPlan}
+                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg"
+                    size="lg"
+                  >
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    {isFinalizingPlan ? 'Finalizing...' : 'Finalize Care Plan'}
+                  </Button>
+                </div>
+              )}
+              
+              {planData.status === 'completed' && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg text-center">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <CheckCircle className="h-5 w-5 inline mr-2" />
+                    <strong>Plan Completed!</strong> This care support plan has been finalized.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
