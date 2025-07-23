@@ -14,8 +14,6 @@ import { createSmartTimesheetEntry } from "./smart-timesheet-service";
 import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
-import { db } from "./lib/dbClient";
-import { sql } from "drizzle-orm";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
