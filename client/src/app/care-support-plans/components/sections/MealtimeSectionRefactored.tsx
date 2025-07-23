@@ -102,14 +102,17 @@ export function MealtimeSectionRefactored() {
     setGeneratingField(`${riskType}-${targetField}`);
 
     try {
+      // Use extracted diagnosis from About Me section like other sections
+      const extractedDiagnosis = (planData?.aboutMeData as any)?.diagnosis || planData?.clientData?.primaryDiagnosis || "Not specified";
       const riskInfo = RISK_TYPES.find(r => r.id === riskType);
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "mealtime",
         userInput: `${mealtimeData.userInput}\n\nFocus on ${riskInfo?.name}: ${riskInfo?.description}`,
         clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
+        clientDiagnosis: extractedDiagnosis,
         maxWords: 200,
         targetField: `${riskType}_${targetField}`,
+        planId: planData?.id,
         riskType: riskInfo?.name,
         fieldType: targetField
       });
@@ -136,11 +139,14 @@ export function MealtimeSectionRefactored() {
     }
   };
 
-  // Add generated content to specific field
+  // Add generated content to specific field (append to existing content)
   const addContentToField = (riskType: string, field: string) => {
     if (mealtimeData.generatedContent) {
-      handleRiskDataChange(riskType, field, mealtimeData.generatedContent);
-      // Don't clear generated content so it persists for multiple uses
+      const currentContent = riskData[riskType]?.[field] || "";
+      const separator = currentContent ? "\n\n" : "";
+      const updatedContent = currentContent + separator + mealtimeData.generatedContent;
+      handleRiskDataChange(riskType, field, updatedContent);
+      
       toast({
         title: "Content Applied",
         description: `AI content added to ${RISK_TYPES.find(r => r.id === riskType)?.name} ${field}`,
@@ -148,11 +154,14 @@ export function MealtimeSectionRefactored() {
     }
   };
 
-  // Add content to global fields
+  // Add content to global fields (append to existing content)
   const addContentToGlobalField = (fieldName: string) => {
     if (mealtimeData.generatedContent) {
-      handleInputChange(fieldName, mealtimeData.generatedContent);
-      // Don't clear generated content so it persists for multiple uses
+      const currentContent = mealtimeData[fieldName] || "";
+      const separator = currentContent ? "\n\n" : "";
+      const updatedContent = currentContent + separator + mealtimeData.generatedContent;
+      handleInputChange(fieldName, updatedContent);
+      
       toast({
         title: "Content Applied",
         description: `AI content added to ${fieldName}`,
@@ -175,13 +184,16 @@ export function MealtimeSectionRefactored() {
     setGeneratingField(targetField);
 
     try {
+      // Use extracted diagnosis from About Me section like other sections
+      const extractedDiagnosis = (planData?.aboutMeData as any)?.diagnosis || planData?.clientData?.primaryDiagnosis || "Not specified";
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
         section: "mealtime",
         userInput: mealtimeData.userInput,
         clientName: planData?.clientData?.fullName || "Client",
-        clientDiagnosis: planData?.clientData?.primaryDiagnosis || "Not specified",
+        clientDiagnosis: extractedDiagnosis,
         maxWords: 200,
         targetField: `global_${targetField}`,
+        planId: planData?.id,
         fieldType: targetField
       });
 
@@ -222,32 +234,32 @@ export function MealtimeSectionRefactored() {
     return (
       <Card key={riskType.id} className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{riskType.icon}</span>
-              {riskType.name} Management
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => generateRiskContent(riskType.id, 'comprehensive')}
-              disabled={isGenerating || !mealtimeData.userInput?.trim()}
-              className="bg-blue-50 hover:bg-blue-100 border-blue-300"
-            >
-              {isGenerating && generatingField === `${riskType.id}-comprehensive` ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              Generate AI Content
-            </Button>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-2xl">{riskType.icon}</span>
+            {riskType.name} Management
           </CardTitle>
           <CardDescription>{riskType.description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium mb-2 block">Prevention Strategy</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Prevention Strategy</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'preventionStrategy')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                  className="bg-green-50 hover:bg-green-100 border-green-300 text-xs px-2 py-1 h-6"
+                >
+                  {isGenerating && generatingField === `${riskType.id}-preventionStrategy` ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 mr-1" />
+                  )}
+                  Add to Prevention
+                </Button>
+              </div>
               <Textarea
                 placeholder="How to prevent this risk..."
                 value={data.preventionStrategy || ""}
@@ -258,7 +270,23 @@ export function MealtimeSectionRefactored() {
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">Response Strategy</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Response Strategy</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'responseStrategy')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                  className="bg-yellow-50 hover:bg-yellow-100 border-yellow-300 text-xs px-2 py-1 h-6"
+                >
+                  {isGenerating && generatingField === `${riskType.id}-responseStrategy` ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 mr-1" />
+                  )}
+                  Add to Response
+                </Button>
+              </div>
               <Textarea
                 placeholder="What to do if this risk occurs..."
                 value={data.responseStrategy || ""}
@@ -269,7 +297,23 @@ export function MealtimeSectionRefactored() {
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">Equipment Needed</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Equipment Needed</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'equipmentNeeded')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                  className="bg-blue-50 hover:bg-blue-100 border-blue-300 text-xs px-2 py-1 h-6"
+                >
+                  {isGenerating && generatingField === `${riskType.id}-equipmentNeeded` ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 mr-1" />
+                  )}
+                  Add to Equipment
+                </Button>
+              </div>
               <Textarea
                 placeholder="Specialized equipment required..."
                 value={data.equipmentNeeded || ""}
@@ -280,7 +324,23 @@ export function MealtimeSectionRefactored() {
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">Staff Training</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Staff Training</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateRiskContent(riskType.id, 'staffTraining')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                  className="bg-purple-50 hover:bg-purple-100 border-purple-300 text-xs px-2 py-1 h-6"
+                >
+                  {isGenerating && generatingField === `${riskType.id}-staffTraining` ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 mr-1" />
+                  )}
+                  Add to Training
+                </Button>
+              </div>
               <Textarea
                 placeholder="Specific training staff need..."
                 value={data.staffTraining || ""}
@@ -340,97 +400,7 @@ export function MealtimeSectionRefactored() {
             />
           </div>
 
-          <div className="flex justify-center">
-            <Button
-              onClick={() => handleGenerateGlobalContent('generalAssessment')}
-              disabled={isGenerating || !mealtimeData.userInput?.trim()}
-              className="bg-blue-600 hover:bg-blue-700"
-              size="lg"
-            >
-              {isGenerating && generatingField === 'generalAssessment' ? (
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ) : (
-                <Sparkles className="h-5 w-5 mr-2" />
-              )}
-              Generate AI Content
-            </Button>
-          </div>
 
-          {mealtimeData.generatedContent && (
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Content:</h4>
-                <div className="flex flex-wrap gap-2">
-                  <Button 
-                    onClick={() => addContentToField(selectedRisk, 'preventionStrategy')}
-                    size="sm"
-                    variant="outline"
-                    className="text-green-700 border-green-200 bg-green-50"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Add to Prevention
-                  </Button>
-                  <Button 
-                    onClick={() => addContentToField(selectedRisk, 'responseStrategy')}
-                    size="sm"
-                    variant="outline"
-                    className="text-yellow-700 border-yellow-200 bg-yellow-50"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Add to Response
-                  </Button>
-                  <Button 
-                    onClick={() => addContentToField(selectedRisk, 'equipmentNeeded')}
-                    size="sm"
-                    variant="outline"
-                    className="text-blue-700 border-blue-200 bg-blue-50"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Add to Equipment
-                  </Button>
-                  <Button 
-                    onClick={() => addContentToField(selectedRisk, 'staffTraining')}
-                    size="sm"
-                    variant="outline"
-                    className="text-purple-700 border-purple-200 bg-purple-50"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Add to Training
-                  </Button>
-                  <Button 
-                    onClick={() => addContentToGlobalField('dietaryRequirements')}
-                    size="sm"
-                    variant="outline"
-                    className="text-emerald-700 border-emerald-200 bg-emerald-50"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Add to Dietary
-                  </Button>
-                  <Button 
-                    onClick={() => addContentToGlobalField('emergencyProcedures')}
-                    size="sm"
-                    variant="outline"
-                    className="text-red-700 border-red-200 bg-red-50"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Add to Emergency
-                  </Button>
-                  <Button 
-                    onClick={() => addContentToGlobalField('staffGuidance')}
-                    size="sm"
-                    variant="outline"
-                    className="text-indigo-700 border-indigo-200 bg-indigo-50"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Add to Staff Guidance
-                  </Button>
-                </div>
-              </div>
-              <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
-                {mealtimeData.generatedContent}
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -482,22 +452,24 @@ export function MealtimeSectionRefactored() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Dietary Requirements</Label>
+                <Label className="text-sm font-medium">Nutritional Guidance</Label>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleGenerateGlobalContent('dietaryRequirements')}
+                  onClick={() => handleGenerateGlobalContent('nutritionalGuidance')}
                   disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                  className="bg-green-50 hover:bg-green-100 border-green-300 text-xs px-2 py-1 h-6"
                 >
-                  {isGenerating && generatingField === 'dietaryRequirements' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  {isGenerating && generatingField === 'nutritionalGuidance' ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-3 w-3 mr-1" />
                   )}
+                  Add to Nutrition
                 </Button>
               </div>
               <Textarea
-                placeholder="Special dietary needs, allergies, cultural restrictions..."
+                placeholder="Comprehensive nutritional requirements, dietary guidelines, supplementation needs..."
                 value={mealtimeData.dietaryRequirements || ""}
                 onChange={(e) => handleInputChange("dietaryRequirements", e.target.value)}
                 rows={6}
@@ -507,54 +479,102 @@ export function MealtimeSectionRefactored() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Emergency Procedures</Label>
+                <Label className="text-sm font-medium">Staff Protocols</Label>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleGenerateGlobalContent('emergencyProcedures')}
+                  onClick={() => handleGenerateGlobalContent('staffProtocols')}
                   disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                  className="bg-blue-50 hover:bg-blue-100 border-blue-300 text-xs px-2 py-1 h-6"
                 >
-                  {isGenerating && generatingField === 'emergencyProcedures' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  {isGenerating && generatingField === 'staffProtocols' ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-3 w-3 mr-1" />
                   )}
+                  Add to Protocols
                 </Button>
               </div>
               <Textarea
-                placeholder="Emergency response protocols for mealtime incidents..."
-                value={mealtimeData.emergencyProcedures || ""}
-                onChange={(e) => handleInputChange("emergencyProcedures", e.target.value)}
-                rows={6}
-                className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Staff Guidance</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleGenerateGlobalContent('staffGuidance')}
-                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
-                >
-                  {isGenerating && generatingField === 'staffGuidance' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <Textarea
-                placeholder="Comprehensive staff instructions for mealtime support..."
+                placeholder="Comprehensive staff mealtime protocols, supervision procedures, documentation requirements..."
                 value={mealtimeData.staffGuidance || ""}
                 onChange={(e) => handleInputChange("staffGuidance", e.target.value)}
                 rows={6}
                 className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800"
               />
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Environmental Setup</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateGlobalContent('environmentalSetup')}
+                  disabled={isGenerating || !mealtimeData.userInput?.trim()}
+                  className="bg-purple-50 hover:bg-purple-100 border-purple-300 text-xs px-2 py-1 h-6"
+                >
+                  {isGenerating && generatingField === 'environmentalSetup' ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Sparkles className="h-3 w-3 mr-1" />
+                  )}
+                  Add to Environment
+                </Button>
+              </div>
+              <Textarea
+                placeholder="Optimal mealtime environmental setup, physical space arrangement, sensory considerations..."
+                value={mealtimeData.mealtimeEnvironment || ""}
+                onChange={(e) => handleInputChange("mealtimeEnvironment", e.target.value)}
+                rows={6}
+                className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800"
+              />
+            </div>
           </div>
+
+          {/* AI Content Preview for Global Fields */}
+          {mealtimeData.generatedContent && (
+            <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  AI Generated Content Preview:
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    onClick={() => addContentToGlobalField('dietaryRequirements')}
+                    size="sm"
+                    variant="outline"
+                    className="text-green-700 border-green-200 bg-green-50 text-xs px-2 py-1 h-6"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Add to Nutrition
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToGlobalField('staffGuidance')}
+                    size="sm"
+                    variant="outline"
+                    className="text-blue-700 border-blue-200 bg-blue-50 text-xs px-2 py-1 h-6"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Add to Protocols
+                  </Button>
+                  <Button 
+                    onClick={() => addContentToGlobalField('mealtimeEnvironment')}
+                    size="sm"
+                    variant="outline"
+                    className="text-purple-700 border-purple-200 bg-purple-50 text-xs px-2 py-1 h-6"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Add to Environment
+                  </Button>
+                </div>
+              </div>
+              <div className="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-wrap bg-white dark:bg-amber-900/20 p-3 rounded border">
+                {mealtimeData.generatedContent}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

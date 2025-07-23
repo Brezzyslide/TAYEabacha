@@ -8998,18 +8998,108 @@ Maximum 400 words.`;
           break;
         
         case "mealtime":
-          systemPrompt = `Generate mealtime management content based on the client's diagnosis. Create practical guidance for eating support, dietary considerations, safety protocols, and mealtime strategies typical for this diagnosis. Always generate content using diagnosis-specific mealtime needs.
+          if (targetField && targetField.includes('_') && !targetField.startsWith('global_')) {
+            // Risk-specific field generation (choking_prevention, aspiration_response, etc.)
+            const [riskType, fieldName] = targetField.split('_');
+            
+            const riskSpecificPrompts = {
+              choking: {
+                prevention: `Generate comprehensive choking prevention strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need choking prevention including: proper food texture modification, supervised eating positioning, emergency equipment placement, staff vigilance protocols, meal environment setup, and swallowing assessment requirements. Focus on practical prevention measures that reduce airway obstruction risk during meals. Maximum 150-200 words.`,
+                response: `Generate comprehensive choking response strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need choking response including: immediate first aid procedures, emergency equipment usage, staff role delegation, communication protocols, medical emergency procedures, and post-incident documentation requirements. Create step-by-step response plan for airway obstruction emergencies. Maximum 150-200 words.`,
+                equipment: `Generate comprehensive choking management equipment needs for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need choking equipment including: emergency suction devices, finger sweeps tools, positioning aids, emergency communication devices, first aid supplies, and specialized feeding equipment. Address equipment maintenance and accessibility requirements. Maximum 150-200 words.`,
+                training: `Generate comprehensive choking response training requirements for ${clientName}'s care staff. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, staff will likely need choking training including: first aid certification, emergency response protocols, equipment operation procedures, incident reporting systems, risk recognition training, and ongoing competency assessment. Ensure staff preparedness for airway emergencies. Maximum 150-200 words.`
+              },
+              aspiration: {
+                prevention: `Generate comprehensive aspiration prevention strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need aspiration prevention including: safe swallowing positions, texture modification protocols, feeding pace management, respiratory monitoring, oral hygiene maintenance, and environmental safety measures. Focus on preventing food/fluid entry into airways. Maximum 150-200 words.`,
+                response: `Generate comprehensive aspiration response strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need aspiration response including: immediate airway clearing, respiratory assessment, emergency medication administration, medical intervention procedures, continuous monitoring protocols, and follow-up care requirements. Create emergency response plan for aspiration incidents. Maximum 150-200 words.`,
+                equipment: `Generate comprehensive aspiration management equipment needs for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need aspiration equipment including: suction machines, oxygen delivery systems, positioning devices, respiratory monitoring equipment, emergency medications, and specialized feeding tools. Address equipment readiness and maintenance protocols. Maximum 150-200 words.`,
+                training: `Generate comprehensive aspiration response training requirements for ${clientName}'s care staff. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, staff will likely need aspiration training including: respiratory emergency procedures, equipment operation skills, monitoring techniques, medical intervention protocols, documentation requirements, and emergency communication procedures. Ensure comprehensive respiratory emergency preparedness. Maximum 150-200 words.`
+              },
+              allergies: {
+                prevention: `Generate comprehensive food allergy prevention strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need allergy prevention including: allergen identification protocols, ingredient verification systems, cross-contamination prevention, emergency medication accessibility, dietary restriction compliance, and environmental safety measures. Focus on preventing allergic reactions during meals. Maximum 150-200 words.`,
+                response: `Generate comprehensive food allergy response strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need allergy response including: emergency medication administration, symptom recognition protocols, medical emergency procedures, communication systems, monitoring requirements, and post-reaction documentation. Create emergency response plan for allergic reactions. Maximum 150-200 words.`,
+                equipment: `Generate comprehensive food allergy management equipment needs for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need allergy equipment including: epinephrine auto-injectors, emergency medication supplies, monitoring devices, communication tools, first aid supplies, and ingredient verification systems. Address equipment accessibility and expiration monitoring. Maximum 150-200 words.`,
+                training: `Generate comprehensive food allergy response training requirements for ${clientName}'s care staff. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, staff will likely need allergy training including: allergen recognition, emergency medication administration, reaction assessment, medical intervention protocols, prevention strategies, and documentation procedures. Ensure staff competency in allergy management. Maximum 150-200 words.`
+              },
+              swallowing: {
+                prevention: `Generate comprehensive swallowing difficulty prevention strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need swallowing prevention including: texture modification protocols, positioning techniques, feeding pace control, oral preparation exercises, hydration management, and dysphagia assessment monitoring. Focus on safe swallowing practices during meals. Maximum 150-200 words.`,
+                response: `Generate comprehensive swallowing difficulty response strategies for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need swallowing response including: immediate safety measures, airway protection protocols, emergency procedures, medical assessment requirements, modification adjustments, and incident documentation. Create response plan for swallowing difficulties. Maximum 150-200 words.`,
+                equipment: `Generate comprehensive swallowing difficulty management equipment needs for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need swallowing equipment including: specialized feeding utensils, texture modification tools, positioning aids, suction equipment, hydration systems, and assessment instruments. Address equipment selection and maintenance requirements. Maximum 150-200 words.`,
+                training: `Generate comprehensive swallowing difficulty management training requirements for ${clientName}'s care staff. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, staff will likely need swallowing training including: dysphagia recognition, safe feeding techniques, positioning methods, emergency procedures, assessment monitoring, and modification protocols. Ensure staff competency in swallowing safety. Maximum 150-200 words.`
+              }
+            };
+            
+            const fieldMappings = {
+              preventionStrategy: 'prevention',
+              responseStrategy: 'response', 
+              equipmentNeeded: 'equipment',
+              staffTraining: 'training'
+            };
+            
+            const mappedField = fieldMappings[fieldName] || fieldName;
+            const riskPrompts = riskSpecificPrompts[riskType];
+            
+            systemPrompt = `You are generating field-specific mealtime management content for the ${fieldName} field. CRITICAL RULES:
+1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
+2. Generate content specific to ${riskType} risk management and the ${fieldName} field
+3. Begin with diagnosis phrasing: "Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely..."
+4. Focus specifically on ${fieldName} content - do not include other fields
+5. Use documented client information and mealtime assessment input
+6. Generate practical, actionable content for care staff
+7. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive}
+8. If existing content is provided, ADD TO IT rather than replacing it
+9. Do NOT include disclaimers about consulting professionals
+10. Write in clinical but accessible language`;
+            
+            userPrompt = riskPrompts?.[mappedField] || `Generate ${fieldName} content for ${riskType} risk management using documented client information`;
+            
+            console.log(`[MEALTIME FIELD-SPECIFIC DEBUG] Generating ${fieldName} content for ${riskType} risk`);
+            console.log(`[MEALTIME FIELD-SPECIFIC DEBUG] User input: ${userInputData}`);
+          } else if (targetField && targetField.startsWith('global_')) {
+            // Global Meal Management Centre field-specific generation
+            const globalField = targetField.replace('global_', '');
+            
+            const globalFieldPrompts = {
+              nutritionalGuidance: `Generate comprehensive nutritional guidance for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need nutritional guidance including: dietary requirements assessment, nutritional supplementation needs, caloric intake monitoring, hydration management, vitamin/mineral considerations, meal timing optimization, and therapeutic diet modifications. Consider all documented mealtime risks and dietary restrictions. Address ${pronouns.possessive} specific nutritional needs and health optimization. Maximum 150-200 words.`,
+              staffProtocols: `Generate comprehensive staff mealtime protocols for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need staff protocols including: mealtime supervision procedures, risk assessment protocols, emergency response procedures, documentation requirements, communication standards, hygiene protocols, and quality assurance measures. Consider all mealtime risks and safety requirements. Address ${pronouns.possessive} specific care protocols and staff responsibilities. Maximum 150-200 words.`,
+              environmentalSetup: `Generate comprehensive mealtime environmental setup for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need environmental setup including: physical space arrangement, lighting optimization, noise control, temperature regulation, accessibility modifications, safety equipment placement, and sensory considerations. Consider all documented preferences and mealtime challenges. Address ${pronouns.possessive} specific environmental needs and comfort requirements. Maximum 150-200 words.`
+            };
+            
+            systemPrompt = `You are generating comprehensive global mealtime management content for the ${globalField} field. CRITICAL RULES:
+1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"  
+2. Generate content that applies across ALL mealtime risk types and scenarios
+3. Begin with diagnosis phrasing: "Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely..."
+4. Focus specifically on ${globalField} content - comprehensive planning approach
+5. Use documented client information and all mealtime risk input
+6. Generate practical, actionable content for staff and care coordinators
+7. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive}
+8. If existing content is provided, ADD TO IT rather than replacing it
+9. Do NOT include disclaimers about consulting professionals
+10. Write in clinical but accessible language for mealtime management`;
+            
+            // Use comprehensive client info and final diagnosis like other sections
+            const updatedContextualInfoGlobalMealtime = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+            userPrompt = `${updatedContextualInfoGlobalMealtime}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInputData || 'Generate global mealtime management content based on diagnosis and all risk assessments'}\n\n${globalFieldPrompts[globalField] || `Generate comprehensive ${globalField} content for global mealtime management using documented client information and all risk parameters`}`;
+            
+            console.log(`[GLOBAL MEALTIME DEBUG] Generating ${globalField} global content`);
+            console.log(`[GLOBAL MEALTIME DEBUG] Final diagnosis being used: ${finalDiagnosis}`);
+            console.log(`[GLOBAL MEALTIME DEBUG] Comprehensive client info: ${updatedContextualInfoGlobalMealtime}`);
+            console.log(`[GLOBAL MEALTIME DEBUG] User input: ${userInputData}`);
+          } else {
+            // General mealtime management generation
+            systemPrompt = `Generate mealtime management content based on the client's diagnosis. Create practical guidance for eating support, dietary considerations, safety protocols, and mealtime strategies typical for this diagnosis. Always generate content using diagnosis-specific mealtime needs.
 
 DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
 PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 Maximum 400 words.`;
-          
-          // Use comprehensive client info and final diagnosis like Goals section
-          const updatedContextualInfoMealtime = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-          userPrompt = `${updatedContextualInfoMealtime}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate mealtime management based on diagnosis'}`;
-          
-          console.log(`[MEALTIME DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoMealtime);
+            
+            // Use comprehensive client info and final diagnosis like Goals section
+            const updatedContextualInfoMealtime = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
+            userPrompt = `${updatedContextualInfoMealtime}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInput || 'Generate mealtime management based on diagnosis'}`;
+            
+            console.log(`[MEALTIME DEBUG] Final contextual info being sent to AI:`, updatedContextualInfoMealtime);
+          }
           break;
         
         default:
