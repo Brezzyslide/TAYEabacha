@@ -8235,6 +8235,191 @@ Generate exactly five therapeutic goals that are clearly linked to the client's 
           break;
         
         case "adl":
+          // Field-specific generation for ADL sections
+          if (req.body.targetField && req.body.targetField !== 'preview') {
+            const targetField = req.body.targetField;
+            
+            // Enhanced fallback: if no client context, try to fetch it directly
+            if (!client && planId) {
+              try {
+                const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
+                if (planResult.length > 0) {
+                  plan = planResult[0];
+                  const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
+                  if (clientResult.length > 0) {
+                    client = clientResult[0];
+                    clientDiagnosis = client.primaryDiagnosis || 'Not specified';
+                    clientName = `${client.firstName || 'Client'} ${client.lastName || ''}`.trim();
+                    console.log(`[ADL FIX] Successfully fetched client: ${clientName}, diagnosis: ${clientDiagnosis}`);
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching client for ADL:", error);
+              }
+            }
+            
+            // Field-specific prompts for each ADL area
+            if (targetField === 'personalCare') {
+              systemPrompt = `You are generating specific content for the Personal Care section of an ADL assessment.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Bathing and showering abilities
+- Oral hygiene and dental care
+- Grooming and personal appearance
+- Toileting and continence
+- Dressing and undressing
+
+Generate specific, clinical guidance about the client's personal care needs and required support strategies. Use clinical language and be specific about support requirements.`;
+              
+              userPrompt = `Generate personal care support guidance for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'mobility') {
+              systemPrompt = `You are generating specific content for the Mobility section of an ADL assessment.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Walking and balance
+- Transfers (bed, chair, toilet, car)
+- Wheelchair or mobility aid use
+- Stairs and navigation
+- Falls risk and prevention
+
+Generate specific, clinical guidance about the client's mobility needs and required support strategies. Use clinical language and be specific about mobility assistance requirements.`;
+              
+              userPrompt = `Generate mobility support guidance for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'household') {
+              systemPrompt = `You are generating specific content for the Household Tasks section of an ADL assessment.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Meal preparation and cooking
+- Cleaning and housekeeping
+- Laundry and clothing care
+- Shopping and errands
+- Home maintenance tasks
+
+Generate specific, clinical guidance about the client's household task abilities and required support strategies. Use clinical language and be specific about domestic support requirements.`;
+              
+              userPrompt = `Generate household tasks support guidance for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'community') {
+              systemPrompt = `You are generating specific content for the Community Access section of an ADL assessment.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Transportation and travel
+- Social participation
+- Community activities and venues
+- Appointments and services
+- Public facility access
+
+Generate specific, clinical guidance about the client's community access needs and required support strategies. Use clinical language and be specific about community participation support.`;
+              
+              userPrompt = `Generate community access support guidance for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'safety') {
+              systemPrompt = `You are generating specific content for the Safety Awareness section of an ADL assessment.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Risk awareness and judgment
+- Emergency response abilities
+- Medication management safety
+- Home and community safety
+- Personal safety awareness
+
+Generate specific, clinical guidance about the client's safety awareness and required supervision/support strategies. Use clinical language and be specific about safety support requirements.`;
+              
+              userPrompt = `Generate safety awareness support guidance for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'independence') {
+              systemPrompt = `You are generating specific content for the Independence Skills section of an ADL assessment.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Decision-making abilities
+- Problem-solving skills
+- Self-advocacy
+- Goal setting and achievement
+- Skill development potential
+
+Generate specific, clinical guidance about the client's independence skills and capacity building strategies. Use clinical language and be specific about independence support requirements.`;
+              
+              userPrompt = `Generate independence skills support guidance for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'assistiveTechnology') {
+              systemPrompt = `You are generating specific content for the Assistive Technology section of an ADL assessment.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Current assistive devices and equipment
+- Technology needs and recommendations
+- Adaptive equipment for daily tasks
+- Communication aids and devices
+- Environmental modifications
+
+Generate specific, clinical guidance about the client's assistive technology needs and recommendations. Use clinical language and be specific about equipment and technology support.`;
+              
+              userPrompt = `Generate assistive technology recommendations for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'recommendations') {
+              systemPrompt = `You are generating specific content for the ADL Recommendations section.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Overall ADL support strategies
+- Staff training recommendations
+- Environmental modifications
+- Goal progression suggestions
+- Review and monitoring plans
+
+Generate specific, clinical recommendations for comprehensive ADL support. Use clinical language and be specific about implementation strategies.`;
+              
+              userPrompt = `Generate comprehensive ADL recommendations for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+            }
+            
+            // Handle the targeted field generation
+            const response = await openai.chat.completions.create({
+              model: "gpt-4o", 
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+              ],
+              temperature: 0.3,
+              max_tokens: 400,
+            });
+            
+            const generatedContent = response.choices[0].message.content;
+            return res.json({ content: generatedContent?.trim() || `Information for ${targetField} was not available in the client's documented data.` });
+          }
+          
+          // Original ADL section generation (for general "Generate ADL Content" button)
           // Build ADL context with comprehensive client data
           const adlContext = `
 Client: ${clientName}

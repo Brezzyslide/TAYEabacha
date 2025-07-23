@@ -262,6 +262,26 @@ export function ADLSectionRefactored() {
                 <Sparkles className="h-4 w-4" />
                 Add to Independence
               </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('assistiveTechnology')}
+                disabled={generateTargetedContentMutation.isPending || !adlData.userInput?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Add to Assistive Tech
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleGenerateTargetedContent('recommendations')}
+                disabled={generateTargetedContentMutation.isPending || !adlData.userInput?.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Add to Recommendations
+              </Button>
             </div>
           </div>
 
@@ -393,6 +413,38 @@ export function ADLSectionRefactored() {
                   className="text-blue-700 border-blue-300 hover:bg-blue-100"
                 >
                   Add to Independence
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("assistiveTechnology", adlData.generatedContent || "");
+                    updateField('adlData', 'generatedContent', ''); // Clear preview
+                    refreshGPTLimit();
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Assistive Technology field. GPT limit refreshed.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Assistive Tech
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleInputChange("recommendations", adlData.generatedContent || "");
+                    updateField('adlData', 'generatedContent', ''); // Clear preview
+                    refreshGPTLimit();
+                    toast({
+                      title: "Content Applied", 
+                      description: "Added to Recommendations field. GPT limit refreshed.",
+                    });
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Add to Recommendations
                 </Button>
               </div>
             </div>
