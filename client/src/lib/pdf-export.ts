@@ -1257,6 +1257,95 @@ export class PDFExportUtility {
         }
       });
     }
+
+    // CRITICAL FIX: Handle new riskAssessments object format (my implementation)
+    const riskAssessments = mealtimeData.riskAssessments || {};
+    if (typeof riskAssessments === 'object' && Object.keys(riskAssessments).length > 0) {
+      Object.entries(riskAssessments).forEach(([riskType, riskData]: [string, any]) => {
+        if (riskData && (riskData.preventionStrategy || riskData.responseStrategy || riskData.equipmentNeeded || riskData.staffTraining)) {
+          this.checkPageBreak(rowHeight + 2);
+          
+          const isEvenRow = rowIndex % 2 === 0;
+          if (isEvenRow) {
+            this.pdf.setFillColor(248, 250, 252); // Very light blue background
+            this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+          }
+          
+          currentX = tableStartX;
+          const textY = this.currentY + 6;
+          
+          // Category column with colored indicator based on severity
+          const severityColors = {
+            'low': [34, 197, 94], // Green/Low
+            'medium': [245, 158, 11], // Amber/Medium
+            'high': [220, 38, 127] // Red/High
+          };
+          
+          const categoryColor = severityColors[riskData.severity as keyof typeof severityColors] || [245, 158, 11];
+          this.pdf.setFillColor(categoryColor[0], categoryColor[1], categoryColor[2]);
+          this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+          
+          this.pdf.setFontSize(8);
+          this.pdf.setFont('helvetica', 'bold');
+          this.pdf.setTextColor(60, 60, 60);
+          
+          const riskTypeLabels = {
+            'choking': 'Choking Risk',
+            'aspiration': 'Aspiration Risk',
+            'swallowing': 'Swallowing Difficulties',
+            'allergies': 'Food Allergies',
+            'medications': 'Medication Interactions',
+            'behavioral': 'Behavioral Concerns',
+            'cultural': 'Cultural/Religious',
+            'texture': 'Texture Intolerance'
+          };
+          
+          const categoryLabel = riskTypeLabels[riskType as keyof typeof riskTypeLabels] || riskType || 'Risk Management';
+          this.pdf.text(categoryLabel, currentX + 6, textY);
+          currentX += colWidths.category;
+          
+          // Content column with combined risk management details
+          this.pdf.setFont('helvetica', 'normal');
+          let contentText = '';
+          if (riskData.preventionStrategy) contentText += `Prevention: ${riskData.preventionStrategy}`;
+          if (riskData.responseStrategy) contentText += (contentText ? ' | ' : '') + `Response: ${riskData.responseStrategy}`;
+          if (riskData.equipmentNeeded) contentText += (contentText ? ' | ' : '') + `Equipment: ${riskData.equipmentNeeded}`;
+          if (riskData.staffTraining) contentText += (contentText ? ' | ' : '') + `Training: ${riskData.staffTraining}`;
+          
+          const contentLines = this.pdf.splitTextToSize(contentText, colWidths.content - 4);
+          
+          if (contentLines.length > 1) {
+            // Handle multi-line content
+            let lineY = textY;
+            contentLines.forEach((line: string, lineIndex: number) => {
+              if (lineIndex > 0) {
+                this.checkPageBreak(5);
+                lineY += 4;
+                // Extend row height for multi-line content
+                if (isEvenRow) {
+                  this.pdf.setFillColor(248, 250, 252);
+                  this.pdf.rect(tableStartX, this.currentY + (lineIndex * 4), tableWidth, 4, 'F');
+                }
+              }
+              this.pdf.text(line, currentX + 2, lineY);
+            });
+            // Adjust current Y for multi-line content
+            this.currentY += (contentLines.length - 1) * 4;
+          } else {
+            this.pdf.text(contentText, currentX + 2, textY);
+          }
+          
+          // Draw row border
+          this.pdf.setDrawColor(200, 200, 200);
+          this.pdf.setLineWidth(0.2);
+          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+          this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+          
+          this.currentY += rowHeight;
+          rowIndex++;
+        }
+      });
+    }
     
     // Add general mealtime fields as separate rows if they exist
     const generalMealtimeFields = [

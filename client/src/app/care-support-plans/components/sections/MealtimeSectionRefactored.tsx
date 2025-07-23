@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,8 +53,8 @@ export function MealtimeSectionRefactored() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingField, setGeneratingField] = useState<string>('');
   
-  // Individual risk data state
-  const [riskData, setRiskData] = useState<{[key: string]: any}>({
+  // Individual risk data state - initialize with saved data or defaults
+  const defaultRiskData = {
     choking: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
     aspiration: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
     swallowing: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
@@ -63,7 +63,18 @@ export function MealtimeSectionRefactored() {
     behavioral: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
     cultural: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' },
     texture: { preventionStrategy: '', responseStrategy: '', equipmentNeeded: '', staffTraining: '', severity: 'medium' }
-  });
+  };
+
+  const [riskData, setRiskData] = useState<{[key: string]: any}>(
+    (mealtimeData as any).riskAssessments || defaultRiskData
+  );
+
+  // Initialize risk data from saved care plan data
+  useEffect(() => {
+    if ((mealtimeData as any).riskAssessments) {
+      setRiskData((mealtimeData as any).riskAssessments);
+    }
+  }, [(mealtimeData as any).riskAssessments]);
 
   const handleInputChange = (field: string, value: string) => {
     dispatch({
@@ -76,15 +87,28 @@ export function MealtimeSectionRefactored() {
     });
   };
 
-  // Handle individual risk data changes
+  // Handle individual risk data changes - SAVE TO CARE PLAN CONTEXT
   const handleRiskDataChange = (riskType: string, field: string, value: string) => {
-    setRiskData(prev => ({
-      ...prev,
+    const updatedRiskData = {
+      ...riskData,
       [riskType]: {
-        ...prev[riskType],
+        ...riskData[riskType],
         [field]: value
       }
-    }));
+    };
+    
+    // Update local state for immediate UI updates
+    setRiskData(updatedRiskData);
+    
+    // CRITICAL: Save to care plan context so data persists and appears in PDF export
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'mealtimeData',
+      data: {
+        ...mealtimeData,
+        riskAssessments: updatedRiskData // Save risk assessments to care plan
+      }
+    });
   };
 
   // Generate AI content for specific risk and field
@@ -163,7 +187,7 @@ export function MealtimeSectionRefactored() {
   // Add content to global fields (append to existing content)
   const addContentToGlobalField = (fieldName: string) => {
     if (mealtimeData.generatedContent) {
-      const currentContent = mealtimeData[fieldName] || "";
+      const currentContent = (mealtimeData as any)[fieldName] || "";
       const separator = currentContent ? "\n\n" : "";
       const updatedContent = currentContent + separator + mealtimeData.generatedContent;
       handleInputChange(fieldName, updatedContent);
