@@ -7758,6 +7758,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`[AI DEBUG] Client name components: firstName="${client.firstName}", lastName="${client.lastName}"`);
               console.log(`[AI DEBUG] Final clientName: "${clientName}"`);
               
+              // Determine correct pronouns based on client name
+              const determinePronouns = (firstName) => {
+                const name = firstName?.toLowerCase() || '';
+                const commonFemaleNames = ['sarah', 'mary', 'emily', 'jessica', 'ashley', 'amanda', 'lisa', 'michelle', 'kimberly', 'jennifer', 'stephanie', 'nicole', 'laura', 'elizabeth', 'rebecca', 'rachel', 'samantha', 'heather', 'maria', 'anna'];
+                
+                if (commonFemaleNames.includes(name)) {
+                  return { subjective: 'she', objective: 'her', possessive: 'her' };
+                } else {
+                  // Default to male pronouns for simplicity (can be expanded)
+                  return { subjective: 'he', objective: 'him', possessive: 'his' };
+                }
+              };
+              
+              const pronouns = determinePronouns(client.firstName);
+              console.log(`[AI DEBUG] Determined pronouns for ${clientName}:`, pronouns);
+              
               comprehensiveClientInfo = `
 CLIENT INFORMATION (USE EXACT NAME PROVIDED):
 - Client Name: ${clientName}
@@ -7850,30 +7866,30 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
             
             const fieldSpecificPrompts = {
               personalHistory: hasExistingContent('personalHistory') 
-                ? `Build upon existing personal history: "${existingAboutMe.personalHistory}". Add relevant clinical details for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Add complementary information using documented facts: birth year 1997, emergency contact ${emergencyContact}. Maximum 100 words.`
-                : `Write clinical personal history for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on his diagnosis, he will likely respond well to structured support approaches. Use ONLY these documented facts: birth year 1997, emergency contact ${emergencyContact}. Keep factual and clinical. Maximum 100 words.`,
+                ? `Build upon existing personal history: "${existingAboutMe.personalHistory}". Add relevant clinical details for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to structured support approaches. Add complementary information using documented facts: birth year 1997, emergency contact ${emergencyContact}. Maximum 100 words.`
+                : `Write clinical personal history for ${clientName}, age ${age}, diagnosed with ${clientDiagnosis}. Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to structured support approaches. Use ONLY these documented facts: birth year 1997, emergency contact ${emergencyContact}. Keep factual and clinical. Maximum 100 words.`,
                 
               interests: hasExistingContent('interests')
-                ? `Build upon existing interests content: "${existingAboutMe.interests}". Add therapeutic explanations for ${clientName}'s documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to structured activities incorporating music, shopping, social connections, and dancing. Explain how these interests support his care goals. Maximum 100 words.`
-                : `Write interests content for ${clientName} using his documented preferences: ${clientLikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to these specific activities: music listening, shopping outings, social activities with friends, and dancing opportunities. Focus on how these interests can be therapeutic. Maximum 100 words.`,
+                ? `Build upon existing interests content: "${existingAboutMe.interests}". Add therapeutic explanations for ${clientName}'s documented preferences: ${clientLikes}. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to structured activities incorporating music, shopping, social connections, and dancing. Explain how these interests support ${pronouns.possessive} care goals. Maximum 100 words.`
+                : `Write interests content for ${clientName} using ${pronouns.possessive} documented preferences: ${clientLikes}. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to these specific activities: music listening, shopping outings, social activities with friends, and dancing opportunities. Focus on how these interests can be therapeutic. Maximum 100 words.`,
                 
               preferences: hasExistingContent('preferences')
-                ? `Build upon existing preferences: "${existingAboutMe.preferences}". Add diagnosis-based insights for ${clientName}. He likes: ${clientLikes}. He dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely prefer quiet environments, choice-driven experiences, and structured social activities. Add therapeutic rationale for these preferences. Maximum 100 words.`
-                : `Write preferences content for ${clientName}. He likes: ${clientLikes}. He dislikes: ${clientDislikes}. Based on his diagnosis of ${clientDiagnosis}, he will likely prefer quiet environments during music time, choice-driven shopping experiences, small friend groups, and structured dance activities. Avoid noisy settings and ensure he has control over decisions. Maximum 100 words.`,
+                ? `Build upon existing preferences: "${existingAboutMe.preferences}". Add diagnosis-based insights for ${clientName}. ${pronouns.subjective} likes: ${clientLikes}. ${pronouns.subjective} dislikes: ${clientDislikes}. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely prefer quiet environments, choice-driven experiences, and structured social activities. Add therapeutic rationale for these preferences. Maximum 100 words.`
+                : `Write preferences content for ${clientName}. ${pronouns.subjective} likes: ${clientLikes}. ${pronouns.subjective} dislikes: ${clientDislikes}. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely prefer quiet environments during music time, choice-driven shopping experiences, small friend groups, and structured dance activities. Avoid noisy settings and ensure ${pronouns.subjective} has control over decisions. Maximum 100 words.`,
                 
               strengths: hasExistingContent('strengths')
-                ? `Build upon existing strengths: "${existingAboutMe.strengths}". Add therapeutic perspective for ${clientName}'s abilities: social skills (making friends, dancing), creative interests (music), independence (shopping), and communication. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches. Add clinical insights about leveraging these strengths. Maximum 100 words.`
-                : `Write strengths for ${clientName} based on his social abilities (enjoys making friends, dancing), creative interests (music), independence skills (shopping), and clear communication of preferences. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to strength-based approaches using these social and expressive abilities. Maximum 100 words.`,
+                ? `Build upon existing strengths: "${existingAboutMe.strengths}". Add therapeutic perspective for ${clientName}'s abilities: social skills (making friends, dancing), creative interests (music), independence (shopping), and communication. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to strength-based approaches. Add clinical insights about leveraging these strengths. Maximum 100 words.`
+                : `Write strengths for ${clientName} based on ${pronouns.possessive} social abilities (enjoys making friends, dancing), creative interests (music), independence skills (shopping), and clear communication of preferences. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to strength-based approaches using these social and expressive abilities. Maximum 100 words.`,
                 
               challenges: hasExistingContent('challenges')
-                ? `Build upon existing challenges: "${existingAboutMe.challenges}". Add diagnosis-based analysis for ${clientName}. Focus on: ${clientDislikes} and his NDIS goals: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely struggle with noise sensitivity and lack of control. Connect these challenges to his therapeutic goals. Maximum 100 words.`
-                : `Write challenges for ${clientName} focusing on: ${clientDislikes} and his NDIS goals: ${clientGoals}. Based on his diagnosis of ${clientDiagnosis}, he will likely struggle with noise sensitivity, situations lacking choice/control, and feeling unheard. These challenges connect to his goals of improving distress tolerance and speech clarity. Maximum 100 words.`,
+                ? `Build upon existing challenges: "${existingAboutMe.challenges}". Add diagnosis-based analysis for ${clientName}. Focus on: ${clientDislikes} and ${pronouns.possessive} NDIS goals: ${clientGoals}. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely struggle with noise sensitivity and lack of control. Connect these challenges to ${pronouns.possessive} therapeutic goals. Maximum 100 words.`
+                : `Write challenges for ${clientName} focusing on: ${clientDislikes} and ${pronouns.possessive} NDIS goals: ${clientGoals}. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely struggle with noise sensitivity, situations lacking choice/control, and feeling unheard. These challenges connect to ${pronouns.possessive} goals of improving distress tolerance and speech clarity. Maximum 100 words.`,
                 
               familyBackground: `Information about family background was not provided in ${clientName}'s profile. Only emergency contact information is available: ${emergencyContact}.`,
               
               culturalConsiderations: hasExistingContent('culturalConsiderations')
-                ? `Build upon existing cultural considerations: "${existingAboutMe.culturalConsiderations}". Add diagnosis-based perspective for ${clientName}'s individual support needs. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to person-centered approaches that respect his individual preferences and communication style. Do NOT make assumptions about ethnicity, race, or cultural background - focus only on documented preferences and individual needs. Maximum 100 words.`
-                : `Write cultural considerations for ${clientName} focusing on individual person-centered support. Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to approaches that honor his documented preferences for choice and control. Do NOT assume any specific cultural, ethnic, or religious background. Focus only on his individual communication needs and documented preferences. Avoid cultural stereotypes or assumptions. Maximum 100 words.`
+                ? `Build upon existing cultural considerations: "${existingAboutMe.culturalConsiderations}". Add diagnosis-based perspective for ${clientName}'s individual support needs. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to person-centered approaches that respect ${pronouns.possessive} individual preferences and communication style. Do NOT make assumptions about ethnicity, race, or cultural background - focus only on documented preferences and individual needs. Maximum 100 words.`
+                : `Write cultural considerations for ${clientName} focusing on individual person-centered support. Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to approaches that honor ${pronouns.possessive} documented preferences for choice and control. Do NOT assume any specific cultural, ethnic, or religious background. Focus only on ${pronouns.possessive} individual communication needs and documented preferences. Avoid cultural stereotypes or assumptions. Maximum 100 words.`
             };
             
             // Check if this is familyBackground and no family data exists
@@ -7885,14 +7901,15 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
             systemPrompt = `You are writing additional care plan content for the ${targetField} field that builds upon existing content. CRITICAL RULES:
 1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"
 2. If existing content is provided, ADD TO IT rather than replacing it - expand, enhance, and provide additional insights
-3. Start new content with diagnosis phrasing: "Based on his diagnosis of ${clientDiagnosis}, he will likely respond well to..." 
+3. Start new content with diagnosis phrasing: "Based on ${pronouns.possessive} diagnosis of ${clientDiagnosis}, ${pronouns.subjective} will likely respond well to..." 
 4. Generate SPECIFIC content related to ${targetField} using documented client information
 5. Connect new content to existing information when available
 6. Do NOT include disclaimers about consulting professionals or healthcare professionals
 7. Do NOT mention employment, work, or make cultural/ethnic/religious assumptions
 8. Focus on practical care planning content that complements what's already written
 9. Write in clinical but accessible language
-10. NEVER say "Please consult with healthcare professionals"`;
+10. NEVER say "Please consult with healthcare professionals"
+11. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}`;
             userPrompt = fieldSpecificPrompts[targetField] || `Generate ${targetField} content using documented client information`;
           } else {
             // Enhanced About Me generation with comprehensive overview data
@@ -7926,9 +7943,9 @@ This document will be viewed by health professionals, support workers, and NDIS 
 5. NEVER speculate, guess, or invent content
 6. NEVER include legal language or professional disclaimers like "please consult a medical team"
 7. DIAGNOSIS PHRASE FORMAT:
-   - "Based on his diagnosis, he will likely respond well to..."
-   - "Based on her diagnosis, she may benefit from..."
+   - "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
    - "Due to the nature of the diagnosis, staff are encouraged to..."
+8. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 ✍️ GENERAL WRITING STYLE
 - Clinical
@@ -8194,9 +8211,9 @@ This document will be viewed by health professionals, support workers, and NDIS 
 5. NEVER speculate, guess, or invent content
 6. NEVER include legal language or professional disclaimers like "please consult a medical team"
 7. DIAGNOSIS PHRASE FORMAT:
-   - "Based on his diagnosis, he will likely respond well to..."
-   - "Based on her diagnosis, she may benefit from..."
+   - "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
    - "Due to the nature of the diagnosis, staff are encouraged to..."
+8. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 ✍️ GENERAL WRITING STYLE
 - Clinical
@@ -8256,9 +8273,9 @@ This document will be viewed by health professionals, support workers, and NDIS 
 5. NEVER speculate, guess, or invent content
 6. NEVER include legal language or professional disclaimers like "please consult a medical team"
 7. DIAGNOSIS PHRASE FORMAT:
-   - "Based on his diagnosis, he will likely respond well to..."
-   - "Based on her diagnosis, she may benefit from..."
+   - "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
    - "Due to the nature of the diagnosis, staff are encouraged to..."
+8. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 ✍️ GENERAL WRITING STYLE
 - Clinical
@@ -8318,9 +8335,9 @@ This document will be viewed by health professionals, support workers, and NDIS 
 5. NEVER speculate, guess, or invent content
 6. NEVER include legal language or professional disclaimers like "please consult a medical team"
 7. DIAGNOSIS PHRASE FORMAT:
-   - "Based on his diagnosis, he will likely respond well to..."
-   - "Based on her diagnosis, she may benefit from..."
+   - "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
    - "Due to the nature of the diagnosis, staff are encouraged to..."
+8. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 ✍️ GENERAL WRITING STYLE
 - Clinical
@@ -8381,9 +8398,9 @@ This document will be viewed by health professionals, support workers, and NDIS 
 5. NEVER speculate, guess, or invent content
 6. NEVER include legal language or professional disclaimers like "please consult a medical team"
 7. DIAGNOSIS PHRASE FORMAT:
-   - "Based on his diagnosis, he will likely respond well to..."
-   - "Based on her diagnosis, she may benefit from..."
+   - "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
    - "Due to the nature of the diagnosis, staff are encouraged to..."
+8. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 ✍️ GENERAL WRITING STYLE
 - Clinical
@@ -8424,7 +8441,8 @@ Identify and address ONLY behavioural triggers that are explicitly documented. U
         case "disaster":
           systemPrompt = `Generate disaster management content based on the client's diagnosis. Create emergency preparedness, evacuation procedures, communication plans, and recovery support strategies considering the specific needs of this diagnosis. Always generate content using diagnosis-specific emergency needs.
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..." 
+PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 Maximum 400 words.`;
           
@@ -8438,7 +8456,8 @@ Maximum 400 words.`;
         case "mealtime":
           systemPrompt = `Generate mealtime management content based on the client's diagnosis. Create practical guidance for eating support, dietary considerations, safety protocols, and mealtime strategies typical for this diagnosis. Always generate content using diagnosis-specific mealtime needs.
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
+PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 Maximum 400 words.`;
           
@@ -8452,7 +8471,8 @@ Maximum 400 words.`;
         default:
           systemPrompt = `Generate professional care support content for the specified section using ONLY documented client information: name, age, diagnosis, documented NDIS goals, documented preferences, documented dislikes, and user-provided input. DO NOT make assumptions or add generic content. Focus strictly on factual, evidence-based content specific to their documented diagnosis and client-provided information.
 
-DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."
+DIAGNOSIS PHRASING: For any content relating to diagnosis, phrase as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."
+PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
 
 Maximum 400 words.`;
           
@@ -8469,7 +8489,7 @@ Maximum 400 words.`;
         messages: [
           { 
             role: "system", 
-            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements\n- DIAGNOSIS CONTENT: Always phrase diagnosis-related content as "Based on his diagnosis, he will likely respond well to..." or "Based on his diagnosis, he may benefit from..."\n- NEVER INCLUDE DISCLAIMERS: Do not say "Please consult with healthcare professionals" or any variation of consulting professionals\n- Write practical care content only, not legal advice` 
+            content: `${systemPrompt}\n\nCRITICAL RESTRICTIONS:\n- USE THE EXACT CLIENT NAME PROVIDED - NEVER write "Client" or "[Client Name]"\n- NEVER mention employment, work, jobs, career, workplace, or professional activities\n- NEVER mention cultural background, race, ethnicity, heritage, community, or location details\n- NEVER assume living situation, family, relationships, or personal history\n- NEVER use descriptive adjectives like "resilient," "independent," "vibrant," "committed"\n- ONLY reference documented medical diagnosis and documented support preferences\n- Be clinical and factual, avoid all speculation and generic statements\n- DIAGNOSIS CONTENT: Always phrase diagnosis-related content as "Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to..."\n- PRONOUNS: Always use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}\n- NEVER INCLUDE DISCLAIMERS: Do not say "Please consult with healthcare professionals" or any variation of consulting professionals\n- Write practical care content only, not legal advice` 
           },
           { role: "user", content: userPrompt }
         ],
@@ -8481,8 +8501,8 @@ Maximum 400 words.`;
       
       // Always return content - no guard rails or validation that could block generation
       if (!generatedContent || generatedContent.trim().length === 0) {
-        // Simple fallback using client's actual documented information
-        const fallbackContent = `${clientName} is diagnosed with ${finalDiagnosis}. Based on his diagnosis, he will likely respond well to structured ${section} approaches that consider his documented preferences and NDIS goals.`;
+        // Simple fallback using client's actual documented information and correct pronouns
+        const fallbackContent = `${clientName} is diagnosed with ${finalDiagnosis}. Based on ${pronouns.possessive} diagnosis, ${pronouns.subjective} will likely respond well to structured ${section} approaches that consider ${pronouns.possessive} documented preferences and NDIS goals.`;
         res.json({ content: fallbackContent });
       } else {
         // Replace any placeholder client names with actual client name
@@ -8492,6 +8512,75 @@ Maximum 400 words.`;
             .replace(/\[Client Name\]/g, clientName)
             .replace(/\[Client\]/g, clientName)
             .replace(/Client Name/g, clientName);
+        }
+        
+        // Apply pronoun consistency fixes if client data is available
+        if (client && pronouns) {
+          console.log(`[PRONOUN FIX] Applying pronoun corrections using: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive}`);
+          
+          // Fix inconsistent pronoun usage in generated content
+          const incorrectPatterns = [
+            // Fix "Based on his diagnosis" patterns for female clients
+            {
+              pattern: /Based on his diagnosis/g,
+              replacement: `Based on ${pronouns.possessive} diagnosis`
+            },
+            {
+              pattern: /Based on her diagnosis/g,
+              replacement: `Based on ${pronouns.possessive} diagnosis`
+            },
+            // Fix standalone pronoun inconsistencies
+            {
+              pattern: /\b[Hh]e will\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} will`
+            },
+            {
+              pattern: /\b[Ss]he will\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} will`
+            },
+            {
+              pattern: /\b[Hh]e may\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} may`
+            },
+            {
+              pattern: /\b[Ss]he may\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} may`
+            },
+            // Fix possessive pronoun patterns
+            {
+              pattern: /\bhis documented\b/g,
+              replacement: `${pronouns.possessive} documented`
+            },
+            {
+              pattern: /\bher documented\b/g,
+              replacement: `${pronouns.possessive} documented`
+            },
+            {
+              pattern: /\bhis individual\b/g,
+              replacement: `${pronouns.possessive} individual`
+            },
+            {
+              pattern: /\bher individual\b/g,
+              replacement: `${pronouns.possessive} individual`
+            },
+            {
+              pattern: /\bhis preferences\b/g,
+              replacement: `${pronouns.possessive} preferences`
+            },
+            {
+              pattern: /\bher preferences\b/g,
+              replacement: `${pronouns.possessive} preferences`
+            }
+          ];
+          
+          // Apply all pronoun corrections
+          incorrectPatterns.forEach(({ pattern, replacement }) => {
+            const beforeFix = finalContent;
+            finalContent = finalContent.replace(pattern, replacement);
+            if (beforeFix !== finalContent) {
+              console.log(`[PRONOUN FIX] Applied correction: ${pattern} -> ${replacement}`);
+            }
+          });
         }
         
         console.log(`[GOALS NEW DEBUG] Original AI content:`, generatedContent.trim());
