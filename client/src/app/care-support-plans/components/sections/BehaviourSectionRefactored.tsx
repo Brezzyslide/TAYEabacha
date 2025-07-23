@@ -158,7 +158,10 @@ Write about universal de-escalation principles, communication techniques, enviro
       return await response.json();
     },
     onSuccess: (responseData) => {
-      updateField('behaviourData', 'deEscalationTechniques', responseData.generatedContent || "");
+      const content = responseData.generatedContent || responseData.content || "";
+      console.log('[DEESCALATION DEBUG] Response data:', responseData);
+      console.log('[DEESCALATION DEBUG] Content to save:', content);
+      updateField('behaviourData', 'deEscalationTechniques', content);
       setIsGeneratingDeescalation(false);
       toast({
         title: "De-escalation Techniques Generated",
@@ -211,7 +214,10 @@ Write about positive reinforcement strategies, environmental design for success,
       return await response.json();
     },
     onSuccess: (responseData) => {
-      updateField('behaviourData', 'positiveBehaviourSupport', responseData.generatedContent || "");
+      const content = responseData.generatedContent || responseData.content || "";
+      console.log('[PBS DEBUG] Response data:', responseData);
+      console.log('[PBS DEBUG] Content to save:', content);
+      updateField('behaviourData', 'positiveBehaviourSupport', content);
       setIsGeneratingPBS(false);
       toast({
         title: "PBS Tips Generated",
