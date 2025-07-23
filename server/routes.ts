@@ -8518,9 +8518,9 @@ Maximum 400 words.`;
         if (client && pronouns) {
           console.log(`[PRONOUN FIX] Applying pronoun corrections using: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive}`);
           
-          // Fix inconsistent pronoun usage in generated content
+          // Fix inconsistent pronoun usage in generated content with comprehensive patterns
           const incorrectPatterns = [
-            // Fix "Based on his diagnosis" patterns for female clients
+            // Fix "Based on his/her diagnosis" patterns
             {
               pattern: /Based on his diagnosis/g,
               replacement: `Based on ${pronouns.possessive} diagnosis`
@@ -8529,7 +8529,7 @@ Maximum 400 words.`;
               pattern: /Based on her diagnosis/g,
               replacement: `Based on ${pronouns.possessive} diagnosis`
             },
-            // Fix standalone pronoun inconsistencies
+            // Fix standalone pronoun inconsistencies - subjective pronouns
             {
               pattern: /\b[Hh]e will\b/g,
               replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} will`
@@ -8545,6 +8545,22 @@ Maximum 400 words.`;
             {
               pattern: /\b[Ss]he may\b/g,
               replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} may`
+            },
+            {
+              pattern: /\b[Hh]e can\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} can`
+            },
+            {
+              pattern: /\b[Ss]he can\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} can`
+            },
+            {
+              pattern: /\b[Hh]e is\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} is`
+            },
+            {
+              pattern: /\b[Ss]he is\b/g,
+              replacement: `${pronouns.subjective.charAt(0).toUpperCase() + pronouns.subjective.slice(1)} is`
             },
             // Fix possessive pronoun patterns
             {
@@ -8562,6 +8578,52 @@ Maximum 400 words.`;
             {
               pattern: /\bher individual\b/g,
               replacement: `${pronouns.possessive} individual`
+            },
+            {
+              pattern: /\bhis preferred\b/g,
+              replacement: `${pronouns.possessive} preferred`
+            },
+            {
+              pattern: /\bher preferred\b/g,
+              replacement: `${pronouns.possessive} preferred`
+            },
+            {
+              pattern: /\bhis daily\b/g,
+              replacement: `${pronouns.possessive} daily`
+            },
+            {
+              pattern: /\bher daily\b/g,
+              replacement: `${pronouns.possessive} daily`
+            },
+            {
+              pattern: /\bhis comfort\b/g,
+              replacement: `${pronouns.possessive} comfort`
+            },
+            {
+              pattern: /\bher comfort\b/g,
+              replacement: `${pronouns.possessive} comfort`
+            },
+            // Fix objective pronoun patterns when client name follows
+            {
+              pattern: new RegExp(`\\b[Hh]im\\b(?=.*${clientName.split(' ')[0]})`, 'g'),
+              replacement: pronouns.objective
+            },
+            {
+              pattern: new RegExp(`\\b[Hh]er\\b(?=.*${clientName.split(' ')[0]})`, 'g'),
+              replacement: pronouns.objective
+            },
+            // Special pattern: Fix sentences that start with wrong pronoun but reference client correctly later
+            // This addresses the specific issue: "Based on his diagnosis... Sarah Johnson may benefit"
+            {
+              pattern: new RegExp(`(Based on ${pronouns.possessive === 'his' ? 'her' : 'his'} diagnosis[^.]*?)\\b(${clientName.split(' ')[0]})\\b`, 'g'),
+              replacement: (match, prefix, name) => {
+                // Replace the incorrect diagnosis reference and ensure client name usage is consistent
+                const correctedPrefix = prefix.replace(
+                  pronouns.possessive === 'his' ? /her diagnosis/ : /his diagnosis/, 
+                  `${pronouns.possessive} diagnosis`
+                );
+                return `${correctedPrefix}${name}`;
+              }
             },
             {
               pattern: /\bhis preferences\b/g,
