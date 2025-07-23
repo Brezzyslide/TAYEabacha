@@ -7738,6 +7738,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let age = 'Not specified';
       let plan = null;
       
+      // Determine correct pronouns function (available globally)
+      const determinePronouns = (firstName) => {
+        const name = firstName?.toLowerCase() || '';
+        const commonFemaleNames = ['sarah', 'mary', 'emily', 'jessica', 'ashley', 'amanda', 'lisa', 'michelle', 'kimberly', 'jennifer', 'stephanie', 'nicole', 'laura', 'elizabeth', 'rebecca', 'rachel', 'samantha', 'heather', 'maria', 'anna'];
+        
+        if (commonFemaleNames.includes(name)) {
+          return { subjective: 'she', objective: 'her', possessive: 'her' };
+        } else {
+          return { subjective: 'he', objective: 'him', possessive: 'his' };
+        }
+      };
+      
+      // Initialize default pronouns
+      let pronouns = { subjective: 'they', objective: 'them', possessive: 'their' };
+      
       if (planId) {
         try {
           const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
@@ -7758,20 +7773,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`[AI DEBUG] Client name components: firstName="${client.firstName}", lastName="${client.lastName}"`);
               console.log(`[AI DEBUG] Final clientName: "${clientName}"`);
               
-              // Determine correct pronouns based on client name
-              const determinePronouns = (firstName) => {
-                const name = firstName?.toLowerCase() || '';
-                const commonFemaleNames = ['sarah', 'mary', 'emily', 'jessica', 'ashley', 'amanda', 'lisa', 'michelle', 'kimberly', 'jennifer', 'stephanie', 'nicole', 'laura', 'elizabeth', 'rebecca', 'rachel', 'samantha', 'heather', 'maria', 'anna'];
-                
-                if (commonFemaleNames.includes(name)) {
-                  return { subjective: 'she', objective: 'her', possessive: 'her' };
-                } else {
-                  // Default to male pronouns for simplicity (can be expanded)
-                  return { subjective: 'he', objective: 'him', possessive: 'his' };
-                }
-              };
-              
-              const pronouns = determinePronouns(client.firstName);
+              // Update pronouns based on client name
+              pronouns = determinePronouns(client.firstName);
               console.log(`[AI DEBUG] Determined pronouns for ${clientName}:`, pronouns);
               
               comprehensiveClientInfo = `
@@ -7924,6 +7927,8 @@ ${plan.mealtimeData ? `Mealtime Management: ${JSON.stringify(plan.mealtimeData, 
             
             // Get current medications (placeholder for now - would need medication plan query)
             const currentMeds = "";
+            
+            // Get pronouns (already determined at global scope)
             
             const universalPromptHeader = `You are writing a section of a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
 
