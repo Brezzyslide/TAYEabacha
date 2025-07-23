@@ -72,10 +72,12 @@ export function GoalsSectionRefactored() {
   };
 
   const generateContentMutation = useMutation({
-    mutationFn: async (userInput: string) => {
+    mutationFn: async ({ userInput, targetField }: { userInput: string; targetField?: string }) => {
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", {
+        planId: planData.id,
         section: "goals",
         userInput,
+        targetField,
         clientName: planData.clientData?.fullName || "Client",
         clientDiagnosis: planData.clientData?.primaryDiagnosis || "Not specified",
         maxWords: 200,
@@ -83,15 +85,19 @@ export function GoalsSectionRefactored() {
       });
       return await response.json();
     },
-    onSuccess: (responseData) => {
+    onSuccess: (responseData, variables) => {
       const generatedText = responseData.content || "";
       
-      // Store generated content for targeted application
-      handleInputChange('generatedGoals', generatedText);
+      // Store generated content for targeted application or general use
+      if (variables.targetField) {
+        handleInputChange('generatedGoals', generatedText);
+      } else {
+        handleInputChange('generatedGoals', generatedText);
+      }
       
       toast({
-        title: "AI Goals Generated",
-        description: "200-word focused goal content generated for targeted application.",
+        title: "AI Content Generated",
+        description: `Goal content generated${variables.targetField ? ' for ' + variables.targetField : ''}.`,
       });
     },
     onError: (error: any) => {
@@ -113,7 +119,43 @@ export function GoalsSectionRefactored() {
       return;
     }
 
-    generateContentMutation.mutate(goalsData.userInput);
+    generateContentMutation.mutate({ userInput: goalsData.userInput });
+  };
+
+  // Field-specific generation function
+  const generateFieldContent = (targetField: string) => {
+    // Map frontend field names to backend field names if needed
+    const backendFieldMap = {
+      personalGoals: 'personalAspirations'
+    };
+    
+    const backendTargetField = backendFieldMap[targetField] || targetField;
+    
+    const fieldPrompts = {
+      ndisGoals: "Generate NDIS-aligned goals focused on capacity building, independence, and community participation",
+      personalGoals: "Generate personal aspirations and life goals based on client's documented preferences",
+      shortTermGoals: "Generate specific, measurable short-term goals achievable in 3-6 months",
+      longTermGoals: "Generate broader long-term goals for 6+ months based on client's diagnosis and aspirations",
+      overallObjective: "Generate an overall objective statement summarizing the client's main life aspirations"
+    };
+
+    const userInput = fieldPrompts[targetField] || `Generate content for ${targetField}`;
+    generateContentMutation.mutate({ userInput, targetField: backendTargetField });
+  };
+
+  // Function to apply generated content to specific field
+  const applyToField = (targetField: string) => {
+    if (goalsData.generatedGoals) {
+      handleInputChange(targetField, goalsData.generatedGoals);
+      // Clear generated content after application
+      handleInputChange('generatedGoals', '');
+      refreshGPTLimit();
+      
+      toast({
+        title: "Content Applied",
+        description: `Generated content added to ${targetField.replace(/([A-Z])/g, ' $1').toLowerCase()}`,
+      });
+    }
   };
 
   return (
@@ -134,7 +176,19 @@ export function GoalsSectionRefactored() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <Label htmlFor="ndisGoals" className="text-base font-medium">NDIS Support Goals</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="ndisGoals" className="text-base font-medium">NDIS Support Goals</Label>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => generateFieldContent('ndisGoals')}
+                disabled={generateContentMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to NDIS Goals
+              </Button>
+            </div>
             <Textarea
               id="ndisGoals"
               value={goalsData.ndisGoals || ''}
@@ -145,7 +199,19 @@ export function GoalsSectionRefactored() {
           </div>
           
           <div className="space-y-3">
-            <Label htmlFor="personalGoals" className="text-base font-medium">Personal Aspirations</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="personalGoals" className="text-base font-medium">Personal Aspirations</Label>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => generateFieldContent('personalGoals')}
+                disabled={generateContentMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Personal Goals
+              </Button>
+            </div>
             <Textarea
               id="personalGoals"
               value={goalsData.personalGoals || goalsData.overallObjective || ''}
@@ -176,7 +242,19 @@ export function GoalsSectionRefactored() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <Label htmlFor="shortTermGoals" className="text-base font-medium">Short-Term Goals (3-6 months)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="shortTermGoals" className="text-base font-medium">Short-Term Goals (3-6 months)</Label>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => generateFieldContent('shortTermGoals')}
+                disabled={generateContentMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Short-Term
+              </Button>
+            </div>
             <Textarea
               id="shortTermGoals"
               value={goalsData.shortTermGoals || goalsData.goalInput || ''}
@@ -187,7 +265,19 @@ export function GoalsSectionRefactored() {
           </div>
           
           <div className="space-y-3">
-            <Label htmlFor="longTermGoals" className="text-base font-medium">Long-Term Goals (6+ months)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="longTermGoals" className="text-base font-medium">Long-Term Goals (6+ months)</Label>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => generateFieldContent('longTermGoals')}
+                disabled={generateContentMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-3 w-3" />
+                Add to Long-Term
+              </Button>
+            </div>
             <Textarea
               id="longTermGoals"
               value={goalsData.longTermGoals || goalsData.generatedGoals || ''}
@@ -196,6 +286,44 @@ export function GoalsSectionRefactored() {
               className="min-h-[100px] resize-none"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Overall Objective Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+            <CheckCircle2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold">Overall Objective</h4>
+            <p className="text-sm text-muted-foreground">
+              Summarize the client's main life aspirations and support outcomes
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="overallObjective" className="text-base font-medium">Overall Objective Statement</Label>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => generateFieldContent('overallObjective')}
+              disabled={generateContentMutation.isPending}
+              className="flex items-center gap-2"
+            >
+              <Sparkles className="h-3 w-3" />
+              Add to Overall Objective
+            </Button>
+          </div>
+          <Textarea
+            id="overallObjective"
+            value={goalsData.overallObjective || ''}
+            onChange={(e) => handleInputChange('overallObjective', e.target.value)}
+            placeholder="Write a comprehensive statement summarizing the client's main life aspirations and how NDIS support will help achieve them..."
+            className="min-h-[100px] resize-none"
+          />
         </div>
       </div>
 
@@ -268,6 +396,78 @@ export function GoalsSectionRefactored() {
           )}
         </div>
       </div>
+
+      {/* AI Generated Content Preview */}
+      {goalsData.generatedGoals && (
+        <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-blue-600" />
+            AI Generated Content:
+          </h4>
+          
+          <div className="bg-white dark:bg-gray-900 p-4 rounded-md border mb-4">
+            <p className="text-sm whitespace-pre-wrap">{goalsData.generatedGoals}</p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              Content limited to 200 words for focused sections
+            </p>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleInputChange('generatedGoals', '')}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Dismiss
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-4">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => applyToField('ndisGoals')}
+              className="text-xs"
+            >
+              Add to NDIS Goals
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => applyToField('personalGoals')}
+              className="text-xs"
+            >
+              Add to Personal Goals
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => applyToField('shortTermGoals')}
+              className="text-xs"
+            >
+              Add to Short-Term
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => applyToField('longTermGoals')}
+              className="text-xs"
+            >
+              Add to Long-Term
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => applyToField('overallObjective')}
+              className="text-xs"
+            >
+              Add to Overall Objective
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* AI-Powered Goal Generation */}
       <div className="space-y-6">

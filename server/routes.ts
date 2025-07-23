@@ -8064,6 +8064,53 @@ ${personalContext}
               
               console.log(`[PERSONAL ASPIRATIONS DEBUG] Personal context being sent to AI:`, personalContext);
               console.log(`[PERSONAL ASPIRATIONS DEBUG] Enhanced prompt being sent to AI:`, systemPrompt);
+              
+            } else if (targetField === 'shortTermGoals') {
+              systemPrompt = `You are generating specific, measurable short-term goals (3-6 months) for a client with NDIS support.
+
+Client name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+
+Generate 3-5 specific, achievable goals that can be accomplished in 3-6 months. These should be:
+1. Directly related to the client's diagnosis and documented needs
+2. Measurable and specific
+3. Achievable within 3-6 months
+4. Build towards independence and capacity building
+
+Use clinical language and be specific about what the client will achieve.`;
+              
+              userPrompt = `Generate short-term goals for ${clientName} with ${clientDiagnosis}. Focus on specific, measurable outcomes achievable in 3-6 months.`;
+              
+            } else if (targetField === 'longTermGoals') {
+              systemPrompt = `You are generating broader long-term goals (6+ months) for a client with NDIS support.
+
+Client name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+
+Generate 3-5 broader aspirational goals that can be worked towards over 6+ months. These should be:
+1. Build upon short-term achievements
+2. Related to the client's diagnosis and long-term independence
+3. Support community participation and quality of life
+4. Align with NDIS capacity building principles
+
+Use clinical language and focus on long-term outcomes and aspirations.`;
+              
+              userPrompt = `Generate long-term goals for ${clientName} with ${clientDiagnosis}. Focus on broader aspirations achievable over 6+ months that build independence and community participation.`;
+              
+            } else if (targetField === 'overallObjective') {
+              systemPrompt = `You are generating an overall objective statement summarizing the main aspirations for a client with NDIS support.
+
+Client name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+
+Generate a comprehensive objective statement (2-3 sentences) that summarizes:
+1. The client's main life aspirations
+2. How NDIS support will help achieve these
+3. The overall vision for their independence and quality of life
+
+Use clinical language and be person-centered.`;
+              
+              userPrompt = `Generate an overall objective statement for ${clientName} with ${clientDiagnosis} that summarizes their main life aspirations and how NDIS support will help achieve them.`;
             }
             
             // Handle the targeted field generation
