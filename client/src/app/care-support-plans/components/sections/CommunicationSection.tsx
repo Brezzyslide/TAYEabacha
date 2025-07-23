@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, MessageCircle, Copy, Check, CheckCircle2, X } from "lucide-react";
+import { Sparkles, Loader2, MessageCircle, Copy, Check, CheckCircle2, X, Laptop, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -156,6 +156,65 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
     generateContentMutation.mutate(data.communicationInput);
   };
 
+  // Add field-specific generation functionality
+  const generateTargetedContentMutation = useMutation({
+    mutationFn: async (targetField: string) => {
+      const payload = {
+        section: "communication",
+        userInput: data.communicationInput || "",
+        targetField: targetField,
+        planId: planData?.id,
+        clientName: selectedClient?.fullName || selectedClient?.firstName + " " + selectedClient?.lastName,
+        clientDiagnosis: selectedClient?.primaryDiagnosis,
+        maxWords: 200,
+        existingContent: {
+          expressiveStrategies: formData.expressiveCommunication || "",
+          receptiveStrategies: formData.receptiveCommunication || "",
+          staffApproaches: formData.supportStrategies || "",
+          assistiveTechnology: formData.assistiveTechnology || ""
+        }
+      };
+
+      console.log(`[COMMUNICATION DEBUG] Enhanced payload:`, payload);
+      console.log(`[COMMUNICATION DEBUG] planData:`, planData);
+      console.log(`[COMMUNICATION DEBUG] About to send request to backend with planId:`, planData?.id);
+
+      return await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
+    },
+    onSuccess: (response) => {
+      console.log("[COMMUNICATION DEBUG] Field-specific generation successful:", response);
+      
+      // Store in generatedContent for preview
+      handleInputChange("generatedContent", response.content);
+      
+      toast({
+        title: "Content Generated",
+        description: "Field-specific communication content generated successfully. Review and apply to desired field.",
+      });
+    },
+    onError: (error) => {
+      console.error("[COMMUNICATION DEBUG] Field-specific generation failed:", error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate field-specific content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerateTargetedContent = (targetField: string) => {
+    if (!data.communicationInput?.trim()) {
+      toast({
+        title: "Input Required",
+        description: "Please describe the client's communication needs first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    generateTargetedContentMutation.mutate(targetField);
+  };
+
   const handleCopyContent = () => {
     if (data.generatedContent) {
       navigator.clipboard.writeText(data.generatedContent);
@@ -242,6 +301,25 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
                 placeholder="Describe how the client communicates their wants, needs, feelings, and thoughts"
                 rows={4}
               />
+              <Button
+                onClick={() => handleGenerateTargetedContent('expressiveStrategies')}
+                disabled={generateTargetedContentMutation.isPending || !data.communicationInput?.trim()}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                {generateTargetedContentMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Add to Expressive Communication
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -263,6 +341,25 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
                 placeholder="Describe how the client processes and understands information from others"
                 rows={4}
               />
+              <Button
+                onClick={() => handleGenerateTargetedContent('receptiveStrategies')}
+                disabled={generateTargetedContentMutation.isPending || !data.communicationInput?.trim()}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                {generateTargetedContentMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Add to Receptive Communication
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -300,6 +397,25 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
               placeholder="Describe any communication devices, apps, or assistive technology used"
               rows={3}
             />
+            <Button
+              onClick={() => handleGenerateTargetedContent('assistiveTechnology')}
+              disabled={generateTargetedContentMutation.isPending || !data.communicationInput?.trim()}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              {generateTargetedContentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Add to Assistive Technology
+                </>
+              )}
+            </Button>
           </div>
 
           <div className="space-y-2">
@@ -340,6 +456,25 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
               placeholder="Specific strategies staff should use to support communication with this client"
               rows={4}
             />
+            <Button
+              onClick={() => handleGenerateTargetedContent('staffApproaches')}
+              disabled={generateTargetedContentMutation.isPending || !data.communicationInput?.trim()}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              {generateTargetedContentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Add to Support Strategies
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -395,79 +530,10 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
               )}
             </Button>
 
-            {formData.generatedContent && (
+            {data.generatedContent && (
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-blue-900 dark:text-blue-100">AI Generated Communication Content:</h4>
-                  <Button 
-                    onClick={() => {
-                      handleInputChange("expressiveCommunication", formData.generatedContent || "");
-                      toast({
-                        title: "Content Applied",
-                        description: "AI-generated content has been added to Expressive Communication field.",
-                      });
-                    }}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Use This Content
-                  </Button>
-                </div>
-                <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap mb-3">
-                  {formData.generatedContent}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <Button 
-                    onClick={() => {
-                      handleInputChange("expressiveCommunication", formData.generatedContent || "");
-                      refreshGPTLimit();
-                      toast({
-                        title: "Content Applied",
-                        description: "Added to Expressive Communication field. GPT limit refreshed.",
-                      });
-                    }}
-                    variant="outline" 
-                    size="sm"
-                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
-                  >
-                    Add to Expressive Communication
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      handleInputChange("receptiveCommunication", formData.generatedContent || "");
-                      refreshGPTLimit();
-                      toast({
-                        title: "Content Applied", 
-                        description: "Added to Receptive Communication field. GPT limit refreshed.",
-                      });
-                    }}
-                    variant="outline" 
-                    size="sm"
-                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
-                  >
-                    Add to Receptive Communication
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      handleInputChange("supportStrategies", formData.generatedContent || "");
-                      refreshGPTLimit();
-                      toast({
-                        title: "Content Applied", 
-                        description: "Added to Support Strategies field. GPT limit refreshed.",
-                      });
-                    }}
-                    variant="outline" 
-                    size="sm"
-                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
-                  >
-                    Add to Support Strategies
-                  </Button>
-                </div>
-                <div className="flex justify-between items-center mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                  <div className="text-xs text-blue-600 dark:text-blue-400">
-                    Content limited to 200 words for focused communication sections
-                  </div>
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100">✨ AI Generated Communication Content</h4>
                   <Button 
                     onClick={() => {
                       handleInputChange("generatedContent", "");
@@ -483,6 +549,81 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
                     <X className="h-4 w-4 mr-1" />
                     Dismiss
                   </Button>
+                </div>
+                <div className="text-sm text-blue-800 dark:text-blue-200 whitespace-pre-wrap mb-4 p-3 bg-white/50 dark:bg-gray-800/50 rounded border border-blue-100 dark:border-blue-700">
+                  {data.generatedContent}
+                </div>
+                
+                <div className="space-y-3">
+                  <h5 className="text-sm font-medium text-blue-900 dark:text-blue-100">Apply this content to specific fields:</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Button 
+                      onClick={() => {
+                        handleInputChange("expressiveCommunication", data.generatedContent || "");
+                        toast({
+                          title: "Content Applied",
+                          description: "Added to Expressive Communication field.",
+                        });
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Add to Expressive Communication
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        handleInputChange("receptiveCommunication", data.generatedContent || "");
+                        toast({
+                          title: "Content Applied", 
+                          description: "Added to Receptive Communication field.",
+                        });
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Add to Receptive Communication
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        handleInputChange("assistiveTechnology", data.generatedContent || "");
+                        toast({
+                          title: "Content Applied", 
+                          description: "Added to Assistive Technology field.",
+                        });
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    >
+                      <Laptop className="h-4 w-4 mr-2" />
+                      Add to Assistive Technology
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        handleInputChange("supportStrategies", data.generatedContent || "");
+                        toast({
+                          title: "Content Applied", 
+                          description: "Added to Support Strategies field.",
+                        });
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Add to Support Strategies
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
+                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                    📝 Review and apply AI-generated content to appropriate Communication fields
+                  </div>
                 </div>
               </div>
             )}

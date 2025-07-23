@@ -8543,6 +8543,119 @@ Output only the generated content. No labels, headings, or explanation.`;
           break;
         
         case "communication":
+          // Field-specific generation for Communication sections
+          if (req.body.targetField && req.body.targetField !== 'preview') {
+            const targetField = req.body.targetField;
+            
+            // Enhanced fallback: if no client context, try to fetch it directly
+            if (!client && planId) {
+              try {
+                const planResult = await db.select().from(careSupportPlans).where(eq(careSupportPlans.id, planId)).limit(1);
+                if (planResult.length > 0) {
+                  plan = planResult[0];
+                  const clientResult = await db.select().from(clients).where(eq(clients.id, plan.clientId)).limit(1);
+                  if (clientResult.length > 0) {
+                    client = clientResult[0];
+                    clientDiagnosis = client.primaryDiagnosis || 'Not specified';
+                    clientName = `${client.firstName || 'Client'} ${client.lastName || ''}`.trim();
+                    console.log(`[COMMUNICATION FIX] Successfully fetched client: ${clientName}, diagnosis: ${clientDiagnosis}`);
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching client for Communication:", error);
+              }
+            }
+            
+            // Field-specific prompts for each Communication area
+            if (targetField === 'expressiveStrategies') {
+              systemPrompt = `You are generating specific content for the Expressive Communication Strategies section.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- How the client expresses wants, needs, and feelings
+- Verbal and non-verbal expression methods
+- Communication aids and devices for expression
+- Staff strategies to support client's expression
+- Techniques to encourage communication attempts
+
+Generate specific, clinical guidance about supporting the client's expressive communication abilities. Use clinical language and be specific about expression support strategies.`;
+              
+              userPrompt = `Generate expressive communication support strategies for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'receptiveStrategies') {
+              systemPrompt = `You are generating specific content for the Receptive Communication Strategies section.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- How the client processes and understands information
+- Comprehension of verbal and non-verbal communication
+- Information processing preferences and needs
+- Staff strategies to improve understanding
+- Environmental factors that affect comprehension
+
+Generate specific, clinical guidance about supporting the client's receptive communication abilities. Use clinical language and be specific about comprehension support strategies.`;
+              
+              userPrompt = `Generate receptive communication support strategies for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'staffApproaches') {
+              systemPrompt = `You are generating specific content for the Staff Communication Approaches section.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Specific communication techniques for staff to use
+- Tone, volume, and pacing considerations
+- Visual and auditory presentation methods
+- Cultural and personal communication preferences
+- Effective interaction strategies
+
+Generate specific, clinical guidance about how staff should communicate with the client. Use clinical language and be specific about staff communication approaches.`;
+              
+              userPrompt = `Generate staff communication approach strategies for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+              
+            } else if (targetField === 'assistiveTechnology') {
+              systemPrompt = `You are generating specific content for the Communication Assistive Technology section.
+
+Client Name: ${clientName}
+Diagnosis: ${clientDiagnosis}
+User Assessment: ${userInput}
+
+Focus specifically on:
+- Communication devices and applications
+- Assistive communication equipment
+- Technology training and support needs
+- Device maintenance and troubleshooting
+- Technology integration into daily routines
+
+Generate specific, clinical guidance about assistive communication technology needs and implementation. Use clinical language and be specific about technology support requirements.`;
+              
+              userPrompt = `Generate assistive communication technology recommendations for ${clientName} with ${clientDiagnosis} based on: ${userInput}`;
+            }
+            
+            // Handle the targeted field generation
+            const response = await openai.chat.completions.create({
+              model: "gpt-4o", 
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+              ],
+              temperature: 0.3,
+              max_tokens: 400,
+            });
+            
+            const generatedContent = response.choices[0].message.content;
+            return res.json({ content: generatedContent?.trim() || `Information for ${targetField} was not available in the client's documented data.` });
+          }
+          
+          // Original Communication section generation (for general "Generate Communication Support Plan" button)
           // Build comprehensive communication context
           const communicationContext = `
 Client: ${clientName}
