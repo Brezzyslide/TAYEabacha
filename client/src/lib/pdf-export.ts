@@ -1626,6 +1626,9 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
   // Debug logging to help identify data contamination
   console.log('PDF Export - Disaster Data Structure:', {
     hasDisasterPlans: Array.isArray(disasterDataForPDF.disasterPlans) && disasterDataForPDF.disasterPlans.length > 0,
+    disasterPlansCount: disasterDataForPDF.disasterPlans ? disasterDataForPDF.disasterPlans.length : 0,
+    disasterPlanTypes: disasterDataForPDF.disasterPlans ? disasterDataForPDF.disasterPlans.map((plan: any) => plan.type) : [],
+    disasterPlansWithContent: disasterDataForPDF.disasterPlans ? disasterDataForPDF.disasterPlans.filter((plan: any) => plan.preparation || plan.evacuation || plan.postEvent || plan.clientNeeds).length : 0,
     hasRiskAssessments: !!disasterDataForPDF.riskAssessments,
     riskAssessmentKeys: disasterDataForPDF.riskAssessments ? Object.keys(disasterDataForPDF.riskAssessments) : [],
     topLevelKeys: Object.keys(disasterDataForPDF)
@@ -1638,9 +1641,22 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
   });
 
   // Section 8: Mealtime Management with colored boxes
+  const mealtimeDataForPDF = plan.mealtimeData || {};
+  
+  // Debug logging to identify mealtime data persistence issues
+  console.log('PDF Export - Mealtime Data Structure:', {
+    hasRiskAssessments: !!mealtimeDataForPDF.riskAssessments,
+    riskAssessmentKeys: mealtimeDataForPDF.riskAssessments ? Object.keys(mealtimeDataForPDF.riskAssessments) : [],
+    hasRiskParameters: Array.isArray(mealtimeDataForPDF.riskParameters) && mealtimeDataForPDF.riskParameters.length > 0,
+    riskParametersCount: mealtimeDataForPDF.riskParameters ? mealtimeDataForPDF.riskParameters.length : 0,
+    topLevelKeys: Object.keys(mealtimeDataForPDF),
+    dietaryRequirements: !!mealtimeDataForPDF.dietaryRequirements,
+    textureModifications: !!mealtimeDataForPDF.textureModifications
+  });
+  
   sections.push({
     title: 'Mealtime Management',
-    content: plan.mealtimeData || {},
+    content: mealtimeDataForPDF,
     type: 'mealtime_management'
   });
 
