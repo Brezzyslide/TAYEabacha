@@ -245,9 +245,11 @@ Write about positive reinforcement strategies, environmental design for success,
       return;
     }
 
-    generateBehaviourContentMutation.mutate({
-      description: currentBehaviour.description,
-      triggers: currentBehaviour.triggers
+    // This would be implemented if we had a general behaviour strategies mutation
+    // For now, we use the field-specific generation buttons
+    toast({
+      title: "Use Field-Specific Buttons",
+      description: "Use the individual 'Add to Strategy' buttons for each strategy type.",
     });
   };
 

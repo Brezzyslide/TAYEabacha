@@ -8719,9 +8719,9 @@ Return ONLY the generated communication section content. Do not include headings
           break;
         
         case "behaviour":
-          // Check if this is a field-specific strategy generation
+          // Check if this is a field-specific strategy generation or bulk generation
           const targetField = req.body.targetField;
-          if (targetField && (targetField.includes('strategy') || targetField.includes('_strategy'))) {
+          if (targetField && (targetField.includes('strategy') || targetField.includes('_strategy') || targetField === 'deescalation_techniques' || targetField === 'pbs_tips')) {
             // Field-specific strategy generation
             const existingContent = req.body.existingContent || {};
             const behaviourDescription = existingContent.description || 'Behaviour not specified';
@@ -8760,6 +8760,42 @@ Generate specific ${strategyType} strategies for the behaviour "${behaviourDescr
             console.log(`[BEHAVIOUR STRATEGY DEBUG] Behaviour: ${behaviourDescription}`);
             console.log(`[BEHAVIOUR STRATEGY DEBUG] Triggers: ${behaviourTriggers}`);
             console.log(`[BEHAVIOUR STRATEGY DEBUG] Existing strategy: ${existingStrategy ? 'Yes' : 'No'}`);
+            
+          } else if (targetField === 'deescalation_techniques' || targetField === 'pbs_tips') {
+            // Bulk generation for de-escalation techniques or PBS tips
+            const allBehaviours = userInput || 'No behaviours specified';
+            
+            let bulkPromptType = '';
+            if (targetField === 'deescalation_techniques') {
+              bulkPromptType = 'comprehensive de-escalation techniques';
+            } else if (targetField === 'pbs_tips') {
+              bulkPromptType = 'positive behaviour support tips';
+            }
+            
+            systemPrompt = `You are writing comprehensive ${bulkPromptType} for a formal Care Support Plan for a participant of the National Disability Insurance Scheme (NDIS).
+
+🛑 UNIVERSAL RESTRICTIONS
+1. ALWAYS use the client's exact name "${clientName}" — never write "Client" or "[Client Name]"
+2. NEVER mention employment, cultural background, living arrangements, or speculative history
+3. NEVER use adjectives like resilient, strong, determined, independent, vibrant
+4. ONLY use documented medical facts and support preferences
+5. NEVER speculate, guess, or invent content
+6. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive} for ${clientName}
+7. DIAGNOSIS PHRASE FORMAT: "Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely respond well to..."
+
+✍️ WRITING STYLE: Clinical, objective, direct. No asterisks, emojis, headers, or bullet points. 250-350 words of flowing text.
+
+🎯 BULK GENERATION TYPE: ${bulkPromptType}
+
+Generate ${bulkPromptType} that work across all behaviours documented for ${clientName}. Use ${pronouns.possessive} diagnosis of ${finalDiagnosis} to inform evidence-based strategies. Focus on universal techniques that staff can apply regardless of the specific behaviour type. Include general principles, communication approaches, and environmental considerations that support all behaviour management scenarios.
+
+ALL DOCUMENTED BEHAVIOURS:
+${allBehaviours}`;
+
+            userPrompt = `Generate ${bulkPromptType} for ${clientName} based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}. Consider all documented behaviours and provide comprehensive guidance that applies universally across different behaviour scenarios.`;
+            
+            console.log(`[BEHAVIOUR BULK DEBUG] Generation type: ${bulkPromptType}`);
+            console.log(`[BEHAVIOUR BULK DEBUG] All behaviours provided: ${allBehaviours ? 'Yes' : 'No'}`);
             
           } else {
             // General behaviour section generation (existing logic)
