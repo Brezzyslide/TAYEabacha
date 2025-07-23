@@ -225,10 +225,19 @@ export class PDFExportUtility {
   private sanitizeText(text: string): string {
     if (!text || typeof text !== 'string') return '';
     
+    // Check for debug content contamination and return empty if detected
+    if (this.containsDebugContent(text)) {
+      console.warn('Debug content detected in PDF export, filtering out:', text.substring(0, 100));
+      return '';
+    }
+    
     return text
       // Remove specific problematic character sequences
       .replace(/Ø=Ü/g, '')
       .replace(/Ø<ß/g, '')
+      .replace(/Ø>Ýþ/g, '')
+      .replace(/Ø=ÜË/g, '')
+      .replace(/Ø=ÜŠ/g, '')
       .replace(/\+P/g, '')
       // Replace smart quotes and dashes with standard ASCII
       .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
@@ -244,6 +253,117 @@ export class PDFExportUtility {
       // Normalize multiple whitespace to single space
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private containsDebugContent(text: string): boolean {
+    // Debug content patterns that should never appear in professional healthcare documentation
+    const debugPatterns = [
+      // Development instructions
+      /Fix the following issues across modules/i,
+      /Issue:/i,
+      /Fix Requirements:/i,
+      /Check if.*properly bound/i,
+      /Confirm that.*API call/i,
+      /Ensure.*error handling/i,
+      /Add loading and error states/i,
+      
+      // Template/prompt content
+      /GENERAL WRITING STYLE/i,
+      /Clinical.*Objective.*Direct/i,
+      /No asterisks, emojis, or markdown/i,
+      /Maximum:.*words per section/i,
+      /Copy Edit/i,
+      /þ GENERAL/i,
+      
+      // Corrupted encoding markers
+      /Ø[=<>][ÜßÝþË]/,
+      /[þË]{2,}/,
+      
+      // API/technical references in user content
+      /PDF export.*captures.*first page/i,
+      /Export.*PDF.*button.*not working/i,
+      /View Records.*not displaying/i,
+      /clientId.*companyId.*filters/i,
+      /TanStack Query/i,
+      /DOM element refs/i,
+      /html2pdf\.js|jsPDF|react-to-pdf/i,
+      /page-break styles/i,
+      
+      // Development artifact patterns
+      /^\s*\d+\.\s*(Case Note PDF Export Bug|Observation Module|View Records)/i,
+      /records\.length.*undefined.*stale/i,
+      /The.*button.*under.*tab.*does nothing/i,
+      /Check if.*button.*properly bound/i,
+      /Confirm.*API response.*TanStack/i,
+      /Fix rendering logic/i,
+      /Add loading and error states if not present/i,
+      
+      // Additional debug markers
+      /^\s*Fix the following/i,
+      /Issue:\s*$/i,
+      /Fix Requirements:\s*$/i,
+      /Ensure all.*content.*paginated/i,
+      /Use.*with page breaks/i,
+    ];
+    
+    return debugPatterns.some(pattern => pattern.test(text));
+  }
+
+  // Add comprehensive data validation and sanitization function
+  public validateAndSanitizeData(data: any, section: string): any {
+    if (!data || typeof data !== 'object') {
+      return {};
+    }
+
+    const sanitizedData: any = {};
+
+    // Deep sanitization of object properties
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string') {
+        const cleanValue = this.sanitizeText(value);
+        // Only include non-empty sanitized content
+        if (cleanValue.trim().length > 0) {
+          sanitizedData[key] = cleanValue;
+        }
+      } else if (Array.isArray(value)) {
+        // Sanitize array elements
+        const cleanArray = value
+          .map(item => {
+            if (typeof item === 'string') {
+              const cleanItem = this.sanitizeText(item);
+              return cleanItem.trim().length > 0 ? cleanItem : null;
+            } else if (typeof item === 'object' && item !== null) {
+              return this.validateAndSanitizeData(item, section);
+            }
+            return item;
+          })
+          .filter(item => item !== null && item !== undefined);
+        
+        if (cleanArray.length > 0) {
+          sanitizedData[key] = cleanArray;
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        // Recursively sanitize nested objects
+        const cleanObject = this.validateAndSanitizeData(value, section);
+        if (Object.keys(cleanObject).length > 0) {
+          sanitizedData[key] = cleanObject;
+        }
+      } else {
+        // Keep other primitive values as-is
+        sanitizedData[key] = value;
+      }
+    }
+
+    // Log validation results for debugging
+    const originalKeys = Object.keys(data);
+    const sanitizedKeys = Object.keys(sanitizedData);
+    const removedKeys = originalKeys.filter(key => !sanitizedKeys.includes(key));
+    
+    if (removedKeys.length > 0) {
+      console.warn(`PDF Export: Removed ${removedKeys.length} contaminated fields from ${section} section:`, removedKeys);
+    }
+
+    return sanitizedData;
   }
 
   private addList(items: string[]): void {
@@ -1577,62 +1697,54 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     type: 'table'
   });
 
+  // Create PDF utility instance to access validation methods
+  const pdfUtil = new PDFExportUtility();
+
   // Section 1: About Me with colored boxes
   sections.push({
     title: 'About Me',
-    content: plan.aboutMeData || {},
+    content: pdfUtil.validateAndSanitizeData(plan.aboutMeData || {}, 'about_me'),
     type: 'about_me'
   });
 
   // Section 2: Goals & Outcomes with colored boxes
   sections.push({
     title: 'Goals & Outcomes',
-    content: plan.goalsData || {},
+    content: pdfUtil.validateAndSanitizeData(plan.goalsData || {}, 'goals'),
     type: 'goals_outcomes'
   });
 
   // Section 3: Activities of Daily Living Support with colored boxes
   sections.push({
     title: 'Activities of Daily Living Support',
-    content: plan.adlData || {},
+    content: pdfUtil.validateAndSanitizeData(plan.adlData || {}, 'adl'),
     type: 'adl_support'
   });
 
   // Section 4: Structure & Routine with colored boxes
   sections.push({
     title: 'Structure & Routine',
-    content: plan.structureData || {},
+    content: pdfUtil.validateAndSanitizeData(plan.structureData || {}, 'structure'),
     type: 'structure_routine'
   });
 
   // Section 5: Communication Support with colored boxes
   sections.push({
     title: 'Communication Support',
-    content: plan.communicationData || {},
+    content: pdfUtil.validateAndSanitizeData(plan.communicationData || {}, 'communication'),
     type: 'communication_support'
   });
 
   // Section 6: Behaviour Support - Custom handling with colored boxes
   sections.push({
     title: 'Behaviour Support',
-    content: plan.behaviourData || {},
+    content: pdfUtil.validateAndSanitizeData(plan.behaviourData || {}, 'behaviour'),
     type: 'behaviour_support'
   });
 
   // Section 7: Disaster Management with colored boxes
   // CRITICAL DATA INTEGRITY CHECK: Validate disaster data before PDF export
-  const disasterDataForPDF = plan.disasterData || {};
-  
-  // Debug logging to help identify data contamination
-  console.log('PDF Export - Disaster Data Structure:', {
-    hasDisasterPlans: Array.isArray(disasterDataForPDF.disasterPlans) && disasterDataForPDF.disasterPlans.length > 0,
-    disasterPlansCount: disasterDataForPDF.disasterPlans ? disasterDataForPDF.disasterPlans.length : 0,
-    disasterPlanTypes: disasterDataForPDF.disasterPlans ? disasterDataForPDF.disasterPlans.map((plan: any) => plan.type) : [],
-    disasterPlansWithContent: disasterDataForPDF.disasterPlans ? disasterDataForPDF.disasterPlans.filter((plan: any) => plan.preparation || plan.evacuation || plan.postEvent || plan.clientNeeds).length : 0,
-    hasRiskAssessments: !!disasterDataForPDF.riskAssessments,
-    riskAssessmentKeys: disasterDataForPDF.riskAssessments ? Object.keys(disasterDataForPDF.riskAssessments) : [],
-    topLevelKeys: Object.keys(disasterDataForPDF)
-  });
+  const disasterDataForPDF = pdfUtil.validateAndSanitizeData(plan.disasterData || {}, 'disaster');
   
   sections.push({
     title: 'Disaster Management',
@@ -1641,18 +1753,8 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
   });
 
   // Section 8: Mealtime Management with colored boxes
-  const mealtimeDataForPDF = plan.mealtimeData || {};
-  
-  // Debug logging to identify mealtime data persistence issues
-  console.log('PDF Export - Mealtime Data Structure:', {
-    hasRiskAssessments: !!mealtimeDataForPDF.riskAssessments,
-    riskAssessmentKeys: mealtimeDataForPDF.riskAssessments ? Object.keys(mealtimeDataForPDF.riskAssessments) : [],
-    hasRiskParameters: Array.isArray(mealtimeDataForPDF.riskParameters) && mealtimeDataForPDF.riskParameters.length > 0,
-    riskParametersCount: mealtimeDataForPDF.riskParameters ? mealtimeDataForPDF.riskParameters.length : 0,
-    topLevelKeys: Object.keys(mealtimeDataForPDF),
-    dietaryRequirements: !!mealtimeDataForPDF.dietaryRequirements,
-    textureModifications: !!mealtimeDataForPDF.textureModifications
-  });
+  // CRITICAL DATA INTEGRITY CHECK: Validate mealtime data before PDF export
+  const mealtimeDataForPDF = pdfUtil.validateAndSanitizeData(plan.mealtimeData || {}, 'mealtime');
   
   sections.push({
     title: 'Mealtime Management',
