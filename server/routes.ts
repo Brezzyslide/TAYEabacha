@@ -9087,12 +9087,13 @@ Maximum 400 words.`;
             
             // Use comprehensive client info and final diagnosis like other sections
             const updatedContextualInfoGlobalMealtime = comprehensiveClientInfo || `Client: ${clientName}, Diagnosis: ${finalDiagnosis}`;
-            userPrompt = `${updatedContextualInfoGlobalMealtime}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInputData || 'Generate global mealtime management content based on diagnosis and all risk assessments'}\n\n${globalFieldPrompts[globalField] || `Generate comprehensive ${globalField} content for global mealtime management using documented client information and all risk parameters`}`;
+            const userInputDataGlobal = req.body.userInput || userInput || 'Generate global mealtime management content based on diagnosis and all risk assessments';
+            userPrompt = `${updatedContextualInfoGlobalMealtime}\n\nExisting Context:\n${existingContext}\n\nUser Input: ${userInputDataGlobal}\n\n${globalFieldPrompts[globalField] || `Generate comprehensive ${globalField} content for global mealtime management using documented client information and all risk parameters`}`;
             
             console.log(`[GLOBAL MEALTIME DEBUG] Generating ${globalField} global content`);
             console.log(`[GLOBAL MEALTIME DEBUG] Final diagnosis being used: ${finalDiagnosis}`);
             console.log(`[GLOBAL MEALTIME DEBUG] Comprehensive client info: ${updatedContextualInfoGlobalMealtime}`);
-            console.log(`[GLOBAL MEALTIME DEBUG] User input: ${userInputData}`);
+            console.log(`[GLOBAL MEALTIME DEBUG] User input: ${userInputDataGlobal}`);
           } else {
             // General mealtime management generation
             systemPrompt = `Generate mealtime management content based on the client's diagnosis. Create practical guidance for eating support, dietary considerations, safety protocols, and mealtime strategies typical for this diagnosis. Always generate content using diagnosis-specific mealtime needs.
