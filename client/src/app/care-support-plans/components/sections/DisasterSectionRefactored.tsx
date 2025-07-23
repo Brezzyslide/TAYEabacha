@@ -145,8 +145,8 @@ export function DisasterSectionRefactored() {
         userInput: disasterData.userInput || 'Disaster management information',
         targetField: `${currentDisaster.type}_${targetField}`,
         planId: planData?.id,
-        clientName: planData?.selectedClient?.fullName || planData?.clientData?.fullName || "Client",
-        clientDiagnosis: planData?.aboutMeData?.diagnosis || planData?.selectedClient?.primaryDiagnosis || "Not specified",
+        clientName: planData?.clientData?.fullName || "Client",
+        clientDiagnosis: (planData?.aboutMeData as any)?.diagnosis || planData?.clientData?.primaryDiagnosis || "Not specified",
         existingContent: {
           disasterType: currentDisaster.type,
           disasterLabel: disasterLabel,
@@ -197,6 +197,64 @@ export function DisasterSectionRefactored() {
   const handleGenerateFieldSpecific = (targetField: string) => {
     generateFieldSpecificMutation.mutate({ targetField });
   };
+
+  // General Disaster Content Generation (for preview/general content)
+  const generateDisasterContentMutation = useMutation({
+    mutationFn: async ({ disasterType, targetField }: { disasterType: string; targetField: string }) => {
+      setIsGenerating(true);
+      setGeneratingField(targetField);
+      
+      const disasterLabel = DISASTER_TYPES.find(d => d.value === disasterType)?.label || disasterType;
+      
+      const payload = {
+        section: "disaster",
+        userInput: disasterData.userInput || 'Generate disaster management content',
+        planId: planData?.id,
+        clientName: planData?.clientData?.fullName || "Client",
+        clientDiagnosis: (planData?.aboutMeData as any)?.diagnosis || planData?.clientData?.primaryDiagnosis || "Not specified",
+        existingContent: {
+          disasterType: disasterType,
+          disasterLabel: disasterLabel,
+          currentContent: '',
+          userInput: disasterData.userInput || ''
+        }
+      };
+      
+      const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
+      return { disasterType, targetField, content: await response.json() };
+    },
+    onSuccess: ({ disasterType, targetField, content }) => {
+      const generatedContent = content.generatedContent || content.content || "";
+      
+      // Store generated content for cross-field application
+      dispatch({
+        type: 'UPDATE_SECTION', 
+        section: 'disasterData',
+        data: {
+          ...disasterData,
+          generatedContent: generatedContent
+        }
+      });
+      
+      setIsGenerating(false);
+      setGeneratingField('');
+      
+      const disasterLabel = DISASTER_TYPES.find(d => d.value === disasterType)?.label || disasterType;
+      toast({
+        title: "Content Generated",
+        description: `${disasterLabel} content has been generated. Use the buttons below to apply it to specific fields.`,
+      });
+    },
+    onError: (error: any) => {
+      setIsGenerating(false);
+      setGeneratingField('');
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate content. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // AI Content Generation for Global Centre
   const generateGlobalContentMutation = useMutation({
