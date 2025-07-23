@@ -8950,6 +8950,32 @@ Identify and address ONLY behavioural triggers that are explicitly documented. U
             console.log(`[DISASTER FIELD-SPECIFIC DEBUG] Generating ${targetField} content for ${disasterType} (${disasterLabel})`);
             console.log(`[DISASTER FIELD-SPECIFIC DEBUG] Existing content: ${existingContent}`);
             console.log(`[DISASTER FIELD-SPECIFIC DEBUG] User input: ${userInputData}`);
+          } else if (targetField && targetField.startsWith('global_')) {
+            // Global Disaster Management Centre field-specific generation
+            const globalField = targetField.replace('global_', '');
+            
+            const globalFieldPrompts = {
+              shelterArrangements: `Generate comprehensive shelter arrangements for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need shelter arrangements including: accessible accommodation requirements, medical equipment storage, medication refrigeration access, mobility assistance, communication support, dietary accommodation, emergency medical access, and staff support coordination. Consider all documented disaster plans and emergency needs across multiple disaster types. Address ${pronouns.possessive} specific shelter needs and safety requirements. Maximum 150-200 words.`,
+              postDisasterSupport: `Generate comprehensive post-disaster support for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need post-disaster support including: psychological recovery assistance, routine re-establishment, medical care continuity, medication management, therapy service coordination, environmental safety assessment, community resource connection, and care plan updates. Consider recovery needs across all disaster types. Address ${pronouns.possessive} specific recovery and reintegration needs. Maximum 150-200 words.`,
+              evacuationPlanAudit: `Generate comprehensive evacuation plan audit checklist for ${clientName}. Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely need evacuation audit including: accessibility compliance verification, medical equipment transportation readiness, medication emergency kit preparation, communication system testing, staff role clarification, emergency contact verification, transport arrangement confirmation, and special needs accommodation review. Create practical audit checklist covering all disaster scenarios. Address ${pronouns.possessive} specific evacuation requirements and safety protocols. Maximum 150-200 words.`
+            };
+            
+            systemPrompt = `You are generating comprehensive global disaster management content for the ${globalField} field. CRITICAL RULES:
+1. Use EXACT client name "${clientName}" - never write "Client" or "[Client Name]"  
+2. Generate content that applies across ALL disaster types and scenarios
+3. Begin with diagnosis phrasing: "Based on ${pronouns.possessive} diagnosis of ${finalDiagnosis}, ${pronouns.subjective} will likely..."
+4. Focus specifically on ${globalField} content - comprehensive planning approach
+5. Use documented client information and all disaster management input
+6. Generate practical, actionable content for staff and emergency coordinators
+7. ALWAYS use correct pronouns: ${pronouns.subjective}/${pronouns.objective}/${pronouns.possessive}
+8. If existing content is provided, ADD TO IT rather than replacing it
+9. Do NOT include disclaimers about consulting professionals
+10. Write in clinical but accessible language for emergency planning`;
+            
+            userPrompt = globalFieldPrompts[globalField] || `Generate comprehensive ${globalField} content for global disaster management using documented client information and all disaster plans`;
+            
+            console.log(`[GLOBAL DISASTER DEBUG] Generating ${globalField} global content`);
+            console.log(`[GLOBAL DISASTER DEBUG] User input: ${userInputData}`);
           } else {
             // General disaster management generation
             systemPrompt = `Generate comprehensive disaster management content based on the client's diagnosis. Create emergency preparedness, evacuation procedures, communication plans, and recovery support strategies considering the specific needs of this diagnosis. Always generate content using diagnosis-specific emergency needs.
