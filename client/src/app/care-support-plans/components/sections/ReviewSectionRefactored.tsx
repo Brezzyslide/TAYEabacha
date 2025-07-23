@@ -86,14 +86,24 @@ export function ReviewSectionRefactored() {
         status: 'completed'
       });
       
-      // Invalidate queries to refresh the care plans list
+      // Invalidate all care plan related queries to refresh the lists
       queryClient.invalidateQueries({ queryKey: ["/api/care-support-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/care-support-plans", planData.id] });
+      
+      // Force refetch of care plans list with exact query key
+      queryClient.refetchQueries({ queryKey: ["/api/care-support-plans"] });
       
       // Show success message
       toast({
         title: "Plan Finalized",
         description: "Care support plan has been completed successfully!",
       });
+      
+      // Small delay to ensure cache updates have propagated
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/care-support-plans"] });
+      }, 500);
+      
     } catch (error) {
       console.error('Finalization failed:', error);
       toast({

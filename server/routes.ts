@@ -7372,23 +7372,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/care-support-plans/:id", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const planId = parseInt(req.params.id);
+      
+      // Log the status update attempt
+      console.log(`[CARE PLAN UPDATE] Plan ID: ${planId}, User: ${req.user.id}, Tenant: ${req.user.tenantId}`);
+      console.log(`[CARE PLAN UPDATE] Status update: ${req.body.status || 'no status change'}`);
+      
       const plan = await storage.updateCareSupportPlan(planId, req.body, req.user.tenantId);
       
       if (!plan) {
+        console.log(`[CARE PLAN UPDATE] Plan not found: ${planId}`);
         return res.status(404).json({ message: "Care support plan not found" });
       }
       
+      console.log(`[CARE PLAN UPDATE] Successfully updated plan ${planId} with status: ${plan.status}`);
+      
       await storage.createActivityLog({
         userId: req.user.id,
-        action: "update_care_support_plan",
+        action: req.body.status === 'completed' ? "complete_care_support_plan" : "update_care_support_plan",
         resourceType: "care_support_plan",
         resourceId: planId,
-        description: `Updated care support plan: ${plan.planTitle}`,
+        description: req.body.status === 'completed' ? 
+          `Completed care support plan: ${plan.planTitle}` : 
+          `Updated care support plan: ${plan.planTitle}`,
         tenantId: req.user.tenantId,
       });
       
       res.json(plan);
     } catch (error) {
+      console.error(`[CARE PLAN UPDATE] Error updating plan:`, error);
       res.status(500).json({ message: "Failed to update care support plan" });
     }
   });
