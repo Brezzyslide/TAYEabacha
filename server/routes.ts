@@ -1615,6 +1615,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update entire recurring shift series
+  app.put("/api/shifts/series/:seriesId", requireAuth, async (req: any, res) => {
+    console.log("[SERIES UPDATE] Starting recurring shift series update");
+    
+    try {
+      const seriesId = req.params.seriesId;
+      const updateData = req.body;
+      
+      console.log(`[SERIES UPDATE] User ${req.user.id} (${req.user.role}) updating series ${seriesId}`);
+      console.log(`[SERIES UPDATE] Update data:`, JSON.stringify(updateData, null, 2));
+      
+      // Get all shifts in the series
+      const seriesShifts = await storage.getShiftsBySeries(seriesId, req.user.tenantId);
+      
+      if (!seriesShifts || seriesShifts.length === 0) {
+        console.log(`[SERIES UPDATE] No shifts found for series ${seriesId}`);
+        return res.status(404).json({ message: "Shift series not found" });
+      }
+      
+      console.log(`[SERIES UPDATE] Found ${seriesShifts.length} shifts in series`);
+      
+      // Update each shift in the series
+      const updatedShifts = [];
+      for (const shift of seriesShifts) {
+        try {
+          // Calculate new date/time for this shift if date/time fields are being updated
+          let shiftUpdateData = { ...updateData };
+          
+          // If start time is being updated, calculate new startTime for this shift
+          if (updateData.startTime) {
+            const originalShiftDate = new Date(shift.startTime);
+            const newDateTime = new Date(updateData.startTime);
+            
+            // Preserve the original date but use new time
+            const updatedStartTime = new Date(originalShiftDate);
+            updatedStartTime.setHours(newDateTime.getHours(), newDateTime.getMinutes(), 0, 0);
+            
+            shiftUpdateData.startTime = updatedStartTime.toISOString();
+          }
+          
+          // If end time is being updated, calculate new endTime for this shift
+          if (updateData.endTime) {
+            const originalShiftDate = new Date(shift.startTime);
+            const newEndDateTime = new Date(updateData.endTime);
+            
+            // Preserve the original date but use new time
+            const updatedEndTime = new Date(originalShiftDate);
+            updatedEndTime.setHours(newEndDateTime.getHours(), newEndDateTime.getMinutes(), 0, 0);
+            
+            shiftUpdateData.endTime = updatedEndTime.toISOString();
+          }
+          
+          // Remove editType from the data sent to storage
+          delete shiftUpdateData.editType;
+          
+          console.log(`[SERIES UPDATE] Updating shift ${shift.id} with data:`, shiftUpdateData);
+          
+          const updatedShift = await storage.updateShift(shift.id, shiftUpdateData, req.user.tenantId);
+          if (updatedShift) {
+            updatedShifts.push(updatedShift);
+          }
+        } catch (shiftError) {
+          console.error(`[SERIES UPDATE] Failed to update shift ${shift.id}:`, shiftError);
+          // Continue with other shifts even if one fails
+        }
+      }
+      
+      console.log(`[SERIES UPDATE] Successfully updated ${updatedShifts.length} shifts`);
+      
+      // Log activity for series update
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_shift_series",
+        resourceType: "shift_series",
+        resourceId: seriesId,
+        description: `Updated recurring shift series (${updatedShifts.length} shifts): ${updateData.title || 'Shift series'}`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.json(updatedShifts);
+    } catch (error) {
+      console.error("[SERIES UPDATE] Error updating shift series:", error);
+      console.error("[SERIES UPDATE] Update data:", req.body);
+      console.error("[SERIES UPDATE] User:", req.user.username, "ID:", req.user.id);
+      res.status(500).json({ 
+        message: "Failed to update shift series", 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // Approve shift request
   app.post("/api/shifts/:id/approve", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
     try {

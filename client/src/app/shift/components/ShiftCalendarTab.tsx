@@ -9,6 +9,7 @@ import ShiftCalendarView from "./ShiftCalendarView";
 import ShiftRequestConfirmDialog from "./ShiftRequestConfirmDialog";
 import NewShiftModal from "./NewShiftModal";
 import EditShiftModal from "./EditShiftModal";
+import RecurringEditChoiceDialog from "./RecurringEditChoiceDialog";
 import { CaseNoteCornerIndicator, CaseNoteStatusBorder } from "./CaseNoteStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ export default function ShiftCalendarTab() {
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
   const [isEditShiftModalOpen, setIsEditShiftModalOpen] = useState(false);
   const [selectedShiftForEdit, setSelectedShiftForEdit] = useState<Shift | null>(null);
+  const [isRecurringChoiceDialogOpen, setIsRecurringChoiceDialogOpen] = useState(false);
+  const [editType, setEditType] = useState<"single" | "series">("single");
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("fortnightly");
   
   const { user } = useAuth();
@@ -368,9 +371,18 @@ export default function ShiftCalendarTab() {
             const isAdminRole = userRole === "admin" || userRole === "consolemanager" || userRole === "coordinator" || userRole === "teamleader";
             
             if (isAdminRole) {
-              console.log(`[ADMIN SHIFT CLICK] Admin user ${user.role} clicked shift ${shift.id}, opening edit modal`);
+              console.log(`[ADMIN SHIFT CLICK] Admin user ${user.role} clicked shift ${shift.id}, checking if recurring`);
               setSelectedShiftForEdit(shift);
-              setIsEditShiftModalOpen(true);
+              
+              // Check if this is a recurring shift
+              if (shift.isRecurring && shift.seriesId) {
+                console.log(`[RECURRING SHIFT] Opening choice dialog for recurring shift series ${shift.seriesId}`);
+                setIsRecurringChoiceDialogOpen(true);
+              } else {
+                console.log(`[SINGLE SHIFT] Opening edit modal directly for single shift`);
+                setEditType("single");
+                setIsEditShiftModalOpen(true);
+              }
               return;
             }
             
@@ -539,14 +551,36 @@ export default function ShiftCalendarTab() {
       />
 
       {selectedShiftForEdit && (
-        <EditShiftModal
-          isOpen={isEditShiftModalOpen}
-          onClose={() => {
-            setIsEditShiftModalOpen(false);
-            setSelectedShiftForEdit(null);
-          }}
-          shift={selectedShiftForEdit}
-        />
+        <>
+          <RecurringEditChoiceDialog
+            isOpen={isRecurringChoiceDialogOpen}
+            onClose={() => {
+              setIsRecurringChoiceDialogOpen(false);
+              setSelectedShiftForEdit(null);
+            }}
+            shift={selectedShiftForEdit}
+            onEditSingle={() => {
+              setEditType("single");
+              setIsRecurringChoiceDialogOpen(false);
+              setIsEditShiftModalOpen(true);
+            }}
+            onEditSeries={() => {
+              setEditType("series");
+              setIsRecurringChoiceDialogOpen(false);
+              setIsEditShiftModalOpen(true);
+            }}
+          />
+          
+          <EditShiftModal
+            isOpen={isEditShiftModalOpen}
+            onClose={() => {
+              setIsEditShiftModalOpen(false);
+              setSelectedShiftForEdit(null);
+            }}
+            shift={selectedShiftForEdit}
+            editType={editType}
+          />
+        </>
       )}
     </div>
   );

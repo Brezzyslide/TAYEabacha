@@ -28,9 +28,10 @@ interface EditShiftModalProps {
   isOpen: boolean;
   onClose: () => void;
   shift: Shift;
+  editType?: "single" | "series"; // New prop to indicate edit type
 }
 
-export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModalProps) {
+export default function EditShiftModal({ isOpen, onClose, shift, editType = "single" }: EditShiftModalProps) {
   const [title, setTitle] = useState(shift.title || "");
   const [clientId, setClientId] = useState(shift.clientId?.toString() || "");
   const [userId, setUserId] = useState(shift.userId?.toString() || "unassigned");
@@ -73,12 +74,18 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         description,
+        editType, // Include edit type in request
       };
 
       console.log("[CLIENT] Sending shift update:", updateData);
-      console.log("[CLIENT] Shift ID:", shift.id);
+      console.log("[CLIENT] Shift ID:", shift.id, "Edit Type:", editType);
 
-      const response = await fetch(`/api/shifts/${shift.id}`, {
+      // Use different endpoint based on edit type
+      const endpoint = editType === "series" && shift.seriesId 
+        ? `/api/shifts/series/${shift.seriesId}` 
+        : `/api/shifts/${shift.id}`;
+
+      const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -94,11 +101,14 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      const updatedCount = Array.isArray(data) ? data.length : 1;
       toast({
         title: "Shift Updated",
-        description: "The shift has been successfully updated.",
+        description: editType === "series" 
+          ? `Successfully updated ${updatedCount} shifts in the series.`
+          : "The shift has been successfully updated.",
       });
       onClose();
     },
@@ -162,7 +172,14 @@ export default function EditShiftModal({ isOpen, onClose, shift }: EditShiftModa
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Shift</DialogTitle>
+          <DialogTitle>
+            {editType === "series" ? "Edit Recurring Shift Series" : "Edit Shift"}
+          </DialogTitle>
+          {editType === "series" && (
+            <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 p-2 rounded border border-amber-200 dark:border-amber-800">
+              Changes will apply to all shifts in this recurring series
+            </div>
+          )}
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">

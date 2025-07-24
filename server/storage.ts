@@ -75,6 +75,7 @@ export interface IStorage {
   deleteShift(id: number, tenantId: number): Promise<boolean>;
   endShift(id: number, endTime: Date, tenantId: number): Promise<Shift | undefined>;
   getShiftsByUser(userId: number, tenantId: number): Promise<Shift[]>;
+  getShiftsBySeries(seriesId: string, tenantId: number): Promise<Shift[]>;
 
   // Staff Availability
   getStaffAvailability(tenantId: number): Promise<StaffAvailability[]>;
@@ -543,6 +544,15 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(shifts)
       .where(and(eq(shifts.userId, userId), eq(shifts.tenantId, tenantId)))
       .orderBy(desc(shifts.startTime));
+  }
+
+  async getShiftsBySeries(seriesId: string, tenantId: number): Promise<Shift[]> {
+    return await db.select().from(shifts)
+      .where(and(
+        eq(shifts.seriesId, seriesId), 
+        eq(shifts.tenantId, tenantId)
+      ))
+      .orderBy(shifts.startTime);
   }
 
   // Staff Availability (updated implementation)

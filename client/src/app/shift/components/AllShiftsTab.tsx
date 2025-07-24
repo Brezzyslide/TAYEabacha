@@ -11,6 +11,7 @@ import ShiftViewToggle from "./ShiftViewToggle";
 import ShiftStatusTag from "./ShiftStatusTag";
 import NewShiftModal from "./NewShiftModal";
 import EditShiftModal from "./EditShiftModal";
+import RecurringEditChoiceDialog from "./RecurringEditChoiceDialog";
 
 type FilterPeriod = "daily" | "weekly" | "fortnightly";
 
@@ -20,6 +21,8 @@ export default function AllShiftsTab() {
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isRecurringChoiceDialogOpen, setIsRecurringChoiceDialogOpen] = useState(false);
+  const [editType, setEditType] = useState<"single" | "series">("single");
   
   const { user } = useAuth();
 
@@ -79,7 +82,16 @@ export default function AllShiftsTab() {
 
   const handleEditShift = (shift: Shift) => {
     setSelectedShift(shift);
-    setIsEditModalOpen(true);
+    
+    // Check if this is a recurring shift
+    if (shift.isRecurring && shift.seriesId) {
+      console.log(`[ALL SHIFTS] Opening choice dialog for recurring shift series ${shift.seriesId}`);
+      setIsRecurringChoiceDialogOpen(true);
+    } else {
+      console.log(`[ALL SHIFTS] Opening edit modal directly for single shift`);
+      setEditType("single");
+      setIsEditModalOpen(true);
+    }
   };
 
   const getShiftStats = () => {
@@ -259,14 +271,36 @@ export default function AllShiftsTab() {
       />
 
       {selectedShift && (
-        <EditShiftModal
-          shiftId={selectedShift.id}
-          open={isEditModalOpen}
-          onOpenChange={(open) => {
-            setIsEditModalOpen(open);
-            if (!open) setSelectedShift(null);
-          }}
-        />
+        <>
+          <RecurringEditChoiceDialog
+            isOpen={isRecurringChoiceDialogOpen}
+            onClose={() => {
+              setIsRecurringChoiceDialogOpen(false);
+              setSelectedShift(null);
+            }}
+            shift={selectedShift}
+            onEditSingle={() => {
+              setEditType("single");
+              setIsRecurringChoiceDialogOpen(false);
+              setIsEditModalOpen(true);
+            }}
+            onEditSeries={() => {
+              setEditType("series");
+              setIsRecurringChoiceDialogOpen(false);
+              setIsEditModalOpen(true);
+            }}
+          />
+          
+          <EditShiftModal
+            shiftId={selectedShift.id}
+            open={isEditModalOpen}
+            onOpenChange={(open) => {
+              setIsEditModalOpen(open);
+              if (!open) setSelectedShift(null);
+            }}
+            editType={editType}
+          />
+        </>
       )}
     </div>
   );
