@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, Clock, User } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, addYears, subYears, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, addYears, subYears, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays, addWeeks, subWeeks } from "date-fns";
 import { type Shift } from "@shared/schema";
 import ShiftStatusTag from "./ShiftStatusTag";
 
@@ -61,6 +61,14 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
     });
   };
 
+  const nextWeek = () => {
+    setCurrentDate(addWeeks(currentDate, 1));
+  };
+
+  const prevWeek = () => {
+    setCurrentDate(subWeeks(currentDate, 1));
+  };
+
   const nextMonth = () => {
     setCurrentDate(addMonths(currentDate, 1));
   };
@@ -87,27 +95,27 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Year Navigation */}
+          {/* Week and Month Navigation */}
           <Button 
-            onClick={() => setCurrentDate(subYears(currentDate, 1))} 
+            onClick={prevMonth} 
             variant="outline" 
             size="sm"
-            title="Previous Year"
+            title="Previous Month"
           >
             <ChevronLeft className="h-4 w-4" />
             <ChevronLeft className="h-4 w-4 -ml-2" />
           </Button>
-          <Button onClick={prevMonth} variant="outline" size="sm" title="Previous Month">
+          <Button onClick={prevWeek} variant="outline" size="sm" title="Previous Week">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button onClick={nextMonth} variant="outline" size="sm" title="Next Month">
+          <Button onClick={nextWeek} variant="outline" size="sm" title="Next Week">
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button 
-            onClick={() => setCurrentDate(addYears(currentDate, 1))} 
+            onClick={nextMonth} 
             variant="outline" 
             size="sm"
-            title="Next Year"
+            title="Next Month"
           >
             <ChevronRight className="h-4 w-4" />
             <ChevronRight className="h-4 w-4 -ml-2" />
