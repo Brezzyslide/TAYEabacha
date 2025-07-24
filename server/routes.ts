@@ -1693,15 +1693,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SERIES UPDATE] Successfully updated ${updatedShifts.length} shifts`);
       
-      // Log activity for series update
-      await storage.createActivityLog({
-        userId: req.user.id,
-        action: "update_shift_series",
-        resourceType: "shift_series",
-        resourceId: seriesId,
-        description: `Updated recurring shift series (${updatedShifts.length} shifts): ${updateData.title || 'Shift series'}`,
-        tenantId: req.user.tenantId,
-      });
+      // Log activity for series update - use first shift ID as resource ID since series ID is a string
+      const firstShiftId = updatedShifts.length > 0 ? updatedShifts[0].id : null;
+      if (firstShiftId) {
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "update_shift_series",
+          resourceType: "shift",
+          resourceId: firstShiftId,
+          description: `Updated recurring shift series "${seriesId}" (${updatedShifts.length} shifts): ${updateData.title || 'Shift series'}`,
+          tenantId: req.user.tenantId,
+        });
+      }
       
       res.json(updatedShifts);
     } catch (error) {
