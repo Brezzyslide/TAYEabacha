@@ -73,6 +73,15 @@ const caseNoteSchema = z.object({
 }, {
   message: "Incident report number is required for medication refusal",
   path: ["incidentRefNumber"]
+}).refine((data) => {
+  // Progress Notes must have a linked shift
+  if (data.category === "Progress Note") {
+    return data.linkedShiftId && data.linkedShiftId > 0;
+  }
+  return true;
+}, {
+  message: "Progress Notes must be linked to a specific shift",
+  path: ["linkedShiftId"]
 });
 
 type CaseNoteFormData = z.infer<typeof caseNoteSchema>;
@@ -147,6 +156,7 @@ export default function CreateCaseNoteModal({
   const incidentOccurred = form.watch("incidentOccurred");
   const incidentRefNumber = form.watch("incidentRefNumber");
   const medicationStatus = form.watch("medicationStatus");
+  const selectedCategory = form.watch("category");
 
   // Auto-fetch shifts when client is selected
   const { data: availableShifts = [] } = useQuery<Shift[]>({
@@ -424,14 +434,37 @@ export default function CreateCaseNoteModal({
                 name="linkedShiftId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Related Shift</FormLabel>
+                    <FormLabel>
+                      Related Shift
+                      {selectedCategory === "Progress Note" && (
+                        <span className="text-red-600 ml-1">*</span>
+                      )}
+                    </FormLabel>
+                    
+                    {/* Warning for Progress Note without shifts */}
+                    {selectedCategory === "Progress Note" && filteredShifts?.length === 0 && selectedClientId && (
+                      <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-amber-800">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="font-medium">Progress Note Requires Shift</span>
+                        </div>
+                        <p className="text-sm text-amber-700 mt-1">
+                          Progress Notes must be linked to a specific shift to document care provided during that period. No eligible shifts are available for this client.
+                        </p>
+                      </div>
+                    )}
+                    
                     <Select 
                       onValueChange={(value) => field.onChange(value === "0" ? undefined : parseInt(value))}
                       value={field.value?.toString() || "0"}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select shift (optional)" />
+                          <SelectValue placeholder={
+                            selectedCategory === "Progress Note" 
+                              ? "Select shift (required for Progress Notes)" 
+                              : "Select shift (optional)"
+                          } />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -447,11 +480,16 @@ export default function CreateCaseNoteModal({
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      {(filteredShifts?.length === 0) && selectedClientId ? 
-                        "No shifts available for case notes (showing today's shifts and past completed shifts only)" :
-                        suggestedShift ? `Suggested: ${format(new Date(suggestedShift.startTime), "MMM d 'at' h:mm a")}` : 
-                        "Showing today's shifts and past completed shifts without case notes"
-                      }
+                      {selectedCategory === "Progress Note" ? (
+                        filteredShifts?.length === 0 && selectedClientId ? 
+                          "Progress Notes require a linked shift. No eligible shifts available." :
+                          "Progress Notes must document care provided during a specific shift period."
+                      ) : (
+                        filteredShifts?.length === 0 && selectedClientId ? 
+                          "No shifts available for case notes (showing today's shifts and past completed shifts only)" :
+                          suggestedShift ? `Suggested: ${format(new Date(suggestedShift.startTime), "MMM d 'at' h:mm a")}` : 
+                          "Showing today's shifts and past completed shifts without case notes"
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
