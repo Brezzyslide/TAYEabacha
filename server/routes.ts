@@ -14,7 +14,7 @@ import { createSmartTimesheetEntry } from "./smart-timesheet-service";
 import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
-import { sendCompanyWelcomeEmail, sendUserWelcomeEmail } from "./lib/email-service";
+import { sendCompanyWelcomeEmail, sendUserWelcomeEmail, sendPasswordResetEmail, sendIncidentReportNotification, sendShiftAssignmentNotification, sendClientCreationNotification } from "./lib/email-service";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -1018,6 +1018,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!updatedUser) {
         return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      // Send password reset notification email
+      try {
+        if (updatedUser.email) {
+          const company = await storage.getCompanyByTenantId(req.user.tenantId);
+          const companyName = company?.name || 'Your Organization';
+          
+          const emailSent = await sendPasswordResetEmail(
+            updatedUser.email,
+            updatedUser.fullName || updatedUser.username,
+            companyName,
+            newPassword
+          );
+          
+          if (emailSent) {
+            console.log(`[EMAIL] Password reset notification sent to ${updatedUser.email}`);
+          } else {
+            console.warn(`[EMAIL] Failed to send password reset notification to ${updatedUser.email}`);
+          }
+        }
+      } catch (emailError) {
+        console.error(`[EMAIL] Error sending password reset notification:`, emailError);
+        // Don't fail password reset if email fails
       }
       
       // Log activity
@@ -4753,6 +4777,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const report = await storage.createIncidentReport(reportData);
+      
+      // Send email notifications to administrators
+      try {
+        // Get all admin users for this tenant
+        const allUsers = await storage.getUsersByTenant(req.user.tenantId);
+        const adminUsers = allUsers.filter(user => 
+          ['Admin', 'ConsoleManager', 'Coordinator'].includes(user.role) && user.email
+        );
+        const adminEmails = adminUsers.map(admin => admin.email).filter(email => email);
+
+        if (adminEmails.length > 0) {
+          // Get client information
+          const client = await storage.getClient(reportData.clientId, req.user.tenantId);
+          const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown Client';
+          
+          // Get company information
+          const company = await storage.getCompanyByTenantId(req.user.tenantId);
+          const companyName = company?.name || 'Your Organization';
+          
+          // Get reporter information
+          const reporterName = req.user.fullName || req.user.username;
+          
+          // Determine severity based on intensity rating
+          const severity = reportData.intensityRating >= 8 ? 'High' : 
+                          reportData.intensityRating >= 5 ? 'Medium' : 'Low';
+
+          const emailSent = await sendIncidentReportNotification(
+            adminEmails,
+            report.incidentId,
+            clientName,
+            reporterName,
+            reportData.types || [],
+            severity,
+            companyName,
+            reportData.isNDISReportable || false
+          );
+          
+          if (emailSent) {
+            console.log(`[EMAIL] Incident notification sent to ${adminEmails.length} administrators`);
+          } else {
+            console.warn(`[EMAIL] Failed to send incident notifications`);
+          }
+        } else {
+          console.log(`[EMAIL] No admin emails found for incident notification`);
+        }
+      } catch (emailError) {
+        console.error(`[EMAIL] Error sending incident notification:`, emailError);
+        // Don't fail incident creation if email fails
+      }
       
       await storage.createActivityLog({
         userId: req.user.id,
