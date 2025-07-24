@@ -4,6 +4,33 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { runStartupSecurityChecks } from "./enhanced-tenant-security";
 import path from 'path';
+import fs from 'fs';
+
+// Load local environment variables for development FIRST
+const localEnvPath = path.join(process.cwd(), '.env.local');
+if (fs.existsSync(localEnvPath)) {
+  const envFile = fs.readFileSync(localEnvPath, 'utf8');
+  envFile.split('\n').forEach(line => {
+    const [key, value] = line.split('=');
+    if (key && value) {
+      process.env[key.trim()] = value.trim();
+    }
+  });
+  console.log('[ENV] Loaded local environment variables');
+  console.log('[ENV] GMAIL_EMAIL now set to:', process.env.GMAIL_EMAIL);
+  console.log('[ENV] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
+} else {
+  console.log('[ENV] .env.local file not found, using default environment');
+}
+
+// Force environment logging for debugging
+console.log('[ENV] FINAL CHECK:');
+console.log('[ENV] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
+console.log('[ENV] GMAIL_APP_PASSWORD_SET:', !!process.env.GMAIL_APP_PASSWORD);
+console.log('[ENV] GMAIL_APP_PASSWORD_LENGTH:', process.env.GMAIL_APP_PASSWORD?.length || 0);
+
+// Initialize email service AFTER environment is loaded
+import "./lib/email-service";
 
 // Set timezone to Australian Eastern Standard Time
 process.env.TZ = 'Australia/Sydney';

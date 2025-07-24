@@ -630,50 +630,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test email endpoint for debugging
-  app.post("/api/test-email", async (req, res) => {
-    try {
-      const { emailType, testEmail, companyName } = req.body;
-      
-      // Debug environment variables
-      console.log('[EMAIL DEBUG] Environment check:');
-      console.log('[EMAIL DEBUG] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
-      console.log('[EMAIL DEBUG] GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? `Set (${process.env.GMAIL_APP_PASSWORD.length} chars)` : 'Not set');
-      
-      if (!process.env.GMAIL_EMAIL || !process.env.GMAIL_APP_PASSWORD) {
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Gmail credentials not configured',
-          debug: {
-            email: !!process.env.GMAIL_EMAIL,
-            password: !!process.env.GMAIL_APP_PASSWORD
-          }
-        });
-      }
-      
-      let emailSent = false;
-      
-      if (emailType === 'company') {
-        emailSent = await sendCompanyWelcomeEmail(companyName || 'Test Company', testEmail);
-      } else if (emailType === 'user') {
-        emailSent = await sendUserWelcomeEmail(
-          testEmail,
-          companyName || 'Test Company',
-          'TempPassword123!',
-          'Admin'
-        );
-      }
-      
-      if (emailSent) {
-        res.json({ success: true, message: `${emailType} email sent successfully to ${testEmail}` });
-      } else {
-        res.status(500).json({ success: false, message: 'Failed to send email - check server logs for details' });
-      }
-    } catch (error) {
-      console.error('Test email error:', error);
-      res.status(500).json({ success: false, message: 'Email test failed', error: error.message });
-    }
+  // Environment debug endpoint (no auth required)
+  app.get("/api/debug/env", (req, res) => {
+    res.json({
+      NODE_ENV: process.env.NODE_ENV,
+      GMAIL_EMAIL: process.env.GMAIL_EMAIL,
+      GMAIL_APP_PASSWORD_SET: !!process.env.GMAIL_APP_PASSWORD,
+      GMAIL_APP_PASSWORD_LENGTH: process.env.GMAIL_APP_PASSWORD?.length || 0,
+      DATABASE_URL_SET: !!process.env.DATABASE_URL,
+      SESSION_SECRET_SET: !!process.env.SESSION_SECRET
+    });
   });
+
+
 
   // Company creation endpoint - public access for admin setup
   app.post("/api/admin/create-company", async (req, res) => {
@@ -1234,6 +1203,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test route to verify role access
   app.get("/api/test-role", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     res.json({ message: "Role access verified", role: req.user.role });
+  });
+
+  // Test email endpoint (admin only)
+  app.post("/api/test-email", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { to, subject, message } = req.body;
+      
+      if (!to || !subject || !message) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing required fields: to, subject, message" 
+        });
+      }
+
+      console.log('[EMAIL TEST] Attempting to send test email...');
+      console.log('[EMAIL TEST] To:', to);
+      console.log('[EMAIL TEST] Subject:', subject);
+      console.log('[EMAIL TEST] Environment check in route:');
+      console.log('[EMAIL TEST] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
+      console.log('[EMAIL TEST] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
+
+      const { sendEmail } = await import('./lib/email-service');
+      
+      const result = await sendEmail({
+        to,
+        subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #2B4B73;">Email Test from NeedsCareAI+</h2>
+            <p>${message}</p>
+            <p><em>This is a test email sent from the NeedsCareAI+ platform.</em></p>
+          </div>
+        `,
+        text: message
+      });
+
+      if (result) {
+        console.log('[EMAIL TEST] ✅ Test email sent successfully');
+        res.json({ success: true, message: 'Test email sent successfully' });
+      } else {
+        console.log('[EMAIL TEST] ❌ Test email failed - sendEmail returned false');
+        res.status(500).json({ success: false, error: 'Failed to send test email - sendEmail returned false' });
+      }
+    } catch (error: any) {
+      console.error('[EMAIL TEST] ❌ Test email error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Unknown error occurred' 
+      });
+    }
   });
 
   app.put("/api/shifts/:id", requireAuth, async (req: any, res) => {

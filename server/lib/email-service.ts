@@ -1,47 +1,64 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+
+// Load environment from .env.local if available (for runtime initialization)
+const loadLocalEnv = () => {
+  const localEnvPath = path.join(process.cwd(), '.env.local');
+  if (fs.existsSync(localEnvPath)) {
+    const envFile = fs.readFileSync(localEnvPath, 'utf8');
+    envFile.split('\n').forEach(line => {
+      const [key, value] = line.split('=');
+      if (key && value && !process.env[key.trim()]) {
+        process.env[key.trim()] = value.trim();
+      }
+    });
+    console.log('[EMAIL] Loaded environment from .env.local');
+  }
+};
+
+// Ensure environment is loaded
+loadLocalEnv();
 
 // Gmail SMTP configuration with detailed debugging
 let transporter: any;
 
-// Debug Gmail configuration
-console.log('[EMAIL] ====== Gmail Configuration Debug ======');
-console.log('[EMAIL] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
-console.log('[EMAIL] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
-console.log('[EMAIL] GMAIL_APP_PASSWORD set:', !!process.env.GMAIL_APP_PASSWORD);
+// Create transporter function for lazy initialization
+const getTransporter = () => {
+  if (!transporter) {
+    console.log('[EMAIL] ====== Gmail Configuration Debug ======');
+    console.log('[EMAIL] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
+    console.log('[EMAIL] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
+    console.log('[EMAIL] GMAIL_APP_PASSWORD set:', !!process.env.GMAIL_APP_PASSWORD);
 
-if (process.env.GMAIL_EMAIL && process.env.GMAIL_APP_PASSWORD) {
-  // Try simpler Gmail configuration first
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_EMAIL,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
-  
-  console.log('[EMAIL] Gmail transporter created with service: gmail');
-  
-  // Test connection
-  transporter.verify((error: any, success: any) => {
-    if (error) {
-      console.error('[EMAIL] ❌ Gmail verification failed:', error.message);
-      console.error('[EMAIL] Error code:', error.code);
-      console.error('[EMAIL] Response code:', error.responseCode);
-      console.log('[EMAIL] 🔧 Troubleshooting steps:');
-      console.log('[EMAIL] 1. Ensure 2FA is enabled on your Gmail account');
-      console.log('[EMAIL] 2. Generate a new App Password at: https://myaccount.google.com/apppasswords');
-      console.log('[EMAIL] 3. Use the 16-character App Password (remove spaces)');
-      console.log('[EMAIL] 4. Make sure the Gmail account allows "Less secure app access"');
+    if (process.env.GMAIL_EMAIL && process.env.GMAIL_APP_PASSWORD) {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_EMAIL,
+          pass: process.env.GMAIL_APP_PASSWORD,
+        },
+      });
+      
+      console.log('[EMAIL] Gmail transporter created with service: gmail');
+      
+      // Test connection
+      transporter.verify((error: any, success: any) => {
+        if (error) {
+          console.error('[EMAIL] ❌ Gmail verification failed:', error.message);
+          console.error('[EMAIL] Error code:', error.code);
+          console.error('[EMAIL] Response code:', error.responseCode);
+        } else {
+          console.log('[EMAIL] ✅ Gmail SMTP verified successfully');
+        }
+      });
     } else {
-      console.log('[EMAIL] ✅ Gmail SMTP verified successfully');
+      console.log('[EMAIL] ❌ Gmail credentials missing');
+      throw new Error('Gmail credentials not configured');
     }
-  });
-} else {
-  console.log('[EMAIL] ❌ Gmail credentials missing');
-  console.log('[EMAIL] Required environment variables:');
-  console.log('[EMAIL] - GMAIL_EMAIL: Your Gmail address');
-  console.log('[EMAIL] - GMAIL_APP_PASSWORD: 16-character App Password from Gmail');
-}
+  }
+  return transporter;
+};
 
 interface EmailOptions {
   to: string;
@@ -52,6 +69,8 @@ interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
+    const transporter = getTransporter();
+    
     const mailOptions = {
       from: `"NeedsCareAI+ Platform" <${process.env.GMAIL_EMAIL}>`,
       to: options.to,
@@ -60,11 +79,14 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text || options.html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
     };
 
+    console.log('[EMAIL] Sending email to:', options.to);
+    console.log('[EMAIL] Subject:', options.subject);
+    
     const result = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', result.messageId);
+    console.log('[EMAIL] ✅ Email sent successfully:', result.messageId);
     return true;
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('[EMAIL] ❌ Failed to send email:', error);
     return false;
   }
 }
