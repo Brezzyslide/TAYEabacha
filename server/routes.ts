@@ -630,6 +630,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test email endpoint for debugging
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      const { emailType, testEmail, companyName } = req.body;
+      
+      let emailSent = false;
+      
+      if (emailType === 'company') {
+        emailSent = await sendCompanyWelcomeEmail(companyName || 'Test Company', testEmail);
+      } else if (emailType === 'user') {
+        emailSent = await sendUserWelcomeEmail(
+          testEmail,
+          companyName || 'Test Company',
+          'TempPassword123!',
+          'Admin'
+        );
+      }
+      
+      if (emailSent) {
+        res.json({ success: true, message: `${emailType} email sent successfully to ${testEmail}` });
+      } else {
+        res.status(500).json({ success: false, message: 'Failed to send email' });
+      }
+    } catch (error) {
+      console.error('Test email error:', error);
+      res.status(500).json({ success: false, message: 'Email test failed', error: error.message });
+    }
+  });
+
   // Company creation endpoint - public access for admin setup
   app.post("/api/admin/create-company", async (req, res) => {
     try {
