@@ -87,14 +87,20 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     defaultValues: {
       title: "",
       startDateTime: new Date(),
+      endDateTime: undefined,
       shiftStartDate: new Date(),
       shiftStartTime: "09:00",
       shiftEndTime: "17:00",
+      userId: undefined,
+      clientId: undefined,
+      fundingCategory: undefined,
+      staffRatio: undefined,
       isRecurring: false,
       selectedWeekdays: [],
       numberOfOccurrences: 6,
       recurrenceType: "weekly",
       endConditionType: "occurrences",
+      recurrenceEndDate: undefined,
     },
   });
 
@@ -329,10 +335,27 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                                 type="time"
                                 value={field.value ? format(field.value, "HH:mm") : ""}
                                 onChange={(e) => {
-                                  const [hours, minutes] = e.target.value.split(":");
-                                  const newDate = new Date(field.value || new Date());
-                                  newDate.setHours(parseInt(hours), parseInt(minutes));
-                                  field.onChange(newDate);
+                                  try {
+                                    const timeValue = e.target.value;
+                                    if (!timeValue || !timeValue.includes(":")) return;
+                                    
+                                    const [hours, minutes] = timeValue.split(":");
+                                    const parsedHours = parseInt(hours, 10);
+                                    const parsedMinutes = parseInt(minutes, 10);
+                                    
+                                    // Validate parsed values
+                                    if (isNaN(parsedHours) || isNaN(parsedMinutes) || 
+                                        parsedHours < 0 || parsedHours > 23 || 
+                                        parsedMinutes < 0 || parsedMinutes > 59) {
+                                      return;
+                                    }
+                                    
+                                    const newDate = new Date(field.value || new Date());
+                                    newDate.setHours(parsedHours, parsedMinutes, 0, 0);
+                                    field.onChange(newDate);
+                                  } catch (error) {
+                                    console.warn("Invalid time input:", e.target.value);
+                                  }
                                 }}
                               />
                             </div>
@@ -381,10 +404,27 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                               type="time"
                               value={field.value ? format(field.value, "HH:mm") : ""}
                               onChange={(e) => {
-                                const [hours, minutes] = e.target.value.split(":");
-                                const newDate = new Date(field.value || new Date());
-                                newDate.setHours(parseInt(hours), parseInt(minutes));
-                                field.onChange(newDate);
+                                try {
+                                  const timeValue = e.target.value;
+                                  if (!timeValue || !timeValue.includes(":")) return;
+                                  
+                                  const [hours, minutes] = timeValue.split(":");
+                                  const parsedHours = parseInt(hours, 10);
+                                  const parsedMinutes = parseInt(minutes, 10);
+                                  
+                                  // Validate parsed values
+                                  if (isNaN(parsedHours) || isNaN(parsedMinutes) || 
+                                      parsedHours < 0 || parsedHours > 23 || 
+                                      parsedMinutes < 0 || parsedMinutes > 59) {
+                                    return;
+                                  }
+                                  
+                                  const newDate = new Date(field.value || new Date());
+                                  newDate.setHours(parsedHours, parsedMinutes, 0, 0);
+                                  field.onChange(newDate);
+                                } catch (error) {
+                                  console.warn("Invalid time input:", e.target.value);
+                                }
                               }}
                             />
                           </div>
@@ -450,8 +490,19 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                           <FormControl>
                             <Input
                               type="time"
-                              {...field}
+                              value={field.value || "09:00"}
+                              onChange={(e) => {
+                                try {
+                                  const timeValue = e.target.value;
+                                  if (timeValue && timeValue.match(/^\d{2}:\d{2}$/)) {
+                                    field.onChange(timeValue);
+                                  }
+                                } catch (error) {
+                                  console.warn("Invalid start time input:", e.target.value);
+                                }
+                              }}
                               className="w-full"
+                              placeholder="09:00"
                             />
                           </FormControl>
                           <FormMessage />
@@ -468,8 +519,19 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                           <FormControl>
                             <Input
                               type="time"
-                              {...field}
+                              value={field.value || "17:00"}
+                              onChange={(e) => {
+                                try {
+                                  const timeValue = e.target.value;
+                                  if (timeValue && timeValue.match(/^\d{2}:\d{2}$/)) {
+                                    field.onChange(timeValue);
+                                  }
+                                } catch (error) {
+                                  console.warn("Invalid end time input:", e.target.value);
+                                }
+                              }}
                               className="w-full"
+                              placeholder="17:00"
                             />
                           </FormControl>
                           <FormMessage />
