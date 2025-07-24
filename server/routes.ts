@@ -14,6 +14,7 @@ import { createSmartTimesheetEntry } from "./smart-timesheet-service";
 import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
+import { sendCompanyWelcomeEmail, sendUserWelcomeEmail } from "./lib/email-service";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -674,6 +675,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // NO AUTO-PROVISIONING - All tenants start completely clean
       console.log(`[NEW TENANT SETUP] Tenant ${tenant.id} created with zero data - users must create all content manually`);
+
+      // Send welcome email to company admin
+      try {
+        const emailSent = await sendCompanyWelcomeEmail(companyName, primaryContactEmail);
+        if (emailSent) {
+          console.log(`[EMAIL] Welcome email sent to ${primaryContactEmail} for company ${companyName}`);
+        } else {
+          console.warn(`[EMAIL] Failed to send welcome email to ${primaryContactEmail}`);
+        }
+      } catch (emailError) {
+        console.error(`[EMAIL] Error sending welcome email:`, emailError);
+        // Don't fail company creation if email fails
+      }
 
       // Log to console as requested
       console.table([
@@ -4472,6 +4486,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const newUser = await storage.createUser(userData);
+      
+      // Send welcome email to new user
+      try {
+        const company = await storage.getCompanyByTenantId(req.user.tenantId);
+        const companyName = company?.name || 'Your Organization';
+        
+        const emailSent = await sendUserWelcomeEmail(
+          fullName,
+          email,
+          username,
+          password, // Send original password before hashing
+          companyName
+        );
+        
+        if (emailSent) {
+          console.log(`[EMAIL] Welcome email sent to new user ${email}`);
+        } else {
+          console.warn(`[EMAIL] Failed to send welcome email to ${email}`);
+        }
+      } catch (emailError) {
+        console.error(`[EMAIL] Error sending user welcome email:`, emailError);
+        // Don't fail user creation if email fails
+      }
       
       // Log activity
       await storage.createActivityLog({

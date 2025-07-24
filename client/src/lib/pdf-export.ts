@@ -1785,6 +1785,5 @@ export async function exportCarePlanToPDF(plan: any, client: any, user: any): Pr
     filename: `care-plan-${plan.planTitle?.replace(/[^a-zA-Z0-9]/g, '-') || 'untitled'}.pdf`
   };
 
-  const pdfUtil = new PDFExportUtility();
   await pdfUtil.generateStructuredPDF(options, sections);
 }
