@@ -61,7 +61,7 @@ const shiftFormSchema = z.object({
   isRecurring: z.boolean().default(false),
   recurrenceType: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
   selectedWeekdays: z.array(z.string()).optional(),
-  numberOfOccurrences: z.number().min(1).max(52).optional(),
+  numberOfOccurrences: z.number().min(1).max(104).optional(),
   recurrenceEndDate: z.date().optional(),
   endConditionType: z.enum(["occurrences", "endDate"]).optional(),
 });
@@ -901,8 +901,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                             <Input
                               type="number"
                               min="1"
-                              max="52"
-                              placeholder="Enter number of shifts"
+                              max="104"
+                              placeholder="Enter number of shifts (max 104)"
                               {...field}
                               value={field.value || ""}
                               onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 6)}
