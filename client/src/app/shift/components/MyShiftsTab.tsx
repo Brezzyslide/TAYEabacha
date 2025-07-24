@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, Play, Square, User, X } from "lucide-react";
-import { format, isToday, isTomorrow, isYesterday, isAfter } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Clock, MapPin, Play, Square, User, X, Filter } from "lucide-react";
+import { format, isToday, isTomorrow, isYesterday, isAfter, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays, startOfMonth, endOfMonth } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { type Shift } from "@shared/schema";
 import ShiftStatusTag from "./ShiftStatusTag";
@@ -13,6 +14,8 @@ import EndShiftModal from "./EndShiftModal";
 import { CancelShiftModal } from "./CancelShiftModal";
 import CaseNoteStatusBadge, { CaseNoteCornerIndicator, CaseNoteStatusBorder } from "./CaseNoteStatusBadge";
 
+type FilterPeriod = "all" | "daily" | "weekly" | "fortnightly" | "monthly";
+
 export default function MyShiftsTab() {
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
@@ -20,6 +23,7 @@ export default function MyShiftsTab() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [shiftToCancel, setShiftToCancel] = useState<Shift | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("all");
 
   // Update current time every minute for real-time countdown
   useEffect(() => {
@@ -55,11 +59,51 @@ export default function MyShiftsTab() {
     );
   }, [shifts, user]);
 
+  // Filter shifts by period
+  const filteredMyShifts = useMemo(() => {
+    if (filterPeriod === "all") return myShifts;
+    
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (filterPeriod) {
+      case "daily":
+        startDate = startOfDay(now);
+        endDate = endOfDay(now);
+        break;
+      case "weekly":
+        startDate = startOfWeek(now);
+        endDate = endOfWeek(now);
+        break;
+      case "fortnightly":
+        startDate = startOfDay(now);
+        endDate = addDays(now, 14);
+        break;
+      case "monthly":
+        startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
+        break;
+      default:
+        return myShifts;
+    }
+
+    return myShifts.filter(shift => {
+      if (!shift.startTime) return true; // Include shifts without start time
+      try {
+        const shiftDate = new Date(shift.startTime);
+        return shiftDate >= startDate && shiftDate <= endDate;
+      } catch (error) {
+        return true; // Include if date parsing fails
+      }
+    });
+  }, [myShifts, filterPeriod]);
+
   // Get the next upcoming shift
   const nextUpcomingShift = useMemo(() => {
     const now = new Date();
     
-    const upcomingShifts = myShifts
+    const upcomingShifts = filteredMyShifts
       .filter(shift => {
         if (!shift.startTime) return true; // Include shifts without start time as upcoming
         return isAfter(new Date(shift.startTime), now);
@@ -72,7 +116,7 @@ export default function MyShiftsTab() {
       });
     
     return upcomingShifts[0] || null;
-  }, [myShifts]);
+  }, [filteredMyShifts]);
 
   const formatShiftDate = (date: Date | string) => {
     const shiftDate = new Date(date);
@@ -162,22 +206,52 @@ export default function MyShiftsTab() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Assigned Shifts</h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          View and manage shifts assigned to you. Use Start/End buttons for GPS check-in with handover notes.
-        </p>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Assigned Shifts</h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            View and manage shifts assigned to you. Use Start/End buttons for GPS check-in with handover notes.
+          </p>
+        </div>
+        
+        {/* Date Filter Controls */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+              <Filter className="h-4 w-4" />
+              <span>Filter:</span>
+            </div>
+            <Select value={filterPeriod} onValueChange={(value: FilterPeriod) => setFilterPeriod(value)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All Shifts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Shifts</SelectItem>
+                <SelectItem value="daily">Today</SelectItem>
+                <SelectItem value="weekly">This Week</SelectItem>
+                <SelectItem value="fortnightly">Next 2 Weeks</SelectItem>
+                <SelectItem value="monthly">This Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
-      {myShifts.length === 0 ? (
+      {filteredMyShifts.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No shifts assigned
+              {filterPeriod === "all" ? "No shifts assigned" : 
+               filterPeriod === "daily" ? "No shifts today" :
+               filterPeriod === "weekly" ? "No shifts this week" :
+               filterPeriod === "fortnightly" ? "No shifts in next 2 weeks" :
+               "No shifts this month"}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              You don't have any shifts assigned. Check the calendar for available shifts to request.
+              {filterPeriod === "all" 
+                ? "You don't have any shifts assigned. Check the calendar for available shifts to request."
+                : "Try changing the filter to see shifts in other time periods."}
             </p>
           </CardContent>
         </Card>
@@ -278,14 +352,21 @@ export default function MyShiftsTab() {
           )}
 
           <div>
-            <h3 className="text-lg font-semibold mb-4">All My Shifts ({myShifts.length})</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {filterPeriod === "all" ? `All My Shifts (${filteredMyShifts.length})` : 
+               filterPeriod === "daily" ? `Today's Shifts (${filteredMyShifts.length})` :
+               filterPeriod === "weekly" ? `This Week's Shifts (${filteredMyShifts.length})` :
+               filterPeriod === "fortnightly" ? `Next 2 Weeks' Shifts (${filteredMyShifts.length})` :
+               `This Month's Shifts (${filteredMyShifts.length})`}
+            </h3>
             <div className="space-y-4">
-              {myShifts
+              {filteredMyShifts
                 .sort((a, b) => {
                   if (!a.startTime && !b.startTime) return 0;
-                  if (!a.startTime) return 1;
-                  if (!b.startTime) return -1;
-                  return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+                  if (!a.startTime) return -1; // Shifts without time come first
+                  if (!b.startTime) return 1;
+                  // FIXED: Changed to ascending order (earliest first)
+                  return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
                 })
                 .map((shift) => (
                   <Card 
