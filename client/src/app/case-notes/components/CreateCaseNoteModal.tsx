@@ -136,6 +136,7 @@ export default function CreateCaseNoteModal({
   const selectedClientId = form.watch("clientId");
   const contentValue = form.watch("content");
   const incidentOccurred = form.watch("incidentOccurred");
+  const incidentRefNumber = form.watch("incidentRefNumber");
   const medicationStatus = form.watch("medicationStatus");
 
   // Auto-fetch shifts when client is selected
@@ -504,21 +505,32 @@ export default function CreateCaseNoteModal({
                   control={form.control}
                   name="incidentOccurred"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Did an incident occur during this shift?
-                        </FormLabel>
-                        <FormDescription>
-                          Toggle if any incident or unusual event occurred
-                        </FormDescription>
+                    <FormItem>
+                      <FormLabel className="text-base">
+                        Did an incident occur during this shift?
+                      </FormLabel>
+                      <FormDescription>
+                        Select whether any incident or unusual event occurred
+                      </FormDescription>
+                      <div className="flex gap-4 mt-2">
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          onClick={() => field.onChange(false)}
+                          className="flex-1"
+                        >
+                          No
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          onClick={() => field.onChange(true)}
+                          className="flex-1"
+                        >
+                          Yes
+                        </Button>
                       </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -565,28 +577,46 @@ export default function CreateCaseNoteModal({
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="incidentLodged"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Has the incident report been lodged? *
-                            </FormLabel>
-                            <FormDescription>
-                              Confirm if the incident has been officially reported
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value || false}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                    {/* Only show incident lodged field if no incident reference number is provided */}
+                    {!incidentRefNumber && (
+                      <FormField
+                        control={form.control}
+                        name="incidentLodged"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">
+                                Has the incident report been lodged? *
+                              </FormLabel>
+                              <FormDescription>
+                                Confirm if the incident has been officially reported
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value || false}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {/* Show confirmation when incident number is provided */}
+                    {incidentRefNumber && (
+                      <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-900/20">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                            Incident report lodged with reference: {incidentRefNumber}
+                          </span>
+                        </div>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          No further incident reporting action required
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
