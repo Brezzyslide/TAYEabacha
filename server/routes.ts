@@ -1643,28 +1643,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Calculate new date/time for this shift if date/time fields are being updated
           let shiftUpdateData = { ...updateData };
           
+          // Convert timestamp strings to Date objects for database compatibility
+          if (shiftUpdateData.startTime && typeof shiftUpdateData.startTime === 'string') {
+            shiftUpdateData.startTime = new Date(shiftUpdateData.startTime);
+          }
+          if (shiftUpdateData.endTime && typeof shiftUpdateData.endTime === 'string') {
+            shiftUpdateData.endTime = new Date(shiftUpdateData.endTime);
+          }
+          
           // If start time is being updated, calculate new startTime for this shift
-          if (updateData.startTime) {
+          if (updateData.startTime && shiftUpdateData.startTime instanceof Date) {
             const originalShiftDate = new Date(shift.startTime);
-            const newDateTime = new Date(updateData.startTime);
+            const newDateTime = shiftUpdateData.startTime;
             
             // Preserve the original date but use new time
             const updatedStartTime = new Date(originalShiftDate);
             updatedStartTime.setHours(newDateTime.getHours(), newDateTime.getMinutes(), 0, 0);
             
-            shiftUpdateData.startTime = updatedStartTime.toISOString();
+            shiftUpdateData.startTime = updatedStartTime;
           }
           
           // If end time is being updated, calculate new endTime for this shift
-          if (updateData.endTime) {
+          if (updateData.endTime && shiftUpdateData.endTime instanceof Date) {
             const originalShiftDate = new Date(shift.startTime);
-            const newEndDateTime = new Date(updateData.endTime);
+            const newEndDateTime = shiftUpdateData.endTime;
             
             // Preserve the original date but use new time
             const updatedEndTime = new Date(originalShiftDate);
             updatedEndTime.setHours(newEndDateTime.getHours(), newEndDateTime.getMinutes(), 0, 0);
             
-            shiftUpdateData.endTime = updatedEndTime.toISOString();
+            shiftUpdateData.endTime = updatedEndTime;
           }
           
           // Remove editType from the data sent to storage
@@ -1678,6 +1686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (shiftError) {
           console.error(`[SERIES UPDATE] Failed to update shift ${shift.id}:`, shiftError);
+          console.error(`[SERIES UPDATE] Shift error details:`, shiftError.message);
           // Continue with other shifts even if one fails
         }
       }
@@ -1697,8 +1706,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedShifts);
     } catch (error) {
       console.error("[SERIES UPDATE] Error updating shift series:", error);
+      console.error("[SERIES UPDATE] Error stack:", error.stack);
       console.error("[SERIES UPDATE] Update data:", req.body);
-      console.error("[SERIES UPDATE] User:", req.user.username, "ID:", req.user.id);
+      console.error("[SERIES UPDATE] User:", req.user?.username, "ID:", req.user?.id);
       res.status(500).json({ 
         message: "Failed to update shift series", 
         error: error instanceof Error ? error.message : 'Unknown error' 
