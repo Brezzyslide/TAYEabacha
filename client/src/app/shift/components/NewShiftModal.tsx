@@ -78,6 +78,9 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const [endConditionType, setEndConditionType] = useState<"occurrences" | "endDate">("occurrences");
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
   
+  // Preserve form data across modal sessions
+  const [preservedFormData, setPreservedFormData] = useState<Partial<ShiftFormData>>({});
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -149,17 +152,50 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         return response.json();
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       const count = Array.isArray(data) ? data.length : 1;
       toast({
         title: "Shifts Created",
         description: `Successfully created ${count} shift${count > 1 ? 's' : ''}`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      
+      // Force immediate cache invalidation and refresh for all shift queries
+      await queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/shifts"] });
+      
+      // Also invalidate related queries that might depend on shift data
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      
+      // Close modal and reset form
       onOpenChange(false);
-      form.reset();
+      
+      // Clear preserved data only after successful creation
+      setPreservedFormData({});
+      
+      // Reset form to default values
+      form.reset({
+        title: "",
+        startDateTime: new Date(),
+        endDateTime: undefined,
+        shiftStartDate: new Date(),
+        shiftStartTime: "09:00",
+        shiftEndTime: "17:00",
+        userId: undefined,
+        clientId: undefined,
+        fundingCategory: undefined,
+        staffRatio: undefined,
+        isRecurring: false,
+        selectedWeekdays: [],
+        numberOfOccurrences: 6,
+        recurrenceType: "weekly",
+        endConditionType: "occurrences",
+        recurrenceEndDate: undefined,
+      });
+      
       setIsRecurring(false);
       setSelectedWeekdays([]);
+      setEndConditionType("occurrences");
     },
     onError: (error: Error) => {
       toast({
@@ -658,9 +694,20 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                   id="isRecurring"
                   checked={isRecurring}
                   onCheckedChange={(checked) => {
-                    setIsRecurring(checked as boolean);
-                    form.setValue("isRecurring", checked as boolean);
-                    if (!checked) {
+                    const isRecurringMode = checked as boolean;
+                    
+                    // Preserve current form data before switching modes
+                    const currentValues = form.getValues();
+                    setPreservedFormData(currentValues);
+                    
+                    setIsRecurring(isRecurringMode);
+                    form.setValue("isRecurring", isRecurringMode);
+                    
+                    // Restore preserved weekdays when switching to recurring mode
+                    if (isRecurringMode && preservedFormData.selectedWeekdays) {
+                      setSelectedWeekdays(preservedFormData.selectedWeekdays);
+                      form.setValue("selectedWeekdays", preservedFormData.selectedWeekdays);
+                    } else if (!isRecurringMode) {
                       setSelectedWeekdays([]);
                       form.setValue("selectedWeekdays", []);
                     }

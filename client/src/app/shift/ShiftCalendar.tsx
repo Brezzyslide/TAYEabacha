@@ -33,7 +33,7 @@ export default function ShiftCalendar() {
 
   const { data: shifts = [], isLoading } = useQuery<Shift[]>({
     queryKey: ["/api/shifts"],
-    refetchInterval: 30000,
+    refetchInterval: 10000, // Reduced to 10 seconds for better responsiveness
   });
 
   const { data: users = [] } = useQuery({
