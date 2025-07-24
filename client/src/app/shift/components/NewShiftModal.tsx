@@ -122,10 +122,15 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       if (data.isRecurring && data.selectedWeekdays && data.selectedWeekdays.length > 0) {
         // Generate recurring shifts using dedicated calendar fields
         const shifts = generateWeeklyPatternShifts(data);
+        
+        // Generate a unique series ID for all shifts in this recurring series
+        const seriesId = `series-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
         const promises = shifts.map(shift => 
           apiRequest("POST", "/api/shifts", {
             ...shift,
             isRecurring: true,
+            seriesId: seriesId,
             recurringPattern: data.recurrenceType,
             recurringDays: data.selectedWeekdays,
             shiftStartDate: data.shiftStartDate?.toISOString(),
