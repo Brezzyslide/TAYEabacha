@@ -1,22 +1,47 @@
 import nodemailer from 'nodemailer';
 
-// Gmail SMTP configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_EMAIL,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+// Gmail SMTP configuration with detailed debugging
+let transporter: any;
 
-// Verify transporter configuration
-transporter.verify((error: any, success: any) => {
-  if (error) {
-    console.error('Gmail SMTP configuration error:', error);
-  } else {
-    console.log('Gmail SMTP server is ready to send emails');
-  }
-});
+// Debug Gmail configuration
+console.log('[EMAIL] ====== Gmail Configuration Debug ======');
+console.log('[EMAIL] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
+console.log('[EMAIL] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
+console.log('[EMAIL] GMAIL_APP_PASSWORD set:', !!process.env.GMAIL_APP_PASSWORD);
+
+if (process.env.GMAIL_EMAIL && process.env.GMAIL_APP_PASSWORD) {
+  // Try simpler Gmail configuration first
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_EMAIL,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+  
+  console.log('[EMAIL] Gmail transporter created with service: gmail');
+  
+  // Test connection
+  transporter.verify((error: any, success: any) => {
+    if (error) {
+      console.error('[EMAIL] ❌ Gmail verification failed:', error.message);
+      console.error('[EMAIL] Error code:', error.code);
+      console.error('[EMAIL] Response code:', error.responseCode);
+      console.log('[EMAIL] 🔧 Troubleshooting steps:');
+      console.log('[EMAIL] 1. Ensure 2FA is enabled on your Gmail account');
+      console.log('[EMAIL] 2. Generate a new App Password at: https://myaccount.google.com/apppasswords');
+      console.log('[EMAIL] 3. Use the 16-character App Password (remove spaces)');
+      console.log('[EMAIL] 4. Make sure the Gmail account allows "Less secure app access"');
+    } else {
+      console.log('[EMAIL] ✅ Gmail SMTP verified successfully');
+    }
+  });
+} else {
+  console.log('[EMAIL] ❌ Gmail credentials missing');
+  console.log('[EMAIL] Required environment variables:');
+  console.log('[EMAIL] - GMAIL_EMAIL: Your Gmail address');
+  console.log('[EMAIL] - GMAIL_APP_PASSWORD: 16-character App Password from Gmail');
+}
 
 interface EmailOptions {
   to: string;

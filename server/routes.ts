@@ -635,6 +635,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { emailType, testEmail, companyName } = req.body;
       
+      // Debug environment variables
+      console.log('[EMAIL DEBUG] Environment check:');
+      console.log('[EMAIL DEBUG] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
+      console.log('[EMAIL DEBUG] GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? `Set (${process.env.GMAIL_APP_PASSWORD.length} chars)` : 'Not set');
+      
+      if (!process.env.GMAIL_EMAIL || !process.env.GMAIL_APP_PASSWORD) {
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Gmail credentials not configured',
+          debug: {
+            email: !!process.env.GMAIL_EMAIL,
+            password: !!process.env.GMAIL_APP_PASSWORD
+          }
+        });
+      }
+      
       let emailSent = false;
       
       if (emailType === 'company') {
@@ -651,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (emailSent) {
         res.json({ success: true, message: `${emailType} email sent successfully to ${testEmail}` });
       } else {
-        res.status(500).json({ success: false, message: 'Failed to send email' });
+        res.status(500).json({ success: false, message: 'Failed to send email - check server logs for details' });
       }
     } catch (error) {
       console.error('Test email error:', error);
