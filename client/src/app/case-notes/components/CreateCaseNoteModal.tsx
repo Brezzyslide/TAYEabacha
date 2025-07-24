@@ -64,6 +64,15 @@ const caseNoteSchema = z.object({
 }, {
   message: "Please confirm if medication record has been logged",
   path: ["medicationRecordLogged"]
+}).refine((data) => {
+  // If medication refused, must have incident reference number
+  if (data.medicationStatus === "refused") {
+    return data.incidentRefNumber && data.incidentRefNumber.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Incident report number is required for medication refusal",
+  path: ["incidentRefNumber"]
 });
 
 type CaseNoteFormData = z.infer<typeof caseNoteSchema>;
@@ -654,6 +663,7 @@ export default function CreateCaseNoteModal({
                   )}
                 />
 
+                {/* Medication Administration Record - only for administered medication */}
                 {medicationStatus === "yes" && (
                   <FormField
                     control={form.control}
@@ -677,6 +687,44 @@ export default function CreateCaseNoteModal({
                       </FormItem>
                     )}
                   />
+                )}
+
+                {/* Medication Refusal Incident Reporting - mandatory for refused medication */}
+                {medicationStatus === "refused" && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border p-4 bg-orange-50 dark:bg-orange-900/20">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        <span className="font-medium text-orange-800 dark:text-orange-200">
+                          Medication Refusal Incident Report Required
+                        </span>
+                      </div>
+                      <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                        Client medication refusal must be documented with an incident report number
+                      </p>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="incidentRefNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Medication Refusal Incident Report Number *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g., INC-2024-001" 
+                              {...field}
+                              className="border-orange-200 focus:border-orange-400"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the incident report number for this medication refusal
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 )}
               </CardContent>
             </Card>
