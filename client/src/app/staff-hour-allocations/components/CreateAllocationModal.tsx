@@ -63,7 +63,14 @@ export default function CreateAllocationModal({
     enabled: isOpen,
   });
 
-  console.log("[CreateAllocationModal] Staff data:", { staffMembers, staffLoading, staffError });
+  console.log("[CreateAllocationModal] Staff data:", { 
+    staffMembers, 
+    staffLoading, 
+    staffError,
+    staffCount: staffMembers.length,
+    staffIds: staffMembers.map(s => s.id),
+    staffNames: staffMembers.map(s => s.fullName || s.username)
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -153,6 +160,15 @@ export default function CreateAllocationModal({
       allocation.staffId === staff.id && allocation.isActive
     )
   );
+
+  console.log("[CreateAllocationModal] Filtering results:", {
+    totalStaff: staffMembers.length,
+    existingAllocations: existingAllocations.length,
+    availableStaff: availableStaff.length,
+    availableStaffIds: availableStaff.map(s => s.id),
+    availableStaffNames: availableStaff.map(s => s.fullName || s.username),
+    isEditMode: !!allocationToEdit
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

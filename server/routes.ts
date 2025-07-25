@@ -1841,11 +1841,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get users for tenant (for shift assignment)
   app.get("/api/users", requireAuth, async (req: any, res) => {
     try {
+      console.log(`[DEBUG /api/users] Request from user ${req.user.id}, tenant ${req.user.tenantId}`);
       const users = await storage.getUsersByTenant(req.user.tenantId);
+      console.log(`[DEBUG /api/users] Found ${users.length} users for tenant ${req.user.tenantId}`);
+      console.log(`[DEBUG /api/users] User IDs: ${users.map(u => u.id).join(', ')}`);
       // Remove sensitive data
       const sanitizedUsers = users.map(({ password, ...user }) => user);
       res.json(sanitizedUsers);
     } catch (error) {
+      console.error(`[ERROR /api/users]`, error);
       res.status(500).json({ message: "Failed to fetch users" });
     }
   });
