@@ -100,7 +100,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       staffRatio: undefined,
       isRecurring: false,
       selectedWeekdays: [],
-      numberOfOccurrences: 6,
+      numberOfOccurrences: 10,
       recurrenceType: "weekly",
       endConditionType: "occurrences",
       recurrenceEndDate: undefined,
@@ -192,7 +192,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         staffRatio: undefined,
         isRecurring: false,
         selectedWeekdays: [],
-        numberOfOccurrences: 6,
+        numberOfOccurrences: 10,
         recurrenceType: "weekly",
         endConditionType: "occurrences",
         recurrenceEndDate: undefined,
@@ -234,7 +234,15 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       "Friday": 5, "Saturday": 6, "Sunday": 0
     };
 
-    const maxOccurrences = data.endConditionType === "occurrences" ? (data.numberOfOccurrences || 6) : 100;
+    const maxOccurrences = data.endConditionType === "occurrences" ? (data.numberOfOccurrences || 10) : 100;
+    
+    console.log("[RECURRING DEBUG] Generating shifts with:", {
+      endConditionType: data.endConditionType,
+      numberOfOccurrences: data.numberOfOccurrences,
+      maxOccurrences,
+      selectedWeekdays: data.selectedWeekdays,
+      frequencyWeeks
+    });
     const endByDate = data.endConditionType === "endDate" ? data.recurrenceEndDate : null;
     const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
 
@@ -296,6 +304,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       currentDate.setDate(currentDate.getDate() + (7 * frequencyWeeks));
       weekCount++;
     }
+    
+    console.log("[RECURRING DEBUG] Generated", shifts.length, "shifts. Expected", maxOccurrences);
 
     return shifts;
   };
@@ -910,7 +920,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                               placeholder="Enter number of shifts (max 104)"
                               {...field}
                               value={field.value || ""}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 6)}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 10)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -975,7 +985,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                         <p>
                           <strong>Duration:</strong> {
                             endConditionType === "occurrences" 
-                              ? `${form.watch("numberOfOccurrences") || 6} occurrences`
+                              ? `${form.watch("numberOfOccurrences") || 10} occurrences`
                               : form.watch("recurrenceEndDate")
                                 ? `Until ${format(form.watch("recurrenceEndDate")!, "PPP")}`
                                 : "Until end date selected"
