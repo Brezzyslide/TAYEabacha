@@ -2968,6 +2968,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pending case notes for validation
+  app.get("/api/case-notes/pending/:clientId", requireAuth, async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const tenantId = req.user.tenantId;
+      
+      // Get case notes that are associated with shifts but considered incomplete
+      const allCaseNotes = await storage.getCaseNotes(clientId, tenantId);
+      const shifts = await storage.getAllShifts(tenantId);
+      
+      // Find shifts that need case notes but don't have them
+      const clientShifts = shifts.filter(shift => 
+        shift.clientId === clientId && 
+        shift.status === 'completed' &&
+        new Date(shift.endTime) < new Date() // Past shifts only
+      );
+      
+      const pendingCaseNotes = clientShifts.filter(shift => {
+        // Check if this shift has a case note
+        const hasProgressNote = allCaseNotes.some(note => 
+          note.linkedShiftId === shift.id && 
+          note.category === 'Progress Note'
+        );
+        return !hasProgressNote;
+      });
+      
+      res.json(pendingCaseNotes);
+    } catch (error: any) {
+      console.error("Pending case notes API error:", error);
+      res.status(500).json({ message: "Failed to fetch pending case notes", error: error.message });
+    }
+  });
+
   app.get("/api/clients/:clientId/case-notes", requireAuth, async (req: any, res) => {
     try {
       const clientId = parseInt(req.params.clientId);

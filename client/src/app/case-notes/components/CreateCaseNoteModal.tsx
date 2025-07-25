@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
-import type { Client, Shift } from "@shared/schema";
+import type { Client, Shift, CaseNote } from "@shared/schema";
 import { format } from "date-fns";
 
 const caseNoteSchema = z.object({
@@ -158,6 +158,18 @@ export default function CreateCaseNoteModal({
   const medicationStatus = form.watch("medicationStatus");
   const selectedCategory = form.watch("category");
 
+  // Fetch selected client data for auto-population
+  const { data: selectedClient } = useQuery<Client>({
+    queryKey: [`/api/clients/${selectedClientId}`],
+    enabled: !!selectedClientId,
+  });
+
+  // Fetch pending case notes to validate completion restrictions
+  const { data: pendingCaseNotes = [] } = useQuery<CaseNote[]>({
+    queryKey: [`/api/case-notes/pending/${selectedClientId}`],
+    enabled: !!selectedClientId && selectedCategory === "Progress Note",
+  });
+
   // Auto-fetch shifts when client is selected
   const { data: availableShifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery<Shift[]>({
     queryKey: ["/api/shifts-by-client-staff", selectedClientId, user?.id],
@@ -172,13 +184,25 @@ export default function CreateCaseNoteModal({
     enabled: !!selectedClientId && !!user?.id,
   });
   
+  // Fetch existing case notes to check for pending ones
+  const { data: existingCaseNotes = [] } = useQuery<CaseNote[]>({
+    queryKey: ["/api/case-notes", { clientId: selectedClientId, staffId: user?.id }],
+    queryFn: async () => {
+      const response = await fetch(`/api/case-notes?clientId=${selectedClientId}&staffId=${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch case notes');
+      return response.json();
+    },
+    enabled: !!selectedClientId && !!user?.id,
+  });
+
   console.log(`[CASE NOTE] Shift fetch state:`, {
     selectedClientId,
     userId: user?.id,
     shiftsLoading,
     shiftsError,
     availableShiftsCount: availableShifts.length,
-    selectedCategory
+    selectedCategory,
+    existingCaseNotesCount: existingCaseNotes.length
   });
 
   // Word count calculation
@@ -197,6 +221,12 @@ export default function CreateCaseNoteModal({
       const shiftDate = new Date(shift.startTime);
       const shiftDateOnly = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
       
+      // Check if this shift already has a case note
+      const hasExistingCaseNote = existingCaseNotes.some(note => note.linkedShiftId === shift.id);
+      if (hasExistingCaseNote) {
+        return false; // Exclude shifts that already have case notes
+      }
+      
       // Include shifts for today
       if (shiftDateOnly.getTime() === today.getTime()) {
         return true;
@@ -212,7 +242,7 @@ export default function CreateCaseNoteModal({
       // Exclude future shifts
       return false;
     });
-  }, [availableShifts]);
+  }, [availableShifts, existingCaseNotes]);
 
   // Suggest most relevant shift (prioritize today's shifts, then most recent past shift)
   const suggestedShift = useMemo(() => {
@@ -247,12 +277,46 @@ export default function CreateCaseNoteModal({
     return filteredShifts[0];
   }, [filteredShifts]);
 
-  // Auto-select suggested shift if only one or set suggestion
+
+
+  // Auto-select suggested shift and populate content
   useEffect(() => {
     if (suggestedShift && !form.getValues("linkedShiftId")) {
       form.setValue("linkedShiftId", suggestedShift.id);
+      
+      // Auto-populate case note title and initial content for progress notes
+      if (selectedCategory === "Progress Note") {
+        const shiftDate = format(new Date(suggestedShift.startTime), "MMM d, yyyy");
+        const shiftTime = format(new Date(suggestedShift.startTime), "h:mm a");
+        const endTime = suggestedShift.endTime ? format(new Date(suggestedShift.endTime), "h:mm a") : "ongoing";
+        
+        form.setValue("title", `Progress Note - ${suggestedShift.title} (${shiftDate})`);
+        
+        // Auto-populate initial content template with client name
+        const clientName = selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : "[Client Name]";
+        const initialContent = `Shift Details:
+Date: ${shiftDate}
+Time: ${shiftTime} - ${endTime}
+Client: ${clientName}
+Shift: ${suggestedShift.title}
+
+Progress Notes:
+- Client presentation and mood:
+- Activities completed during shift:
+- Goals worked on:
+- Challenges or concerns noted:
+- Support provided:
+- Recommendations for future shifts:
+
+Additional Notes:
+`;
+        
+        if (!form.getValues("content")) {
+          form.setValue("content", initialContent);
+        }
+      }
     }
-  }, [suggestedShift, form]);
+  }, [suggestedShift, form, selectedCategory, selectedClient]);
 
   const spellCheckMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -376,7 +440,7 @@ export default function CreateCaseNoteModal({
     }
   };
 
-  const selectedClient = clients.find(c => c.id === selectedClientId);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -462,6 +526,19 @@ export default function CreateCaseNoteModal({
                         </div>
                         <p className="text-sm text-amber-700 mt-1">
                           Progress Notes must be linked to a specific shift to document care provided during that period. No eligible shifts are available for this client.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Warning about pending case notes */}
+                    {selectedCategory === "Progress Note" && pendingCaseNotes?.length > 0 && (
+                      <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-red-800">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="font-medium">Pending Case Notes Detected</span>
+                        </div>
+                        <p className="text-sm text-red-700 mt-1">
+                          {pendingCaseNotes.length} completed shift(s) require Progress Notes before creating new ones. Please complete pending documentation first.
                         </p>
                       </div>
                     )}
