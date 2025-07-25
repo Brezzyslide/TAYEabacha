@@ -917,6 +917,14 @@ export default function ObservationDashboard() {
 
   const handleExportExcel = async () => {
     try {
+      console.log("[EXCEL EXPORT DEBUG] Starting Excel export...");
+      console.log("[EXCEL EXPORT DEBUG] Filtered observations count:", filteredObservations.length);
+      
+      if (filteredObservations.length === 0) {
+        console.error("[EXCEL EXPORT DEBUG] No observations to export");
+        return;
+      }
+      
       const response = await apiRequest("POST", "/api/observations/export/excel", {
         clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
         observationType: selectedType !== "all" ? selectedType : null,
@@ -926,6 +934,12 @@ export default function ObservationDashboard() {
         searchTerm: searchTerm || null,
         observations: filteredObservations
       });
+      
+      console.log("[EXCEL EXPORT DEBUG] Response received:", !!response?.excel);
+      
+      if (!response?.excel) {
+        throw new Error("No Excel data received from server");
+      }
       
       // Convert base64 to blob and download
       const excelBlob = new Blob([Uint8Array.from(atob(response.excel), c => c.charCodeAt(0))], { 
@@ -939,6 +953,8 @@ export default function ObservationDashboard() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      console.log("[EXCEL EXPORT DEBUG] Excel download completed");
     } catch (error) {
       console.error("Excel export failed:", error);
     }

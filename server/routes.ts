@@ -3437,19 +3437,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         starChartItems.forEach(([label, text, rating]) => {
           if (text) {
+            // Create a section box for each star chart item
+            pdf.setFillColor(248, 250, 252); // Light gray background
+            pdf.rect(margin, currentY - 2, contentWidth, 25, 'F');
+            pdf.setDrawColor(229, 231, 235); // Border
+            pdf.rect(margin, currentY - 2, contentWidth, 25, 'S');
+            
+            // Label header
+            pdf.setFillColor(37, 99, 235);
+            pdf.rect(margin, currentY - 2, contentWidth, 8, 'F');
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(10);
             pdf.setFont('helvetica', 'bold');
-            pdf.text(label, margin, currentY);
+            pdf.text(label, margin + 3, currentY + 4);
+            
+            // Content area
+            pdf.setTextColor(0, 0, 0);
             pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(9);
             
-            // Add text with word wrapping
-            const splitText = pdf.splitTextToSize(text, contentWidth - 100);
-            pdf.text(splitText, margin, currentY + 6);
-            currentY += splitText.length * 5 + 3;
+            // Clean and format text
+            const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
+            const splitText = pdf.splitTextToSize(cleanText, contentWidth - 10);
+            pdf.text(splitText, margin + 3, currentY + 12);
             
-            // Add star rating
+            // Rating in bottom right
             pdf.setFont('helvetica', 'bold');
-            pdf.text(`Rating: ${rating}/5 stars`, margin, currentY);
-            currentY += 10;
+            pdf.setFontSize(8);
+            pdf.text(`★ ${rating}/5`, margin + contentWidth - 30, currentY + 20);
+            
+            currentY += 30;
           }
         });
       } else {
@@ -3694,12 +3711,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       
       // Auto-width columns
-      const colWidths = [];
+      const colWidths: any[] = [];
       const headers = Object.keys(excelData[0] || {});
       headers.forEach((header, i) => {
         const maxLength = Math.max(
           header.length,
-          ...excelData.map(row => String(row[header] || '').length)
+          ...excelData.map((row: any) => String(row[header] || '').length)
         );
         colWidths[i] = { width: Math.min(Math.max(maxLength + 2, 10), 50) };
       });
