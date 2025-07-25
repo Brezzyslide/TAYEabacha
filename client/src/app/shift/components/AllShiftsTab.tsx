@@ -292,12 +292,12 @@ export default function AllShiftsTab() {
           />
           
           <EditShiftModal
-            shiftId={selectedShift.id}
-            open={isEditModalOpen}
-            onOpenChange={(open) => {
-              setIsEditModalOpen(open);
-              if (!open) setSelectedShift(null);
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              setSelectedShift(null);
             }}
+            shift={selectedShift}
             editType={editType}
           />
         </>
