@@ -235,6 +235,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     };
 
     const maxOccurrences = data.endConditionType === "occurrences" ? (data.numberOfOccurrences || 10) : 100;
+    const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
+    const endByDate = data.endConditionType === "endDate" ? data.recurrenceEndDate : null;
     
     console.log("[RECURRING DEBUG] Generating shifts with:", {
       endConditionType: data.endConditionType,
@@ -243,8 +245,6 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       selectedWeekdays: data.selectedWeekdays,
       frequencyWeeks
     });
-    const endByDate = data.endConditionType === "endDate" ? data.recurrenceEndDate : null;
-    const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
 
     // Start from the beginning of the week containing our start date
     let currentDate = new Date(startDate);
