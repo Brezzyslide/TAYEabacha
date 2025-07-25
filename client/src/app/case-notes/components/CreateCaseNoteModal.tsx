@@ -159,14 +159,26 @@ export default function CreateCaseNoteModal({
   const selectedCategory = form.watch("category");
 
   // Auto-fetch shifts when client is selected
-  const { data: availableShifts = [] } = useQuery<Shift[]>({
+  const { data: availableShifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery<Shift[]>({
     queryKey: ["/api/shifts-by-client-staff", selectedClientId, user?.id],
     queryFn: async () => {
+      console.log(`[CASE NOTE] Fetching shifts for client ${selectedClientId}, staff ${user?.id}`);
       const response = await fetch(`/api/shifts-by-client-staff?clientId=${selectedClientId}&staffId=${user?.id}`);
       if (!response.ok) throw new Error('Failed to fetch shifts');
-      return response.json();
+      const shifts = await response.json();
+      console.log(`[CASE NOTE] Received ${shifts.length} shifts:`, shifts);
+      return shifts;
     },
     enabled: !!selectedClientId && !!user?.id,
+  });
+  
+  console.log(`[CASE NOTE] Shift fetch state:`, {
+    selectedClientId,
+    userId: user?.id,
+    shiftsLoading,
+    shiftsError,
+    availableShiftsCount: availableShifts.length,
+    selectedCategory
   });
 
   // Word count calculation

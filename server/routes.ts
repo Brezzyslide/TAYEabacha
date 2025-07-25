@@ -6131,27 +6131,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { clientId, staffId } = req.query;
       const tenantId = req.user.tenantId;
       
+      console.log(`[SHIFT FETCH] Client: ${clientId}, Staff: ${staffId}, Tenant: ${tenantId}`);
+      
       if (!clientId || !staffId) {
         return res.status(400).json({ message: "Client ID and Staff ID are required" });
       }
 
       const allShifts = await storage.getAllShifts(tenantId);
-      const relevantShifts = allShifts.filter(shift => 
-        shift.clientId === parseInt(clientId) && 
-        (shift.userId === parseInt(staffId) || shift.userId === null) // Include unassigned shifts
+      console.log(`[SHIFT FETCH] Total shifts in tenant ${tenantId}: ${allShifts.length}`);
+      
+      // Filter by client first
+      const clientShifts = allShifts.filter(shift => shift.clientId === parseInt(clientId));
+      console.log(`[SHIFT FETCH] Shifts for client ${clientId}: ${clientShifts.length}`);
+      
+      // Then filter by staff (assigned to this staff OR completed by this staff OR unassigned)
+      const relevantShifts = clientShifts.filter(shift => 
+        shift.userId === parseInt(staffId) || 
+        shift.userId === null ||
+        shift.status === 'completed' // Include completed shifts regardless of assignment
       );
+      console.log(`[SHIFT FETCH] Relevant shifts for staff ${staffId}: ${relevantShifts.length}`);
 
-      // Sort by most recent first and limit to recent shifts
+      // For progress notes, we need a broader time range - last 30 days instead of 7
       const now = new Date();
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       
-      const recentShifts = relevantShifts
-        .filter(shift => new Date(shift.startTime) >= sevenDaysAgo)
+      const availableShifts = relevantShifts
+        .filter(shift => {
+          const shiftDate = new Date(shift.startTime);
+          // Include today's shifts and past completed shifts within 30 days
+          return shiftDate >= thirtyDaysAgo;
+        })
         .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-        .slice(0, 10); // Limit to 10 most recent
+        .slice(0, 20); // Increase limit to 20 for better selection
       
-      res.json(recentShifts);
+      console.log(`[SHIFT FETCH] Available shifts (last 30 days): ${availableShifts.length}`);
+      console.log(`[SHIFT FETCH] Shift details:`, availableShifts.map(s => ({
+        id: s.id,
+        title: s.title,
+        startTime: s.startTime,
+        status: s.status,
+        userId: s.userId
+      })));
+      
+      res.json(availableShifts);
     } catch (error) {
+      console.error("[SHIFT FETCH] Error:", error);
       res.status(500).json({ message: "Failed to fetch shifts" });
     }
   });
