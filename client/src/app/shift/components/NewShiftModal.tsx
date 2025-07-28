@@ -119,9 +119,9 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     mutationFn: async (data: ShiftFormData) => {
       if (!user?.tenantId) throw new Error("No tenant ID available");
       
-      if (data.isRecurring && data.selectedWeekdays && data.selectedWeekdays.length > 0) {
+      if (data.isRecurring && (data.recurrenceType === "daily" || data.recurrenceType === "monthly" || (data.selectedWeekdays && data.selectedWeekdays.length > 0))) {
         // Generate recurring shifts using dedicated calendar fields
-        const shifts = generateWeeklyPatternShifts(data);
+        const shifts = generateRecurringShifts(data);
         
         // Generate a unique series ID for all shifts in this recurring series
         const seriesId = `series-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -211,7 +211,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     },
   });
 
-  const generateWeeklyPatternShifts = (data: ShiftFormData): any[] => {
+  const generateRecurringShifts = (data: ShiftFormData): any[] => {
     const shifts: any[] = [];
     
     // Use dedicated recurring shift fields
@@ -226,16 +226,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     // Check if shift spans to next day
     const nextDay = endHours < startHours || (endHours === startHours && endMinutes <= startMinutes);
     
-    const selectedWeekdays = data.selectedWeekdays || [];
-    if (selectedWeekdays.length === 0) return shifts;
-
-    const weekdayMap = {
-      "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4,
-      "Friday": 5, "Saturday": 6, "Sunday": 0
-    };
-
     const maxOccurrences = data.endConditionType === "occurrences" ? (data.numberOfOccurrences || 10) : 100;
-    const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
     const endByDate = data.endConditionType === "endDate" ? data.recurrenceEndDate : null;
     
     console.log("[RECURRING DEBUG] Generating shifts with:", {
@@ -243,38 +234,22 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       numberOfOccurrences: data.numberOfOccurrences,
       maxOccurrences,
       selectedWeekdays: data.selectedWeekdays,
-      frequencyWeeks
+      recurrenceType: data.recurrenceType
     });
 
-    // Start from the beginning of the week containing our start date
-    let currentDate = new Date(startDate);
-    let totalShiftsGenerated = 0;
-    let weekCount = 0;
+    // Handle different recurrence patterns
+    if (data.recurrenceType === "daily") {
+      // Daily recurrence - generate shifts every day
+      let currentDate = new Date(startDate);
+      let totalShiftsGenerated = 0;
 
-    while (totalShiftsGenerated < maxOccurrences && (!endByDate || currentDate <= endByDate)) {
-      // Generate shifts for selected weekdays in current week
-      for (const weekday of selectedWeekdays) {
-        if (totalShiftsGenerated >= maxOccurrences) break;
-        
-        const dayOfWeek = weekdayMap[weekday as keyof typeof weekdayMap];
-        const shiftDate = new Date(currentDate);
-        
-        // Calculate the date for this weekday
-        const daysToAdd = (dayOfWeek - currentDate.getDay() + 7) % 7;
-        shiftDate.setDate(currentDate.getDate() + daysToAdd);
-        
-        // Skip if this date is before our start date
-        if (shiftDate < startDate) continue;
-        
-        // Skip if this date is after our end date
-        if (endByDate && shiftDate > endByDate) continue;
-        
+      while (totalShiftsGenerated < maxOccurrences && (!endByDate || currentDate <= endByDate)) {
         // Create shift start datetime
-        const shiftStart = new Date(shiftDate);
+        const shiftStart = new Date(currentDate);
         shiftStart.setHours(startHours, startMinutes, 0, 0);
         
         // Create shift end datetime
-        const shiftEnd = new Date(shiftDate);
+        const shiftEnd = new Date(currentDate);
         if (nextDay) {
           shiftEnd.setDate(shiftEnd.getDate() + 1);
         }
@@ -291,18 +266,123 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
           status: data.userId ? "assigned" : "unassigned",
           isRecurring: true,
           recurringPattern: data.recurrenceType,
-          recurringDays: data.selectedWeekdays,
+          recurringDays: ["Daily"],
           shiftStartDate: data.shiftStartDate,
           shiftStartTime: data.shiftStartTime,
           shiftEndTime: data.shiftEndTime,
         });
         
         totalShiftsGenerated++;
+        // Move to next day
+        currentDate.setDate(currentDate.getDate() + 1);
       }
+    } else if (data.recurrenceType === "monthly") {
+      // Monthly recurrence - generate shifts on the same day of each month
+      let currentDate = new Date(startDate);
+      let totalShiftsGenerated = 0;
+
+      while (totalShiftsGenerated < maxOccurrences && (!endByDate || currentDate <= endByDate)) {
+        // Create shift start datetime
+        const shiftStart = new Date(currentDate);
+        shiftStart.setHours(startHours, startMinutes, 0, 0);
+        
+        // Create shift end datetime
+        const shiftEnd = new Date(currentDate);
+        if (nextDay) {
+          shiftEnd.setDate(shiftEnd.getDate() + 1);
+        }
+        shiftEnd.setHours(endHours, endMinutes, 0, 0);
+        
+        shifts.push({
+          title: data.title,
+          startTime: shiftStart,
+          endTime: shiftEnd,
+          userId: data.userId,
+          clientId: data.clientId,
+          fundingCategory: data.fundingCategory,
+          staffRatio: data.staffRatio,
+          status: data.userId ? "assigned" : "unassigned",
+          isRecurring: true,
+          recurringPattern: data.recurrenceType,
+          recurringDays: ["Monthly"],
+          shiftStartDate: data.shiftStartDate,
+          shiftStartTime: data.shiftStartTime,
+          shiftEndTime: data.shiftEndTime,
+        });
+        
+        totalShiftsGenerated++;
+        // Move to next month
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+    } else {
+      // Weekly/Fortnightly recurrence - generate shifts on selected weekdays
+      const selectedWeekdays = data.selectedWeekdays || [];
+      if (selectedWeekdays.length === 0) return shifts;
+
+      const weekdayMap = {
+        "Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4,
+        "Friday": 5, "Saturday": 6, "Sunday": 0
+      };
+
+      const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
       
-      // Move to next week(s) based on frequency
-      currentDate.setDate(currentDate.getDate() + (7 * frequencyWeeks));
-      weekCount++;
+      // For each occurrence, generate shifts for all selected weekdays
+      let occurrenceCount = 0;
+      let currentWeekStart = new Date(startDate);
+      
+      // Move to the start of the week containing our start date
+      const daysToStartOfWeek = currentWeekStart.getDay();
+      currentWeekStart.setDate(currentWeekStart.getDate() - daysToStartOfWeek);
+
+      while (occurrenceCount < maxOccurrences && (!endByDate || currentWeekStart <= endByDate)) {
+        // Generate shifts for each selected weekday in this occurrence
+        for (const weekday of selectedWeekdays) {
+          if (occurrenceCount >= maxOccurrences) break;
+          
+          const dayOfWeek = weekdayMap[weekday as keyof typeof weekdayMap];
+          const shiftDate = new Date(currentWeekStart);
+          shiftDate.setDate(currentWeekStart.getDate() + dayOfWeek);
+          
+          // Skip if this date is before our start date
+          if (shiftDate < startDate) continue;
+          
+          // Skip if this date is after our end date
+          if (endByDate && shiftDate > endByDate) continue;
+          
+          // Create shift start datetime
+          const shiftStart = new Date(shiftDate);
+          shiftStart.setHours(startHours, startMinutes, 0, 0);
+          
+          // Create shift end datetime
+          const shiftEnd = new Date(shiftDate);
+          if (nextDay) {
+            shiftEnd.setDate(shiftEnd.getDate() + 1);
+          }
+          shiftEnd.setHours(endHours, endMinutes, 0, 0);
+          
+          shifts.push({
+            title: data.title,
+            startTime: shiftStart,
+            endTime: shiftEnd,
+            userId: data.userId,
+            clientId: data.clientId,
+            fundingCategory: data.fundingCategory,
+            staffRatio: data.staffRatio,
+            status: data.userId ? "assigned" : "unassigned",
+            isRecurring: true,
+            recurringPattern: data.recurrenceType,
+            recurringDays: data.selectedWeekdays,
+            shiftStartDate: data.shiftStartDate,
+            shiftStartTime: data.shiftStartTime,
+            shiftEndTime: data.shiftEndTime,
+          });
+          
+          occurrenceCount++;
+        }
+        
+        // Move to next occurrence (week or fortnight)
+        currentWeekStart.setDate(currentWeekStart.getDate() + (7 * frequencyWeeks));
+      }
     }
     
     console.log("[RECURRING DEBUG] Generated", shifts.length, "shifts. Expected", maxOccurrences);
