@@ -57,7 +57,10 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
         const shiftDate = new Date(shift.startTime);
         const isSame = isSameDay(shiftDate, date);
         
-
+        // Debug logging for recently created shifts (ID > 740)
+        if (shift.id && shift.id > 740) {
+          console.log(`[CALENDAR DEBUG] Shift ${shift.id} "${shift.title}": stored=${shift.startTime}, parsed=${shiftDate.toISOString()}, calendar=${date.toDateString()}, match=${isSame}`);
+        }
         
         return isSame;
       } catch (error) {
@@ -65,8 +68,6 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
         return false;
       }
     });
-    
-
     
     return dayShifts;
   };
