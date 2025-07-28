@@ -126,8 +126,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         // Generate a unique series ID for all shifts in this recurring series
         const seriesId = `series-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
-        const promises = shifts.map(shift => 
-          apiRequest("POST", "/api/shifts", {
+        const promises = shifts.map(async (shift) => {
+          const response = await apiRequest("POST", "/api/shifts", {
             ...shift,
             isRecurring: true,
             seriesId: seriesId,
@@ -137,8 +137,9 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
             shiftStartTime: data.shiftStartTime,
             shiftEndTime: data.shiftEndTime,
             tenantId: user.tenantId,
-          })
-        );
+          });
+          return response.json();
+        });
         return Promise.all(promises);
       } else {
         // Single shift creation
