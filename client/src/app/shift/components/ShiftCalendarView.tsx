@@ -50,17 +50,25 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getShiftsForDay = (date: Date) => {
-    return shifts.filter(shift => {
+    const dayShifts = shifts.filter(shift => {
       if (!shift.startTime) return false;
       try {
         // Create shift date in local timezone to handle UTC storage properly
         const shiftDate = new Date(shift.startTime);
-        return isSameDay(shiftDate, date);
+        const isSame = isSameDay(shiftDate, date);
+        
+
+        
+        return isSame;
       } catch (error) {
         console.warn('Invalid date in shift:', shift);
         return false;
       }
     });
+    
+
+    
+    return dayShifts;
   };
 
   const nextWeek = () => {

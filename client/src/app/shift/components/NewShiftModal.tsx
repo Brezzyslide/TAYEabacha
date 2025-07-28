@@ -324,7 +324,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       
       // Generate shifts for the specified number of occurrences
       let totalShiftsGenerated = 0;
-      let currentWeek = 0; // Track which week we're in
+      let weekNumber = 0; // Track which week iteration we're in
       
       while (totalShiftsGenerated < maxOccurrences) {
         // For each selected weekday in this week
@@ -333,13 +333,19 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
           
           const dayOfWeek = weekdayMap[weekday as keyof typeof weekdayMap];
           
-          // Calculate the actual date for this weekday in this week
-          const shiftDate = new Date(startDate);
-          const startDayOfWeek = startDate.getDay();
-          const daysFromStart = (dayOfWeek - startDayOfWeek + 7) % 7; // Days from start date to this weekday
-          const weekOffset = currentWeek * 7 * frequencyWeeks; // Offset for this week occurrence
+          // Calculate the actual date for this weekday in this occurrence
+          // For weekly: weeks 0, 1, 2, 3... (every 7 days)
+          // For fortnightly: weeks 0, 2, 4, 6... (every 14 days)
+          const weeksToAdd = weekNumber * frequencyWeeks;
+          const daysToAdd = weeksToAdd * 7;
           
-          shiftDate.setDate(startDate.getDate() + daysFromStart + weekOffset);
+          // Find the first occurrence of this weekday from start date
+          const startDayOfWeek = startDate.getDay();
+          const daysFromStartToWeekday = (dayOfWeek - startDayOfWeek + 7) % 7;
+          
+          // Calculate the actual shift date
+          const shiftDate = new Date(startDate);
+          shiftDate.setDate(startDate.getDate() + daysFromStartToWeekday + daysToAdd);
           
           // Skip if this date is after our end date
           if (endByDate && shiftDate > endByDate) continue;
@@ -378,11 +384,11 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         }
         
         // Move to next week occurrence
-        currentWeek++;
+        weekNumber++;
       }
     }
     
-    console.log("[RECURRING DEBUG] Generated", shifts.length, "shifts. Expected", maxOccurrences);
+
 
     return shifts;
   };
