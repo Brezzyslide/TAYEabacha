@@ -349,7 +349,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
           // Skip if this date is after our end date
           if (endByDate && shiftDate > endByDate) continue;
           
-          console.log(`[RECURRING DEBUG] Week ${currentWeek}: ${weekday} -> ${shiftDate.toLocaleDateString()}`);
+
           
           // Create shift start datetime
           const shiftStart = new Date(shiftDate);
