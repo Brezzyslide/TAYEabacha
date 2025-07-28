@@ -2,11 +2,8 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// AWS Production Database Override
-const AWS_DATABASE_URL = "postgres://postgres:mypassword@54.80.195.220:5430/mydb";
-
-// Use AWS database instead of Replit's database
-const databaseUrl = AWS_DATABASE_URL || process.env.DATABASE_URL;
+// Use local Replit database
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error(

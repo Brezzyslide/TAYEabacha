@@ -494,17 +494,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllShifts(tenantId: number): Promise<Shift[]> {
-    return await db.select().from(shifts)
+    console.log("[STORAGE DEBUG] ===== QUERYING ALL SHIFTS =====");
+    console.log("[STORAGE DEBUG] Tenant ID:", tenantId);
+    
+    const shifts = await db.select().from(shifts)
       .where(eq(shifts.tenantId, tenantId))
       .orderBy(desc(shifts.startTime));
+      
+    console.log("[STORAGE DEBUG] Found", shifts.length, "shifts for tenant", tenantId);
+    console.log("[STORAGE DEBUG] Shift IDs:", shifts.map(s => s.id));
+    
+    return shifts;
   }
 
   async createShift(insertShift: InsertShift): Promise<Shift> {
-    const [shift] = await db
-      .insert(shifts)
-      .values(insertShift)
-      .returning();
-    return shift;
+    console.log("[STORAGE DEBUG] ===== CREATING SHIFT IN DATABASE =====");
+    console.log("[STORAGE DEBUG] Shift data to insert:", JSON.stringify(insertShift, null, 2));
+    
+    try {
+      const [shift] = await db
+        .insert(shifts)
+        .values(insertShift)
+        .returning();
+      
+      console.log("[STORAGE DEBUG] ✅ SHIFT CREATED IN DB:", JSON.stringify(shift, null, 2));
+      
+      // Immediate verification query
+      const verifyQuery = await db.select()
+        .from(shifts)
+        .where(eq(shifts.id, shift.id));
+      
+      console.log("[STORAGE DEBUG] ✅ IMMEDIATE VERIFY:", verifyQuery.length > 0 ? "FOUND" : "NOT FOUND");
+      if (verifyQuery.length > 0) {
+        console.log("[STORAGE DEBUG] ✅ VERIFIED SHIFT:", JSON.stringify(verifyQuery[0], null, 2));
+      }
+      
+      return shift;
+    } catch (error) {
+      console.error("[STORAGE DEBUG] ❌ ERROR CREATING SHIFT:", error);
+      throw error;
+    }
   }
 
   async getShift(id: number, tenantId: number): Promise<Shift | undefined> {
