@@ -1078,7 +1078,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                               {(() => {
                                 const formData = form.getValues();
                                 if (formData.selectedWeekdays && formData.selectedWeekdays.length > 0) {
-                                  const previewShifts = generateWeeklyPatternShifts(formData as ShiftFormData);
+                                  const previewShifts = generateRecurringShifts(formData as ShiftFormData);
                                   return previewShifts.length;
                                 }
                                 return 0;
