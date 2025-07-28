@@ -126,34 +126,21 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         // Generate a unique series ID for all shifts in this recurring series
         const seriesId = `series-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
-        console.log(`[RECURRING CREATE] About to create ${shifts.length} shifts with series ID: ${seriesId}`);
-        
-        const promises = shifts.map(async (shift, index) => {
-          try {
-            console.log(`[RECURRING CREATE] Creating shift ${index + 1}/${shifts.length}:`, shift);
-            const response = await apiRequest("POST", "/api/shifts", {
-              ...shift,
-              isRecurring: true,
-              seriesId: seriesId,
-              recurringPattern: data.recurrenceType,
-              recurringDays: data.selectedWeekdays,
-              shiftStartDate: data.shiftStartDate?.toISOString(),
-              shiftStartTime: data.shiftStartTime,
-              shiftEndTime: data.shiftEndTime,
-              tenantId: user.tenantId,
-            });
-            const result = await response.json();
-            console.log(`[RECURRING CREATE] ✅ Created shift ${index + 1}:`, result);
-            return result;
-          } catch (error) {
-            console.error(`[RECURRING CREATE] ❌ Failed to create shift ${index + 1}:`, error);
-            throw error;
-          }
+        const promises = shifts.map(async (shift) => {
+          const response = await apiRequest("POST", "/api/shifts", {
+            ...shift,
+            isRecurring: true,
+            seriesId: seriesId,
+            recurringPattern: data.recurrenceType,
+            recurringDays: data.selectedWeekdays,
+            shiftStartDate: data.shiftStartDate?.toISOString(),
+            shiftStartTime: data.shiftStartTime,
+            shiftEndTime: data.shiftEndTime,
+            tenantId: user.tenantId,
+          });
+          return response.json();
         });
-        
-        const results = await Promise.all(promises);
-        console.log(`[RECURRING CREATE] ✅ Successfully created ${results.length} shifts`);
-        return results;
+        return Promise.all(promises);
       } else {
         // Single shift creation
         const shiftData = {
@@ -244,13 +231,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     const maxOccurrences = data.endConditionType === "occurrences" ? (data.numberOfOccurrences || 10) : 100;
     const endByDate = data.endConditionType === "endDate" ? data.recurrenceEndDate : null;
     
-    console.log("[RECURRING DEBUG] Generating shifts with:", {
-      endConditionType: data.endConditionType,
-      numberOfOccurrences: data.numberOfOccurrences,
-      maxOccurrences,
-      selectedWeekdays: data.selectedWeekdays,
-      recurrenceType: data.recurrenceType
-    });
+
 
     // Handle different recurrence patterns
     if (data.recurrenceType === "daily") {
