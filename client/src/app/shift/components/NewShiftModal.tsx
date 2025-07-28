@@ -327,28 +327,29 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
 
       const frequencyWeeks = data.recurrenceType === "fortnightly" ? 2 : 1;
       
-      // For each occurrence, generate shifts for all selected weekdays
-      let occurrenceCount = 0;
-      let currentWeekStart = new Date(startDate);
+      // Generate shifts for the specified number of occurrences
+      let totalShiftsGenerated = 0;
+      let currentWeek = 0; // Track which week we're in
       
-      // Move to the start of the week containing our start date
-      const daysToStartOfWeek = currentWeekStart.getDay();
-      currentWeekStart.setDate(currentWeekStart.getDate() - daysToStartOfWeek);
-
-      while (occurrenceCount < maxOccurrences && (!endByDate || currentWeekStart <= endByDate)) {
-        // Generate shifts for each selected weekday in this occurrence
+      while (totalShiftsGenerated < maxOccurrences) {
+        // For each selected weekday in this week
         for (const weekday of selectedWeekdays) {
-          if (occurrenceCount >= maxOccurrences) break;
+          if (totalShiftsGenerated >= maxOccurrences) break;
           
           const dayOfWeek = weekdayMap[weekday as keyof typeof weekdayMap];
-          const shiftDate = new Date(currentWeekStart);
-          shiftDate.setDate(currentWeekStart.getDate() + dayOfWeek);
           
-          // Skip if this date is before our start date
-          if (shiftDate < startDate) continue;
+          // Calculate the actual date for this weekday in this week
+          const shiftDate = new Date(startDate);
+          const startDayOfWeek = startDate.getDay();
+          const daysFromStart = (dayOfWeek - startDayOfWeek + 7) % 7; // Days from start date to this weekday
+          const weekOffset = currentWeek * 7 * frequencyWeeks; // Offset for this week occurrence
+          
+          shiftDate.setDate(startDate.getDate() + daysFromStart + weekOffset);
           
           // Skip if this date is after our end date
           if (endByDate && shiftDate > endByDate) continue;
+          
+          console.log(`[RECURRING DEBUG] Week ${currentWeek}: ${weekday} -> ${shiftDate.toLocaleDateString()}`);
           
           // Create shift start datetime
           const shiftStart = new Date(shiftDate);
@@ -378,11 +379,11 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
             shiftEndTime: data.shiftEndTime,
           });
           
-          occurrenceCount++;
+          totalShiftsGenerated++;
         }
         
-        // Move to next occurrence (week or fortnight)
-        currentWeekStart.setDate(currentWeekStart.getDate() + (7 * frequencyWeeks));
+        // Move to next week occurrence
+        currentWeek++;
       }
     }
     
