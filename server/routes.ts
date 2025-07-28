@@ -1168,6 +1168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   app.post("/api/shifts", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    console.log("[SHIFT CREATE] ===== CREATING SHIFT =====");
+    console.log("[SHIFT CREATE] User:", req.user.username, "Tenant:", req.user.tenantId);
+    console.log("[SHIFT CREATE] Request body:", JSON.stringify(req.body, null, 2));
+    
     try {
       // Convert string dates to Date objects before validation
       const processedBody = {
@@ -1178,9 +1182,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       };
       
+      console.log("[SHIFT CREATE] Processed body:", JSON.stringify(processedBody, null, 2));
+      
       const shiftData = insertShiftSchema.parse(processedBody);
+      console.log("[SHIFT CREATE] Validated shift data:", JSON.stringify(shiftData, null, 2));
       
       const shift = await storage.createShift(shiftData);
+      console.log("[SHIFT CREATE] ✅ CREATED SHIFT:", JSON.stringify(shift, null, 2));
+      
+      // Verify the shift was actually saved by querying it back
+      const verifyShift = await storage.getShift(shift.id, req.user.tenantId);
+      console.log("[SHIFT CREATE] ✅ VERIFICATION QUERY:", verifyShift ? "FOUND" : "NOT FOUND");
       
       // Update hour allocation if shift has assigned user and is approved/assigned status
       if (shift.userId && (shift.status === 'assigned' || shift.status === 'approved')) {
@@ -1197,12 +1209,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       });
       
+      console.log("[SHIFT CREATE] ===== SHIFT CREATION COMPLETE =====");
       res.status(201).json(shift);
     } catch (error) {
-      console.error("Error creating shift:", error);
-      console.error("Request body:", req.body);
+      console.error("[SHIFT CREATE] ❌ ERROR creating shift:", error);
+      console.error("[SHIFT CREATE] Request body:", req.body);
       if (error instanceof z.ZodError) {
-        console.error("Zod validation errors:", error.errors);
+        console.error("[SHIFT CREATE] Zod validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid shift data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create shift", error: error instanceof Error ? error.message : 'Unknown error' });
