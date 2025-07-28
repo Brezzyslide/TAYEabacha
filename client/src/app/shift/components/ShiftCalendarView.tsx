@@ -53,7 +53,15 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
     return shifts.filter(shift => {
       if (!shift.startTime) return false;
       try {
-        return isSameDay(new Date(shift.startTime), date);
+        // Create shift date in local timezone to handle UTC storage properly
+        const shiftDate = new Date(shift.startTime);
+        
+        // Debug logging for September shifts
+        if (shiftDate.getMonth() === 8) { // September is month 8 (0-indexed)
+          console.log(`[CALENDAR DEBUG] Checking September shift: ${shift.title}, stored time: ${shift.startTime}, local date: ${shiftDate.toLocaleDateString()}, comparing to: ${date.toLocaleDateString()}`);
+        }
+        
+        return isSameDay(shiftDate, date);
       } catch (error) {
         console.warn('Invalid date in shift:', shift);
         return false;
