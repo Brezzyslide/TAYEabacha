@@ -59,10 +59,7 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
         // Use isSameDay from date-fns which handles timezone conversion properly
         const isSame = isSameDay(shiftDate, date);
         
-        // Debug logging for shift "6" to help locate it
-        if (shift.title === "6") {
-          console.log(`[ADMIN CALENDAR DEBUG] Shift ${shift.id}: stored=${shift.startTime}, shiftDate=${shiftDate.toDateString()}, calendar=${date.toDateString()}, match=${isSame}`);
-        }
+
         
         return isSame;
       } catch (error) {
@@ -247,15 +244,9 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                     </div>
                     
                     <div className="flex-1 space-y-1 overflow-y-auto">
-                      {dayShifts.length > 0 && dayShifts.some(s => s.title === "6") && console.log(`[ADMIN RENDER DEBUG] Day ${format(day, 'MMM d')}: Found ${dayShifts.length} shifts, including shift "6"`)}
                       {dayShifts.map(shift => {
                         const isAssigned = shift.userId !== null;
                         const clientName = getClientName(shift.clientId);
-                        
-                        // Debug logging for shift "6" rendering
-                        if (shift.title === "6") {
-                          console.log(`[ADMIN RENDER DEBUG] Rendering shift "6" on ${format(day, 'MMM d')}: clientName="${clientName}", isAssigned=${isAssigned}`);
-                        }
                         
                         return (
                           <div
