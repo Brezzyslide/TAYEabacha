@@ -3407,9 +3407,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[OBSERVATION CREATE] Prepared observation data:", observationData);
 
+      // Enhanced debugging for behavior observations
+      if (observationData.observationType === "behaviour") {
+        console.log("[OBSERVATION CREATE] Behavior validation debug:", {
+          settings: { value: observationData.settings, length: observationData.settings?.length },
+          settingsRating: { value: observationData.settingsRating, type: typeof observationData.settingsRating },
+          time: { value: observationData.time, length: observationData.time?.length },
+          timeRating: { value: observationData.timeRating, type: typeof observationData.timeRating },
+          antecedents: { value: observationData.antecedents, length: observationData.antecedents?.length },
+          antecedentsRating: { value: observationData.antecedentsRating, type: typeof observationData.antecedentsRating },
+          response: { value: observationData.response, length: observationData.response?.length },
+          responseRating: { value: observationData.responseRating, type: typeof observationData.responseRating }
+        });
+      }
+
       const validationResult = insertHourlyObservationSchema.safeParse(observationData);
       if (!validationResult.success) {
         console.error("[OBSERVATION CREATE] Validation failed:", validationResult.error.issues);
+        console.error("[OBSERVATION CREATE] Failed data:", JSON.stringify(observationData, null, 2));
         return res.status(400).json({ 
           message: "Invalid observation data", 
           errors: validationResult.error.issues 

@@ -805,18 +805,72 @@ export const insertHourlyObservationSchema = createInsertSchema(hourlyObservatio
   updatedAt: true,
 }).extend({
   observationType: z.enum(["behaviour", "adl"]),
-  // Star chart fields for behaviour observations
+  // Star chart fields for behaviour observations with enhanced type coercion
   settings: z.string().optional(),
-  settingsRating: z.number().min(1).max(5).optional(),
+  settingsRating: z.union([z.number(), z.string()]).optional().transform((val) => {
+    if (val === null || val === undefined || val === "") return undefined;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? undefined : Math.min(Math.max(num, 1), 5);
+  }),
   time: z.string().optional(),
-  timeRating: z.number().min(1).max(5).optional(),
+  timeRating: z.union([z.number(), z.string()]).optional().transform((val) => {
+    if (val === null || val === undefined || val === "") return undefined;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? undefined : Math.min(Math.max(num, 1), 5);
+  }),
   antecedents: z.string().optional(),
-  antecedentsRating: z.number().min(1).max(5).optional(),
+  antecedentsRating: z.union([z.number(), z.string()]).optional().transform((val) => {
+    if (val === null || val === undefined || val === "") return undefined;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? undefined : Math.min(Math.max(num, 1), 5);
+  }),
   response: z.string().optional(),
-  responseRating: z.number().min(1).max(5).optional(),
+  responseRating: z.union([z.number(), z.string()]).optional().transform((val) => {
+    if (val === null || val === undefined || val === "") return undefined;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? undefined : Math.min(Math.max(num, 1), 5);
+  }),
+  // Additional fields for compatibility with enhanced type coercion
+  intensity: z.union([z.number(), z.string()]).optional().transform((val) => {
+    if (val === null || val === undefined || val === "") return undefined;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? undefined : Math.min(Math.max(num, 1), 5);
+  }),
+  adlDetails: z.string().optional(),
   // ADL fields
   subtype: z.string().optional(),
   notes: z.string().optional(),
+}).refine((data) => {
+  // For behaviour observations, require all star chart fields with enhanced validation
+  if (data.observationType === "behaviour") {
+    const hasValidSettings = data.settings && data.settings.trim().length > 0 && 
+                           data.settingsRating && data.settingsRating >= 1 && data.settingsRating <= 5;
+    const hasValidTime = data.time && data.time.trim().length > 0 && 
+                        data.timeRating && data.timeRating >= 1 && data.timeRating <= 5;
+    const hasValidAntecedents = data.antecedents && data.antecedents.trim().length > 0 && 
+                               data.antecedentsRating && data.antecedentsRating >= 1 && data.antecedentsRating <= 5;
+    const hasValidResponse = data.response && data.response.trim().length > 0 && 
+                            data.responseRating && data.responseRating >= 1 && data.responseRating <= 5;
+    
+    if (!hasValidSettings || !hasValidTime || !hasValidAntecedents || !hasValidResponse) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "All star chart fields (text and ratings 1-5) are required for behaviour observations",
+  path: ["settings"]
+}).refine((data) => {
+  // For ADL observations, require subtype and notes
+  if (data.observationType === "adl") {
+    if (!data.subtype || data.subtype.trim() === "" || !data.notes || data.notes.trim() === "") {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Subtype and notes are required for ADL observations",
+  path: ["subtype"]
 });
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({

@@ -39,26 +39,43 @@ const observationSchema = z.object({
   clientId: z.string().min(1, "Please select a client"),
   observationType: z.string().min(1, "Please select an observation type"),
   subtype: z.string().optional(),
-  notes: z.string().min(10, "Notes must be at least 10 characters"),
+  notes: z.string().optional(),
   timestamp: z.string().min(1, "Please select a date and time"),
+  // Behaviour-specific star chart fields (matching server schema)
+  settings: z.string().optional(),
+  settingsRating: z.number().min(1).max(5).optional(),
+  time: z.string().optional(),
+  timeRating: z.number().min(1).max(5).optional(),
+  antecedents: z.string().optional(),
+  antecedentsRating: z.number().min(1).max(5).optional(),
+  response: z.string().optional(),
+  responseRating: z.number().min(1).max(5).optional(),
+  // Additional fields for compatibility
   intensity: z.number().min(1).max(5).optional(),
   adlDetails: z.string().optional(),
-  behaviorRatings: z.object({
-    setting: z.number().min(1).max(5).optional(),
-    time: z.number().min(1).max(5).optional(),
-    antecedents: z.number().min(1).max(5).optional(),
-    consequences: z.number().min(1).max(5).optional(),
-    duration: z.number().min(1).max(5).optional(),
-    frequency: z.number().min(1).max(5).optional(),
-  }).optional(),
-  behaviorNotes: z.object({
-    setting: z.string().optional(),
-    time: z.string().optional(),
-    antecedents: z.string().optional(),
-    consequences: z.string().optional(),
-    duration: z.string().optional(),
-    frequency: z.string().optional(),
-  }).optional(),
+}).refine((data) => {
+  // For behaviour observations, require all star chart fields
+  if (data.observationType === "behaviour") {
+    if (!data.settings || !data.settingsRating || !data.time || !data.timeRating || 
+        !data.antecedents || !data.antecedentsRating || !data.response || !data.responseRating) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "All star chart fields are required for behaviour observations",
+  path: ["settings"]
+}).refine((data) => {
+  // For ADL observations, require subtype and notes
+  if (data.observationType === "adl") {
+    if (!data.subtype || data.subtype.trim() === "" || !data.notes || data.notes.trim() === "") {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Subtype and notes are required for ADL observations",
+  path: ["subtype"]
 });
 
 type ObservationFormData = z.infer<typeof observationSchema>;
@@ -121,24 +138,18 @@ export default function ObservationFormModal({
       subtype: "",
       notes: "",
       timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      // Star chart fields for behaviour observations
+      settings: "",
+      settingsRating: undefined,
+      time: "",
+      timeRating: undefined,
+      antecedents: "",
+      antecedentsRating: undefined,
+      response: "",
+      responseRating: undefined,
+      // Additional fields
       intensity: undefined,
       adlDetails: "",
-      behaviorRatings: {
-        setting: undefined,
-        time: undefined,
-        antecedents: undefined,
-        consequences: undefined,
-        duration: undefined,
-        frequency: undefined,
-      },
-      behaviorNotes: {
-        setting: "",
-        time: "",
-        antecedents: "",
-        consequences: "",
-        duration: "",
-        frequency: "",
-      },
     },
   });
 
@@ -153,9 +164,20 @@ export default function ObservationFormModal({
           clientId: observation.clientId.toString(),
           observationType: observation.observationType,
           subtype: observation.subtype || "",
-          notes: observation.notes,
+          notes: observation.notes || "",
           timestamp: format(new Date(observation.timestamp), "yyyy-MM-dd'T'HH:mm"),
-          intensity: observation.intensity,
+          // Load star chart fields
+          settings: observation.settings || "",
+          settingsRating: observation.settingsRating || undefined,
+          time: observation.time || "",
+          timeRating: observation.timeRating || undefined,
+          antecedents: observation.antecedents || "",
+          antecedentsRating: observation.antecedentsRating || undefined,
+          response: observation.response || "",
+          responseRating: observation.responseRating || undefined,
+          // Load additional fields
+          intensity: observation.intensity || undefined,
+          adlDetails: observation.adlDetails || "",
         });
         setSelectedType(observation.observationType);
       } else {
@@ -165,7 +187,18 @@ export default function ObservationFormModal({
           subtype: "",
           notes: "",
           timestamp: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+          // Reset star chart fields
+          settings: "",
+          settingsRating: undefined,
+          time: "",
+          timeRating: undefined,
+          antecedents: "",
+          antecedentsRating: undefined,
+          response: "",
+          responseRating: undefined,
+          // Reset additional fields
           intensity: undefined,
+          adlDetails: "",
         });
         setSelectedType("");
       }
@@ -174,16 +207,27 @@ export default function ObservationFormModal({
 
   const createMutation = useMutation({
     mutationFn: async (data: ObservationFormData) => {
-      const payload = {
+      const payload: any = {
         clientId: parseInt(data.clientId),
         observationType: data.observationType,
         subtype: data.subtype || null,
-        notes: data.notes,
+        notes: data.notes || null,
         timestamp: new Date(data.timestamp).toISOString(),
-        intensity: data.intensity || null,
         createdBy: user?.id,
         tenantId: user?.tenantId,
       };
+
+      // Include star chart fields for behavior observations
+      if (data.observationType === "behaviour") {
+        payload.settings = data.settings;
+        payload.settingsRating = data.settingsRating;
+        payload.time = data.time;
+        payload.timeRating = data.timeRating;
+        payload.antecedents = data.antecedents;
+        payload.antecedentsRating = data.antecedentsRating;
+        payload.response = data.response;
+        payload.responseRating = data.responseRating;
+      }
 
       if (isEditing) {
         return apiRequest("PATCH", `/api/observations/${observation.id}`, payload);
@@ -202,9 +246,23 @@ export default function ObservationFormModal({
       onClose();
     },
     onError: (error: any) => {
+      console.error("[OBSERVATION FORM] Submission error details:", error);
+      
+      // Enhanced error messaging for validation failures
+      let errorMessage = "Failed to save observation.";
+      if (error.message) {
+        if (error.message.includes("star chart fields") || error.message.includes("behaviour observations")) {
+          errorMessage = "Please fill out all star chart fields (text descriptions and 1-5 star ratings) for behavior observations.";
+        } else if (error.message.includes("validation")) {
+          errorMessage = "Please check all required fields are completed correctly.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to save observation.",
+        title: "Validation Error",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -220,6 +278,40 @@ export default function ObservationFormModal({
     }
     
     console.log("[OBSERVATION FORM] Starting submission:", data);
+    
+    // Enhanced validation for behavior observations before submission
+    if (data.observationType === "behaviour") {
+      const missingFields = [];
+      if (!data.settings || data.settings.trim().length === 0) missingFields.push("Settings description");
+      if (!data.settingsRating || data.settingsRating < 1 || data.settingsRating > 5) missingFields.push("Settings rating");
+      if (!data.time || data.time.trim().length === 0) missingFields.push("Time description");
+      if (!data.timeRating || data.timeRating < 1 || data.timeRating > 5) missingFields.push("Time rating");
+      if (!data.antecedents || data.antecedents.trim().length === 0) missingFields.push("Antecedents description");
+      if (!data.antecedentsRating || data.antecedentsRating < 1 || data.antecedentsRating > 5) missingFields.push("Antecedents rating");
+      if (!data.response || data.response.trim().length === 0) missingFields.push("Response description");
+      if (!data.responseRating || data.responseRating < 1 || data.responseRating > 5) missingFields.push("Response rating");
+      
+      if (missingFields.length > 0) {
+        toast({
+          title: "Missing Required Fields",
+          description: `Please complete: ${missingFields.join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("[OBSERVATION FORM] Behavior validation passed:", {
+        settings: data.settings?.length,
+        settingsRating: data.settingsRating,
+        time: data.time?.length,
+        timeRating: data.timeRating,
+        antecedents: data.antecedents?.length,
+        antecedentsRating: data.antecedentsRating,
+        response: data.response?.length,
+        responseRating: data.responseRating
+      });
+    }
+    
     setIsSubmitting(true);
     
     // Auto-populate timestamp with current time if not manually changed
@@ -254,15 +346,13 @@ export default function ObservationFormModal({
     if (selectedType !== "behaviour") return null;
 
     const behaviorCategories = [
-      { key: 'setting', label: 'Setting', description: 'Environmental factors and location appropriateness' },
-      { key: 'time', label: 'Time', description: 'Duration and timing of behavior occurrence' },
-      { key: 'antecedents', label: 'Antecedents', description: 'Triggers and events preceding the behavior' },
-      { key: 'consequences', label: 'Consequences', description: 'Outcomes and responses following the behavior' },
-      { key: 'duration', label: 'Duration', description: 'Length of time behavior persisted' },
-      { key: 'frequency', label: 'Frequency', description: 'How often the behavior occurred' },
+      { key: 'settings', ratingKey: 'settingsRating', label: 'Setting', description: 'Environmental factors and location appropriateness' },
+      { key: 'time', ratingKey: 'timeRating', label: 'Time', description: 'Duration and timing of behavior occurrence' },
+      { key: 'antecedents', ratingKey: 'antecedentsRating', label: 'Antecedents', description: 'Triggers and events preceding the behavior' },
+      { key: 'response', ratingKey: 'responseRating', label: 'Response', description: 'How the participant responded and strategies used' },
     ];
 
-    const StarRating = ({ categoryKey, label, description }: { categoryKey: string; label: string; description: string }) => (
+    const StarRating = ({ categoryKey, ratingKey, label, description }: { categoryKey: string; ratingKey: string; label: string; description: string }) => (
       <div className="space-y-3 p-4 bg-white rounded-lg border border-gray-200">
         <div>
           <h4 className="font-medium text-gray-900">{label}</h4>
@@ -272,7 +362,7 @@ export default function ObservationFormModal({
         {/* Star Rating */}
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((level) => {
-            const currentValue = form.watch(`behaviorRatings.${categoryKey}` as any);
+            const currentValue = form.watch(ratingKey as any);
             return (
               <button
                 key={level}
@@ -280,14 +370,8 @@ export default function ObservationFormModal({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log(`Clicking star ${level} for ${categoryKey}`);
-                  const currentRatings = form.getValues('behaviorRatings') || {};
-                  const newRatings = {
-                    ...currentRatings,
-                    [categoryKey]: level
-                  };
-                  form.setValue('behaviorRatings', newRatings, { shouldValidate: true, shouldDirty: true });
-                  console.log('New ratings:', newRatings);
+                  console.log(`Clicking star ${level} for ${ratingKey}`);
+                  form.setValue(ratingKey as any, level, { shouldValidate: true, shouldDirty: true });
                 }}
                 className={`p-2 rounded-lg border-2 transition-all hover:scale-110 cursor-pointer ${
                   currentValue === level 
@@ -307,8 +391,8 @@ export default function ObservationFormModal({
             );
           })}
           <span className="ml-3 text-sm font-medium text-gray-700">
-            {form.watch(`behaviorRatings.${categoryKey}` as any) ? 
-              `${form.watch(`behaviorRatings.${categoryKey}` as any)}/5` : 
+            {form.watch(ratingKey as any) ? 
+              `${form.watch(ratingKey as any)}/5` : 
               "Not rated"}
           </span>
         </div>
@@ -321,13 +405,9 @@ export default function ObservationFormModal({
           <input
             type="text"
             placeholder={`Describe ${label.toLowerCase()} details...`}
-            value={form.watch(`behaviorNotes.${categoryKey}` as any) || ""}
+            value={form.watch(categoryKey as any) || ""}
             onChange={(e) => {
-              const currentNotes = form.getValues('behaviorNotes') || {};
-              form.setValue('behaviorNotes', {
-                ...currentNotes,
-                [categoryKey]: e.target.value
-              });
+              form.setValue(categoryKey as any, e.target.value);
             }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
@@ -358,6 +438,7 @@ export default function ObservationFormModal({
             <StarRating
               key={category.key}
               categoryKey={category.key}
+              ratingKey={category.ratingKey}
               label={category.label}
               description={category.description}
             />
