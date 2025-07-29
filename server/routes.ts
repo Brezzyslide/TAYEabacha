@@ -1702,6 +1702,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
               continue;
             }
             
+            // For "future" edits, also check if this shift date already exists in preserved shifts
+            if (updateData.editType === "future") {
+              const existingShift = seriesShifts.find(existingShift => {
+                const existingDate = new Date(existingShift.startTime);
+                return existingDate.getTime() === shiftStartTime.getTime();
+              });
+              
+              if (existingShift && existingShift.status !== "completed") {
+                console.log(`[SERIES UPDATE] Skipping shift ${shiftStartTime.toDateString()} - would duplicate existing shift ${existingShift.id}`);
+                continue;
+              }
+            }
+            
             console.log(`[SERIES UPDATE] Creating new shift:`, {
               title: shiftData.title,
               startTime: shiftData.startTime,
