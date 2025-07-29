@@ -1651,21 +1651,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if this is a full recreation request (from recurring edit modal)
       if (updateData.updateType === "full" && updateData.shifts) {
-        console.log(`[SERIES UPDATE] Full recreation requested - deleting ${seriesShifts.length} existing shifts and creating ${updateData.shifts.length} new ones`);
+        console.log(`[SERIES UPDATE] Full recreation requested with editType: ${updateData.editType}`);
+        console.log(`[SERIES UPDATE] Deleting ${seriesShifts.length} existing shifts and creating ${updateData.shifts.length} new ones`);
         
-        // Delete all existing shifts in the series (only future ones to preserve completed shifts)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Determine cutoff date based on editType
+        let cutoffDate;
+        if (updateData.editType === "future" && updateData.fromShiftId) {
+          // Find the shift that was clicked and use its date as cutoff
+          const targetShift = seriesShifts.find(s => s.id === updateData.fromShiftId);
+          if (targetShift) {
+            cutoffDate = new Date(targetShift.startTime);
+            console.log(`[SERIES UPDATE] Edit Future: Using cutoff date ${cutoffDate.toDateString()} from shift ID ${updateData.fromShiftId}`);
+          } else {
+            console.log(`[SERIES UPDATE] Target shift ${updateData.fromShiftId} not found, falling back to today`);
+            cutoffDate = new Date();
+            cutoffDate.setHours(0, 0, 0, 0);
+          }
+        } else {
+          // For "series" editType, delete all future shifts from today
+          cutoffDate = new Date();
+          cutoffDate.setHours(0, 0, 0, 0);
+          console.log(`[SERIES UPDATE] Edit Series: Using today as cutoff date ${cutoffDate.toDateString()}`);
+        }
         
+        // Delete shifts based on the cutoff date and preserve completed shifts
         for (const shift of seriesShifts) {
           const shiftDate = new Date(shift.startTime);
-          if (shiftDate >= today && shift.status !== "completed") {
+          const shouldDelete = shiftDate >= cutoffDate && shift.status !== "completed";
+          
+          if (shouldDelete) {
             try {
-              console.log(`[SERIES UPDATE] Deleting future shift ${shift.id} (${shiftDate.toDateString()})`);
+              console.log(`[SERIES UPDATE] Deleting shift ${shift.id} (${shiftDate.toDateString()}) - ${updateData.editType} edit`);
               await storage.deleteShift(shift.id, req.user.tenantId);
             } catch (deleteError) {
               console.error(`[SERIES UPDATE] Failed to delete shift ${shift.id}:`, deleteError);
             }
+          } else {
+            console.log(`[SERIES UPDATE] Preserving shift ${shift.id} (${shiftDate.toDateString()}) - before cutoff or completed`);
           }
         }
         
@@ -1701,12 +1723,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Log activity for series recreation
         if (newShifts.length > 0) {
+          const editTypeDescription = updateData.editType === "future" ? "future shifts" : "entire series";
           await storage.createActivityLog({
             userId: req.user.id,
             action: "recreate_shift_series",
             resourceType: "shift",
             resourceId: newShifts[0].id,
-            description: `Recreated recurring shift series "${seriesId}" with new pattern (${newShifts.length} shifts): ${updateData.shifts[0]?.title || 'Recurring shift'}`,
+            description: `Updated recurring shift ${editTypeDescription} "${seriesId}" with new pattern (${newShifts.length} shifts): ${updateData.shifts[0]?.title || 'Recurring shift'}`,
             tenantId: req.user.tenantId,
           });
         }

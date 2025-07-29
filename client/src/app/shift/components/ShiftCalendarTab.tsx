@@ -29,7 +29,7 @@ export default function ShiftCalendarTab() {
   const [isRecurringEditModalOpen, setIsRecurringEditModalOpen] = useState(false);
   const [selectedShiftForEdit, setSelectedShiftForEdit] = useState<Shift | null>(null);
   const [isRecurringChoiceDialogOpen, setIsRecurringChoiceDialogOpen] = useState(false);
-  const [editType, setEditType] = useState<"single" | "series">("single");
+  const [editType, setEditType] = useState<"single" | "future" | "series">("single");
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("monthly");
   
   const { user } = useAuth();
@@ -593,6 +593,11 @@ export default function ShiftCalendarTab() {
               setIsRecurringChoiceDialogOpen(false);
               setIsEditShiftModalOpen(true);
             }}
+            onEditFuture={() => {
+              setEditType("future");
+              setIsRecurringChoiceDialogOpen(false);
+              setIsRecurringEditModalOpen(true);
+            }}
             onEditSeries={() => {
               setEditType("series");
               setIsRecurringChoiceDialogOpen(false);
@@ -617,6 +622,7 @@ export default function ShiftCalendarTab() {
               setSelectedShiftForEdit(null);
             }}
             shift={selectedShiftForEdit}
+            editType={editType === "future" || editType === "series" ? editType : "series"}
           />
         </>
       )}

@@ -10,6 +10,7 @@ interface RecurringEditChoiceDialogProps {
   onClose: () => void;
   shift: Shift;
   onEditSingle: () => void;
+  onEditFuture: () => void;
   onEditSeries: () => void;
 }
 
@@ -18,6 +19,7 @@ export default function RecurringEditChoiceDialog({
   onClose,
   shift,
   onEditSingle,
+  onEditFuture,
   onEditSeries
 }: RecurringEditChoiceDialogProps) {
   return (
@@ -84,6 +86,22 @@ export default function RecurringEditChoiceDialog({
             </Button>
 
             <Button
+              onClick={onEditFuture}
+              variant="outline"
+              className="h-auto p-4 text-left justify-start"
+            >
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <div className="font-medium">Edit All Future Shifts</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Changes apply to this shift and all future occurrences, preserving past shifts
+                  </div>
+                </div>
+              </div>
+            </Button>
+
+            <Button
               onClick={onEditSeries}
               variant="outline"
               className="h-auto p-4 text-left justify-start"
@@ -91,9 +109,9 @@ export default function RecurringEditChoiceDialog({
               <div className="flex items-start gap-3">
                 <CalendarDays className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div>
-                  <div className="font-medium">Edit All Shifts in Series</div>
+                  <div className="font-medium">Edit Entire Series</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Changes will apply to all shifts in this recurring series
+                    Changes will apply to all shifts in this recurring series (past, present, and future)
                   </div>
                 </div>
               </div>

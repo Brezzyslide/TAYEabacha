@@ -67,9 +67,10 @@ interface EditRecurringShiftModalProps {
   isOpen: boolean;
   onClose: () => void;
   shift: Shift;
+  editType: "future" | "series";
 }
 
-export default function EditRecurringShiftModal({ isOpen, onClose, shift }: EditRecurringShiftModalProps) {
+export default function EditRecurringShiftModal({ isOpen, onClose, shift, editType }: EditRecurringShiftModalProps) {
   const [endConditionType, setEndConditionType] = useState<"occurrences" | "endDate">("occurrences");
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
   
@@ -146,10 +147,12 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift }: Edit
         throw new Error("No shifts generated. Please select at least one weekday.");
       }
 
-      // Send update request for the entire series
+      // Send update request for the series with edit type
       return await apiRequest("PUT", `/api/shifts/series/${shift.seriesId}`, {
         shifts,
-        updateType: "full" // Full recreate of the series
+        updateType: "full", // Full recreate of the series
+        editType: editType, // "future" or "series"
+        fromShiftId: editType === "future" ? shift.id : undefined
       });
     },
     onSuccess: (data) => {
