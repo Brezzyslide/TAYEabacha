@@ -1702,15 +1702,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
               recurring: shiftData.isRecurring
             });
             
+            // Clean and transform the data to match database schema
             const newShiftData = {
-              ...shiftData,
+              title: shiftData.title,
+              description: shiftData.description || null,
+              startTime: new Date(shiftData.startTime), // Ensure proper Date object
+              endTime: shiftData.endTime ? new Date(shiftData.endTime) : null,
+              userId: shiftData.userId || null,
+              clientId: shiftData.clientId || null,
+              status: shiftData.status || (shiftData.userId ? "assigned" : "unassigned"),
+              location: shiftData.location || null,
+              latitude: shiftData.latitude || null,
+              longitude: shiftData.longitude || null,
+              building: shiftData.building || null,
+              floor: shiftData.floor || null,
+              fundingCategory: shiftData.fundingCategory || null,
+              staffRatio: shiftData.staffRatio || null,
+              isActive: true,
               seriesId: seriesId, // Preserve the original series ID
+              isRecurring: true,
+              recurringPattern: shiftData.recurringPattern || null,
+              recurringDays: shiftData.recurringDays || null,
+              shiftStartDate: shiftData.shiftStartDate ? new Date(shiftData.shiftStartDate) : null,
+              shiftStartTime: shiftData.shiftStartTime || null,
+              shiftEndTime: shiftData.shiftEndTime || null,
               tenantId: req.user.tenantId,
               createdAt: new Date(),
-              updatedAt: new Date(),
             };
             
-            console.log(`[SERIES UPDATE] Attempting to create shift with data:`, JSON.stringify(newShiftData, null, 2));
+            console.log(`[SERIES UPDATE] Attempting to create shift with cleaned data:`, JSON.stringify(newShiftData, null, 2));
             console.log(`[SERIES UPDATE] Data types: startTime=${typeof newShiftData.startTime}, tenantId=${typeof newShiftData.tenantId}`);
             console.log(`[SERIES UPDATE] StartTime value: ${newShiftData.startTime}, TenantId value: ${newShiftData.tenantId}`);
             
