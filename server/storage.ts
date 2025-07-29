@@ -500,11 +500,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createShift(insertShift: InsertShift): Promise<Shift> {
-    const [shift] = await db
-      .insert(shifts)
-      .values(insertShift)
-      .returning();
-    return shift;
+    try {
+      console.log(`[STORAGE CREATE SHIFT] Attempting to create shift with data:`, JSON.stringify(insertShift, null, 2));
+      
+      // Validate required fields before insertion
+      if (!insertShift.startTime) {
+        throw new Error("startTime is required but missing");
+      }
+      if (!insertShift.tenantId) {
+        throw new Error("tenantId is required but missing");
+      }
+      
+      console.log(`[STORAGE CREATE SHIFT] Required fields validated: startTime=${insertShift.startTime}, tenantId=${insertShift.tenantId}`);
+      
+      const [shift] = await db
+        .insert(shifts)
+        .values(insertShift)
+        .returning();
+        
+      console.log(`[STORAGE CREATE SHIFT] Successfully created shift with ID: ${shift.id}`);
+      return shift;
+    } catch (error) {
+      console.error(`[STORAGE CREATE SHIFT] Database insertion failed:`, error);
+      console.error(`[STORAGE CREATE SHIFT] Failed data:`, JSON.stringify(insertShift, null, 2));
+      throw error;
+    }
   }
 
   async getShift(id: number, tenantId: number): Promise<Shift | undefined> {
