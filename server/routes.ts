@@ -3717,19 +3717,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bulk observations PDF export
   app.post("/api/observations/export/pdf", requireAuth, async (req: any, res) => {
     try {
+      console.log("[OBSERVATIONS PDF EXPORT] Starting bulk PDF export...");
       const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
       
+      console.log("[OBSERVATIONS PDF EXPORT] Request payload:", {
+        observationsCount: observations?.length || 0,
+        clientId,
+        observationType,
+        dateFilter
+      });
+      
       if (!observations || observations.length === 0) {
+        console.error("[OBSERVATIONS PDF EXPORT] No observations provided for export");
         return res.status(400).json({ message: "No observations to export" });
       }
 
       const company = await storage.getCompanyByTenantId(req.user.tenantId);
       const companyName = company?.name || "NeedsCareAI+";
 
-      const { jsPDF } = await import('jspdf');
+      // Use require instead of dynamic import for better production compatibility
+      const { jsPDF } = require('jspdf');
       
-      // Create PDF
-      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+      // Create PDF with correct parameters for jsPDF 3.x
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
       const pageWidth = 297;
       const pageHeight = 210;
       const margin = 20;
@@ -3851,24 +3865,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const footerY = pageHeight - 15;
       pdf.setFontSize(8);
       pdf.setTextColor(128, 128, 128);
-      pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName} | Page ${pdf.getNumberOfPages()}`, margin, footerY);
+      pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName} | Page ${pdf.internal.getNumberOfPages()}`, margin, footerY);
       
+      console.log("[OBSERVATIONS PDF EXPORT] Generating PDF output...");
       const pdfOutput = pdf.output('datauristring');
       const base64Data = pdfOutput.split(',')[1];
       
+      console.log("[OBSERVATIONS PDF EXPORT] PDF generated successfully, size:", base64Data.length);
       res.json({ pdf: base64Data });
     } catch (error) {
-      console.error("Bulk observations PDF export error:", error);
-      res.status(500).json({ message: "Failed to export observations PDF" });
+      console.error("[OBSERVATIONS PDF EXPORT] Bulk observations PDF export error:", error);
+      res.status(500).json({ message: "Failed to export observations PDF", error: error.message });
     }
   });
 
   // Bulk observations Excel export
   app.post("/api/observations/export/excel", requireAuth, async (req: any, res) => {
     try {
+      console.log("[OBSERVATIONS EXCEL EXPORT] Starting bulk Excel export...");
       const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
       
+      console.log("[OBSERVATIONS EXCEL EXPORT] Request payload:", {
+        observationsCount: observations?.length || 0,
+        clientId,
+        observationType,
+        dateFilter
+      });
+      
       if (!observations || observations.length === 0) {
+        console.error("[OBSERVATIONS EXCEL EXPORT] No observations provided for export");
         return res.status(400).json({ message: "No observations to export" });
       }
 
@@ -3934,13 +3959,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Observations');
 
       // Generate Excel file
+      console.log("[OBSERVATIONS EXCEL EXPORT] Generating Excel workbook...");
       const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
       const base64Data = excelBuffer.toString('base64');
       
+      console.log("[OBSERVATIONS EXCEL EXPORT] Excel generated successfully, size:", base64Data.length);
       res.json({ excel: base64Data });
     } catch (error) {
-      console.error("Bulk observations Excel export error:", error);
-      res.status(500).json({ message: "Failed to export observations Excel" });
+      console.error("[OBSERVATIONS EXCEL EXPORT] Bulk observations Excel export error:", error);
+      res.status(500).json({ message: "Failed to export observations Excel", error: error.message });
     }
   });
 

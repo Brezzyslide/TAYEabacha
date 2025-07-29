@@ -890,6 +890,19 @@ export default function ObservationDashboard() {
 
   const handleExportPDF = async () => {
     try {
+      console.log("[PDF EXPORT DEBUG] Starting PDF export...");
+      console.log("[PDF EXPORT DEBUG] Filtered observations count:", filteredObservations.length);
+      
+      if (filteredObservations.length === 0) {
+        console.error("[PDF EXPORT DEBUG] No observations to export");
+        toast({
+          title: "Export Error",
+          description: "No observations to export. Please ensure you have observations matching your filters.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const response = await apiRequest("POST", "/api/observations/export/pdf", {
         clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
         observationType: selectedType !== "all" ? selectedType : null,
@@ -899,6 +912,12 @@ export default function ObservationDashboard() {
         searchTerm: searchTerm || null,
         observations: filteredObservations
       });
+      
+      console.log("[PDF EXPORT DEBUG] Response received:", !!response?.pdf);
+      
+      if (!response?.pdf) {
+        throw new Error("No PDF data received from server");
+      }
       
       // Convert base64 to blob and download
       const pdfBlob = new Blob([Uint8Array.from(atob(response.pdf), c => c.charCodeAt(0))], { type: 'application/pdf' });
@@ -910,8 +929,20 @@ export default function ObservationDashboard() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      console.log("[PDF EXPORT DEBUG] PDF download completed");
+      toast({
+        title: "Export Successful",
+        description: "PDF export completed successfully.",
+        variant: "default",
+      });
     } catch (error) {
-      console.error("PDF export failed:", error);
+      console.error("[PDF EXPORT DEBUG] PDF export failed:", error);
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to export observations to PDF.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -922,6 +953,11 @@ export default function ObservationDashboard() {
       
       if (filteredObservations.length === 0) {
         console.error("[EXCEL EXPORT DEBUG] No observations to export");
+        toast({
+          title: "Export Error",
+          description: "No observations to export. Please ensure you have observations matching your filters.",
+          variant: "destructive",
+        });
         return;
       }
       
@@ -955,8 +991,18 @@ export default function ObservationDashboard() {
       URL.revokeObjectURL(url);
       
       console.log("[EXCEL EXPORT DEBUG] Excel download completed");
+      toast({
+        title: "Export Successful",
+        description: "Excel export completed successfully.",
+        variant: "default",
+      });
     } catch (error) {
-      console.error("Excel export failed:", error);
+      console.error("[EXCEL EXPORT DEBUG] Excel export failed:", error);
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to export observations to Excel.",
+        variant: "destructive",
+      });
     }
   };
 
