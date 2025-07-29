@@ -13,11 +13,11 @@ import NewShiftModal from "./NewShiftModal";
 import EditShiftModal from "./EditShiftModal";
 import RecurringEditChoiceDialog from "./RecurringEditChoiceDialog";
 
-type FilterPeriod = "daily" | "weekly" | "fortnightly";
+type FilterPeriod = "all" | "daily" | "weekly" | "fortnightly" | "monthly" | "yearly";
 
 export default function AllShiftsTab() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
-  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("weekly");
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("all");
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -41,6 +41,10 @@ export default function AllShiftsTab() {
 
   // Filter shifts by period
   const filteredShifts = useMemo(() => {
+    if (filterPeriod === "all") {
+      return shifts; // Show all shifts when "all" is selected
+    }
+
     const now = new Date();
     let startDate: Date;
     let endDate: Date;
@@ -57,6 +61,16 @@ export default function AllShiftsTab() {
       case "fortnightly":
         startDate = subDays(startOfWeek(now), 7);
         endDate = addDays(endOfWeek(now), 7);
+        break;
+      case "monthly":
+        // Show 6 months for recurring shifts
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 6, 0);
+        break;
+      case "yearly":
+        // Full year range for long-term recurring shifts
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 11, 31);
         break;
       default:
         return shifts;
@@ -182,17 +196,75 @@ export default function AllShiftsTab() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Select value={filterPeriod} onValueChange={(value: FilterPeriod) => setFilterPeriod(value)}>
-            <SelectTrigger className="w-40">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="fortnightly">Fortnightly</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Filter View Options */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+              <Filter className="h-4 w-4" />
+              <span>Filter:</span>
+            </div>
+            <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <button
+                onClick={() => setFilterPeriod("all")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-l-lg transition-colors ${
+                  filterPeriod === "all"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                All Shifts
+              </button>
+              <button
+                onClick={() => setFilterPeriod("daily")}
+                className={`px-3 py-1.5 text-sm font-medium border-x border-gray-200 dark:border-gray-700 transition-colors ${
+                  filterPeriod === "daily"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={() => setFilterPeriod("weekly")}
+                className={`px-3 py-1.5 text-sm font-medium border-x border-gray-200 dark:border-gray-700 transition-colors ${
+                  filterPeriod === "weekly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Weekly
+              </button>
+              <button
+                onClick={() => setFilterPeriod("fortnightly")}
+                className={`px-3 py-1.5 text-sm font-medium border-x border-gray-200 dark:border-gray-700 transition-colors ${
+                  filterPeriod === "fortnightly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Fortnightly
+              </button>
+              <button
+                onClick={() => setFilterPeriod("monthly")}
+                className={`px-3 py-1.5 text-sm font-medium border-x border-gray-200 dark:border-gray-700 transition-colors ${
+                  filterPeriod === "monthly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setFilterPeriod("yearly")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition-colors ${
+                  filterPeriod === "yearly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Yearly
+              </button>
+            </div>
+          </div>
           
           <ShiftViewToggle viewMode={viewMode} onViewChange={setViewMode} />
           
