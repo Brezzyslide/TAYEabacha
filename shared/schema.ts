@@ -133,7 +133,7 @@ export const shifts = pgTable("shifts", {
   isActive: boolean("is_active").default(true),
   seriesId: text("series_id"), // For grouping recurring shifts
   isRecurring: boolean("is_recurring").default(false),
-  recurringPattern: text("recurring_pattern"), // "weekly", "fortnightly", "monthly"
+  recurringPattern: text("recurring_pattern"), // "daily", "weekly", "fortnightly", "monthly"
   recurringDays: jsonb("recurring_days"), // Array of selected days for recurring shifts
   shiftStartDate: timestamp("shift_start_date"), // When recurring shifts should start
   shiftStartTime: text("shift_start_time"), // Time format like "09:00"

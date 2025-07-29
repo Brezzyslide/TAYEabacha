@@ -59,7 +59,7 @@ const shiftFormSchema = z.object({
   fundingCategory: z.enum(["SIL", "CommunityAccess", "CapacityBuilding"]).optional(),
   staffRatio: z.enum(["1:1", "1:2", "1:3", "1:4", "2:1"]).optional(),
   isRecurring: z.boolean().default(false),
-  recurrenceType: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
+  recurrenceType: z.enum(["daily", "weekly", "fortnightly", "monthly"]).optional(),
   selectedWeekdays: z.array(z.string()).optional(),
   numberOfOccurrences: z.number().min(1).max(104).optional(),
   recurrenceEndDate: z.date().optional(),
