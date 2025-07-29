@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, MapPin, Users, UserCheck, UserX, TrendingUp, CheckCircle, PlayCircle, Plus, Filter } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 
-type FilterPeriod = "daily" | "weekly" | "fortnightly" | "monthly";
+type FilterPeriod = "daily" | "weekly" | "fortnightly" | "monthly" | "yearly";
 
 export default function ShiftCalendarTab() {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
@@ -110,9 +110,14 @@ export default function ShiftCalendarTab() {
         endDate = addDays(now, 14);
         break;
       case "monthly":
-        // Expanded monthly range to include next 2 months for recurring shifts
+        // Expanded range for recurring shifts - show 6 months from current month
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 6, 0);
+        break;
+      case "yearly":
+        // Full year range for long-term recurring shifts (like 52-week schedules)
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 11, 31);
         break;
       default:
         return shifts;
@@ -334,13 +339,23 @@ export default function ShiftCalendarTab() {
               </button>
               <button
                 onClick={() => setFilterPeriod("monthly")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium border-x border-gray-200 dark:border-gray-700 transition-colors ${
                   filterPeriod === "monthly"
                     ? "bg-blue-500 text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
                 Monthly
+              </button>
+              <button
+                onClick={() => setFilterPeriod("yearly")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition-colors ${
+                  filterPeriod === "yearly"
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+              >
+                Yearly
               </button>
             </div>
           </div>

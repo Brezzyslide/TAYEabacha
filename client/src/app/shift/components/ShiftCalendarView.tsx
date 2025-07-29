@@ -9,7 +9,7 @@ import ShiftStatusTag from "./ShiftStatusTag";
 
 interface ShiftCalendarViewProps {
   shifts: Shift[];
-  filterPeriod: "daily" | "weekly" | "fortnightly" | "monthly";
+  filterPeriod: "daily" | "weekly" | "fortnightly" | "monthly" | "yearly";
   onShiftClick: (shift: Shift) => void;
   getClientName: (clientId: number | null) => string;
 }
@@ -36,12 +36,26 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
           end: addDays(endOfWeek(currentDate), 7)
         };
       case "monthly":
-      default:
         const monthStart = startOfMonth(currentDate);
         const monthEnd = endOfMonth(currentDate);
         return {
           start: startOfWeek(monthStart),
           end: endOfWeek(monthEnd)
+        };
+      case "yearly":
+        // Show 3 months at a time for yearly view
+        const yearStart = startOfMonth(currentDate);
+        const yearEnd = endOfMonth(addMonths(currentDate, 2));
+        return {
+          start: startOfWeek(yearStart),
+          end: endOfWeek(yearEnd)
+        };
+      default:
+        const defaultMonthStart = startOfMonth(currentDate);
+        const defaultMonthEnd = endOfMonth(currentDate);
+        return {
+          start: startOfWeek(defaultMonthStart),
+          end: endOfWeek(defaultMonthEnd)
         };
     }
   };
