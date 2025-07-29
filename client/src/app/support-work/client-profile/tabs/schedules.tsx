@@ -48,7 +48,14 @@ export default function SchedulesTab({ clientId, companyId }: SchedulesTabProps)
   const getShiftsForDate = (date: Date) => {
     return shifts.filter((shift: any) => {
       const shiftDate = new Date(shift.startTime);
-      return isSameDay(date, shiftDate);
+      const isSame = isSameDay(date, shiftDate);
+      
+      // Debug logging for shift "6" to help locate it
+      if (shift.title === "6") {
+        console.log(`[CLIENT SCHEDULE DEBUG] Shift ${shift.id}: stored=${shift.startTime}, shiftDate=${shiftDate.toDateString()}, calendar=${date.toDateString()}, match=${isSame}`);
+      }
+      
+      return isSame;
     });
   };
 
