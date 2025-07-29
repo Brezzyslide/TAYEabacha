@@ -1668,10 +1668,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             cutoffDate.setHours(0, 0, 0, 0);
           }
         } else {
-          // For "series" editType, delete all future shifts from today
-          cutoffDate = new Date();
-          cutoffDate.setHours(0, 0, 0, 0);
-          console.log(`[SERIES UPDATE] Edit Series: Using today as cutoff date ${cutoffDate.toDateString()}`);
+          // For "series" editType, delete all shifts in the series (except completed)
+          cutoffDate = new Date('1900-01-01'); // Very old date to include all shifts
+          console.log(`[SERIES UPDATE] Edit Series: Using minimum cutoff to delete all non-completed shifts`);
         }
         
         // Delete shifts based on the cutoff date and preserve completed shifts
@@ -1691,10 +1690,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        // Create new shifts based on the new pattern
+        // Create new shifts based on the new pattern, but only for dates >= cutoff
         const newShifts = [];
         for (const shiftData of updateData.shifts) {
           try {
+            const shiftStartTime = new Date(shiftData.startTime);
+            
+            // Skip shifts that are before the cutoff date (these should be preserved)
+            if (shiftStartTime < cutoffDate) {
+              console.log(`[SERIES UPDATE] Skipping shift ${shiftStartTime.toDateString()} - before cutoff ${cutoffDate.toDateString()}`);
+              continue;
+            }
+            
             console.log(`[SERIES UPDATE] Creating new shift:`, {
               title: shiftData.title,
               startTime: shiftData.startTime,
@@ -1706,7 +1713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const newShiftData = {
               title: shiftData.title,
               description: shiftData.description || null,
-              startTime: new Date(shiftData.startTime), // Ensure proper Date object
+              startTime: shiftStartTime, // Already converted to Date object
               endTime: shiftData.endTime ? new Date(shiftData.endTime) : null,
               userId: shiftData.userId || null,
               clientId: shiftData.clientId || null,
@@ -1730,9 +1737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               createdAt: new Date(),
             };
             
-            console.log(`[SERIES UPDATE] Attempting to create shift with cleaned data:`, JSON.stringify(newShiftData, null, 2));
-            console.log(`[SERIES UPDATE] Data types: startTime=${typeof newShiftData.startTime}, tenantId=${typeof newShiftData.tenantId}`);
-            console.log(`[SERIES UPDATE] StartTime value: ${newShiftData.startTime}, TenantId value: ${newShiftData.tenantId}`);
+            console.log(`[SERIES UPDATE] Attempting to create shift for ${shiftStartTime.toDateString()}`);
             
             const createdShift = await storage.createShift(newShiftData);
             console.log(`[SERIES UPDATE] Created shift result:`, createdShift ? `Success - ID: ${createdShift.id}` : 'Failed - null returned');
