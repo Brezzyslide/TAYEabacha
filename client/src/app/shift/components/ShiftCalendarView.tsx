@@ -53,27 +53,15 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
     const dayShifts = shifts.filter(shift => {
       if (!shift.startTime) return false;
       try {
-        // Parse the stored UTC date and convert to local date for comparison
+        // Parse the stored date (already in the correct timezone when created)
         const shiftDate = new Date(shift.startTime);
         
-        // Get the local date components to handle timezone differences
-        const shiftLocalDate = new Date(
-          shiftDate.getFullYear(),
-          shiftDate.getMonth(),
-          shiftDate.getDate()
-        );
+        // Use isSameDay from date-fns which handles timezone conversion properly
+        const isSame = isSameDay(shiftDate, date);
         
-        const calendarLocalDate = new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate()
-        );
-        
-        const isSame = shiftLocalDate.getTime() === calendarLocalDate.getTime();
-        
-        // Debug logging for recently created shifts (ID > 740)
-        if (shift.id && shift.id > 740) {
-          console.log(`[CALENDAR DEBUG] Shift ${shift.id} "${shift.title}": stored=${shift.startTime}, shiftLocal=${shiftLocalDate.toDateString()}, calendar=${calendarLocalDate.toDateString()}, match=${isSame}`);
+        // Debug logging for recently created shifts (ID > 798)
+        if (shift.id && shift.id > 798) {
+          console.log(`[CALENDAR DEBUG] Shift ${shift.id} "${shift.title}": stored=${shift.startTime}, shiftDate=${shiftDate.toDateString()}, calendar=${date.toDateString()}, match=${isSame}`);
         }
         
         return isSame;
