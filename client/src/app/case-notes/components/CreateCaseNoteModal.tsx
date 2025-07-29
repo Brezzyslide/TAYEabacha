@@ -264,10 +264,18 @@ export default function CreateCaseNoteModal({
       return false;
     });
     
-    // If no eligible shifts found but we have shifts available, include the most recent ones for testing
+    // If no eligible shifts found but we have shifts available, include recent ones prioritized by proximity to today
     if (filtered.length === 0 && availableShifts.length > 0) {
-      // For testing purposes, include the first few shifts even if they're in the future
-      filtered.push(...availableShifts.slice(0, 5));
+      // Sort all shifts by proximity to today (closest dates first)
+      const sortedByProximity = [...availableShifts].sort((a, b) => {
+        const aDate = new Date(a.startTime);
+        const bDate = new Date(b.startTime);
+        const aDiff = Math.abs(aDate.getTime() - today.getTime());
+        const bDiff = Math.abs(bDate.getTime() - today.getTime());
+        return aDiff - bDiff;
+      });
+      
+      filtered.push(...sortedByProximity.slice(0, 5));
     }
     
     console.log(`[CASE NOTE] Filtered ${filtered.length} shifts from ${availableShifts.length} total:`, filtered.map(s => ({
@@ -299,18 +307,53 @@ export default function CreateCaseNoteModal({
       return todayShifts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
     }
     
-    // Second priority: Most recent past completed shift
+    // Second priority: Most recent past completed shift (within last 30 days)
     const pastShifts = filteredShifts.filter((shift: Shift) => {
       const shiftDate = new Date(shift.startTime);
       const shiftDateOnly = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
-      return shiftDateOnly < today;
+      return shiftDateOnly < today && (shift as any).status === "completed";
     });
     
     if (pastShifts.length > 0) {
       return pastShifts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
     }
     
-    return filteredShifts[0];
+    // Third priority: Recent past shifts (last 7 days) regardless of status
+    const recentPastShifts = filteredShifts.filter((shift: Shift) => {
+      const shiftDate = new Date(shift.startTime);
+      const shiftDateOnly = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return shiftDateOnly >= sevenDaysAgo && shiftDateOnly < today;
+    });
+    
+    if (recentPastShifts.length > 0) {
+      return recentPastShifts.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
+    }
+    
+    // Fourth priority: Near future shifts (next 7 days) that are assigned
+    const nearFutureShifts = filteredShifts.filter((shift: Shift) => {
+      const shiftDate = new Date(shift.startTime);
+      const shiftDateOnly = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
+      const nextWeek = new Date(today);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      const shiftStatus = (shift as any).status;
+      return shiftDateOnly > today && shiftDateOnly <= nextWeek && 
+             (shiftStatus === "assigned" || shiftStatus === "in-progress");
+    });
+    
+    if (nearFutureShifts.length > 0) {
+      return nearFutureShifts.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0];
+    }
+    
+    // Last resort: Most recent shift by date (avoid distant future)
+    return filteredShifts.sort((a, b) => {
+      const aDate = new Date(a.startTime);
+      const bDate = new Date(b.startTime);
+      const aDiff = Math.abs(aDate.getTime() - now.getTime());
+      const bDiff = Math.abs(bDate.getTime() - now.getTime());
+      return aDiff - bDiff;
+    })[0];
   }, [filteredShifts]);
 
 
