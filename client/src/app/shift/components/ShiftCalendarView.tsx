@@ -59,9 +59,9 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
         // Use isSameDay from date-fns which handles timezone conversion properly
         const isSame = isSameDay(shiftDate, date);
         
-        // Debug logging for recently created shifts (ID > 798)
-        if (shift.id && shift.id > 798) {
-          console.log(`[CALENDAR DEBUG] Shift ${shift.id} "${shift.title}": stored=${shift.startTime}, shiftDate=${shiftDate.toDateString()}, calendar=${date.toDateString()}, match=${isSame}`);
+        // Debug logging for shift "6" to help locate it
+        if (shift.title === "6") {
+          console.log(`[SHIFT 6 DEBUG] ID ${shift.id}: stored=${shift.startTime}, shiftDate=${shiftDate.toDateString()}, calendar=${date.toDateString()}, match=${isSame}`);
         }
         
         return isSame;
