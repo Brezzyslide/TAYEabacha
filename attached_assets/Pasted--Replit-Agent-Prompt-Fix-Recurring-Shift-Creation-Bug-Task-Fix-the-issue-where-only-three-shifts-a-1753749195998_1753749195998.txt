@@ -1,0 +1,116 @@
+ Replit Agent Prompt: Fix Recurring Shift Creation Bug
+Task: Fix the issue where only three shifts are being generated for a recurring shift pattern.
+
+Context:
+The system supports recurring shift generation by either:
+
+A fixed number of occurrences (e.g., 30), or
+
+An end date that determines the last valid shift.
+
+Recurrence patterns include: "daily", "weekly", "fortnightly", and "monthly".
+Each recurring shift group is tagged with a seriesId.
+
+Current Issue: Only 3 shifts are being created regardless of recurrence settings.
+
+✅ What to Fix
+Ensure numberOfOccurrences and endDate are properly received from the request.
+
+Default to 30 occurrences if neither is provided (for safe fallback).
+
+Fix loop logic to correctly:
+
+Increment date by recurrence pattern
+
+Push shift objects to the batch
+
+Respect maximum count or end date
+
+Await all database writes properly — avoid forEach(async) and use Promise.all() or for...of + await.
+
+Return a response that includes:
+
+totalShiftsGenerated
+
+seriesId
+
+startDate and recurrencePattern
+
+💻 Example Backend Fix Code (Node.js style)
+ts
+Copy
+Edit
+async function generateRecurringShifts({
+  startDate,
+  startTime,
+  endTime,
+  recurrencePattern,
+  numberOfOccurrences,
+  endDate,
+  seriesId,
+  companyId,
+  createdBy,
+}) {
+  const shifts = [];
+  const maxCount = numberOfOccurrences ?? 30;
+  let current = new Date(startDate);
+  let count = 0;
+
+  while (count < maxCount && (!endDate || current <= new Date(endDate))) {
+    const newShift = {
+      companyId,
+      seriesId,
+      startTime: combineDateAndTime(current, startTime),
+      endTime: combineDateAndTime(current, endTime),
+      recurrencePattern,
+      createdBy,
+      isRecurring: true,
+    };
+    shifts.push(newShift);
+
+    // Increment based on pattern
+    switch (recurrencePattern) {
+      case "daily":
+        current.setDate(current.getDate() + 1);
+        break;
+      case "weekly":
+        current.setDate(current.getDate() + 7);
+        break;
+      case "fortnightly":
+        current.setDate(current.getDate() + 14);
+        break;
+      case "monthly":
+        current.setMonth(current.getMonth() + 1);
+        break;
+      default:
+        throw new Error("Invalid recurrence pattern");
+    }
+
+    count++;
+  }
+
+  // Await batch creation
+  const savedShifts = [];
+  for (const shift of shifts) {
+    const saved = await db.shifts.create(shift); // or your actual create logic
+    savedShifts.push(saved);
+  }
+
+  return {
+    success: true,
+    totalShiftsGenerated: savedShifts.length,
+    seriesId,
+    recurrencePattern,
+  };
+}
+🧪 Additional Tests to Include
+Test 30 daily shifts from 2025-08-01
+
+Test 12 monthly shifts from 2025-08-01
+
+Test weekly with multiple weekdays (Mon & Thu)
+
+Test recurrence that ends before reaching 30 (use endDate)
+
+Confirm seriesId is consistent across saved shifts
+
