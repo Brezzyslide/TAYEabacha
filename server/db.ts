@@ -2,8 +2,8 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Use local Replit database
-const databaseUrl = process.env.DATABASE_URL;
+// Use AWS production database
+const databaseUrl = process.env.AWS_DATABASE_URL || "postgres://postgres:NeedsCareAI2024!@54.80.195.220:5430/mydb";
 
 if (!databaseUrl) {
   throw new Error(
