@@ -1649,7 +1649,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SERIES UPDATE] Found ${seriesShifts.length} shifts in series`);
       
-      // Update each shift in the series
+      // Check if this is a full recreation request (from recurring edit modal)
+      if (updateData.updateType === "full" && updateData.shifts) {
+        console.log(`[SERIES UPDATE] Full recreation requested - deleting ${seriesShifts.length} existing shifts and creating ${updateData.shifts.length} new ones`);
+        
+        // Delete all existing shifts in the series (only future ones to preserve completed shifts)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        for (const shift of seriesShifts) {
+          const shiftDate = new Date(shift.startTime);
+          if (shiftDate >= today && shift.status !== "completed") {
+            try {
+              console.log(`[SERIES UPDATE] Deleting future shift ${shift.id} (${shiftDate.toDateString()})`);
+              await storage.deleteShift(shift.id, req.user.tenantId);
+            } catch (deleteError) {
+              console.error(`[SERIES UPDATE] Failed to delete shift ${shift.id}:`, deleteError);
+            }
+          }
+        }
+        
+        // Create new shifts based on the new pattern
+        const newShifts = [];
+        for (const shiftData of updateData.shifts) {
+          try {
+            console.log(`[SERIES UPDATE] Creating new shift:`, {
+              title: shiftData.title,
+              startTime: shiftData.startTime,
+              endTime: shiftData.endTime,
+              recurring: shiftData.isRecurring
+            });
+            
+            const newShiftData = {
+              ...shiftData,
+              seriesId: seriesId, // Preserve the original series ID
+              tenantId: req.user.tenantId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            };
+            
+            const createdShift = await storage.createShift(newShiftData, req.user.tenantId);
+            if (createdShift) {
+              newShifts.push(createdShift);
+            }
+          } catch (createError) {
+            console.error(`[SERIES UPDATE] Failed to create new shift:`, createError);
+          }
+        }
+        
+        console.log(`[SERIES UPDATE] Successfully created ${newShifts.length} new shifts for series ${seriesId}`);
+        
+        // Log activity for series recreation
+        if (newShifts.length > 0) {
+          await storage.createActivityLog({
+            userId: req.user.id,
+            action: "recreate_shift_series",
+            resourceType: "shift",
+            resourceId: newShifts[0].id,
+            description: `Recreated recurring shift series "${seriesId}" with new pattern (${newShifts.length} shifts): ${updateData.shifts[0]?.title || 'Recurring shift'}`,
+            tenantId: req.user.tenantId,
+          });
+        }
+        
+        res.json({ 
+          success: true, 
+          created: newShifts.length, 
+          shifts: newShifts,
+          count: newShifts.length 
+        });
+        return;
+      }
+      
+      // Original update logic for simple field updates
       const updatedShifts = [];
       for (const shift of seriesShifts) {
         try {
@@ -1688,8 +1759,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             shiftUpdateData.endTime = updatedEndTime;
           }
           
-          // Remove editType from the data sent to storage
+          // Remove editType and updateType from the data sent to storage
           delete shiftUpdateData.editType;
+          delete shiftUpdateData.updateType;
+          delete shiftUpdateData.shifts;
           
           console.log(`[SERIES UPDATE] Updating shift ${shift.id} with data:`, shiftUpdateData);
           

@@ -9,6 +9,7 @@ import ShiftCalendarView from "./ShiftCalendarView";
 import ShiftRequestConfirmDialog from "./ShiftRequestConfirmDialog";
 import NewShiftModal from "./NewShiftModal";
 import EditShiftModal from "./EditShiftModal";
+import EditRecurringShiftModal from "./EditRecurringShiftModal";
 import RecurringEditChoiceDialog from "./RecurringEditChoiceDialog";
 import { CaseNoteCornerIndicator, CaseNoteStatusBorder } from "./CaseNoteStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ export default function ShiftCalendarTab() {
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isNewShiftModalOpen, setIsNewShiftModalOpen] = useState(false);
   const [isEditShiftModalOpen, setIsEditShiftModalOpen] = useState(false);
+  const [isRecurringEditModalOpen, setIsRecurringEditModalOpen] = useState(false);
   const [selectedShiftForEdit, setSelectedShiftForEdit] = useState<Shift | null>(null);
   const [isRecurringChoiceDialogOpen, setIsRecurringChoiceDialogOpen] = useState(false);
   const [editType, setEditType] = useState<"single" | "series">("single");
@@ -594,18 +596,27 @@ export default function ShiftCalendarTab() {
             onEditSeries={() => {
               setEditType("series");
               setIsRecurringChoiceDialogOpen(false);
-              setIsEditShiftModalOpen(true);
+              setIsRecurringEditModalOpen(true);
             }}
           />
           
           <EditShiftModal
-            isOpen={isEditShiftModalOpen}
+            isOpen={isEditShiftModalOpen && editType === "single"}
             onClose={() => {
               setIsEditShiftModalOpen(false);
               setSelectedShiftForEdit(null);
             }}
             shift={selectedShiftForEdit}
             editType={editType}
+          />
+          
+          <EditRecurringShiftModal
+            isOpen={isRecurringEditModalOpen}
+            onClose={() => {
+              setIsRecurringEditModalOpen(false);
+              setSelectedShiftForEdit(null);
+            }}
+            shift={selectedShiftForEdit}
           />
         </>
       )}
