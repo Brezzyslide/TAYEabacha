@@ -1320,7 +1320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role === "SupportWorker" && existingShift.userId !== req.user.id) {
         console.log("[SHIFT UPDATE] ❌ PERMISSION DENIED - Not user's shift");
         return res.status(403).json({ message: "You can only update your own assigned shifts" });
-      } else if (req.user.role !== "SupportWorker" && !["TeamLeader", "Coordinator", "Admin", "ConsoleManager"].includes(req.user.role)) {
+      } else if (req.user.role !== "SupportWorker" && !["TeamLeader", "Coordinator", "Admin", "ConsoleManager", "admin", "teamleader", "coordinator", "consolemanager"].includes(req.user.role)) {
         console.log("[SHIFT UPDATE] ❌ PERMISSION DENIED - Insufficient role");
         return res.status(403).json({ message: "Insufficient permissions" });
       }
