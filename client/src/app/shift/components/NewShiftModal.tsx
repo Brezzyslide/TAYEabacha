@@ -311,7 +311,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         currentDate.setMonth(currentDate.getMonth() + 1);
       }
     } else {
-      // Weekly/Fortnightly recurrence - FIXED ALGORITHM
+      // Weekly/Fortnightly/Daily recurrence - SIMPLIFIED ALGORITHM
       const selectedWeekdays = data.selectedWeekdays || [];
       if (selectedWeekdays.length === 0) return shifts;
 
@@ -320,53 +320,35 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         "Friday": 5, "Saturday": 6, "Sunday": 0
       };
 
-      const intervalDays = data.recurrenceType === "fortnightly" ? 14 : 7;
-      let totalShiftsGenerated = 0;
+      // Get interval days based on recurrence type
+      let intervalDays = 1; // daily
+      if (data.recurrenceType === "weekly") intervalDays = 7;
+      if (data.recurrenceType === "fortnightly") intervalDays = 14;
       
-      console.log(`[WEEKLY DEBUG] Selected weekdays: ${selectedWeekdays.join(', ')}, interval: ${intervalDays} days`);
+      console.log(`[RECURRING DEBUG] Creating ${maxOccurrences} shifts with ${data.recurrenceType} pattern (${intervalDays} day intervals)`);
       
-      // Find all the initial dates for each selected weekday in the first week
-      const initialDates: Date[] = [];
-      
+      // For each selected weekday, generate the exact number of occurrences
       for (const weekday of selectedWeekdays) {
         const dayOfWeek = weekdayMap[weekday as keyof typeof weekdayMap];
         const startDayOfWeek = startDate.getDay();
         
-        // Calculate days to add to get to this weekday
+        // Calculate days to add to get to the first occurrence of this weekday
         let daysToAdd = (dayOfWeek - startDayOfWeek + 7) % 7;
         
-        // If the weekday is today and we want it to start today, keep it as 0
+        // If it's the same day and we want to start today, keep as 0
         if (daysToAdd === 0 && dayOfWeek === startDayOfWeek) {
           daysToAdd = 0;
         }
         
-        const initialDate = new Date(startDate);
-        initialDate.setDate(startDate.getDate() + daysToAdd);
-        initialDates.push(initialDate);
-        
-        console.log(`[WEEKLY DEBUG] ${weekday} initial date: ${initialDate.toDateString()}`);
-      }
-      
-      // Sort initial dates chronologically
-      initialDates.sort((a, b) => a.getTime() - b.getTime());
-      
-      // Generate shifts by cycling through intervals
-      let cycleNumber = 0;
-      
-      while (totalShiftsGenerated < maxOccurrences) {
-        let shiftsAddedInThisCycle = 0;
-        
-        for (const initialDate of initialDates) {
-          if (totalShiftsGenerated >= maxOccurrences) break;
-          
-          // Calculate the actual shift date for this cycle
-          const shiftDate = new Date(initialDate);
-          shiftDate.setDate(initialDate.getDate() + (cycleNumber * intervalDays));
+        // Generate exactly maxOccurrences shifts for this weekday
+        for (let occurrence = 0; occurrence < maxOccurrences; occurrence++) {
+          const shiftDate = new Date(startDate);
+          shiftDate.setDate(startDate.getDate() + daysToAdd + (occurrence * intervalDays));
           
           // Skip if this date is after our end date
           if (endByDate && shiftDate > endByDate) {
-            console.log(`[WEEKLY DEBUG] Skipping ${shiftDate.toDateString()} - after end date`);
-            continue;
+            console.log(`[RECURRING DEBUG] Stopping at occurrence ${occurrence + 1} - reached end date`);
+            break;
           }
           
           // Create shift start datetime
@@ -391,25 +373,14 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
             status: data.userId ? "assigned" : "unassigned",
             isRecurring: true,
             recurringPattern: data.recurrenceType,
-            recurringDays: data.selectedWeekdays,
+            recurringDays: [weekday],
             shiftStartDate: data.shiftStartDate,
             shiftStartTime: data.shiftStartTime,
             shiftEndTime: data.shiftEndTime,
           });
           
-          totalShiftsGenerated++;
-          shiftsAddedInThisCycle++;
-          
-          console.log(`[WEEKLY DEBUG] Created shift ${totalShiftsGenerated}: ${shiftDate.toDateString()}`);
+          console.log(`[RECURRING DEBUG] ${weekday} shift ${occurrence + 1}/${maxOccurrences}: ${shiftDate.toDateString()}`);
         }
-        
-        // If we couldn't add any shifts in this cycle, break to avoid infinite loop
-        if (shiftsAddedInThisCycle === 0) {
-          console.log(`[WEEKLY DEBUG] No shifts added in cycle ${cycleNumber}, breaking`);
-          break;
-        }
-        
-        cycleNumber++;
       }
     }
     
