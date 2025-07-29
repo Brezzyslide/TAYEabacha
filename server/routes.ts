@@ -1711,6 +1711,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
             
             console.log(`[SERIES UPDATE] Attempting to create shift with data:`, JSON.stringify(newShiftData, null, 2));
+            console.log(`[SERIES UPDATE] Data types: startTime=${typeof newShiftData.startTime}, tenantId=${typeof newShiftData.tenantId}`);
+            console.log(`[SERIES UPDATE] StartTime value: ${newShiftData.startTime}, TenantId value: ${newShiftData.tenantId}`);
+            
             const createdShift = await storage.createShift(newShiftData);
             console.log(`[SERIES UPDATE] Created shift result:`, createdShift ? `Success - ID: ${createdShift.id}` : 'Failed - null returned');
             if (createdShift) {
