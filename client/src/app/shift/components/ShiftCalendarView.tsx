@@ -48,6 +48,13 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
 
   const { start: calendarStart, end: calendarEnd } = getCalendarRange();
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  
+  // Debug calendar range to see if it's limiting dates
+  console.log(`[CALENDAR RANGE DEBUG] Viewing ${format(currentDate, 'MMM yyyy')}, range: ${format(calendarStart, 'MMM d')} to ${format(calendarEnd, 'MMM d')}, total days: ${calendarDays.length}`);
+  
+  // Debug to see which shifts are being fetched
+  const shiftsWithTitle6 = shifts.filter(s => s.title === "6");
+  console.log(`[SHIFTS DEBUG] Total shifts with title "6": ${shiftsWithTitle6.length}`, shiftsWithTitle6.map(s => ({ id: s.id, startTime: s.startTime, date: new Date(s.startTime).toDateString() })));
 
   const getShiftsForDay = (date: Date) => {
     const dayShifts = shifts.filter(shift => {
@@ -59,7 +66,10 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
         // Use isSameDay from date-fns which handles timezone conversion properly
         const isSame = isSameDay(shiftDate, date);
         
-
+        // Debug logging to see why later shifts aren't showing
+        if (shift.title === "6" && !isSame) {
+          console.log(`[SHIFT MATCH DEBUG] Shift ${shift.id}: stored=${shift.startTime}, parsed=${shiftDate.toDateString()}, checking=${date.toDateString()}, match=${isSame}`);
+        }
         
         return isSame;
       } catch (error) {

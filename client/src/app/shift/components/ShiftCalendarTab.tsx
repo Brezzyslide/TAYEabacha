@@ -28,7 +28,7 @@ export default function ShiftCalendarTab() {
   const [selectedShiftForEdit, setSelectedShiftForEdit] = useState<Shift | null>(null);
   const [isRecurringChoiceDialogOpen, setIsRecurringChoiceDialogOpen] = useState(false);
   const [editType, setEditType] = useState<"single" | "series">("single");
-  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("fortnightly");
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("monthly");
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -110,24 +110,36 @@ export default function ShiftCalendarTab() {
         endDate = addDays(now, 14);
         break;
       case "monthly":
-        // Only this month's shifts
+        // Expanded monthly range to include next 2 months for recurring shifts
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
         break;
       default:
         return shifts;
     }
 
-    return shifts.filter(shift => {
+    console.log(`[FILTER DEBUG] Period: ${filterPeriod}, Range: ${startDate.toDateString()} to ${endDate.toDateString()}`);
+    
+    const filtered = shifts.filter(shift => {
       if (!shift.startTime) return false;
       try {
         const shiftDate = new Date(shift.startTime);
-        return shiftDate >= startDate && shiftDate <= endDate;
+        const isInRange = shiftDate >= startDate && shiftDate <= endDate;
+        
+        // Debug filtering for "6" shifts specifically
+        if (shift.title === "6") {
+          console.log(`[FILTER DEBUG] Shift "${shift.title}" (${shift.id}): date=${shiftDate.toDateString()}, inRange=${isInRange}`);
+        }
+        
+        return isInRange;
       } catch (error) {
         console.warn('Invalid shift date:', shift);
         return false;
       }
     });
+    
+    console.log(`[FILTER DEBUG] Filtered from ${shifts.length} to ${filtered.length} shifts`);
+    return filtered;
   }, [shifts, filterPeriod]);
 
   // All shifts to display in calendar (filtered)
