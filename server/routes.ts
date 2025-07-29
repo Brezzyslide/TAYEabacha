@@ -1710,12 +1710,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               updatedAt: new Date(),
             };
             
-            const createdShift = await storage.createShift(newShiftData, req.user.tenantId);
+            console.log(`[SERIES UPDATE] Attempting to create shift with data:`, JSON.stringify(newShiftData, null, 2));
+            const createdShift = await storage.createShift(newShiftData);
+            console.log(`[SERIES UPDATE] Created shift result:`, createdShift ? `Success - ID: ${createdShift.id}` : 'Failed - null returned');
             if (createdShift) {
               newShifts.push(createdShift);
+            } else {
+              console.error(`[SERIES UPDATE] createShift returned null for data:`, newShiftData);
             }
           } catch (createError) {
             console.error(`[SERIES UPDATE] Failed to create new shift:`, createError);
+            console.error(`[SERIES UPDATE] Error stack:`, createError.stack);
           }
         }
         
