@@ -1662,6 +1662,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (targetShift) {
             cutoffDate = new Date(targetShift.startTime);
             console.log(`[SERIES UPDATE] Edit Future: Using cutoff date ${cutoffDate.toDateString()} from shift ID ${updateData.fromShiftId}`);
+            console.log(`[SERIES UPDATE] Total shifts in series: ${seriesShifts.length}`);
+            console.log(`[SERIES UPDATE] Shifts before cutoff:`, seriesShifts.filter(s => new Date(s.startTime) < cutoffDate).map(s => `${s.id}(${new Date(s.startTime).toDateString()})`));
+            console.log(`[SERIES UPDATE] Shifts at/after cutoff:`, seriesShifts.filter(s => new Date(s.startTime) >= cutoffDate).map(s => `${s.id}(${new Date(s.startTime).toDateString()})`));
           } else {
             console.log(`[SERIES UPDATE] Target shift ${updateData.fromShiftId} not found, falling back to today`);
             cutoffDate = new Date();
@@ -1690,30 +1693,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        // Create new shifts based on the new pattern, but only for dates >= cutoff
+        // For future edits, filter the generated shifts to only include those >= cutoff date
+        const shiftsToCreate = updateData.editType === "future" 
+          ? updateData.shifts.filter(shiftData => {
+              const shiftStartTime = new Date(shiftData.startTime);
+              return shiftStartTime >= cutoffDate;
+            })
+          : updateData.shifts;
+
+        console.log(`[SERIES UPDATE] Original shifts generated: ${updateData.shifts.length}, Shifts to create after cutoff filter: ${shiftsToCreate.length}`);
+        if (updateData.editType === "future") {
+          console.log(`[SERIES UPDATE] Cutoff date: ${cutoffDate.toDateString()}`);
+          console.log(`[SERIES UPDATE] Generated shifts before cutoff (will be skipped):`, 
+            updateData.shifts.filter(s => new Date(s.startTime) < cutoffDate).map(s => new Date(s.startTime).toDateString()));
+          console.log(`[SERIES UPDATE] Generated shifts at/after cutoff (will be created):`, 
+            shiftsToCreate.map(s => new Date(s.startTime).toDateString()));
+        }
+
+        // Create new shifts based on the filtered list
         const newShifts = [];
-        for (const shiftData of updateData.shifts) {
+        for (const shiftData of shiftsToCreate) {
           try {
             const shiftStartTime = new Date(shiftData.startTime);
-            
-            // Skip shifts that are before the cutoff date (these should be preserved)
-            if (shiftStartTime < cutoffDate) {
-              console.log(`[SERIES UPDATE] Skipping shift ${shiftStartTime.toDateString()} - before cutoff ${cutoffDate.toDateString()}`);
-              continue;
-            }
-            
-            // For "future" edits, also check if this shift date already exists in preserved shifts
-            if (updateData.editType === "future") {
-              const existingShift = seriesShifts.find(existingShift => {
-                const existingDate = new Date(existingShift.startTime);
-                return existingDate.getTime() === shiftStartTime.getTime();
-              });
-              
-              if (existingShift && existingShift.status !== "completed") {
-                console.log(`[SERIES UPDATE] Skipping shift ${shiftStartTime.toDateString()} - would duplicate existing shift ${existingShift.id}`);
-                continue;
-              }
-            }
             
             console.log(`[SERIES UPDATE] Creating new shift:`, {
               title: shiftData.title,
