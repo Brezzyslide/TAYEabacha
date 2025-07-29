@@ -125,7 +125,7 @@ export default function CaseNoteCard({
                 <h3 className="font-medium text-lg">{note.title}</h3>
                 {getTypeBadge()}
                 {getPriorityBadge()}
-                {note.attachments && note.attachments.length > 0 && (
+                {note.attachments && Array.isArray(note.attachments) && note.attachments.length > 0 && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Paperclip className="w-3 h-3" />
                     {note.attachments.length}
@@ -178,15 +178,15 @@ export default function CaseNoteCard({
               )}
 
               {/* Incident/Medication details */}
-              {note.incidentRef && (
+              {note.incidentData && typeof note.incidentData === 'object' && (note.incidentData as any)?.refNumber && (
                 <Badge variant="outline" className="text-xs">
-                  Ref: {note.incidentRef}
+                  Ref: {(note.incidentData as any).refNumber}
                 </Badge>
               )}
               
-              {note.medicationFlag && (
+              {note.medicationData && typeof note.medicationData === 'object' && (note.medicationData as any)?.status && (
                 <Badge variant="outline" className="text-xs">
-                  Medication: {note.medicationFlag.replace('_', ' ')}
+                  Medication: {(note.medicationData as any).status.replace('_', ' ')}
                 </Badge>
               )}
             </div>
@@ -248,7 +248,7 @@ export default function CaseNoteCard({
             <div className="flex flex-wrap items-center gap-2 mb-2">
               {getTypeBadge()}
               {getPriorityBadge()}
-              {note.attachments && note.attachments.length > 0 && (
+              {note.attachments && Array.isArray(note.attachments) && note.attachments.length > 0 && (
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Paperclip className="w-3 h-3" />
                   {note.attachments.length} files
@@ -341,15 +341,15 @@ export default function CaseNoteCard({
           {/* Additional info */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              {note.incidentRef && (
+              {note.incidentData && typeof note.incidentData === 'object' && (note.incidentData as any)?.refNumber && (
                 <Badge variant="outline" className="text-xs">
-                  Ref: {note.incidentRef}
+                  Ref: {(note.incidentData as any).refNumber}
                 </Badge>
               )}
               
-              {note.medicationFlag && (
+              {note.medicationData && typeof note.medicationData === 'object' && (note.medicationData as any)?.status && (
                 <Badge variant="outline" className="text-xs">
-                  Medication: {note.medicationFlag.replace('_', ' ')}
+                  Medication: {(note.medicationData as any).status.replace('_', ' ')}
                 </Badge>
               )}
 
@@ -372,7 +372,7 @@ export default function CaseNoteCard({
           </div>
 
           {/* Attachments preview */}
-          {note.attachments && note.attachments.length > 0 && (
+          {note.attachments && Array.isArray(note.attachments) && note.attachments.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1">Attachments:</p>
               <div className="space-y-1">
@@ -382,7 +382,7 @@ export default function CaseNoteCard({
                     {attachment.name}
                   </div>
                 ))}
-                {note.attachments.length > 3 && (
+                {Array.isArray(note.attachments) && note.attachments.length > 3 && (
                   <div className="text-xs text-muted-foreground">
                     +{note.attachments.length - 3} more files
                   </div>
