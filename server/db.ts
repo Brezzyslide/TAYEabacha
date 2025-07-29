@@ -13,10 +13,10 @@ if (!databaseUrl) {
 
 console.log(`[DATABASE] Connecting to: ${databaseUrl.replace(/:[^:]*@/, ':***@')}`);
 
-// Create pool with AWS database configuration using standard pg
+// Create pool with Neon database configuration using standard pg
 export const pool = new Pool({ 
   connectionString: databaseUrl,
-  ssl: false, // AWS database doesn't require SSL
+  ssl: databaseUrl.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
