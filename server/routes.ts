@@ -3889,15 +3889,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         observationsCount: observations?.length || 0,
         clientId,
         observationType,
-        dateFilter
+        dateFilter,
+        hasObservations: !!observations,
+        userTenant: req.user?.tenantId
       });
       
       if (!observations || observations.length === 0) {
         console.error("[OBSERVATIONS EXCEL EXPORT] No observations provided for export");
-        return res.status(400).json({ message: "No observations to export" });
+        return res.status(400).json({ 
+          message: "No observations to export",
+          debug: "Observations array is empty or not provided"
+        });
       }
 
-      const XLSX = require('xlsx');
+      // Import XLSX with error handling
+      let XLSX;
+      try {
+        XLSX = require('xlsx');
+        console.log("[OBSERVATIONS EXCEL EXPORT] XLSX library loaded successfully");
+      } catch (xlsxError) {
+        console.error("[OBSERVATIONS EXCEL EXPORT] Failed to load XLSX library:", xlsxError);
+        return res.status(500).json({ message: "Excel library not available" });
+      }
       
       // Get all clients for name lookup
       const clients = await storage.getClients(req.user.tenantId);
@@ -3967,7 +3980,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ excel: base64Data });
     } catch (error) {
       console.error("[OBSERVATIONS EXCEL EXPORT] Bulk observations Excel export error:", error);
-      res.status(500).json({ message: "Failed to export observations Excel", error: error.message });
+      res.status(500).json({ 
+        message: "Failed to export observations to Excel",
+        error: error.message
+      });
     }
   });
 

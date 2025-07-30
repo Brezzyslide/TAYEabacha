@@ -913,6 +913,9 @@ export default function ObservationDashboard() {
         observations: filteredObservations
       });
       
+      console.log("[PDF EXPORT DEBUG] Response type:", typeof response);
+      console.log("[PDF EXPORT DEBUG] Response keys:", response ? Object.keys(response) : 'null');
+      
       console.log("[PDF EXPORT DEBUG] Response received:", !!response?.pdf);
       
       if (!response?.pdf) {
@@ -970,6 +973,9 @@ export default function ObservationDashboard() {
         searchTerm: searchTerm || null,
         observations: filteredObservations
       });
+      
+      console.log("[EXCEL EXPORT DEBUG] Response type:", typeof response);
+      console.log("[EXCEL EXPORT DEBUG] Response keys:", response ? Object.keys(response) : 'null');
       
       console.log("[EXCEL EXPORT DEBUG] Response received:", !!response?.excel);
       
