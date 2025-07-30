@@ -24,7 +24,7 @@ export default function RecurringEditChoiceDialog({
 }: RecurringEditChoiceDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg w-full mx-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5 text-blue-600" />
@@ -68,15 +68,15 @@ export default function RecurringEditChoiceDialog({
           </Card>
 
           {/* Choice Buttons */}
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 overflow-hidden">
             <Button
               onClick={onEditSingle}
               variant="outline"
               className="h-auto p-4 text-left justify-start"
             >
-              <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-orange-600 mt-0.5" />
-                <div>
+              <div className="flex items-start gap-3 w-full">
+                <Calendar className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
                   <div className="font-medium">Edit This Shift Only</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Changes will only apply to this specific occurrence
@@ -90,12 +90,12 @@ export default function RecurringEditChoiceDialog({
               variant="outline"
               className="h-auto p-4 text-left justify-start"
             >
-              <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-green-600 mt-0.5" />
-                <div>
+              <div className="flex items-start gap-3 w-full">
+                <Clock className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
                   <div className="font-medium">Edit All Future Shifts</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Changes apply to this shift and all future occurrences, preserving past shifts
+                  <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Changes apply to this shift and all future occurrences
                   </div>
                 </div>
               </div>
@@ -106,12 +106,12 @@ export default function RecurringEditChoiceDialog({
               variant="outline"
               className="h-auto p-4 text-left justify-start"
             >
-              <div className="flex items-start gap-3">
-                <CalendarDays className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div>
+              <div className="flex items-start gap-3 w-full">
+                <CalendarDays className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
                   <div className="font-medium">Edit Entire Series</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Changes will apply to all shifts in this recurring series (past, present, and future)
+                  <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Changes apply to all shifts in the recurring series
                   </div>
                 </div>
               </div>
