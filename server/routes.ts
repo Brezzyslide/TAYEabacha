@@ -3723,17 +3723,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk observations PDF export
-  app.post("/api/observations/export/pdf", (req: any, res: any, next: any) => {
-    console.log("[PDF EXPORT AUTH] Session check:", {
-      sessionID: req.sessionID,
-      hasUser: !!req.user,
-      isAuthenticated: req.isAuthenticated(),
-      cookies: req.headers.cookie
-    });
-    requireAuth(req, res, next);
-  }, async (req: any, res) => {
+  app.post("/api/observations/export/pdf", async (req: any, res) => {
     try {
       console.log("[OBSERVATIONS PDF EXPORT] Starting bulk PDF export...");
+      console.log("[OBSERVATIONS PDF EXPORT] Request body:", JSON.stringify(req.body, null, 2));
+      
+      // Simple auth check - if user is not authenticated, return error
+      if (!req.isAuthenticated()) {
+        console.log("[OBSERVATIONS PDF EXPORT] User not authenticated");
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       console.log("[OBSERVATIONS PDF EXPORT] User:", req.user?.username, "Tenant:", req.user?.tenantId);
       console.log("[OBSERVATIONS PDF EXPORT] Session ID:", req.sessionID);
       console.log("[OBSERVATIONS PDF EXPORT] Request body keys:", Object.keys(req.body));
@@ -3900,21 +3900,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk observations Excel export
-  app.post("/api/observations/export/excel", (req: any, res: any, next: any) => {
-    console.log("[EXCEL EXPORT AUTH] Session check:", {
-      sessionID: req.sessionID,
-      hasUser: !!req.user,
-      isAuthenticated: req.isAuthenticated(),
-      cookies: req.headers.cookie
-    });
-    requireAuth(req, res, next);
-  }, async (req: any, res) => {
+  // Bulk observations Excel export  
+  app.post("/api/observations/export/excel", async (req: any, res) => {
     try {
       console.log("[OBSERVATIONS EXCEL EXPORT] Starting bulk Excel export...");
+      console.log("[OBSERVATIONS EXCEL EXPORT] Request body:", JSON.stringify(req.body, null, 2));
+      
+      // Simple auth check - if user is not authenticated, return error
+      if (!req.isAuthenticated()) {
+        console.log("[OBSERVATIONS EXCEL EXPORT] User not authenticated");
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       console.log("[OBSERVATIONS EXCEL EXPORT] User:", req.user?.username, "Tenant:", req.user?.tenantId);
-      console.log("[OBSERVATIONS EXCEL EXPORT] Session ID:", req.sessionID);
-      console.log("[OBSERVATIONS EXCEL EXPORT] Auth check passed, proceeding with export");
       
       const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
       

@@ -894,6 +894,10 @@ export default function ObservationDashboard() {
       console.log("[PDF EXPORT DEBUG] Filtered observations count:", filteredObservations.length);
       console.log("[PDF EXPORT DEBUG] Document cookies:", document.cookie);
       
+      // Extract session cookie from document.cookie
+      const sessionCookie = document.cookie.split(';').find(c => c.trim().startsWith('connect.sid='));
+      console.log("[PDF EXPORT DEBUG] Session cookie:", sessionCookie);
+      
       // First check if we're authenticated
       const authCheck = await fetch('/api/auth/user', { credentials: 'include' });
       console.log("[PDF EXPORT DEBUG] Auth check status:", authCheck.status);
@@ -919,6 +923,7 @@ export default function ObservationDashboard() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cookie": document.cookie  // Explicitly include all cookies
         },
         credentials: "include",
         body: JSON.stringify({
@@ -989,6 +994,10 @@ export default function ObservationDashboard() {
       console.log("[EXCEL EXPORT DEBUG] Filtered observations count:", filteredObservations.length);
       console.log("[EXCEL EXPORT DEBUG] Document cookies:", document.cookie);
       
+      // Extract session cookie from document.cookie
+      const sessionCookie = document.cookie.split(';').find(c => c.trim().startsWith('connect.sid='));
+      console.log("[EXCEL EXPORT DEBUG] Session cookie:", sessionCookie);
+      
       // First check if we're authenticated
       const authCheck = await fetch('/api/auth/user', { credentials: 'include' });
       console.log("[EXCEL EXPORT DEBUG] Auth check status:", authCheck.status);
@@ -1014,6 +1023,7 @@ export default function ObservationDashboard() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cookie": document.cookie  // Explicitly include all cookies
         },
         credentials: "include",
         body: JSON.stringify({
