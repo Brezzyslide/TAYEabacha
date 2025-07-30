@@ -219,6 +219,12 @@ function StaffBulkUploadForm() {
       </div>
 
       {/* File Upload Section */}
+      <div className="space-y-2">
+        <h3 className="font-medium text-gray-900 dark:text-gray-100">Step 2: Fill Template & Upload</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Fill in your staff data and upload the completed file. Make sure to remove any sample data if present.
+        </p>
+      </div>
       <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/20">
         <input
           type="file"
