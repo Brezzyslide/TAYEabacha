@@ -919,22 +919,14 @@ export default function ObservationDashboard() {
         return;
       }
       
-      const response = await fetch("/api/observations/export/pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cookie": document.cookie  // Explicitly include all cookies
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
-          observationType: selectedType !== "all" ? selectedType : null,
-          dateFilter,
-          dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
-          dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
-          searchTerm: searchTerm || null,
-          observations: filteredObservations
-        })
+      const response = await apiRequest("POST", "/api/observations/export/pdf", {
+        clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
+        observationType: selectedType !== "all" ? selectedType : null,
+        dateFilter,
+        dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
+        dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
+        searchTerm: searchTerm || null,
+        observations: filteredObservations
       });
       
       console.log("[PDF EXPORT DEBUG] Raw response status:", response.status);
@@ -1019,22 +1011,14 @@ export default function ObservationDashboard() {
         return;
       }
       
-      const response = await fetch("/api/observations/export/excel", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cookie": document.cookie  // Explicitly include all cookies
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
-          observationType: selectedType !== "all" ? selectedType : null,
-          dateFilter,
-          dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
-          dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
-          searchTerm: searchTerm || null,
-          observations: filteredObservations
-        })
+      const response = await apiRequest("POST", "/api/observations/export/excel", {
+        clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
+        observationType: selectedType !== "all" ? selectedType : null,
+        dateFilter,
+        dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
+        dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
+        searchTerm: searchTerm || null,
+        observations: filteredObservations
       });
       
       console.log("[EXCEL EXPORT DEBUG] Raw response status:", response.status);
