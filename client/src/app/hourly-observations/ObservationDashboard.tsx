@@ -908,15 +908,31 @@ export default function ObservationDashboard() {
         return;
       }
       
-      const response = await apiRequest("POST", "/api/observations/export/pdf", {
-        clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
-        observationType: selectedType !== "all" ? selectedType : null,
-        dateFilter,
-        dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
-        dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
-        searchTerm: searchTerm || null,
-        observations: filteredObservations
+      const response = await fetch("/api/observations/export/pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
+          observationType: selectedType !== "all" ? selectedType : null,
+          dateFilter,
+          dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
+          dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
+          searchTerm: searchTerm || null,
+          observations: filteredObservations
+        })
       });
+      
+      console.log("[PDF EXPORT DEBUG] Raw response status:", response.status);
+      console.log("[PDF EXPORT DEBUG] Raw response ok:", response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[PDF EXPORT DEBUG] Error response:", errorText);
+        throw new Error(`Export failed: ${response.status} ${errorText}`);
+      }
       
       const responseData = await response.json();
       console.log("[PDF EXPORT DEBUG] Response data:", responseData);
@@ -980,15 +996,31 @@ export default function ObservationDashboard() {
         return;
       }
       
-      const response = await apiRequest("POST", "/api/observations/export/excel", {
-        clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
-        observationType: selectedType !== "all" ? selectedType : null,
-        dateFilter,
-        dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
-        dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
-        searchTerm: searchTerm || null,
-        observations: filteredObservations
+      const response = await fetch("/api/observations/export/excel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
+          observationType: selectedType !== "all" ? selectedType : null,
+          dateFilter,
+          dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
+          dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
+          searchTerm: searchTerm || null,
+          observations: filteredObservations
+        })
       });
+      
+      console.log("[EXCEL EXPORT DEBUG] Raw response status:", response.status);
+      console.log("[EXCEL EXPORT DEBUG] Raw response ok:", response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[EXCEL EXPORT DEBUG] Error response:", errorText);
+        throw new Error(`Export failed: ${response.status} ${errorText}`);
+      }
       
       const responseData = await response.json();
       console.log("[EXCEL EXPORT DEBUG] Response data:", responseData);
