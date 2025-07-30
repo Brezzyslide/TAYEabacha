@@ -892,6 +892,11 @@ export default function ObservationDashboard() {
     try {
       console.log("[PDF EXPORT DEBUG] Starting PDF export...");
       console.log("[PDF EXPORT DEBUG] Filtered observations count:", filteredObservations.length);
+      console.log("[PDF EXPORT DEBUG] Document cookies:", document.cookie);
+      
+      // First check if we're authenticated
+      const authCheck = await fetch('/api/auth/user', { credentials: 'include' });
+      console.log("[PDF EXPORT DEBUG] Auth check status:", authCheck.status);
       
       if (filteredObservations.length === 0) {
         console.error("[PDF EXPORT DEBUG] No observations to export");
@@ -959,6 +964,11 @@ export default function ObservationDashboard() {
     try {
       console.log("[EXCEL EXPORT DEBUG] Starting Excel export...");
       console.log("[EXCEL EXPORT DEBUG] Filtered observations count:", filteredObservations.length);
+      console.log("[EXCEL EXPORT DEBUG] Document cookies:", document.cookie);
+      
+      // First check if we're authenticated
+      const authCheck = await fetch('/api/auth/user', { credentials: 'include' });
+      console.log("[EXCEL EXPORT DEBUG] Auth check status:", authCheck.status);
       
       if (filteredObservations.length === 0) {
         console.error("[EXCEL EXPORT DEBUG] No observations to export");

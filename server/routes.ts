@@ -237,9 +237,17 @@ async function hashPassword(password: string) {
 
 // Middleware to ensure user is authenticated and has tenant access
 function requireAuth(req: any, res: any, next: any) {
+  console.log("[AUTH MIDDLEWARE] Checking authentication...");
+  console.log("[AUTH MIDDLEWARE] Session ID:", req.sessionID);
+  console.log("[AUTH MIDDLEWARE] User:", req.user ? `${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId})` : 'None');
+  console.log("[AUTH MIDDLEWARE] Is authenticated:", req.isAuthenticated());
+  
   if (!req.isAuthenticated()) {
+    console.log("[AUTH MIDDLEWARE] Authentication failed - user not authenticated");
     return res.status(401).json({ message: "Authentication required" });
   }
+  
+  console.log("[AUTH MIDDLEWARE] Authentication successful, proceeding...");
   next();
 }
 
@@ -3719,7 +3727,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("[OBSERVATIONS PDF EXPORT] Starting bulk PDF export...");
       console.log("[OBSERVATIONS PDF EXPORT] User:", req.user?.username, "Tenant:", req.user?.tenantId);
+      console.log("[OBSERVATIONS PDF EXPORT] Session ID:", req.sessionID);
       console.log("[OBSERVATIONS PDF EXPORT] Request body keys:", Object.keys(req.body));
+      console.log("[OBSERVATIONS PDF EXPORT] Auth check passed, proceeding with export");
       
       const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
       
@@ -3886,6 +3896,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/observations/export/excel", requireAuth, async (req: any, res) => {
     try {
       console.log("[OBSERVATIONS EXCEL EXPORT] Starting bulk Excel export...");
+      console.log("[OBSERVATIONS EXCEL EXPORT] User:", req.user?.username, "Tenant:", req.user?.tenantId);
+      console.log("[OBSERVATIONS EXCEL EXPORT] Session ID:", req.sessionID);
+      console.log("[OBSERVATIONS EXCEL EXPORT] Auth check passed, proceeding with export");
+      
       const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
       
       console.log("[OBSERVATIONS EXCEL EXPORT] Request payload:", {
