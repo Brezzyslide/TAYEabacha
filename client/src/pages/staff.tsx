@@ -65,11 +65,11 @@ function StaffBulkUploadForm() {
   const queryClient = useQueryClient();
 
   const downloadTemplate = (format: 'csv' | 'excel' = templateFormat) => {
-    const headers = ["username", "email", "password", "role", "fullName", "phone", "address"];
-    const sampleData = ["example.user", "user@example.com", "password123", "SupportWorker", "John Doe", "1234567890", "123 Main St"];
+    const headers = ["email", "password", "role", "fullName", "phone", "address"];
     
     if (format === 'csv') {
-      const csvContent = `${headers.join(',')}\n${sampleData.join(',')}`;
+      // Only include headers, no sample data to avoid contamination
+      const csvContent = headers.join(',');
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -78,8 +78,8 @@ function StaffBulkUploadForm() {
       a.click();
       window.URL.revokeObjectURL(url);
     } else {
-      // Create Excel file
-      const ws = XLSX.utils.aoa_to_sheet([headers, sampleData]);
+      // Create Excel file with headers only
+      const ws = XLSX.utils.aoa_to_sheet([headers]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Staff Template");
       XLSX.writeFile(wb, "staff_upload_template.xlsx");
@@ -178,8 +178,16 @@ function StaffBulkUploadForm() {
     <div className="space-y-6">
       {/* Template Download Section */}
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Choose template format and download</p>
+        <div className="space-y-2">
+          <h3 className="font-medium text-gray-900 dark:text-gray-100">Step 1: Download Template</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Download a clean template with the required columns: email, password, role, fullName, phone, address
+          </p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              <strong>Note:</strong> Username will be auto-generated from email address. Template contains headers only - no sample data.
+            </p>
+          </div>
         </div>
         
         <div className="flex gap-3">

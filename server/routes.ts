@@ -6746,6 +6746,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             address: userData.address ? String(userData.address).trim() : null,
           };
           
+          // Auto-generate username from email if not provided
+          if (!processedUserData.username && processedUserData.email) {
+            processedUserData.username = processedUserData.email.split('@')[0];
+            console.log(`[BULK UPLOAD] Auto-generated username '${processedUserData.username}' from email for row ${i + 1}`);
+          }
+          
           // Validate required fields
           if (!processedUserData.username || !processedUserData.email || !processedUserData.password || !processedUserData.fullName) {
             const missingFields = [];
