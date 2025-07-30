@@ -3723,7 +3723,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk observations PDF export
-  app.post("/api/observations/export/pdf", requireAuth, async (req: any, res) => {
+  app.post("/api/observations/export/pdf", (req: any, res: any, next: any) => {
+    console.log("[PDF EXPORT AUTH] Session check:", {
+      sessionID: req.sessionID,
+      hasUser: !!req.user,
+      isAuthenticated: req.isAuthenticated(),
+      cookies: req.headers.cookie
+    });
+    requireAuth(req, res, next);
+  }, async (req: any, res) => {
     try {
       console.log("[OBSERVATIONS PDF EXPORT] Starting bulk PDF export...");
       console.log("[OBSERVATIONS PDF EXPORT] User:", req.user?.username, "Tenant:", req.user?.tenantId);
@@ -3893,7 +3901,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk observations Excel export
-  app.post("/api/observations/export/excel", requireAuth, async (req: any, res) => {
+  app.post("/api/observations/export/excel", (req: any, res: any, next: any) => {
+    console.log("[EXCEL EXPORT AUTH] Session check:", {
+      sessionID: req.sessionID,
+      hasUser: !!req.user,
+      isAuthenticated: req.isAuthenticated(),
+      cookies: req.headers.cookie
+    });
+    requireAuth(req, res, next);
+  }, async (req: any, res) => {
     try {
       console.log("[OBSERVATIONS EXCEL EXPORT] Starting bulk Excel export...");
       console.log("[OBSERVATIONS EXCEL EXPORT] User:", req.user?.username, "Tenant:", req.user?.tenantId);

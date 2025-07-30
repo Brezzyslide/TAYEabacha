@@ -898,6 +898,13 @@ export default function ObservationDashboard() {
       const authCheck = await fetch('/api/auth/user', { credentials: 'include' });
       console.log("[PDF EXPORT DEBUG] Auth check status:", authCheck.status);
       
+      if (authCheck.status !== 200) {
+        console.error("[PDF EXPORT DEBUG] Authentication failed, status:", authCheck.status);
+        const authError = await authCheck.text();
+        console.error("[PDF EXPORT DEBUG] Auth error:", authError);
+        throw new Error(`Authentication failed: ${authCheck.status}`);
+      }
+      
       if (filteredObservations.length === 0) {
         console.error("[PDF EXPORT DEBUG] No observations to export");
         toast({
@@ -985,6 +992,13 @@ export default function ObservationDashboard() {
       // First check if we're authenticated
       const authCheck = await fetch('/api/auth/user', { credentials: 'include' });
       console.log("[EXCEL EXPORT DEBUG] Auth check status:", authCheck.status);
+      
+      if (authCheck.status !== 200) {
+        console.error("[EXCEL EXPORT DEBUG] Authentication failed, status:", authCheck.status);
+        const authError = await authCheck.text();
+        console.error("[EXCEL EXPORT DEBUG] Auth error:", authError);
+        throw new Error(`Authentication failed: ${authCheck.status}`);
+      }
       
       if (filteredObservations.length === 0) {
         console.error("[EXCEL EXPORT DEBUG] No observations to export");
