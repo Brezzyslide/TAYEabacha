@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import RecordAdministrationModal from "./components/RecordAdministrationModal";
 import AddMedicationPlanModal from "./components/AddMedicationPlanModal";
+import MedicationScheduler from "./components/MedicationScheduler";
 
 interface MedicationPlan {
   id: number;
@@ -67,6 +68,7 @@ export default function MedicationDashboard() {
     isOpen: false,
   });
   const [addPlanModal, setAddPlanModal] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -381,6 +383,7 @@ export default function MedicationDashboard() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="plans">Medication Plans</TabsTrigger>
+              <TabsTrigger value="scheduler">Visual Scheduler</TabsTrigger>
               <TabsTrigger value="records">Administration Records</TabsTrigger>
               <TabsTrigger value="compliance">Compliance Analytics</TabsTrigger>
               <TabsTrigger value="schedule">Record Administration</TabsTrigger>
@@ -460,6 +463,10 @@ export default function MedicationDashboard() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+            
+            <TabsContent value="scheduler" className="space-y-4">
+              <MedicationScheduler />
             </TabsContent>
 
             <TabsContent value="records" className="space-y-4">

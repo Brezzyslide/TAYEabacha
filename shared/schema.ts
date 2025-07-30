@@ -289,6 +289,30 @@ export const medicationRecords = pgTable("medication_records", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Medication Schedules table for drag-and-drop scheduling
+export const medicationSchedules = pgTable("medication_schedules", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").notNull().references(() => medicationPlans.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  timeSlot: text("time_slot").notNull(), // morning, midday, afternoon, evening, night
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  medicationName: text("medication_name").notNull(),
+  dosage: text("dosage").notNull(),
+  route: text("route").notNull(),
+  status: text("status").notNull().default("scheduled"), // scheduled, administered, missed, refused
+  administeredBy: integer("administered_by").references(() => users.id),
+  administeredAt: timestamp("administered_at"),
+  notes: text("notes"),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Insert schemas for medication schedules
+export const insertMedicationScheduleSchema = createInsertSchema(medicationSchedules);
+export type InsertMedicationSchedule = z.infer<typeof insertMedicationScheduleSchema>;
+export type MedicationSchedule = typeof medicationSchedules.$inferSelect;
+
 // Activity logs table
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),

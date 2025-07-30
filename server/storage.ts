@@ -1,6 +1,6 @@
 import { 
   companies, users, clients, tenants, formTemplates, formSubmissions, shifts, staffAvailability, caseNotes, activityLogs, hourlyObservations,
-  medicationPlans, medicationRecords, incidentReports, incidentClosures, staffMessages, hourAllocations,
+  medicationPlans, medicationRecords, medicationSchedules, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
   shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries, leaveBalances, taxBrackets,
   downloadableForms, completedMedicationAuthorityForms, evacuationDrills,
@@ -2399,6 +2399,99 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(evacuationDrills)
       .where(and(eq(evacuationDrills.id, id), eq(evacuationDrills.tenantId, tenantId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Medication Schedules
+  async getMedicationSchedules(tenantId: number, date?: string): Promise<any[]> {
+    const query = db.select({
+      id: medicationSchedules.id,
+      planId: medicationSchedules.planId,
+      clientId: medicationSchedules.clientId,
+      timeSlot: medicationSchedules.timeSlot,
+      scheduledDate: medicationSchedules.scheduledDate,
+      medicationName: medicationSchedules.medicationName,
+      dosage: medicationSchedules.dosage,
+      route: medicationSchedules.route,
+      status: medicationSchedules.status,
+      administeredBy: medicationSchedules.administeredBy,
+      administeredAt: medicationSchedules.administeredAt,
+      notes: medicationSchedules.notes,
+      tenantId: medicationSchedules.tenantId,
+      createdAt: medicationSchedules.createdAt,
+      updatedAt: medicationSchedules.updatedAt,
+      clientName: clients.fullName,
+      administeringStaff: users.fullName,
+    })
+    .from(medicationSchedules)
+    .leftJoin(clients, eq(medicationSchedules.clientId, clients.id))
+    .leftJoin(users, eq(medicationSchedules.administeredBy, users.id))
+    .where(eq(medicationSchedules.tenantId, tenantId));
+
+    if (date) {
+      // Get schedules for the week containing the date
+      const targetDate = new Date(date);
+      const startOfWeek = new Date(targetDate);
+      startOfWeek.setDate(targetDate.getDate() - targetDate.getDay() + 1); // Monday
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+
+      query.where(and(
+        eq(medicationSchedules.tenantId, tenantId),
+        gte(medicationSchedules.scheduledDate, startOfWeek),
+        lte(medicationSchedules.scheduledDate, endOfWeek)
+      ));
+    }
+
+    return query.orderBy(medicationSchedules.scheduledDate, medicationSchedules.timeSlot);
+  }
+
+  async createMedicationSchedule(schedule: any): Promise<any> {
+    const [created] = await db
+      .insert(medicationSchedules)
+      .values({
+        planId: schedule.planId,
+        clientId: schedule.clientId,
+        timeSlot: schedule.timeSlot,
+        scheduledDate: new Date(schedule.scheduledDate),
+        medicationName: schedule.medicationName,
+        dosage: schedule.dosage,
+        route: schedule.route,
+        status: schedule.status || 'scheduled',
+        tenantId: schedule.tenantId,
+      })
+      .returning();
+    return created;
+  }
+
+  async updateMedicationSchedule(id: number, updates: any, tenantId: number): Promise<any> {
+    const updateData: any = {};
+    
+    if (updates.status) updateData.status = updates.status;
+    if (updates.administeredBy) updateData.administeredBy = updates.administeredBy;
+    if (updates.administeredAt) updateData.administeredAt = new Date(updates.administeredAt);
+    if (updates.notes) updateData.notes = updates.notes;
+    
+    updateData.updatedAt = new Date();
+
+    const [updated] = await db
+      .update(medicationSchedules)
+      .set(updateData)
+      .where(and(
+        eq(medicationSchedules.id, id),
+        eq(medicationSchedules.tenantId, tenantId)
+      ))
+      .returning();
+    return updated;
+  }
+
+  async deleteMedicationSchedule(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(medicationSchedules)
+      .where(and(
+        eq(medicationSchedules.id, id),
+        eq(medicationSchedules.tenantId, tenantId)
+      ));
     return (result.rowCount || 0) > 0;
   }
 }

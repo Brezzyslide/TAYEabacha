@@ -10608,6 +10608,99 @@ Maximum 400 words.`;
     }
   });
 
+  // Medication Schedule Management APIs
+  app.get("/api/medication-schedules", requireAuth, requireRole(['SupportWorker', 'TeamLeader', 'Coordinator', 'Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { date } = req.query;
+      
+      const schedules = await storage.getMedicationSchedules(tenantId, date as string);
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching medication schedules:", error);
+      res.status(500).json({ error: "Failed to fetch medication schedules" });
+    }
+  });
+
+  app.post("/api/medication-schedules", requireAuth, requireRole(['SupportWorker', 'TeamLeader', 'Coordinator', 'Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const userId = req.user.id;
+      
+      const scheduleData = {
+        ...req.body,
+        tenantId,
+      };
+
+      const schedule = await storage.createMedicationSchedule(scheduleData);
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId,
+        action: "create",
+        resourceType: "medication_schedule",
+        resourceId: schedule.id,
+        description: `Created medication schedule for ${schedule.medicationName}`,
+        tenantId
+      });
+      
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error creating medication schedule:", error);
+      res.status(500).json({ error: "Failed to create medication schedule" });
+    }
+  });
+
+  app.patch("/api/medication-schedules/:id", requireAuth, requireRole(['SupportWorker', 'TeamLeader', 'Coordinator', 'Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      const updatedSchedule = await storage.updateMedicationSchedule(parseInt(id), req.body, tenantId);
+      
+      if (updatedSchedule) {
+        await storage.createActivityLog({
+          userId,
+          action: "update",
+          resourceType: "medication_schedule",
+          resourceId: parseInt(id),
+          description: `Updated medication schedule status to ${req.body.status}`,
+          tenantId
+        });
+      }
+      
+      res.json(updatedSchedule);
+    } catch (error) {
+      console.error("Error updating medication schedule:", error);
+      res.status(500).json({ error: "Failed to update medication schedule" });
+    }
+  });
+
+  app.delete("/api/medication-schedules/:id", requireAuth, requireRole(['SupportWorker', 'TeamLeader', 'Coordinator', 'Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      await storage.deleteMedicationSchedule(parseInt(id), tenantId);
+      
+      await storage.createActivityLog({
+        userId,
+        action: "delete",
+        resourceType: "medication_schedule",
+        resourceId: parseInt(id),
+        description: "Removed medication schedule",
+        tenantId
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting medication schedule:", error);
+      res.status(500).json({ error: "Failed to delete medication schedule" });
+    }
+  });
+
   // Serve static files from uploads directory  
   const expressStatic = await import('express');
   const pathModule = await import('path');
