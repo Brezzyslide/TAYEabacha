@@ -37,7 +37,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Info } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -90,7 +90,7 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
       fundingCategory: undefined,
       staffRatio: undefined,
       selectedWeekdays: [],
-      numberOfOccurrences: 10,
+      numberOfOccurrences: 1, // Not used in edit mode
       recurrenceType: "weekly",
       endConditionType: "occurrences",
       recurrenceEndDate: undefined,
@@ -119,7 +119,7 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
         staffRatio: shift.staffRatio as any,
         recurrenceType: (shift.recurringPattern as any) || "weekly",
         selectedWeekdays: existingDays,
-        numberOfOccurrences: 10, // Default - this could be enhanced to calculate from existing series
+        numberOfOccurrences: 1, // Not used in edit mode - we edit existing shifts only
         endConditionType: "occurrences",
         recurrenceEndDate: undefined,
       });
@@ -138,29 +138,31 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
     mutationFn: async (data: RecurringShiftFormData) => {
       if (!user?.tenantId) throw new Error("No tenant ID available");
       
-      console.log("[RECURRING EDIT] Updating recurring shift series:", shift.seriesId, data);
+      console.log("[RECURRING EDIT] Updating existing recurring shifts in series:", shift.seriesId, data);
       
-      // Generate new recurring shifts using the same logic as creation
-      const shifts = generateRecurringShifts(data);
-      
-      if (shifts.length === 0) {
-        throw new Error("No shifts generated. Please select at least one weekday.");
-      }
-
-      // Send update request for the series with edit type
-      return await apiRequest("PUT", `/api/shifts/series/${shift.seriesId}`, {
-        shifts,
-        updateType: "full", // Full recreate of the series
+      // Send update request to edit existing shifts in place
+      return await apiRequest("PUT", `/api/shifts/series/${shift.seriesId}/edit-existing`, {
+        updateData: {
+          title: data.title,
+          shiftStartTime: data.shiftStartTime,
+          shiftEndTime: data.shiftEndTime,
+          userId: data.userId,
+          clientId: data.clientId,
+          fundingCategory: data.fundingCategory,
+          staffRatio: data.staffRatio,
+          selectedWeekdays: data.selectedWeekdays,
+          recurrenceType: data.recurrenceType,
+        },
         editType: editType, // "future" or "series"
         fromShiftId: editType === "future" ? shift.id : undefined
       });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
-      const updatedCount = Array.isArray(data) ? data.length : data.count || 0;
+      const updatedCount = Array.isArray(data) ? data.length : (typeof data === 'object' && data && 'count' in data) ? data.count : 0;
       toast({
         title: "Recurring Shifts Updated",
-        description: `Successfully updated recurring shift series. Generated ${updatedCount} shifts.`,
+        description: `Successfully updated recurring shift series. Modified ${updatedCount} shifts.`,
       });
       onClose();
     },
@@ -615,94 +617,16 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
                 )}
               </div>
 
-              {/* Duration Configuration */}
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="endConditionType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Condition</FormLabel>
-                      <Select onValueChange={(value: "occurrences" | "endDate") => {
-                        field.onChange(value);
-                        setEndConditionType(value);
-                      }} value={field.value || "occurrences"}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select end condition" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="occurrences">Number of Occurrences</SelectItem>
-                          <SelectItem value="endDate">End Date</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {endConditionType === "occurrences" ? (
-                  <FormField
-                    control={form.control}
-                    name="numberOfOccurrences"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Shifts to Generate</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="104"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <FormField
-                    control={form.control}
-                    name="recurrenceEndDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick end date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) => date < new Date()}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+              {/* Edit Mode Information */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-blue-800 mb-2">
+                  <Info className="h-4 w-4" />
+                  <span className="font-medium">Edit Mode</span>
+                </div>
+                <p className="text-blue-700 text-sm">
+                  You are editing existing recurring shifts. Changes will be applied to {editType === "series" ? "all shifts in the series" : "future shifts from the selected date"}.
+                  The number of shifts will remain the same - only their properties will be updated.
+                </p>
               </div>
             </div>
 

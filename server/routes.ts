@@ -1883,6 +1883,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Edit existing recurring shifts in place (preserves all shifts, only modifies their properties)
+  app.put("/api/shifts/series/:seriesId/edit-existing", requireAuth, async (req: any, res) => {
+    console.log("[SERIES EDIT-EXISTING] Starting in-place recurring shift edit");
+    
+    try {
+      const seriesId = req.params.seriesId;
+      const { updateData, editType, fromShiftId } = req.body;
+      
+      console.log(`[SERIES EDIT-EXISTING] User ${req.user.id} (${req.user.role}) editing series ${seriesId}`);
+      console.log(`[SERIES EDIT-EXISTING] EditType: ${editType}, FromShiftId: ${fromShiftId}`);
+      console.log(`[SERIES EDIT-EXISTING] Update data:`, JSON.stringify(updateData, null, 2));
+      
+      // Get all shifts in the series
+      const seriesShifts = await storage.getShiftsBySeries(seriesId, req.user.tenantId);
+      
+      if (!seriesShifts || seriesShifts.length === 0) {
+        console.log(`[SERIES EDIT-EXISTING] No shifts found for series ${seriesId}`);
+        return res.status(404).json({ message: "Shift series not found" });
+      }
+      
+      console.log(`[SERIES EDIT-EXISTING] Found ${seriesShifts.length} shifts in series`);
+      
+      // Determine which shifts to edit
+      let shiftsToEdit = seriesShifts;
+      
+      if (editType === "future" && fromShiftId) {
+        // Get the fromShift to get its date
+        const fromShift = seriesShifts.find(s => s.id === fromShiftId);
+        if (fromShift && fromShift.startTime) {
+          const cutoffDate = new Date(fromShift.startTime);
+          // Include the clicked shift and all future shifts 
+          shiftsToEdit = seriesShifts.filter(shift => {
+            if (!shift.startTime) return false;
+            const shiftDate = new Date(shift.startTime);
+            return shiftDate >= cutoffDate;
+          });
+          console.log(`[SERIES EDIT-EXISTING] Editing ${shiftsToEdit.length} future shifts from ${cutoffDate}`);
+        }
+      } else {
+        console.log(`[SERIES EDIT-EXISTING] Editing entire series (${shiftsToEdit.length} shifts)`);
+      }
+      
+      const updatedShifts = [];
+      
+      // Update each shift in place
+      for (const shift of shiftsToEdit) {
+        try {
+          // Build update data for this specific shift
+          const shiftUpdateData: any = {};
+          
+          // Update basic properties
+          if (updateData.title) shiftUpdateData.title = updateData.title;
+          if (updateData.userId !== undefined) shiftUpdateData.userId = updateData.userId;
+          if (updateData.clientId !== undefined) shiftUpdateData.clientId = updateData.clientId;
+          if (updateData.fundingCategory) shiftUpdateData.fundingCategory = updateData.fundingCategory;
+          if (updateData.staffRatio) shiftUpdateData.staffRatio = updateData.staffRatio;
+          
+          // Update recurring pattern properties
+          if (updateData.recurrenceType) shiftUpdateData.recurringPattern = updateData.recurrenceType;
+          if (updateData.selectedWeekdays) shiftUpdateData.recurringDays = updateData.selectedWeekdays;
+          
+          // Handle time updates (preserve original date, update times)
+          if (updateData.shiftStartTime || updateData.shiftEndTime) {
+            const originalShiftDate = new Date(shift.startTime);
+            
+            if (updateData.shiftStartTime) {
+              const [startHours, startMinutes] = updateData.shiftStartTime.split(':').map(Number);
+              const newStartTime = new Date(originalShiftDate);
+              newStartTime.setHours(startHours, startMinutes, 0, 0);
+              shiftUpdateData.startTime = newStartTime;
+              shiftUpdateData.shiftStartTime = updateData.shiftStartTime;
+            }
+            
+            if (updateData.shiftEndTime) {
+              const [endHours, endMinutes] = updateData.shiftEndTime.split(':').map(Number);
+              const newEndTime = new Date(originalShiftDate);
+              newEndTime.setHours(endHours, endMinutes, 0, 0);
+              
+              // Handle overnight shifts
+              if (updateData.shiftStartTime) {
+                const [startHours] = updateData.shiftStartTime.split(':').map(Number);
+                if (endHours < startHours || (endHours === startHours && endMinutes <= startMinutes)) {
+                  newEndTime.setDate(newEndTime.getDate() + 1);
+                }
+              }
+              
+              shiftUpdateData.endTime = newEndTime;
+              shiftUpdateData.shiftEndTime = updateData.shiftEndTime;
+            }
+          }
+          
+          console.log(`[SERIES EDIT-EXISTING] Updating shift ${shift.id} with:`, shiftUpdateData);
+          
+          const updatedShift = await storage.updateShift(shift.id, shiftUpdateData, req.user.tenantId);
+          if (updatedShift) {
+            updatedShifts.push(updatedShift);
+          }
+        } catch (shiftError) {
+          console.error(`[SERIES EDIT-EXISTING] Failed to update shift ${shift.id}:`, shiftError);
+          // Continue with other shifts even if one fails
+        }
+      }
+      
+      console.log(`[SERIES EDIT-EXISTING] Successfully updated ${updatedShifts.length} shifts in place`);
+      
+      // Log activity for in-place edit
+      if (updatedShifts.length > 0) {
+        const editTypeDescription = editType === "future" ? "future shifts" : "entire series";
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "edit_shift_series_in_place",
+          resourceType: "shift",
+          resourceId: updatedShifts[0].id,
+          description: `Edited recurring shift ${editTypeDescription} "${seriesId}" in place (${updatedShifts.length} shifts): ${updateData.title || 'Recurring shift'}`,
+          tenantId: req.user.tenantId,
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        updated: updatedShifts.length, 
+        shifts: updatedShifts,
+        count: updatedShifts.length 
+      });
+      
+    } catch (error) {
+      console.error("[SERIES EDIT-EXISTING] Error updating shift series:", error);
+      console.error("[SERIES EDIT-EXISTING] Error stack:", error.stack);
+      res.status(500).json({ 
+        message: "Failed to edit recurring shifts in place", 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // Approve shift request
   app.post("/api/shifts/:id/approve", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
     try {
