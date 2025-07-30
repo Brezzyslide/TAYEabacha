@@ -22,7 +22,7 @@ import {
   type EvacuationDrill, type InsertEvacuationDrill
 } from "@shared/schema";
 import { db, pool } from "./lib/dbClient";
-import { eq, and, desc, sql, or, exists } from "drizzle-orm";
+import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -2493,6 +2493,124 @@ export class DatabaseStorage implements IStorage {
         eq(medicationSchedules.tenantId, tenantId)
       ));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Shift-based data access methods for SupportWorkers
+  async getAssignedClientIds(userId: number, tenantId: number): Promise<number[]> {
+    const assignedShifts = await db.select({
+      clientId: shifts.clientId
+    })
+    .from(shifts)
+    .where(and(
+      eq(shifts.userId, userId),
+      eq(shifts.tenantId, tenantId),
+      // Only current and future shifts
+      gte(shifts.startTime, new Date(new Date().setHours(0, 0, 0, 0)))
+    ))
+    .groupBy(shifts.clientId);
+
+    return assignedShifts.map(shift => shift.clientId).filter(id => id !== null) as number[];
+  }
+
+  async getClientsForSupportWorker(userId: number, tenantId: number): Promise<Client[]> {
+    const assignedClientIds = await this.getAssignedClientIds(userId, tenantId);
+    
+    if (assignedClientIds.length === 0) {
+      return [];
+    }
+
+    return db.select()
+      .from(clients)
+      .where(and(
+        eq(clients.tenantId, tenantId),
+        inArray(clients.id, assignedClientIds)
+      ));
+  }
+
+  async getCaseNotesForSupportWorker(userId: number, tenantId: number): Promise<any[]> {
+    const assignedClientIds = await this.getAssignedClientIds(userId, tenantId);
+    
+    if (assignedClientIds.length === 0) {
+      return [];
+    }
+
+    return db.select({
+      id: caseNotes.id,
+      title: caseNotes.title,
+      content: caseNotes.content,
+      type: caseNotes.type,
+      clientId: caseNotes.clientId,
+      shiftId: caseNotes.shiftId,
+      userId: caseNotes.userId,
+      createdAt: caseNotes.createdAt,
+      clientName: clients.fullName,
+      authorName: users.fullName,
+    })
+    .from(caseNotes)
+    .leftJoin(clients, eq(caseNotes.clientId, clients.id))
+    .leftJoin(users, eq(caseNotes.userId, users.id))
+    .where(and(
+      eq(caseNotes.tenantId, tenantId),
+      inArray(caseNotes.clientId, assignedClientIds)
+    ))
+    .orderBy(desc(caseNotes.createdAt));
+  }
+
+  async getIncidentReportsForSupportWorker(userId: number, tenantId: number): Promise<any[]> {
+    const assignedClientIds = await this.getAssignedClientIds(userId, tenantId);
+    
+    if (assignedClientIds.length === 0) {
+      return [];
+    }
+
+    return db.select({
+      id: incidentReports.id,
+      incidentId: incidentReports.incidentId,
+      description: incidentReports.description,
+      clientId: incidentReports.clientId,
+      userId: incidentReports.userId,
+      dateTime: incidentReports.dateTime,
+      incidentType: incidentReports.incidentType,
+      status: incidentReports.status,
+      clientName: clients.fullName,
+      reporterName: users.fullName,
+    })
+    .from(incidentReports)
+    .leftJoin(clients, eq(incidentReports.clientId, clients.id))
+    .leftJoin(users, eq(incidentReports.userId, users.id))
+    .where(and(
+      eq(incidentReports.tenantId, tenantId),
+      inArray(incidentReports.clientId, assignedClientIds)
+    ))
+    .orderBy(desc(incidentReports.dateTime));
+  }
+
+  async getMedicationPlansForSupportWorker(userId: number, tenantId: number): Promise<any[]> {
+    const assignedClientIds = await this.getAssignedClientIds(userId, tenantId);
+    
+    if (assignedClientIds.length === 0) {
+      return [];
+    }
+
+    return db.select({
+      id: medicationPlans.id,
+      clientId: medicationPlans.clientId,
+      medicationName: medicationPlans.medicationName,
+      dosage: medicationPlans.dosage,
+      route: medicationPlans.route,
+      frequency: medicationPlans.frequency,
+      timeOfDay: medicationPlans.timeOfDay,
+      startDate: medicationPlans.startDate,
+      endDate: medicationPlans.endDate,
+      status: medicationPlans.status,
+      clientName: clients.fullName,
+    })
+    .from(medicationPlans)
+    .leftJoin(clients, eq(medicationPlans.clientId, clients.id))
+    .where(and(
+      eq(medicationPlans.tenantId, tenantId),
+      inArray(medicationPlans.clientId, assignedClientIds)
+    ));
   }
 }
 
