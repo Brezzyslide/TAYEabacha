@@ -913,17 +913,18 @@ export default function ObservationDashboard() {
         observations: filteredObservations
       });
       
-      console.log("[PDF EXPORT DEBUG] Response type:", typeof response);
-      console.log("[PDF EXPORT DEBUG] Response keys:", response ? Object.keys(response) : 'null');
+      const responseData = await response.json();
+      console.log("[PDF EXPORT DEBUG] Response data:", responseData);
+      console.log("[PDF EXPORT DEBUG] Response keys:", responseData ? Object.keys(responseData) : 'null');
       
-      console.log("[PDF EXPORT DEBUG] Response received:", !!response?.pdf);
+      console.log("[PDF EXPORT DEBUG] PDF data received:", !!responseData?.pdf);
       
-      if (!response?.pdf) {
+      if (!responseData?.pdf) {
         throw new Error("No PDF data received from server");
       }
       
       // Convert base64 to blob and download
-      const pdfBlob = new Blob([Uint8Array.from(atob(response.pdf), c => c.charCodeAt(0))], { type: 'application/pdf' });
+      const pdfBlob = new Blob([Uint8Array.from(atob(responseData.pdf), c => c.charCodeAt(0))], { type: 'application/pdf' });
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -941,9 +942,14 @@ export default function ObservationDashboard() {
       });
     } catch (error) {
       console.error("[PDF EXPORT DEBUG] PDF export failed:", error);
+      console.error("[PDF EXPORT DEBUG] Error details:", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       toast({
         title: "Export Failed",
-        description: error.message || "Failed to export observations to PDF.",
+        description: `Failed to export observations to PDF: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }
@@ -974,17 +980,18 @@ export default function ObservationDashboard() {
         observations: filteredObservations
       });
       
-      console.log("[EXCEL EXPORT DEBUG] Response type:", typeof response);
-      console.log("[EXCEL EXPORT DEBUG] Response keys:", response ? Object.keys(response) : 'null');
+      const responseData = await response.json();
+      console.log("[EXCEL EXPORT DEBUG] Response data:", responseData);
+      console.log("[EXCEL EXPORT DEBUG] Response keys:", responseData ? Object.keys(responseData) : 'null');
       
-      console.log("[EXCEL EXPORT DEBUG] Response received:", !!response?.excel);
+      console.log("[EXCEL EXPORT DEBUG] Excel data received:", !!responseData?.excel);
       
-      if (!response?.excel) {
+      if (!responseData?.excel) {
         throw new Error("No Excel data received from server");
       }
       
       // Convert base64 to blob and download
-      const excelBlob = new Blob([Uint8Array.from(atob(response.excel), c => c.charCodeAt(0))], { 
+      const excelBlob = new Blob([Uint8Array.from(atob(responseData.excel), c => c.charCodeAt(0))], { 
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
       });
       const url = URL.createObjectURL(excelBlob);
@@ -1004,9 +1011,14 @@ export default function ObservationDashboard() {
       });
     } catch (error) {
       console.error("[EXCEL EXPORT DEBUG] Excel export failed:", error);
+      console.error("[EXCEL EXPORT DEBUG] Error details:", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
       toast({
         title: "Export Failed",
-        description: error.message || "Failed to export observations to Excel.",
+        description: `Failed to export observations to Excel: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }

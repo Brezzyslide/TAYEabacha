@@ -3718,6 +3718,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/observations/export/pdf", requireAuth, async (req: any, res) => {
     try {
       console.log("[OBSERVATIONS PDF EXPORT] Starting bulk PDF export...");
+      console.log("[OBSERVATIONS PDF EXPORT] User:", req.user?.username, "Tenant:", req.user?.tenantId);
+      console.log("[OBSERVATIONS PDF EXPORT] Request body keys:", Object.keys(req.body));
+      
       const { observations, clientId, observationType, dateFilter, dateRangeStart, dateRangeEnd, searchTerm } = req.body;
       
       console.log("[OBSERVATIONS PDF EXPORT] Request payload:", {
