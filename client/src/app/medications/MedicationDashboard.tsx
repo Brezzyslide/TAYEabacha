@@ -438,7 +438,18 @@ export default function MedicationDashboard() {
                                 <Camera className="h-3 w-3 mr-1" />
                                 Record Administration
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  // Switch to records tab and filter by this plan's client
+                                  setActiveTab("records");
+                                  setClientFilter(plan.clientId.toString());
+                                  setSearchTerm(plan.medicationName);
+                                }}
+                                className="text-green-600 border-green-600 hover:bg-green-50"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
                                 View Records
                               </Button>
                             </div>
