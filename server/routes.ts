@@ -5261,20 +5261,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Incident Reports API
+  // Incident Reports API - SHIFT-BASED ACCESS CONTROL
   app.get("/api/incident-reports", requireAuth, async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId || 1;
       const clientId = req.query.clientId ? parseInt(req.query.clientId as string) : undefined;
+      const userRole = req.user.role?.toLowerCase().replace(/\s+/g, '');
       
       let reports;
-      if (clientId) {
-        // Filter by specific client
-        reports = await storage.getIncidentReportsWithClosures(tenantId);
-        reports = reports.filter((report: any) => report.client.id === clientId);
+      
+      if (userRole === "supportworker") {
+        // SupportWorkers can only see incidents for their assigned clients
+        reports = await storage.getIncidentReportsForSupportWorker(req.user.id, tenantId);
+        console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} accessing ${reports.length} incident reports for assigned clients only`);
+      } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
+        // Management roles can see all incidents
+        if (clientId) {
+          reports = await storage.getIncidentReportsWithClosures(tenantId);
+          reports = reports.filter((report: any) => report.client.id === clientId);
+        } else {
+          reports = await storage.getIncidentReportsWithClosures(tenantId);
+        }
+        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing incident reports`);
       } else {
-        // Get all incident reports for tenant
-        reports = await storage.getIncidentReportsWithClosures(tenantId);
+        console.log(`🚨 [SECURITY ALERT] Unknown role "${req.user.role}" attempting incident access - denying`);
+        return res.status(403).json({ message: "Access denied: Invalid role" });
       }
       
       res.json(reports);
