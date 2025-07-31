@@ -765,30 +765,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let clients;
       
-      // Check if user is a support worker - they should only see assigned clients
-      if (req.user.role === "SupportWorker") {
-        // Get all shifts assigned to this user
+      // STRICT ROLE-BASED ACCESS CONTROL
+      const userRole = req.user.role?.toLowerCase().replace(/\s+/g, '');
+      console.log(`[SECURITY CHECK] Normalized user role: "${userRole}" for user ${req.user.username}`);
+      
+      if (userRole === "supportworker") {
+        // SupportWorkers can ONLY see clients they are assigned to via shifts
         const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        console.log(`[SUPPORT WORKER ACCESS] Found ${userShifts.length} shifts for user ${req.user.username}`);
         
         // Extract unique client IDs from user's shifts
         const clientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null) as number[];
         const assignedClientIds = Array.from(new Set(clientIds));
         
+        console.log(`[SUPPORT WORKER ACCESS] Assigned client IDs: [${assignedClientIds.join(', ')}]`);
+        
         if (assignedClientIds.length === 0) {
-          // No clients assigned - return empty array
-          console.log(`[CLIENT API DEBUG] SupportWorker has no assigned clients - returning empty array`);
+          // SECURITY: SupportWorker with NO assigned shifts gets NO clients
+          console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} has no assigned shifts - returning empty array`);
           return res.json([]);
         }
         
-        // Get only the clients this user is assigned to
+        // Get only the clients this user is assigned to via shifts
         const allClients = await storage.getClients(req.user.tenantId);
         clients = allClients.filter(client => assignedClientIds.includes(client.id));
         
-        console.log(`[CLIENT ACCESS] SupportWorker ${req.user.username} can access ${clients.length} clients based on shift assignments`);
-      } else {
-        // Admin, Coordinator, TeamLeader, ConsoleManager can see all clients
+        console.log(`🔒 [SECURITY ENFORCED] SupportWorker ${req.user.username} can access ${clients.length} clients based on shift assignments`);
+      } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
+        // Management roles can see all clients in their tenant
         clients = await storage.getClients(req.user.tenantId);
-        console.log(`[CLIENT API DEBUG] Admin/Manager user accessing all clients for tenant ${req.user.tenantId}: ${clients.length} clients found`);
+        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing all ${clients.length} clients for tenant ${req.user.tenantId}`);
+      } else {
+        // Unknown/invalid role - deny access
+        console.log(`🚨 [SECURITY ALERT] Unknown role "${req.user.role}" for user ${req.user.username} - denying access`);
+        return res.status(403).json({ message: "Access denied: Invalid role" });
       }
       
       // CRITICAL DEBUG: Log exact client data being returned
