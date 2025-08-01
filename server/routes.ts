@@ -11368,7 +11368,38 @@ Maximum 400 words.`;
         return res.status(404).json({ message: "Timesheet not found" });
       }
 
-      const timesheet = timesheetQuery[0];
+      let timesheet = timesheetQuery[0];
+      
+      // Calculate live payroll if tax/net pay is missing or zero
+      if (!timesheet.totalTax || parseFloat(timesheet.totalTax) <= 0 || !timesheet.netPay || parseFloat(timesheet.netPay) <= 0) {
+        console.log(`[PAYROLL CALC] Calculating live payroll for timesheet ${timesheetId}, user ${timesheet.userId}`);
+        
+        try {
+          const { calculatePayroll } = await import("./payroll-calculator");
+          const grossPay = parseFloat(timesheet.totalEarnings || '0');
+          
+          if (grossPay > 0) {
+            const payrollCalc = await calculatePayroll(timesheet.userId, req.user.tenantId, grossPay);
+            
+            // Update timesheet with calculated values
+            await db
+              .update(timesheetsTable)
+              .set({
+                totalTax: payrollCalc.taxWithheld.toFixed(2),
+                netPay: payrollCalc.netPay.toFixed(2),
+              })
+              .where(eq(timesheetsTable.id, timesheetId));
+            
+            // Update our local timesheet object
+            timesheet.totalTax = payrollCalc.taxWithheld.toFixed(2);
+            timesheet.netPay = payrollCalc.netPay.toFixed(2);
+            
+            console.log(`[PAYROLL CALC] Updated timesheet ${timesheetId}: Tax: $${payrollCalc.taxWithheld.toFixed(2)}, Net: $${payrollCalc.netPay.toFixed(2)}`);
+          }
+        } catch (payrollError) {
+          console.error(`[PAYROLL CALC] Failed to calculate payroll for timesheet ${timesheetId}:`, payrollError);
+        }
+      }
 
       // Get timesheet entries
       const entries = await db
