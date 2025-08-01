@@ -17,7 +17,8 @@ import {
   Users,
   DollarSign,
   TrendingUp,
-  Calendar
+  Calendar,
+  Download
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -78,6 +79,43 @@ export default function TimesheetReviewDashboard() {
 
   const { data: stats } = useQuery<ReviewStats>({
     queryKey: ["/api/admin/timesheets/stats"],
+  });
+
+  // Export individual timesheet as PDF
+  const exportTimesheetMutation = useMutation({
+    mutationFn: async (timesheetId: number) => {
+      const response = await fetch(`/api/admin/timesheets/${timesheetId}/export-pdf`);
+      if (!response.ok) throw new Error("Failed to export timesheet");
+      
+      const data = await response.json();
+      
+      // Generate PDF using the data (simplified for now - returns JSON data)
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json'
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `timesheet-${data.timesheet.userName}-${data.timesheet.payPeriodStart}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Timesheet exported successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to export timesheet",
+        variant: "destructive",
+      });
+    },
   });
 
   const { data: timesheetEntries = [], refetch: refetchEntries } = useQuery<TimesheetEntry[]>({
@@ -368,7 +406,7 @@ export default function TimesheetReviewDashboard() {
                         {format(new Date(timesheet.submittedAt), "MMM dd, HH:mm")}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 flex-wrap">
                           <Button
                             size="sm"
                             variant="outline"
@@ -377,8 +415,17 @@ export default function TimesheetReviewDashboard() {
                               setIsViewDialogOpen(true);
                             }}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3 w-3" />
                             View
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => exportTimesheetMutation.mutate(timesheet.id)}
+                            disabled={exportTimesheetMutation.isPending}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Download className="h-3 w-3" />
+                            PDF
                           </Button>
                           <Button
                             size="sm"
@@ -387,7 +434,7 @@ export default function TimesheetReviewDashboard() {
                             disabled={approveMutation.isPending}
                             className="bg-green-600 hover:bg-green-700"
                           >
-                            <Check className="h-4 w-4" />
+                            <Check className="h-3 w-3" />
                             Approve
                           </Button>
                           <Button
@@ -396,7 +443,7 @@ export default function TimesheetReviewDashboard() {
                             onClick={() => rejectMutation.mutate(timesheet.id)}
                             disabled={rejectMutation.isPending}
                           >
-                            <X className="h-4 w-4" />
+                            <X className="h-3 w-3" />
                             Reject
                           </Button>
                         </div>

@@ -1,9 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, AlertCircle, Settings, BarChart3 } from "lucide-react";
+import { CheckCircle, AlertCircle, Settings, BarChart3, History } from "lucide-react";
 import TimesheetReviewDashboard from "./components/TimesheetReviewDashboard";
 import PayrollReadyTab from "./components/PayrollReadyTab";
 import SettingsAndRatesTab from "./components/SettingsAndRatesTab";
 import ReportsTab from "./components/ReportsTab";
+import TimesheetHistoryTab from "./components/TimesheetHistoryTab";
 
 export default function NewAdminTimesheetTabs() {
   return (
@@ -16,7 +17,7 @@ export default function NewAdminTimesheetTabs() {
       </div>
 
       <Tabs defaultValue="review" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="review" className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
             Review & Approve
@@ -24,6 +25,10 @@ export default function NewAdminTimesheetTabs() {
           <TabsTrigger value="payroll" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             Payroll Ready
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            History
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -41,6 +46,10 @@ export default function NewAdminTimesheetTabs() {
 
         <TabsContent value="payroll">
           <PayrollReadyTab />
+        </TabsContent>
+
+        <TabsContent value="history">
+          <TimesheetHistoryTab />
         </TabsContent>
 
         <TabsContent value="settings">
