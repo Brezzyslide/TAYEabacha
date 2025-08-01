@@ -6599,17 +6599,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Hourly Observations API
+  // Hourly Observations API - SHIFT-BASED ACCESS CONTROL
   app.get("/api/observations", requireAuth, async (req: any, res) => {
     try {
       const tenantId = req.user.tenantId;
       const { clientId } = req.query;
+      const userRole = req.user.role?.toLowerCase().replace(/\s+/g, '');
+      
+      console.log(`[OBSERVATIONS API] User: ${req.user.username}, Role: ${userRole}, ClientId: ${clientId}`);
       
       let observations;
-      if (clientId) {
-        observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+      
+      if (userRole === "supportworker") {
+        // SupportWorkers can ONLY see observations for their assigned clients
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null) as number[];
+        const uniqueClientIds = Array.from(new Set(assignedClientIds));
+        
+        console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} assigned to clients: [${uniqueClientIds.join(', ')}]`);
+        
+        if (clientId) {
+          // Check access to specific client
+          if (!uniqueClientIds.includes(parseInt(clientId))) {
+            console.log(`🚨 [SECURITY ALERT] SupportWorker ${req.user.username} denied access to client ${clientId}`);
+            return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+          }
+          observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+        } else {
+          // Get observations for all assigned clients
+          if (uniqueClientIds.length === 0) {
+            console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} has no assigned clients - returning empty array`);
+            return res.json([]);
+          }
+          
+          let allObservations = [];
+          for (const assignedClientId of uniqueClientIds) {
+            const clientObservations = await storage.getObservationsByClient(assignedClientId, tenantId);
+            allObservations.push(...clientObservations);
+          }
+          observations = allObservations;
+        }
+        
+        console.log(`🔒 [SECURITY ENFORCED] SupportWorker ${req.user.username} accessing ${observations.length} observations`);
+      } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
+        // Management roles can see all observations
+        if (clientId) {
+          observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+        } else {
+          observations = await storage.getAllObservations(tenantId);
+        }
+        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing observations`);
       } else {
-        observations = await storage.getAllObservations(tenantId);
+        console.log(`🚨 [SECURITY ALERT] Unknown role "${req.user.role}" attempting observations access - denying`);
+        return res.status(403).json({ message: "Access denied: Invalid role" });
       }
       
       res.json(observations);
@@ -6623,12 +6665,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tenantId = req.user.tenantId;
       const { clientId } = req.query;
+      const userRole = req.user.role?.toLowerCase().replace(/\s+/g, '');
+      
+      console.log(`[HOURLY OBSERVATIONS API] User: ${req.user.username}, Role: ${userRole}, ClientId: ${clientId}`);
       
       let observations;
-      if (clientId) {
-        observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+      
+      if (userRole === "supportworker") {
+        // SupportWorkers can ONLY see observations for their assigned clients
+        const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
+        const assignedClientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null) as number[];
+        const uniqueClientIds = Array.from(new Set(assignedClientIds));
+        
+        console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} assigned to clients: [${uniqueClientIds.join(', ')}]`);
+        
+        if (clientId) {
+          // Check access to specific client
+          if (!uniqueClientIds.includes(parseInt(clientId))) {
+            console.log(`🚨 [SECURITY ALERT] SupportWorker ${req.user.username} denied access to client ${clientId}`);
+            return res.status(403).json({ message: "Access denied: You are not assigned to this client" });
+          }
+          observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+        } else {
+          // Get observations for all assigned clients
+          if (uniqueClientIds.length === 0) {
+            console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} has no assigned clients - returning empty array`);
+            return res.json([]);
+          }
+          
+          let allObservations = [];
+          for (const assignedClientId of uniqueClientIds) {
+            const clientObservations = await storage.getObservationsByClient(assignedClientId, tenantId);
+            allObservations.push(...clientObservations);
+          }
+          observations = allObservations;
+        }
+        
+        console.log(`🔒 [SECURITY ENFORCED] SupportWorker ${req.user.username} accessing ${observations.length} hourly observations`);
+      } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
+        // Management roles can see all observations
+        if (clientId) {
+          observations = await storage.getObservationsByClient(parseInt(clientId), tenantId);
+        } else {
+          observations = await storage.getAllObservations(tenantId);
+        }
+        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing hourly observations`);
       } else {
-        observations = await storage.getAllObservations(tenantId);
+        console.log(`🚨 [SECURITY ALERT] Unknown role "${req.user.role}" attempting hourly observations access - denying`);
+        return res.status(403).json({ message: "Access denied: Invalid role" });
       }
       
       res.json(observations);
