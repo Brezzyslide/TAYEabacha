@@ -5,7 +5,7 @@ import { storage } from "./storage";
 // All demo data provisioning removed - tenants start completely clean
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
-import { eq, desc, and, or, ilike, sql, lt, gte, lte, inArray } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql, lt, gte, lte, inArray, count, sum, avg } from "drizzle-orm";
 const { medicationRecords, medicationPlans, clients, users, shifts, shiftCancellations, timesheets: timesheetsTable, timesheetEntries, leaveBalances, companies, tenants, careSupportPlans } = schema;
 import { insertClientSchema, insertFormTemplateSchema, insertFormSubmissionSchema, insertShiftSchema, insertHourlyObservationSchema, insertMedicationPlanSchema, insertMedicationRecordSchema, insertIncidentReportSchema, insertIncidentClosureSchema, insertStaffMessageSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
@@ -10995,25 +10995,25 @@ Maximum 400 words.`;
     try {
       const pendingTimesheets = await db
         .select({
-          id: timesheets.id,
-          userId: timesheets.userId,
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
           staffName: users.fullName,
           staffEmail: users.email,
-          payPeriodStart: timesheets.payPeriodStart,
-          payPeriodEnd: timesheets.payPeriodEnd,
-          status: timesheets.status,
-          totalHours: timesheets.totalHours,
-          totalEarnings: timesheets.totalEarnings,
-          submittedAt: timesheets.submittedAt,
-          autoSubmitted: timesheets.autoSubmitted
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          submittedAt: timesheetsTable.submittedAt,
+          autoSubmitted: timesheetsTable.autoSubmitted
         })
-        .from(timesheets)
-        .innerJoin(users, eq(timesheets.userId, users.id))
+        .from(timesheetsTable)
+        .innerJoin(users, eq(timesheetsTable.userId, users.id))
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          eq(timesheets.status, 'submitted')
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'submitted')
         ))
-        .orderBy(desc(timesheets.submittedAt));
+        .orderBy(desc(timesheetsTable.submittedAt));
 
       res.json(pendingTimesheets);
     } catch (error) {
@@ -11026,22 +11026,22 @@ Maximum 400 words.`;
     try {
       const pendingCount = await db
         .select({ count: count() })
-        .from(timesheets)
+        .from(timesheetsTable)
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          eq(timesheets.status, 'submitted')
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'submitted')
         ));
 
       const statsQuery = await db
         .select({
-          totalHours: sum(timesheets.totalHours),
-          totalEarnings: sum(timesheets.totalEarnings),
-          autoSubmittedCount: count(timesheets.autoSubmitted)
+          totalHours: sum(timesheetsTable.totalHours),
+          totalEarnings: sum(timesheetsTable.totalEarnings),
+          autoSubmittedCount: count(timesheetsTable.autoSubmitted)
         })
-        .from(timesheets)
+        .from(timesheetsTable)
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          eq(timesheets.status, 'submitted')
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'submitted')
         ));
 
       const stats = {
@@ -11067,15 +11067,15 @@ Maximum 400 words.`;
       }
 
       await db
-        .update(timesheets)
+        .update(timesheetsTable)
         .set({ 
           status: 'approved',
           approvedAt: new Date(),
           updatedAt: new Date()
         })
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          inArray(timesheets.id, timesheetIds)
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          inArray(timesheetsTable.id, timesheetIds)
         ));
 
       res.json({ message: `Successfully approved ${timesheetIds.length} timesheets` });
@@ -11090,15 +11090,15 @@ Maximum 400 words.`;
       const timesheetId = parseInt(req.params.id);
 
       await db
-        .update(timesheets)
+        .update(timesheetsTable)
         .set({ 
           status: 'approved',
           approvedAt: new Date(),
           updatedAt: new Date()
         })
         .where(and(
-          eq(timesheets.id, timesheetId),
-          eq(timesheets.tenantId, req.user.tenantId)
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
         ));
 
       res.json({ message: "Timesheet approved successfully" });
@@ -11113,14 +11113,14 @@ Maximum 400 words.`;
       const timesheetId = parseInt(req.params.id);
 
       await db
-        .update(timesheets)
+        .update(timesheetsTable)
         .set({ 
           status: 'rejected',
           updatedAt: new Date()
         })
         .where(and(
-          eq(timesheets.id, timesheetId),
-          eq(timesheets.tenantId, req.user.tenantId)
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.tenantId, req.user.tenantId)
         ));
 
       res.json({ message: "Timesheet rejected successfully" });
@@ -11134,26 +11134,26 @@ Maximum 400 words.`;
     try {
       const approvedTimesheets = await db
         .select({
-          id: timesheets.id,
-          userId: timesheets.userId,
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
           staffName: users.fullName,
           staffEmail: users.email,
-          payPeriodStart: timesheets.payPeriodStart,
-          payPeriodEnd: timesheets.payPeriodEnd,
-          totalHours: timesheets.totalHours,
-          totalEarnings: timesheets.totalEarnings,
-          totalTax: timesheets.totalTax,
-          totalSuper: timesheets.totalSuper,
-          netPay: timesheets.netPay,
-          approvedAt: timesheets.approvedAt
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          totalTax: timesheetsTable.totalTax,
+          totalSuper: timesheetsTable.totalSuper,
+          netPay: timesheetsTable.netPay,
+          approvedAt: timesheetsTable.approvedAt
         })
-        .from(timesheets)
-        .innerJoin(users, eq(timesheets.userId, users.id))
+        .from(timesheetsTable)
+        .innerJoin(users, eq(timesheetsTable.userId, users.id))
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          eq(timesheets.status, 'approved')
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'approved')
         ))
-        .orderBy(desc(timesheets.approvedAt));
+        .orderBy(desc(timesheetsTable.approvedAt));
 
       res.json(approvedTimesheets);
     } catch (error) {
@@ -11166,22 +11166,22 @@ Maximum 400 words.`;
     try {
       const approvedCount = await db
         .select({ count: count() })
-        .from(timesheets)
+        .from(timesheetsTable)
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          eq(timesheets.status, 'approved')
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'approved')
         ));
 
       const payrollQuery = await db
         .select({
-          totalPayroll: sum(timesheets.totalEarnings),
-          totalTax: sum(timesheets.totalTax),
-          totalSuper: sum(timesheets.totalSuper)
+          totalPayroll: sum(timesheetsTable.totalEarnings),
+          totalTax: sum(timesheetsTable.totalTax),
+          totalSuper: sum(timesheetsTable.totalSuper)
         })
-        .from(timesheets)
+        .from(timesheetsTable)
         .where(and(
-          eq(timesheets.tenantId, req.user.tenantId),
-          eq(timesheets.status, 'approved')
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          eq(timesheetsTable.status, 'approved')
         ));
 
       const stats = {
@@ -11202,23 +11202,23 @@ Maximum 400 words.`;
     try {
       const historicalTimesheets = await db
         .select({
-          id: timesheets.id,
-          userId: timesheets.userId,
+          id: timesheetsTable.id,
+          userId: timesheetsTable.userId,
           staffName: users.fullName,
           staffEmail: users.email,
-          payPeriodStart: timesheets.payPeriodStart,
-          payPeriodEnd: timesheets.payPeriodEnd,
-          status: timesheets.status,
-          totalHours: timesheets.totalHours,
-          totalEarnings: timesheets.totalEarnings,
-          submittedAt: timesheets.submittedAt,
-          approvedAt: timesheets.approvedAt,
-          createdAt: timesheets.createdAt
+          payPeriodStart: timesheetsTable.payPeriodStart,
+          payPeriodEnd: timesheetsTable.payPeriodEnd,
+          status: timesheetsTable.status,
+          totalHours: timesheetsTable.totalHours,
+          totalEarnings: timesheetsTable.totalEarnings,
+          submittedAt: timesheetsTable.submittedAt,
+          approvedAt: timesheetsTable.approvedAt,
+          createdAt: timesheetsTable.createdAt
         })
-        .from(timesheets)
-        .innerJoin(users, eq(timesheets.userId, users.id))
-        .where(eq(timesheets.tenantId, req.user.tenantId))
-        .orderBy(desc(timesheets.createdAt))
+        .from(timesheetsTable)
+        .innerJoin(users, eq(timesheetsTable.userId, users.id))
+        .where(eq(timesheetsTable.tenantId, req.user.tenantId))
+        .orderBy(desc(timesheetsTable.createdAt))
         .limit(500); // Limit to prevent performance issues
 
       res.json(historicalTimesheets);
@@ -11232,8 +11232,8 @@ Maximum 400 words.`;
     try {
       const totalTimesheets = await db
         .select({ count: count() })
-        .from(timesheets)
-        .where(eq(timesheets.tenantId, req.user.tenantId));
+        .from(timesheetsTable)
+        .where(eq(timesheetsTable.tenantId, req.user.tenantId));
 
       const totalStaff = await db
         .select({ count: count(users.id) })
@@ -11242,20 +11242,20 @@ Maximum 400 words.`;
 
       const avgHoursQuery = await db
         .select({
-          avgHours: avg(timesheets.totalHours),
-          totalEarnings: sum(timesheets.totalEarnings)
+          avgHours: avg(timesheetsTable.totalHours),
+          totalEarnings: sum(timesheetsTable.totalEarnings)
         })
-        .from(timesheets)
-        .where(eq(timesheets.tenantId, req.user.tenantId));
+        .from(timesheetsTable)
+        .where(eq(timesheetsTable.tenantId, req.user.tenantId));
 
       const statusCounts = await db
         .select({
-          status: timesheets.status,
+          status: timesheetsTable.status,
           count: count()
         })
-        .from(timesheets)
-        .where(eq(timesheets.tenantId, req.user.tenantId))
-        .groupBy(timesheets.status);
+        .from(timesheetsTable)
+        .where(eq(timesheetsTable.tenantId, req.user.tenantId))
+        .groupBy(timesheetsTable.status);
 
       const byStatus = {
         draft: statusCounts.find(s => s.status === 'draft')?.count || 0,
