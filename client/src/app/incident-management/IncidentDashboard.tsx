@@ -17,34 +17,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
 interface IncidentReport {
-  report: {
-    id: number;
-    incidentId: string;
-    dateTime: string;
-    location: string;
-    types: string[];
-    isNDISReportable: boolean;
-    intensityRating: number;
-    description: string;
-    status: string;
-    createdAt: string;
-  };
-  closure?: {
-    closureDate: string;
-    severity: string;
-    hazard: string;
-    reviewType: string;
-  };
-  client: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    clientId: string;
-  };
-  staff: {
-    id: number;
-    username: string;
-  };
+  id: number;
+  incidentId: string;
+  dateTime: string;
+  description: string;
+  clientId: number;
+  userId: number;
+  types: string[];
+  status: string;
+  clientName: string;
+  reporterName: string;
 }
 
 export default function IncidentDashboard() {
@@ -127,18 +109,16 @@ export default function IncidentDashboard() {
 
   const filteredIncidents = (incidents || []).filter((incident: IncidentReport) => {
     const matchesSearch = 
-      incident.report.incidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.client.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.client.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.report.location.toLowerCase().includes(searchTerm.toLowerCase());
+      incident.incidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || incident.report.status.toLowerCase() === statusFilter;
-    const matchesType = typeFilter === "all" || incident.report.types.some(type => type.toLowerCase().includes(typeFilter.toLowerCase()));
+    const matchesStatus = statusFilter === "all" || incident.status.toLowerCase() === statusFilter;
+    const matchesType = typeFilter === "all" || incident.types.some(type => type.toLowerCase().includes(typeFilter.toLowerCase()));
     const matchesTab = 
       activeTab === "all" ||
-      (activeTab === "open" && incident.report.status === "Open") ||
-      (activeTab === "closed" && incident.report.status === "Closed") ||
-      (activeTab === "ndis" && incident.report.isNDISReportable);
+      (activeTab === "open" && incident.status === "Open") ||
+      (activeTab === "closed" && incident.status === "Closed");
 
     return matchesSearch && matchesStatus && matchesType && matchesTab;
   });
@@ -290,10 +270,10 @@ export default function IncidentDashboard() {
 
   const incidentStats = {
     total: incidents.length,
-    open: incidents.filter((i: IncidentReport) => i.report.status === "Open").length,
-    closed: incidents.filter((i: IncidentReport) => i.report.status === "Closed").length,
-    ndis: incidents.filter((i: IncidentReport) => i.report.isNDISReportable).length,
-    highIntensity: incidents.filter((i: IncidentReport) => i.report.intensityRating >= 8).length,
+    open: incidents.filter((i: IncidentReport) => i.status === "Open").length,
+    closed: incidents.filter((i: IncidentReport) => i.status === "Closed").length,
+    ndis: 0, // Simplified - no NDIS field in current data structure
+    highIntensity: 0, // Simplified - no intensity field in current data structure
   };
 
   if (isLoading) {
@@ -438,27 +418,21 @@ export default function IncidentDashboard() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {filteredIncidents.map((incident: IncidentReport) => (
-                <Card key={incident.report.id} className="hover:shadow-md transition-shadow">
+                <Card key={incident.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
-                          <h3 className="font-semibold">{incident.report.incidentId}</h3>
-                          {getStatusBadge(incident.report.status)}
-                          {incident.report.isNDISReportable && (
-                            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                              NDIS Reportable
-                            </Badge>
-                          )}
+                          <h3 className="font-semibold">{incident.incidentId}</h3>
+                          {getStatusBadge(incident.status)}
+
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Client: {incident.client.firstName} {incident.client.lastName} ({incident.client.clientId})</span>
-                          <span>Staff: {incident.staff.username}</span>
-                          <span>Location: {incident.report.location}</span>
+                          <span>Client: {incident.clientName}</span>
+                          <span>Staff: {incident.reporterName}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Date: {format(new Date(incident.report.dateTime), "MMM dd, yyyy 'at' HH:mm")}</span>
-                          <span>Created: {format(new Date(incident.report.createdAt), "MMM dd, yyyy")}</span>
+                          <span>Date: {format(new Date(incident.dateTime), "MMM dd, yyyy 'at' HH:mm")}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -468,13 +442,13 @@ export default function IncidentDashboard() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleExportIndividualPDF(incident.report.incidentId)}
+                          onClick={() => handleExportIndividualPDF(incident.incidentId)}
                           className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                           title="Export to PDF"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
-                        {incident.report.status === "Open" && canCloseIncident() && (
+                        {incident.status === "Open" && canCloseIncident() && (
                           <Button variant="outline" size="sm" onClick={() => handleCloseIncident(incident)}>
                             <CheckCircle className="h-4 w-4" />
                           </Button>
@@ -482,7 +456,7 @@ export default function IncidentDashboard() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleDeleteIncident(incident.report.incidentId)}
+                          onClick={() => handleDeleteIncident(incident.incidentId)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -496,17 +470,14 @@ export default function IncidentDashboard() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">Types:</span>
                           <div className="flex gap-1">
-                            {incident.report.types.map((type, index) => (
+                            {incident.types.map((type, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 {type}
                               </Badge>
                             ))}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Intensity:</span>
-                          {getIntensityBadge(incident.report.intensityRating)}
-                        </div>
+
                         {incident.closure && (
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">Severity:</span>
@@ -515,7 +486,7 @@ export default function IncidentDashboard() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {incident.report.description}
+                        {incident.description}
                       </p>
                       {incident.closure && (
                         <div className="text-xs text-muted-foreground pt-2 border-t">
