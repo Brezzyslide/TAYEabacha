@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 interface TimesheetHistoryItem {
   id: number;
   userId: number;
-  userName: string;
+  staffName: string;
   userEmail: string;
   payPeriodStart: string;
   payPeriodEnd: string;
@@ -279,7 +279,7 @@ export default function TimesheetHistoryTab() {
   // Filter timesheets based on search and status
   const filteredTimesheets = (timesheetHistory as TimesheetHistoryItem[]).filter((timesheet: TimesheetHistoryItem) => {
     const matchesSearch = searchTerm === "" || 
-      timesheet.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      timesheet.staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       timesheet.userEmail.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || timesheet.status === statusFilter;
@@ -389,7 +389,7 @@ export default function TimesheetHistoryTab() {
                     <TableRow key={timesheet.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{timesheet.userName}</div>
+                          <div className="font-medium">{timesheet.staffName}</div>
                           <div className="text-sm text-gray-600">{timesheet.userEmail}</div>
                         </div>
                       </TableCell>
@@ -457,7 +457,7 @@ export default function TimesheetHistoryTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Timesheet Details - {selectedTimesheet?.userName || (timesheetData as any)?.staff?.name || (timesheetData as any)?.user?.fullName || 'Staff Member'}
+              Timesheet Details - {selectedTimesheet?.staffName || (timesheetData as any)?.staff?.name || (timesheetData as any)?.user?.fullName || 'Staff Member'}
             </DialogTitle>
           </DialogHeader>
           {selectedTimesheet && (
