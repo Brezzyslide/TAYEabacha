@@ -492,7 +492,7 @@ export default function TimesheetHistoryTab() {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-gray-600">Loading shift details...</p>
                     </div>
-                  ) : timesheetData?.entries && timesheetData.entries.length > 0 ? (
+                  ) : timesheetData?.entries && (timesheetData as any).entries.length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
@@ -507,7 +507,7 @@ export default function TimesheetHistoryTab() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {timesheetData.entries.map((entry: any, index: number) => (
+                          {(timesheetData as any).entries.map((entry: any, index: number) => (
                             <TableRow key={entry.id || index}>
                               <TableCell>{formatDate(entry.entryDate)}</TableCell>
                               <TableCell>
