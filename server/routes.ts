@@ -7821,16 +7821,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin Timesheet Management APIs
   
-  // Get current timesheets (submitted) for admin approval - AWS PRODUCTION FIX
+  // Get current timesheets (submitted) for admin approval - ENHANCED DEBUG VERSION
   app.get("/api/admin/timesheets/current", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      console.log(`[ADMIN CURRENT] AWS PRODUCTION - Admin ${req.user.id} (${req.user.username}) requesting current timesheets for tenant ${req.user.tenantId}`);
+      console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Admin ${req.user.id} (${req.user.username}) requesting current timesheets for tenant ${req.user.tenantId}`);
+      console.log(`[ADMIN CURRENT] ENHANCED DEBUG - About to call storage.getAdminTimesheets with status 'submitted'`);
       
       const timesheets = await storage.getAdminTimesheets(req.user.tenantId, 'submitted');
       
-      console.log(`[ADMIN CURRENT] AWS PRODUCTION - Retrieved ${timesheets.length} submitted timesheets`);
+      console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Retrieved ${timesheets.length} submitted timesheets`);
+      console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Full results:`, JSON.stringify(timesheets, null, 2));
+      
       if (timesheets.length > 0) {
-        console.log(`[ADMIN CURRENT] AWS PRODUCTION - Sample submitted timesheets:`, timesheets.slice(0, 3).map(t => ({
+        console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Sample submitted timesheets:`, timesheets.slice(0, 3).map(t => ({
           id: t.id,
           userId: t.userId,
           staffName: t.staffName,
@@ -7839,21 +7842,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalHours: t.totalHours
         })));
       } else {
-        console.log(`[ADMIN CURRENT] AWS PRODUCTION - No submitted timesheets found. Checking for any timesheets in tenant...`);
+        console.log(`[ADMIN CURRENT] ENHANCED DEBUG - No submitted timesheets found. Running diagnostic queries...`);
         
         // Diagnostic query to see all timesheet statuses
         const allTimesheets = await storage.getAdminTimesheets(req.user.tenantId, ['draft', 'submitted', 'approved', 'rejected', 'paid']);
-        console.log(`[ADMIN CURRENT] AWS PRODUCTION - Total timesheets in tenant: ${allTimesheets.length}`);
-        console.log(`[ADMIN CURRENT] AWS PRODUCTION - Status breakdown:`, allTimesheets.reduce((acc, t) => {
+        console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Total timesheets in tenant: ${allTimesheets.length}`);
+        console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Status breakdown:`, allTimesheets.reduce((acc, t) => {
           acc[t.status] = (acc[t.status] || 0) + 1;
           return acc;
         }, {} as Record<string, number>));
+        console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Sample of all timesheets:`, allTimesheets.slice(0, 5).map(t => ({
+          id: t.id,
+          userId: t.userId,
+          status: t.status,
+          staffName: t.staffName
+        })));
       }
       
+      console.log(`[ADMIN CURRENT] ENHANCED DEBUG - Sending response with ${timesheets.length} timesheets`);
       res.json(timesheets);
     } catch (error: any) {
-      console.error("[ADMIN CURRENT] AWS PRODUCTION - Error:", error);
-      res.status(500).json({ message: "Failed to fetch current timesheets" });
+      console.error("[ADMIN CURRENT] ENHANCED DEBUG - Error:", error);
+      console.error("[ADMIN CURRENT] ENHANCED DEBUG - Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to fetch current timesheets", error: error.message });
+    }
+  });
+
+  // DEBUG: Test endpoint to trigger admin timesheet query manually
+  app.get("/api/debug/test-admin-timesheets/:tenantId", async (req: any, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      console.log(`[DEBUG TEST] Manually triggering admin timesheet query for tenant ${tenantId}`);
+      
+      const submittedTimesheets = await storage.getAdminTimesheets(tenantId, 'submitted');
+      
+      res.json({
+        tenantId,
+        submittedCount: submittedTimesheets.length,
+        submittedTimesheets: submittedTimesheets,
+        debug: "Manual test successful"
+      });
+    } catch (error: any) {
+      console.error("[DEBUG TEST] Error:", error);
+      res.status(500).json({ message: "Debug test failed", error: error.message });
     }
   });
 

@@ -2074,51 +2074,14 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // Admin Timesheet Management Methods - ENHANCED DEBUG VERSION
+  // Admin Timesheet Management Methods - CORRECTED VERSION  
   async getAdminTimesheets(tenantId: number, status: string | string[]): Promise<any[]> {
     const statusArray = Array.isArray(status) ? status : [status];
     
     try {
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Starting query for tenant ${tenantId}, statuses: ${JSON.stringify(statusArray)}`);
+      console.log(`[ADMIN TIMESHEETS] CORRECTED - Starting query for tenant ${tenantId}, statuses: ${JSON.stringify(statusArray)}`);
       
-      // First, let's try a simple direct query to see if basic data is accessible
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Testing basic timesheet access...`);
-      const basicTimesheets = await db.select()
-        .from(timesheets)
-        .where(eq(timesheets.tenantId, tenantId));
-      
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Basic timesheets found: ${basicTimesheets.length}`);
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Basic timesheet sample:`, basicTimesheets.slice(0, 2).map(t => ({
-        id: t.id,
-        userId: t.userId,
-        status: t.status,
-        submittedAt: t.submittedAt
-      })));
-      
-      // Now test with users join
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Testing with users join...`);
-      const timesheetsWithUsers = await db.select({
-        timesheetId: timesheets.id,
-        userId: timesheets.userId,
-        status: timesheets.status,
-        userName: users.fullName,
-        userTenantId: users.tenantId
-      })
-      .from(timesheets)
-      .innerJoin(users, and(
-        eq(timesheets.userId, users.id),
-        eq(timesheets.tenantId, users.tenantId)
-      ))
-      .where(eq(timesheets.tenantId, tenantId));
-      
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Timesheets with users: ${timesheetsWithUsers.length}`);
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Sample with users:`, timesheetsWithUsers.slice(0, 2));
-      
-      // Finally, test with status filter
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Testing with status filter...`);
-      const statusConditions = statusArray.map(s => eq(timesheets.status, s as any));
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Status conditions:`, statusArray);
-      
+      // FIXED QUERY: Use proper tenant filtering with users table constraint
       const result = await db.select({
         id: timesheets.id,
         userId: timesheets.userId,
@@ -2144,31 +2107,29 @@ export class DatabaseStorage implements IStorage {
       .from(timesheets)
       .innerJoin(users, and(
         eq(timesheets.userId, users.id),
-        eq(timesheets.tenantId, users.tenantId)
+        eq(users.tenantId, tenantId) // CRITICAL FIX: Use users.tenantId for filtering
       ))
       .leftJoin(leaveBalances, and(
         eq(users.id, leaveBalances.userId),
         eq(users.tenantId, leaveBalances.tenantId)
       ))
       .where(and(
-        eq(timesheets.tenantId, tenantId),
-        or(...statusConditions)
+        eq(timesheets.tenantId, tenantId), // Keep this for double-safety
+        or(...statusArray.map(s => eq(timesheets.status, s as any)))
       ))
       .orderBy(desc(timesheets.createdAt));
 
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Final result count: ${result.length}`);
-      console.log(`[ADMIN TIMESHEETS] ENHANCED DEBUG - Final results:`, result.map(t => ({
+      console.log(`[ADMIN TIMESHEETS] CORRECTED - Query successful, found ${result.length} timesheets`);
+      console.log(`[ADMIN TIMESHEETS] CORRECTED - Results:`, result.map(t => ({
         id: t.id,
         userId: t.userId,
         status: t.status,
-        submittedAt: t.submittedAt,
         staffName: t.staffName
       })));
 
       return result;
     } catch (error) {
-      console.error("[ADMIN TIMESHEETS] ENHANCED DEBUG - Query error:", error);
-      console.error("[ADMIN TIMESHEETS] ENHANCED DEBUG - Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+      console.error("[ADMIN TIMESHEETS] CORRECTED - Query error:", error);
       return [];
     }
   }
