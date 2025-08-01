@@ -11005,7 +11005,7 @@ Maximum 400 words.`;
           totalHours: timesheetsTable.totalHours,
           totalEarnings: timesheetsTable.totalEarnings,
           submittedAt: timesheetsTable.submittedAt,
-          autoSubmitted: timesheetsTable.autoSubmitted
+          createdAt: timesheetsTable.createdAt
         })
         .from(timesheetsTable)
         .innerJoin(users, eq(timesheetsTable.userId, users.id))
@@ -11036,7 +11036,7 @@ Maximum 400 words.`;
         .select({
           totalHours: sum(timesheetsTable.totalHours),
           totalEarnings: sum(timesheetsTable.totalEarnings),
-          autoSubmittedCount: count(timesheetsTable.autoSubmitted)
+          submittedCount: count(timesheetsTable.id)
         })
         .from(timesheetsTable)
         .where(and(
