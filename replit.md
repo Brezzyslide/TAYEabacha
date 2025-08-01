@@ -6,6 +6,9 @@ CareConnect is a comprehensive, multi-tenant healthcare facility management plat
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+**2025-08-01**: ✅ **CRITICAL SECURITY FIX** - Fixed authentication vulnerability where SupportWorkers bypassed shift-based access control on subsequent logins. Implemented comprehensive cache clearing, user re-verification, and enhanced audit logging to prevent unauthorized client data access.
+
 ## System Architecture
 CareConnect is built with a modern web stack, featuring a React 18 and TypeScript frontend utilizing Tailwind CSS with shadcn/ui for UI, TanStack Query for data, Wouter for routing, and Vite for building. The backend is an Express.js server with TypeScript, employing Passport.js for authentication and Drizzle ORM for PostgreSQL database interactions.
 

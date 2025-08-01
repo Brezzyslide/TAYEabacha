@@ -746,10 +746,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clients API
+  // Clients API with ABSOLUTE SECURITY ENFORCEMENT
   app.get("/api/clients", requireAuth, async (req: any, res) => {
     try {
       console.log(`[CLIENT API DEBUG] Request from user: ${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId}, Role: ${req.user.role})`);
+      
+      // 🚨 CRITICAL SECURITY CHECKPOINT: Re-verify user in database to prevent session hijacking
+      const currentUser = await storage.getUserById(req.user.id);
+      if (!currentUser || currentUser.tenantId !== req.user.tenantId || !currentUser.isActive) {
+        console.log(`🚨 [SECURITY BREACH] User verification failed for ${req.user.username} - session may be compromised`);
+        return res.status(401).json({ message: "Session invalid - please login again" });
+      }
       
       // CRITICAL DEBUG: Check which database we're connected to
       try {
@@ -770,27 +777,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[SECURITY CHECK] Normalized user role: "${userRole}" for user ${req.user.username}`);
       
       if (userRole === "supportworker") {
-        // SupportWorkers can ONLY see clients they are assigned to via shifts
+        // 🔒 CRITICAL SECURITY: SupportWorkers can ONLY see clients they are assigned to via shifts
+        console.log(`🔒 [SECURITY AUDIT] Checking shift assignments for SupportWorker ${req.user.username} (ID: ${req.user.id})`);
+        
         const userShifts = await storage.getShiftsByUser(req.user.id, req.user.tenantId);
         console.log(`[SUPPORT WORKER ACCESS] Found ${userShifts.length} shifts for user ${req.user.username}`);
         
-        // Extract unique client IDs from user's shifts
-        const clientIds = userShifts.map(shift => shift.clientId).filter(id => id !== null) as number[];
+        // Log each shift for debugging
+        if (userShifts.length > 0) {
+          console.log(`[SHIFT DETAILS] User ${req.user.username} shifts:`, userShifts.map(s => ({
+            id: s.id,
+            clientId: s.clientId,
+            status: s.status,
+            startTime: s.startTime,
+            endTime: s.endTime
+          })));
+        } else {
+          console.log(`🔒 [SECURITY ALERT] SupportWorker ${req.user.username} has ZERO shifts assigned`);
+        }
+        
+        // Extract unique client IDs from user's shifts - MUST HAVE VALID CLIENT ID
+        const clientIds = userShifts
+          .map(shift => shift.clientId)
+          .filter(id => id !== null && id !== undefined && typeof id === 'number') as number[];
         const assignedClientIds = Array.from(new Set(clientIds));
         
-        console.log(`[SUPPORT WORKER ACCESS] Assigned client IDs: [${assignedClientIds.join(', ')}]`);
+        console.log(`[SUPPORT WORKER ACCESS] Valid assigned client IDs: [${assignedClientIds.join(', ')}]`);
         
+        // 🚨 ABSOLUTE SECURITY ENFORCEMENT
         if (assignedClientIds.length === 0) {
-          // SECURITY: SupportWorker with NO assigned shifts gets NO clients
-          console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} has no assigned shifts - returning empty array`);
+          console.log(`🔒 [SECURITY ENFORCED] SupportWorker ${req.user.username} has NO VALID SHIFT ASSIGNMENTS - returning empty array`);
+          console.log(`🔒 [AUDIT TRAIL] User ${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId}) denied client access due to no shift assignments`);
           return res.json([]);
         }
         
-        // Get only the clients this user is assigned to via shifts
+        // Double-check: Get all clients first, then strictly filter
         const allClients = await storage.getClients(req.user.tenantId);
-        clients = allClients.filter(client => assignedClientIds.includes(client.id));
+        console.log(`[SECURITY DEBUG] Total clients in tenant ${req.user.tenantId}: ${allClients.length}`);
         
-        console.log(`🔒 [SECURITY ENFORCED] SupportWorker ${req.user.username} can access ${clients.length} clients based on shift assignments`);
+        clients = allClients.filter(client => {
+          const hasAccess = assignedClientIds.includes(client.id);
+          if (!hasAccess) {
+            console.log(`🔒 [ACCESS DENIED] SupportWorker ${req.user.username} denied access to client ${client.id} (${client.fullName})`);
+          }
+          return hasAccess;
+        });
+        
+        console.log(`🔒 [SECURITY ENFORCED] SupportWorker ${req.user.username} authorized for ${clients.length} clients out of ${allClients.length} total clients`);
+        
+        // Final security audit log
+        if (clients.length > 0) {
+          console.log(`🔒 [AUTHORIZED ACCESS] SupportWorker ${req.user.username} granted access to clients:`, clients.map(c => `${c.id}:${c.fullName}`));
+        }
+        
+          // 🔒 FINAL SECURITY ENFORCEMENT: Clear any cached data from frontend
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        
+        // 🚨 ABSOLUTE ENFORCEMENT: Log final security state
+        console.log(`🔒 [FINAL SECURITY STATE] SupportWorker ${req.user.username}: Authorized for ${clients.length} clients only`);
+        
       } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
         // Management roles can see all clients in their tenant
         clients = await storage.getClients(req.user.tenantId);

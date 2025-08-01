@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      // 🔒 SECURITY: Clear all cached data on login to prevent stale data access
+      queryClient.clear();
       queryClient.setQueryData(["/api/auth/user"], user);
     },
     onError: (error: Error) => {
@@ -54,6 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      // 🔒 SECURITY: Clear all cached data on login to prevent stale data access
+      queryClient.clear();
       queryClient.setQueryData(["/api/auth/user"], user);
     },
     onError: (error: Error) => {
@@ -70,7 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      // 🔒 SECURITY: Clear all cached data on logout to prevent authorization bypass
+      queryClient.clear();
       queryClient.setQueryData(["/api/auth/user"], null);
+      
+      // Force page reload to clear any lingering cached state
+      window.location.reload();
     },
     onError: (error: Error) => {
       toast({
