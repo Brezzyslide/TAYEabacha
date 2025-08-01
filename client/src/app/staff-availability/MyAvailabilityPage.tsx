@@ -32,6 +32,7 @@ import { apiRequest } from "@/lib/queryClient";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import ConflictDetectionBanner from "./components/ConflictDetectionBanner";
+import MyAvailabilityList from "./MyAvailabilityList";
 
 const daysOfWeek = [
   "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
@@ -344,8 +345,13 @@ export default function MyAvailabilityPage() {
             <Tabs defaultValue="edit" className="space-y-6">
               <TabsList>
                 <TabsTrigger value="edit">Edit Availability</TabsTrigger>
+                <TabsTrigger value="submissions">My Submissions</TabsTrigger>
                 <TabsTrigger value="patterns">Quick Patterns</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="submissions">
+                <MyAvailabilityList />
+              </TabsContent>
 
               <TabsContent value="patterns">
                 {renderQuickPatterns()}

@@ -2277,13 +2277,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get current user's availability
+  // Get current user's availability - ALL USERS CAN ACCESS THEIR OWN
   app.get("/api/staff-availability/current", requireAuth, async (req: any, res) => {
     try {
       const availability = await storage.getUserAvailability(req.user.id, req.user.tenantId);
+      console.log(`[AVAILABILITY] User ${req.user.username} fetching their current availability`);
       res.json(availability);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch current availability" });
+    }
+  });
+
+  // Get ALL user's own availability submissions - SUPPORTWORKERS CAN SEE ALL THEIR SUBMISSIONS
+  app.get("/api/staff-availability/mine", requireAuth, async (req: any, res) => {
+    try {
+      const userAvailabilities = await storage.getUserAllAvailabilities(req.user.id, req.user.tenantId);
+      console.log(`[AVAILABILITY] User ${req.user.username} fetching ${userAvailabilities.length} of their availability submissions`);
+      res.json(userAvailabilities);
+    } catch (error) {
+      console.error("Failed to fetch user availabilities:", error);
+      res.status(500).json({ message: "Failed to fetch your availability submissions" });
     }
   });
 
@@ -2338,11 +2351,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { availability, patternName, isQuickPattern } = req.body;
       
+      // Check if user owns this availability or is admin
+      const existingAvailability = await storage.getStaffAvailabilityById(parseInt(id), req.user.tenantId);
+      if (!existingAvailability) {
+        return res.status(404).json({ message: "Availability not found" });
+      }
+      
+      const userRole = req.user.role?.toLowerCase().replace(/\s+/g, '');
+      const isOwner = existingAvailability.userId === req.user.id;
+      const isAdmin = userRole === "admin" || userRole === "coordinator" || userRole === "teamleader" || userRole === "consolemanager";
+      
+      if (!isOwner && !isAdmin) {
+        console.log(`🚨 [SECURITY] User ${req.user.username} denied access to edit availability ${id} (not owner)`);
+        return res.status(403).json({ message: "Access denied: You can only edit your own availability" });
+      }
+      
       const updated = await storage.updateStaffAvailability(parseInt(id), {
         availability,
         patternName,
         isQuickPattern,
-        userId: req.user.id,
+        userId: existingAvailability.userId, // Preserve original owner
         tenantId: req.user.tenantId
       }, req.user.tenantId);
       
@@ -2352,14 +2380,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: "update_availability",
         resourceType: "staff_availability",
         resourceId: parseInt(id),
-        description: "Updated staff availability",
+        description: isOwner ? "Updated own availability" : `Admin updated availability for user ${existingAvailability.userId}`,
         tenantId: req.user.tenantId,
       });
       
+      console.log(`[AVAILABILITY] ${isOwner ? 'User' : 'Admin'} ${req.user.username} updated availability ${id}`);
       res.json(updated);
     } catch (error) {
       console.error("Staff availability update error:", error);
       res.status(500).json({ message: "Failed to update availability" });
+    }
+  });
+
+  // Delete staff availability (for staff to delete their own)
+  app.delete("/api/staff-availability/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if user owns this availability or is admin
+      const existingAvailability = await storage.getStaffAvailabilityById(parseInt(id), req.user.tenantId);
+      if (!existingAvailability) {
+        return res.status(404).json({ message: "Availability not found" });
+      }
+      
+      const userRole = req.user.role?.toLowerCase().replace(/\s+/g, '');
+      const isOwner = existingAvailability.userId === req.user.id;
+      const isAdmin = userRole === "admin" || userRole === "coordinator" || userRole === "teamleader" || userRole === "consolemanager";
+      
+      if (!isOwner && !isAdmin) {
+        console.log(`🚨 [SECURITY] User ${req.user.username} denied access to delete availability ${id} (not owner)`);
+        return res.status(403).json({ message: "Access denied: You can only delete your own availability" });
+      }
+      
+      const deleted = await storage.deleteStaffAvailability(parseInt(id), req.user.tenantId);
+      
+      if (deleted) {
+        // Log activity
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "delete_availability",
+          resourceType: "staff_availability",
+          resourceId: parseInt(id),
+          description: isOwner ? "Deleted own availability" : `Admin deleted availability for user ${existingAvailability.userId}`,
+          tenantId: req.user.tenantId,
+        });
+        
+        console.log(`[AVAILABILITY] ${isOwner ? 'User' : 'Admin'} ${req.user.username} deleted availability ${id}`);
+        res.json({ message: "Availability deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Availability not found" });
+      }
+    } catch (error) {
+      console.error("Staff availability deletion error:", error);
+      res.status(500).json({ message: "Failed to delete availability" });
     }
   });
 

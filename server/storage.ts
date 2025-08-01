@@ -80,8 +80,11 @@ export interface IStorage {
   // Staff Availability
   getStaffAvailability(tenantId: number): Promise<StaffAvailability[]>;
   getUserAvailability(userId: number, tenantId: number): Promise<StaffAvailability | undefined>;
+  getUserAllAvailabilities(userId: number, tenantId: number): Promise<StaffAvailability[]>;
+  getStaffAvailabilityById(id: number, tenantId: number): Promise<StaffAvailability | undefined>;
   createStaffAvailability(availability: InsertStaffAvailability): Promise<StaffAvailability>;
   updateStaffAvailability(id: number, availability: Partial<InsertStaffAvailability>, tenantId: number): Promise<StaffAvailability | undefined>;
+  deleteStaffAvailability(id: number, tenantId: number): Promise<boolean>;
   getQuickPatterns(userId: number, tenantId: number): Promise<StaffAvailability[]>;
   getAllStaffAvailability(tenantId: number, showArchived: boolean): Promise<any[]>;
   getAllStaffAvailabilities(tenantId: number): Promise<any[]>;
@@ -592,6 +595,35 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(staffAvailability.createdAt))
       .limit(1);
     return availability;
+  }
+
+  async getUserAllAvailabilities(userId: number, tenantId: number): Promise<StaffAvailability[]> {
+    return await db.select().from(staffAvailability)
+      .where(and(
+        eq(staffAvailability.userId, userId),
+        eq(staffAvailability.tenantId, tenantId),
+        eq(staffAvailability.isActive, true)
+      ))
+      .orderBy(desc(staffAvailability.createdAt));
+  }
+
+  async getStaffAvailabilityById(id: number, tenantId: number): Promise<StaffAvailability | undefined> {
+    const [availability] = await db.select().from(staffAvailability)
+      .where(and(
+        eq(staffAvailability.id, id),
+        eq(staffAvailability.tenantId, tenantId)
+      ));
+    return availability;
+  }
+
+  async deleteStaffAvailability(id: number, tenantId: number): Promise<boolean> {
+    const result = await db.update(staffAvailability)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(staffAvailability.id, id),
+        eq(staffAvailability.tenantId, tenantId)
+      ));
+    return result.rowCount! > 0;
   }
 
   async createStaffAvailability(insertAvailability: InsertStaffAvailability): Promise<StaffAvailability> {
