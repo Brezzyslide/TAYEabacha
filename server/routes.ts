@@ -752,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[CLIENT API DEBUG] Request from user: ${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId}, Role: ${req.user.role})`);
       
       // 🚨 CRITICAL SECURITY CHECKPOINT: Re-verify user in database to prevent session hijacking
-      const currentUser = await storage.getUserById(req.user.id);
+      const currentUser = await storage.getUser(req.user.id);
       if (!currentUser || currentUser.tenantId !== req.user.tenantId || !currentUser.isActive) {
         console.log(`🚨 [SECURITY BREACH] User verification failed for ${req.user.username} - session may be compromised`);
         return res.status(401).json({ message: "Session invalid - please login again" });
