@@ -611,7 +611,7 @@ export default function TimesheetReviewDashboard() {
                                 <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
                                 <div className="text-xs text-gray-500">
                                   {entry.startTime && entry.endTime && (
-                                    `${format(new Date(`1970-01-01T${entry.startTime}`), 'h:mm a')} - ${format(new Date(`1970-01-01T${entry.endTime}`), 'h:mm a')}`
+                                    `${format(new Date(entry.startTime), 'h:mm a')} - ${format(new Date(entry.endTime), 'h:mm a')}`
                                   )}
                                 </div>
                               </TableCell>
