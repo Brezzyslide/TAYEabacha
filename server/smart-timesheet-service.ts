@@ -190,6 +190,9 @@ export async function createSmartTimesheetEntry(
 
   // Update timesheet totals
   await updateTimesheetTotals(timesheet.id);
+  
+  // Check if auto-submission should be triggered
+  await checkAndAutoSubmitTimesheet(timesheet.id, userId, tenantId);
 }
 
 /**
@@ -301,4 +304,101 @@ async function updateTimesheetTotals(timesheetId: number): Promise<void> {
       updatedAt: new Date()
     })
     .where(eq(timesheets.id, timesheetId));
+}
+
+/**
+ * Check if all shifts in pay period are completed and auto-submit timesheet
+ */
+async function checkAndAutoSubmitTimesheet(timesheetId: number, userId: number, tenantId: number): Promise<void> {
+  try {
+    // Check if auto-submission is enabled for this tenant
+    const tenantSettings = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1);
+
+    if (!tenantSettings.length) {
+      console.log(`[AUTO-SUBMIT] Tenant ${tenantId} not found, skipping auto-submission`);
+      return;
+    }
+
+    const settings = tenantSettings[0].settings as any;
+    const autoSubmitEnabled = settings?.timesheet?.autoSubmitEnabled ?? false;
+
+    if (!autoSubmitEnabled) {
+      console.log(`[AUTO-SUBMIT] Auto-submission disabled for tenant ${tenantId}, skipping`);
+      return;
+    }
+
+    // Get the timesheet to check its pay period
+    const timesheet = await db
+      .select()
+      .from(timesheets)
+      .where(eq(timesheets.id, timesheetId))
+      .limit(1);
+
+    if (!timesheet.length || timesheet[0].status !== 'draft') {
+      return; // Skip if timesheet not found or already submitted
+    }
+
+    const { payPeriodStart, payPeriodEnd } = timesheet[0];
+    
+    console.log(`[AUTO-SUBMIT] Checking auto-submission for timesheet ${timesheetId}, user ${userId}`);
+
+    // Get all shifts for this user in the pay period
+    const shiftsInPeriod = await db
+      .select()
+      .from(shifts)
+      .where(and(
+        eq(shifts.userId, userId),
+        eq(shifts.tenantId, tenantId),
+        gte(shifts.startTime, payPeriodStart),
+        lte(shifts.startTime, payPeriodEnd)
+      ));
+
+    console.log(`[AUTO-SUBMIT] Found ${shiftsInPeriod.length} shifts in pay period for user ${userId}`);
+
+    if (shiftsInPeriod.length === 0) {
+      console.log(`[AUTO-SUBMIT] No shifts found in period, skipping auto-submission`);
+      return;
+    }
+
+    // Check if all shifts are completed (have end_time)
+    const completedShifts = shiftsInPeriod.filter(shift => shift.endTime !== null);
+    const pendingShifts = shiftsInPeriod.filter(shift => shift.endTime === null);
+
+    console.log(`[AUTO-SUBMIT] Completed shifts: ${completedShifts.length}, Pending shifts: ${pendingShifts.length}`);
+
+    // Only auto-submit if all shifts are completed and we have timesheet entries
+    if (pendingShifts.length === 0 && completedShifts.length > 0) {
+      const timesheetEntryCount = await db
+        .select()
+        .from(timesheetEntries)
+        .where(eq(timesheetEntries.timesheetId, timesheetId));
+
+      if (timesheetEntryCount.length > 0) {
+        console.log(`[AUTO-SUBMIT] All ${completedShifts.length} shifts completed, auto-submitting timesheet ${timesheetId}`);
+        
+        // Auto-submit the timesheet
+        await db
+          .update(timesheets)
+          .set({
+            status: 'submitted',
+            submittedAt: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(timesheets.id, timesheetId));
+
+        console.log(`[AUTO-SUBMIT] ✅ Timesheet ${timesheetId} auto-submitted successfully for user ${userId}`);
+      } else {
+        console.log(`[AUTO-SUBMIT] No timesheet entries found, skipping auto-submission`);
+      }
+    } else {
+      console.log(`[AUTO-SUBMIT] Cannot auto-submit: ${pendingShifts.length} shifts still pending completion`);
+    }
+  } catch (error) {
+    console.error(`[AUTO-SUBMIT ERROR] Failed to check auto-submission for timesheet ${timesheetId}:`, error);
+    // Don't throw - auto-submission failure shouldn't break the main flow
+  }
 }

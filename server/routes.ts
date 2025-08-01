@@ -10990,6 +10990,83 @@ Maximum 400 words.`;
     }
   });
 
+  // Auto-submission settings API endpoints
+  app.get("/api/settings/timesheet/auto-submit", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const tenantSettings = await db
+        .select()
+        .from(tenants)
+        .where(eq(tenants.id, req.user.tenantId))
+        .limit(1);
+
+      if (!tenantSettings.length) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const settings = tenantSettings[0].settings as any;
+      const autoSubmitEnabled = settings?.timesheet?.autoSubmitEnabled ?? false;
+
+      res.json({ autoSubmitEnabled });
+    } catch (error) {
+      console.error("Failed to get auto-submit settings:", error);
+      res.status(500).json({ message: "Failed to get auto-submit settings" });
+    }
+  });
+
+  app.put("/api/settings/timesheet/auto-submit", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { autoSubmitEnabled } = req.body;
+
+      if (typeof autoSubmitEnabled !== 'boolean') {
+        return res.status(400).json({ message: "autoSubmitEnabled must be a boolean" });
+      }
+
+      // Get current settings
+      const tenantSettings = await db
+        .select()
+        .from(tenants)
+        .where(eq(tenants.id, req.user.tenantId))
+        .limit(1);
+
+      if (!tenantSettings.length) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const currentSettings = tenantSettings[0].settings as any || {};
+      
+      // Update timesheet auto-submit settings
+      const newSettings = {
+        ...currentSettings,
+        timesheet: {
+          ...currentSettings.timesheet,
+          autoSubmitEnabled
+        }
+      };
+
+      await db
+        .update(tenants)
+        .set({ settings: newSettings })
+        .where(eq(tenants.id, req.user.tenantId));
+
+      console.log(`[AUTO-SUBMIT] Settings updated for tenant ${req.user.tenantId}: autoSubmitEnabled = ${autoSubmitEnabled}`);
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update_auto_submit_settings",
+        resourceType: "tenant_settings",
+        resourceId: req.user.tenantId,
+        description: `${autoSubmitEnabled ? 'Enabled' : 'Disabled'} timesheet auto-submission`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ autoSubmitEnabled, message: `Auto-submission ${autoSubmitEnabled ? 'enabled' : 'disabled'} successfully` });
+    } catch (error) {
+      console.error("Failed to update auto-submit settings:", error);
+      res.status(500).json({ message: "Failed to update auto-submit settings" });
+    }
+  });
+
   // Serve static files from uploads directory  
   const expressStatic = await import('express');
   const pathModule = await import('path');

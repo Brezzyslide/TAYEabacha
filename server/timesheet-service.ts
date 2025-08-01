@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { timesheets, timesheetEntries, shifts, users, payScales, clients } from "@shared/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, or } from "drizzle-orm";
 import { calculatePayroll, calculatePayPeriod, updateLeaveBalances } from "./payroll-calculator";
 
 export interface TimesheetSummary {
@@ -449,24 +449,24 @@ export async function recalculateTimesheetEntriesForUser(userId: number, tenantI
     console.log(`[TIMESHEET RECALC] New hourly rate for user ${userId}: $${newHourlyRate}`);
     
     // Get all timesheet entries for this user that are not yet paid
-    const timesheetEntries = await db
+    const timesheetEntriesResult = await db
       .select()
       .from(timesheetEntries)
-      .innerJoin(timesheetsTable, eq(timesheetEntries.timesheetId, timesheetsTable.id))
+      .innerJoin(timesheets, eq(timesheetEntries.timesheetId, timesheets.id))
       .where(and(
-        eq(timesheetsTable.userId, userId),
-        eq(timesheetsTable.tenantId, tenantId),
+        eq(timesheets.userId, userId),
+        eq(timesheets.tenantId, tenantId),
         or(
-          eq(timesheetsTable.status, 'draft'),
-          eq(timesheetsTable.status, 'submitted'),
-          eq(timesheetsTable.status, 'approved')
+          eq(timesheets.status, 'draft'),
+          eq(timesheets.status, 'submitted'),
+          eq(timesheets.status, 'approved')
         )
       ));
     
-    console.log(`[TIMESHEET RECALC] Found ${timesheetEntries.length} entries to recalculate`);
+    console.log(`[TIMESHEET RECALC] Found ${timesheetEntriesResult.length} entries to recalculate`);
     
     // Update each entry with new hourly rate and recalculated gross pay
-    for (const entry of timesheetEntries) {
+    for (const entry of timesheetEntriesResult) {
       const entryData = entry.timesheet_entries;
       const currentHours = parseFloat(entryData.totalHours || '0');
       
@@ -487,7 +487,7 @@ export async function recalculateTimesheetEntriesForUser(userId: number, tenantI
     }
     
     // Update timesheet totals for all affected timesheets
-    const uniqueTimesheetIds = [...new Set(timesheetEntries.map(e => e.timesheet_entries.timesheetId))];
+    const uniqueTimesheetIds = Array.from(new Set(timesheetEntriesResult.map(e => e.timesheet_entries.timesheetId)));
     for (const timesheetId of uniqueTimesheetIds) {
       await updateTimesheetTotals(timesheetId);
       console.log(`[TIMESHEET RECALC] Updated totals for timesheet ${timesheetId}`);

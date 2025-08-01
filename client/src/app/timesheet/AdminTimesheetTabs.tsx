@@ -37,6 +37,7 @@ import { format } from "date-fns";
 import { ApprovalBadge } from "@/components/ui/approval-badge";
 import PayScaleManagement from "@/app/admin/PayScaleManagement";
 import WageIncreaseManager from "@/app/admin/WageIncreaseManager";
+import { TimesheetAutoSubmitSettings } from "@/app/admin/components/TimesheetAutoSubmitSettings";
 
 interface AdminTimesheet {
   id: number;
@@ -738,6 +739,7 @@ export default function AdminTimesheetTabs() {
           <TabsTrigger value="staff-payslips" className="text-xs sm:text-sm flex-shrink-0">Staff Payslips</TabsTrigger>
           <TabsTrigger value="pay-scales" className="text-xs sm:text-sm flex-shrink-0">Pay Scales</TabsTrigger>
           <TabsTrigger value="wage-increases" className="text-xs sm:text-sm flex-shrink-0">Wage Increases</TabsTrigger>
+          <TabsTrigger value="settings" className="text-xs sm:text-sm flex-shrink-0">Settings</TabsTrigger>
         </TabsList>
 
         {/* Current Period Tab */}
