@@ -8455,6 +8455,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid timesheet ID", error: "INVALID_ID" });
       }
       
+      // ENHANCED VALIDATION: Verify user exists and is active in tenant
+      const userExists = await db.select()
+        .from(usersTable)
+        .where(and(
+          eq(usersTable.id, req.user.id),
+          eq(usersTable.tenantId, req.user.tenantId)
+        ));
+      
+      if (userExists.length === 0) {
+        console.error(`[TIMESHEET SUBMIT] CRITICAL ERROR: User ${req.user.id} not found in tenant ${req.user.tenantId} - session corruption detected`);
+        return res.status(401).json({ message: "User account not found - please login again", error: "USER_NOT_FOUND" });
+      }
+      
       // Get timesheet and verify ownership
       const timesheet = await db.select()
         .from(timesheetsTable)
@@ -8489,26 +8502,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let updatedTimesheet;
       let approvalMessage;
       
-      // Always submit for admin approval (proper workflow) - AWS PRODUCTION FIX
-      console.log(`[TIMESHEET SUBMIT] AWS PRODUCTION - Updating timesheet ${timesheetId} status to 'submitted'`);
+      // Always submit for admin approval (proper workflow) - ENHANCED WITH VALIDATION
+      console.log(`[TIMESHEET SUBMIT] ENHANCED - Updating timesheet ${timesheetId} status to 'submitted'`);
       
+      // Use more restrictive WHERE clause to prevent race conditions
       updatedTimesheet = await db.update(timesheetsTable)
         .set({ 
           status: 'submitted',
           submittedAt: new Date(),
           updatedAt: new Date()
         })
-        .where(eq(timesheetsTable.id, timesheetId))
+        .where(and(
+          eq(timesheetsTable.id, timesheetId),
+          eq(timesheetsTable.userId, req.user.id),
+          eq(timesheetsTable.tenantId, req.user.tenantId),
+          inArray(timesheetsTable.status, ['draft', 'rejected'])
+        ))
         .returning();
 
-      console.log(`[TIMESHEET SUBMIT] AWS PRODUCTION - Update result:`, updatedTimesheet.length > 0 ? {
+      console.log(`[TIMESHEET SUBMIT] ENHANCED - Update result:`, updatedTimesheet.length > 0 ? {
         id: updatedTimesheet[0].id,
         status: updatedTimesheet[0].status,
         submittedAt: updatedTimesheet[0].submittedAt,
         userId: updatedTimesheet[0].userId,
         tenantId: updatedTimesheet[0].tenantId
-      } : "NO RESULT");
+      } : "NO RESULT - CRITICAL ERROR");
 
+      // CRITICAL: Verify the update was successful
+      if (!updatedTimesheet || updatedTimesheet.length === 0) {
+        console.error(`[TIMESHEET SUBMIT] CRITICAL ERROR: Failed to update timesheet ${timesheetId}`);
+        console.error(`[TIMESHEET SUBMIT] Debug: User ${req.user.id}, Tenant ${req.user.tenantId}, Status: ${timesheet[0].status}`);
+        throw new Error("Failed to update timesheet status - this indicates a database constraint issue or race condition");
+      }
+
+      console.log(`[TIMESHEET SUBMIT] ✅ SUCCESS: Timesheet ${timesheetId} status updated to 'submitted' for user ${req.user.id}`);
       approvalMessage = "Timesheet submitted for admin approval";
         
       // Create submission activity log

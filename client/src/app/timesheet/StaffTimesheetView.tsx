@@ -122,19 +122,26 @@ export default function StaffTimesheetView() {
     }
   }, [user, queryClient]);
 
-  // Submit timesheet mutation
+  // Submit timesheet mutation with enhanced error handling
   const submitMutation = useMutation({
     mutationFn: async (timesheetId: number) => {
       console.log(`[FRONTEND] Submitting timesheet ${timesheetId} for user ${user?.id}`);
       try {
         const response = await apiRequest('POST', `/api/timesheet/${timesheetId}/submit`);
-        console.log(`[FRONTEND] Timesheet submission successful:`, response);
+        console.log(`[FRONTEND] Timesheet submission successful:`, {
+          timesheetId,
+          status: response?.timesheet?.status,
+          autoApproved: response?.autoApproved,
+          submissionVerified: response?.submissionVerified,
+          timestamp: new Date().toISOString()
+        });
         return response;
       } catch (error: any) {
         console.error(`[FRONTEND] Timesheet submission failed:`, {
           timesheetId,
           userId: user?.id,
           error: error.message,
+          errorCode: error.error || error.code,
           status: error.status,
           response: error.response,
           timestamp: new Date().toISOString()
@@ -144,13 +151,18 @@ export default function StaffTimesheetView() {
     },
     onSuccess: (data: any) => {
       const wasAutoApproved = data?.autoApproved;
+      const isVerified = data?.submissionVerified;
+      
+      console.log(`[FRONTEND] Submission success - Auto-approved: ${wasAutoApproved}, Verified: ${isVerified}`);
+      
       toast({
-        title: "Timesheet Submitted",
+        title: "Timesheet Submitted Successfully",
         description: wasAutoApproved 
           ? "Your timesheet has been automatically approved!" 
-          : "Your timesheet has been submitted for approval.",
-        variant: wasAutoApproved ? "default" : "default"
+          : "Your timesheet has been submitted for admin approval.",
+        variant: "default"
       });
+      
       // Invalidate both current and history queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/timesheet/current'] });
       queryClient.invalidateQueries({ queryKey: ['/api/timesheet/history'] });
@@ -164,16 +176,40 @@ export default function StaffTimesheetView() {
       const errorCode = error.response?.data?.error || error.status || "UNKNOWN";
       const errorDetails = error.response?.data?.details;
       
-      // Show detailed error message for debugging
-      const description = process.env.NODE_ENV === 'development' 
-        ? `${errorMessage} (Code: ${errorCode}${errorDetails ? `, Details: ${errorDetails}` : ''})`
-        : "Failed to submit timesheet. Please try again.";
+      // Handle specific error types with targeted user messages
+      let title = "Submission Failed";
+      let description = "Failed to submit timesheet. Please try again.";
+      
+      if (errorCode === "USER_NOT_FOUND") {
+        title = "Authentication Error";
+        description = "Your session appears to be corrupted. Please refresh the page and login again.";
+      } else if (errorCode === "NOT_FOUND") {
+        title = "Timesheet Not Found";
+        description = "The timesheet could not be found. Please refresh the page.";
+      } else if (errorCode === "INVALID_STATUS") {
+        title = "Invalid Status";
+        description = `Cannot submit timesheet: ${errorDetails || errorMessage}`;
+      } else if (process.env.NODE_ENV === 'development') {
+        // Development mode: show detailed error for debugging
+        description = `${errorMessage} (Code: ${errorCode}${errorDetails ? `, Details: ${errorDetails}` : ''})`;
+      }
       
       toast({
-        title: "Submission Failed",
+        title,
         description,
         variant: "destructive"
       });
+      
+      // For critical authentication errors, suggest refresh
+      if (errorCode === "USER_NOT_FOUND") {
+        setTimeout(() => {
+          toast({
+            title: "Tip",
+            description: "Try refreshing the page (Ctrl+R or Cmd+R) to restore your session.",
+            variant: "default"
+          });
+        }, 3000);
+      }
     }
   });
 
