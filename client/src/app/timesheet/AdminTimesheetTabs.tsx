@@ -1251,6 +1251,10 @@ export default function AdminTimesheetTabs() {
         <TabsContent value="wage-increases">
           <WageIncreaseManager />
         </TabsContent>
+
+        <TabsContent value="settings">
+          <TimesheetAutoSubmitSettings />
+        </TabsContent>
       </Tabs>
 
       {/* Edit Timesheet Dialog */}
