@@ -10990,6 +10990,295 @@ Maximum 400 words.`;
     }
   });
 
+  // Admin timesheet endpoints for new interface
+  app.get("/api/admin/timesheets/pending", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const pendingTimesheets = await db
+        .select({
+          id: timesheets.id,
+          userId: timesheets.userId,
+          staffName: users.fullName,
+          staffEmail: users.email,
+          payPeriodStart: timesheets.payPeriodStart,
+          payPeriodEnd: timesheets.payPeriodEnd,
+          status: timesheets.status,
+          totalHours: timesheets.totalHours,
+          totalEarnings: timesheets.totalEarnings,
+          submittedAt: timesheets.submittedAt,
+          autoSubmitted: timesheets.autoSubmitted
+        })
+        .from(timesheets)
+        .innerJoin(users, eq(timesheets.userId, users.id))
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          eq(timesheets.status, 'submitted')
+        ))
+        .orderBy(desc(timesheets.submittedAt));
+
+      res.json(pendingTimesheets);
+    } catch (error) {
+      console.error("Failed to get pending timesheets:", error);
+      res.status(500).json({ message: "Failed to get pending timesheets" });
+    }
+  });
+
+  app.get("/api/admin/timesheets/stats", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const pendingCount = await db
+        .select({ count: count() })
+        .from(timesheets)
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          eq(timesheets.status, 'submitted')
+        ));
+
+      const statsQuery = await db
+        .select({
+          totalHours: sum(timesheets.totalHours),
+          totalEarnings: sum(timesheets.totalEarnings),
+          autoSubmittedCount: count(timesheets.autoSubmitted)
+        })
+        .from(timesheets)
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          eq(timesheets.status, 'submitted')
+        ));
+
+      const stats = {
+        pendingCount: pendingCount[0]?.count || 0,
+        totalHours: parseFloat(statsQuery[0]?.totalHours || '0'),
+        totalEarnings: parseFloat(statsQuery[0]?.totalEarnings || '0'),
+        autoSubmittedCount: statsQuery[0]?.autoSubmittedCount || 0
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Failed to get timesheet stats:", error);
+      res.status(500).json({ message: "Failed to get timesheet stats" });
+    }
+  });
+
+  app.post("/api/admin/timesheets/bulk-approve", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { timesheetIds } = req.body;
+
+      if (!Array.isArray(timesheetIds) || timesheetIds.length === 0) {
+        return res.status(400).json({ message: "Invalid timesheet IDs" });
+      }
+
+      await db
+        .update(timesheets)
+        .set({ 
+          status: 'approved',
+          approvedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          inArray(timesheets.id, timesheetIds)
+        ));
+
+      res.json({ message: `Successfully approved ${timesheetIds.length} timesheets` });
+    } catch (error) {
+      console.error("Failed to bulk approve timesheets:", error);
+      res.status(500).json({ message: "Failed to bulk approve timesheets" });
+    }
+  });
+
+  app.post("/api/admin/timesheets/:id/approve", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+
+      await db
+        .update(timesheets)
+        .set({ 
+          status: 'approved',
+          approvedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(timesheets.id, timesheetId),
+          eq(timesheets.tenantId, req.user.tenantId)
+        ));
+
+      res.json({ message: "Timesheet approved successfully" });
+    } catch (error) {
+      console.error("Failed to approve timesheet:", error);
+      res.status(500).json({ message: "Failed to approve timesheet" });
+    }
+  });
+
+  app.post("/api/admin/timesheets/:id/reject", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const timesheetId = parseInt(req.params.id);
+
+      await db
+        .update(timesheets)
+        .set({ 
+          status: 'rejected',
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(timesheets.id, timesheetId),
+          eq(timesheets.tenantId, req.user.tenantId)
+        ));
+
+      res.json({ message: "Timesheet rejected successfully" });
+    } catch (error) {
+      console.error("Failed to reject timesheet:", error);
+      res.status(500).json({ message: "Failed to reject timesheet" });
+    }
+  });
+
+  app.get("/api/admin/timesheets/approved", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const approvedTimesheets = await db
+        .select({
+          id: timesheets.id,
+          userId: timesheets.userId,
+          staffName: users.fullName,
+          staffEmail: users.email,
+          payPeriodStart: timesheets.payPeriodStart,
+          payPeriodEnd: timesheets.payPeriodEnd,
+          totalHours: timesheets.totalHours,
+          totalEarnings: timesheets.totalEarnings,
+          totalTax: timesheets.totalTax,
+          totalSuper: timesheets.totalSuper,
+          netPay: timesheets.netPay,
+          approvedAt: timesheets.approvedAt
+        })
+        .from(timesheets)
+        .innerJoin(users, eq(timesheets.userId, users.id))
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          eq(timesheets.status, 'approved')
+        ))
+        .orderBy(desc(timesheets.approvedAt));
+
+      res.json(approvedTimesheets);
+    } catch (error) {
+      console.error("Failed to get approved timesheets:", error);
+      res.status(500).json({ message: "Failed to get approved timesheets" });
+    }
+  });
+
+  app.get("/api/admin/timesheets/payroll-stats", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const approvedCount = await db
+        .select({ count: count() })
+        .from(timesheets)
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          eq(timesheets.status, 'approved')
+        ));
+
+      const payrollQuery = await db
+        .select({
+          totalPayroll: sum(timesheets.totalEarnings),
+          totalTax: sum(timesheets.totalTax),
+          totalSuper: sum(timesheets.totalSuper)
+        })
+        .from(timesheets)
+        .where(and(
+          eq(timesheets.tenantId, req.user.tenantId),
+          eq(timesheets.status, 'approved')
+        ));
+
+      const stats = {
+        approvedCount: approvedCount[0]?.count || 0,
+        totalPayroll: parseFloat(payrollQuery[0]?.totalPayroll || '0'),
+        totalTax: parseFloat(payrollQuery[0]?.totalTax || '0'),
+        totalSuper: parseFloat(payrollQuery[0]?.totalSuper || '0')
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Failed to get payroll stats:", error);
+      res.status(500).json({ message: "Failed to get payroll stats" });
+    }
+  });
+
+  app.get("/api/admin/timesheets/history", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const historicalTimesheets = await db
+        .select({
+          id: timesheets.id,
+          userId: timesheets.userId,
+          staffName: users.fullName,
+          staffEmail: users.email,
+          payPeriodStart: timesheets.payPeriodStart,
+          payPeriodEnd: timesheets.payPeriodEnd,
+          status: timesheets.status,
+          totalHours: timesheets.totalHours,
+          totalEarnings: timesheets.totalEarnings,
+          submittedAt: timesheets.submittedAt,
+          approvedAt: timesheets.approvedAt,
+          createdAt: timesheets.createdAt
+        })
+        .from(timesheets)
+        .innerJoin(users, eq(timesheets.userId, users.id))
+        .where(eq(timesheets.tenantId, req.user.tenantId))
+        .orderBy(desc(timesheets.createdAt))
+        .limit(500); // Limit to prevent performance issues
+
+      res.json(historicalTimesheets);
+    } catch (error) {
+      console.error("Failed to get timesheet history:", error);
+      res.status(500).json({ message: "Failed to get timesheet history" });
+    }
+  });
+
+  app.get("/api/admin/timesheets/analytics", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const totalTimesheets = await db
+        .select({ count: count() })
+        .from(timesheets)
+        .where(eq(timesheets.tenantId, req.user.tenantId));
+
+      const totalStaff = await db
+        .select({ count: count(users.id) })
+        .from(users)
+        .where(eq(users.tenantId, req.user.tenantId));
+
+      const avgHoursQuery = await db
+        .select({
+          avgHours: avg(timesheets.totalHours),
+          totalEarnings: sum(timesheets.totalEarnings)
+        })
+        .from(timesheets)
+        .where(eq(timesheets.tenantId, req.user.tenantId));
+
+      const statusCounts = await db
+        .select({
+          status: timesheets.status,
+          count: count()
+        })
+        .from(timesheets)
+        .where(eq(timesheets.tenantId, req.user.tenantId))
+        .groupBy(timesheets.status);
+
+      const byStatus = {
+        draft: statusCounts.find(s => s.status === 'draft')?.count || 0,
+        submitted: statusCounts.find(s => s.status === 'submitted')?.count || 0,
+        approved: statusCounts.find(s => s.status === 'approved')?.count || 0,
+        rejected: statusCounts.find(s => s.status === 'rejected')?.count || 0
+      };
+
+      const analytics = {
+        totalTimesheets: totalTimesheets[0]?.count || 0,
+        totalStaff: totalStaff[0]?.count || 0,
+        avgHoursPerStaff: parseFloat(avgHoursQuery[0]?.avgHours || '0'),
+        totalEarnings: parseFloat(avgHoursQuery[0]?.totalEarnings || '0'),
+        byStatus
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Failed to get timesheet analytics:", error);
+      res.status(500).json({ message: "Failed to get timesheet analytics" });
+    }
+  });
+
   // Auto-submission settings API endpoints
   app.get("/api/settings/timesheet/auto-submit", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
