@@ -1382,10 +1382,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[SHIFT UPDATE] ✅ SHIFT FOUND, CHECKING PERMISSIONS");
       
       // Permission check: SupportWorker can only update their own shifts, TeamLeader+ can update assigned shifts
-      if (req.user.role === "SupportWorker" && existingShift.userId !== req.user.id) {
+      const userRole = req.user.role.toLowerCase();
+      
+      if (userRole === "supportworker" && existingShift.userId !== req.user.id) {
         console.log("[SHIFT UPDATE] ❌ PERMISSION DENIED - Not user's shift");
         return res.status(403).json({ message: "You can only update your own assigned shifts" });
-      } else if (req.user.role !== "SupportWorker" && !["TeamLeader", "Coordinator", "Admin", "ConsoleManager", "admin", "teamleader", "coordinator", "consolemanager"].includes(req.user.role)) {
+      }
+      
+      // Allow SupportWorkers to update their own shifts, and higher roles to update any shifts
+      const allowedRoles = ["supportworker", "teamleader", "coordinator", "admin", "consolemanager"];
+      if (!allowedRoles.includes(userRole)) {
         console.log("[SHIFT UPDATE] ❌ PERMISSION DENIED - Insufficient role");
         return res.status(403).json({ message: "Insufficient permissions" });
       }
