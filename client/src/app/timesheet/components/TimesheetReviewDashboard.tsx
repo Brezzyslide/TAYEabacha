@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Clock, 
   CheckCircle, 
@@ -18,7 +21,10 @@ import {
   DollarSign,
   TrendingUp,
   Calendar,
-  Download
+  Download,
+  Edit3,
+  Save,
+  Trash2
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +78,9 @@ export default function TimesheetReviewDashboard() {
   const [selectedTimesheet, setSelectedTimesheet] = useState<PendingTimesheet | null>(null);
   const [selectedTimesheetEntries, setSelectedTimesheetEntries] = useState<TimesheetEntry[]>([]);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<TimesheetEntry | null>(null);
+  const [editedEntries, setEditedEntries] = useState<TimesheetEntry[]>([]);
 
   const { data: pendingTimesheets = [], isLoading } = useQuery<PendingTimesheet[]>({
     queryKey: ["/api/admin/timesheets/pending"],
@@ -260,6 +269,36 @@ export default function TimesheetReviewDashboard() {
     },
   });
 
+  const updateEntryMutation = useMutation({
+    mutationFn: async ({ entryId, data }: { entryId: number; data: Partial<TimesheetEntry> }) => {
+      return apiRequest("PUT", `/api/admin/timesheet-entries/${entryId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/timesheets/${selectedTimesheet?.id}/export-pdf`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/stats"] });
+      toast({
+        title: "Entry Updated",
+        description: "Timesheet entry has been updated successfully",
+      });
+    },
+  });
+
+  const deleteEntryMutation = useMutation({
+    mutationFn: async (entryId: number) => {
+      return apiRequest("DELETE", `/api/admin/timesheet-entries/${entryId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/timesheets/${selectedTimesheet?.id}/export-pdf`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/stats"] });
+      toast({
+        title: "Entry Deleted",
+        description: "Timesheet entry has been deleted successfully",
+      });
+    },
+  });
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedTimesheets(pendingTimesheets.map(t => t.id));
@@ -274,6 +313,204 @@ export default function TimesheetReviewDashboard() {
     } else {
       setSelectedTimesheets(prev => prev.filter(id => id !== timesheetId));
     }
+  };
+
+  const enterEditMode = () => {
+    setIsEditMode(true);
+    setEditedEntries(timesheetData?.entries ? [...timesheetData.entries] : []);
+  };
+
+  const exitEditMode = () => {
+    setIsEditMode(false);
+    setEditingEntry(null);
+    setEditedEntries([]);
+  };
+
+  const handleEditEntry = (entry: TimesheetEntry) => {
+    setEditingEntry(entry);
+  };
+
+  const saveEntryEdit = async (entryId: number, updatedData: Partial<TimesheetEntry>) => {
+    try {
+      await updateEntryMutation.mutateAsync({ entryId, data: updatedData });
+      setEditingEntry(null);
+    } catch (error) {
+      console.error('Failed to save entry:', error);
+    }
+  };
+
+  const deleteEntry = async (entryId: number) => {
+    if (window.confirm('Are you sure you want to delete this timesheet entry?')) {
+      try {
+        await deleteEntryMutation.mutateAsync(entryId);
+      } catch (error) {
+        console.error('Failed to delete entry:', error);
+      }
+    }
+  };
+
+  const calculateGrossPay = (hours: number, rate: number) => {
+    return (hours * rate).toFixed(2);
+  };
+
+  // Component for editable timesheet entry row
+  const TimesheetEntryRow = ({ 
+    entry, 
+    isEditMode, 
+    isEditing, 
+    onEdit, 
+    onSave, 
+    onDelete, 
+    onCancel,
+    formatDate,
+    formatCurrency,
+    calculateGrossPay
+  }: any) => {
+    const [editData, setEditData] = useState({
+      totalHours: entry.totalHours,
+      hourlyRate: entry.hourlyRate,
+      breakMinutes: entry.breakMinutes,
+      notes: entry.notes || ''
+    });
+
+    const handleSave = () => {
+      const updatedData = {
+        ...editData,
+        grossPay: calculateGrossPay(parseFloat(editData.totalHours), parseFloat(editData.hourlyRate))
+      };
+      onSave(entry.id, updatedData);
+    };
+
+    if (isEditing) {
+      return (
+        <TableRow className="bg-blue-50">
+          <TableCell>{formatDate(entry.entryDate)}</TableCell>
+          <TableCell>
+            <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
+            <div className="text-xs text-gray-500">
+              {entry.startTime && entry.endTime && (
+                `${format(new Date(entry.startTime), 'h:mm a')} - ${format(new Date(entry.endTime), 'h:mm a')}`
+              )}
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-gray-400" />
+              {entry.clientName || '-'}
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="space-y-2">
+              <div>
+                <Label htmlFor="hours" className="text-xs">Hours</Label>
+                <Input
+                  id="hours"
+                  type="number"
+                  step="0.25"
+                  value={editData.totalHours}
+                  onChange={(e) => setEditData({...editData, totalHours: e.target.value})}
+                  className="w-20 h-8"
+                />
+              </div>
+              <div>
+                <Label htmlFor="break" className="text-xs">Break (min)</Label>
+                <Input
+                  id="break"
+                  type="number"
+                  value={editData.breakMinutes}
+                  onChange={(e) => setEditData({...editData, breakMinutes: parseInt(e.target.value)})}
+                  className="w-20 h-8"
+                />
+              </div>
+            </div>
+          </TableCell>
+          <TableCell>
+            <div>
+              <Label htmlFor="rate" className="text-xs">Rate/hr</Label>
+              <Input
+                id="rate"
+                type="number"
+                step="0.01"
+                value={editData.hourlyRate}
+                onChange={(e) => setEditData({...editData, hourlyRate: e.target.value})}
+                className="w-24 h-8"
+              />
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="font-medium text-green-600">
+              {formatCurrency(calculateGrossPay(parseFloat(editData.totalHours), parseFloat(editData.hourlyRate)))}
+            </div>
+          </TableCell>
+          <TableCell>
+            <Badge variant={entry.isAutoGenerated ? "default" : "secondary"}>
+              {entry.isAutoGenerated ? "Auto" : "Manual"}
+            </Badge>
+          </TableCell>
+          <TableCell>
+            <div className="flex gap-1">
+              <Button size="sm" onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+                <Save className="h-3 w-3" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={onCancel}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return (
+      <TableRow>
+        <TableCell>{formatDate(entry.entryDate)}</TableCell>
+        <TableCell>
+          <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
+          <div className="text-xs text-gray-500">
+            {entry.startTime && entry.endTime && (
+              `${format(new Date(entry.startTime), 'h:mm a')} - ${format(new Date(entry.endTime), 'h:mm a')}`
+            )}
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-gray-400" />
+            {entry.clientName || '-'}
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="font-medium">{parseFloat(entry.totalHours).toFixed(2)}h</div>
+          {entry.breakMinutes > 0 && (
+            <div className="text-xs text-gray-500">
+              -{entry.breakMinutes}min break
+            </div>
+          )}
+        </TableCell>
+        <TableCell>
+          <div className="font-medium">{formatCurrency(entry.hourlyRate)}/hr</div>
+        </TableCell>
+        <TableCell>
+          <div className="font-medium text-green-600">{formatCurrency(entry.grossPay)}</div>
+        </TableCell>
+        <TableCell>
+          <Badge variant={entry.isAutoGenerated ? "default" : "secondary"}>
+            {entry.isAutoGenerated ? "Auto" : "Manual"}
+          </Badge>
+        </TableCell>
+        {isEditMode && (
+          <TableCell>
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" onClick={onEdit}>
+                <Edit3 className="h-3 w-3" />
+              </Button>
+              <Button size="sm" variant="destructive" onClick={onDelete}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </TableCell>
+        )}
+      </TableRow>
+    );
   };
 
   const getStatusBadge = (status: string, autoSubmitted?: boolean) => {
@@ -578,10 +815,33 @@ export default function TimesheetReviewDashboard() {
               {/* Individual Shift Earnings - Replicating Support Worker View */}
               <Card className="border-2 border-slate-200 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Individual Shift Earnings
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Individual Shift Earnings
+                    </CardTitle>
+                    <div className="flex gap-2">
+                      {!isEditMode ? (
+                        <Button
+                          size="sm"
+                          onClick={enterEditMode}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Edit Entries
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={exitEditMode}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {entriesLoading ? (
@@ -601,46 +861,24 @@ export default function TimesheetReviewDashboard() {
                             <TableHead>Rate</TableHead>
                             <TableHead>Earnings</TableHead>
                             <TableHead>Type</TableHead>
+                            {isEditMode && <TableHead>Actions</TableHead>}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {timesheetData.entries.map((entry: any) => (
-                            <TableRow key={entry.id}>
-                              <TableCell>{formatDate(entry.entryDate)}</TableCell>
-                              <TableCell>
-                                <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
-                                <div className="text-xs text-gray-500">
-                                  {entry.startTime && entry.endTime && (
-                                    `${format(new Date(entry.startTime), 'h:mm a')} - ${format(new Date(entry.endTime), 'h:mm a')}`
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-gray-400" />
-                                  {entry.clientName || '-'}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-medium">{parseFloat(entry.totalHours).toFixed(2)}h</div>
-                                {entry.breakMinutes > 0 && (
-                                  <div className="text-xs text-gray-500">
-                                    -{entry.breakMinutes}min break
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-medium">{formatCurrency(entry.hourlyRate)}/hr</div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-medium text-green-600">{formatCurrency(entry.grossPay)}</div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={entry.isAutoGenerated ? "default" : "secondary"}>
-                                  {entry.isAutoGenerated ? "Auto" : "Manual"}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
+                            <TimesheetEntryRow
+                              key={entry.id}
+                              entry={entry}
+                              isEditMode={isEditMode}
+                              isEditing={editingEntry?.id === entry.id}
+                              onEdit={() => handleEditEntry(entry)}
+                              onSave={saveEntryEdit}
+                              onDelete={() => deleteEntry(entry.id)}
+                              onCancel={() => setEditingEntry(null)}
+                              formatDate={formatDate}
+                              formatCurrency={formatCurrency}
+                              calculateGrossPay={calculateGrossPay}
+                            />
                           ))}
                         </TableBody>
                       </Table>

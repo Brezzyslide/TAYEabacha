@@ -11451,6 +11451,148 @@ Maximum 400 words.`;
     }
   });
 
+  // Admin: Update timesheet entry
+  app.put("/api/admin/timesheet-entries/:entryId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const entryId = parseInt(req.params.entryId);
+      const updateData = req.body;
+
+      // Get the current entry to verify it exists and get timesheet details
+      const existingEntry = await db
+        .select({
+          id: timesheetEntries.id,
+          timesheetId: timesheetEntries.timesheetId,
+          tenantId: timesheetEntries.tenantId,
+        })
+        .from(timesheetEntries)
+        .where(and(
+          eq(timesheetEntries.id, entryId),
+          eq(timesheetEntries.tenantId, req.user.tenantId)
+        ))
+        .limit(1);
+
+      if (existingEntry.length === 0) {
+        return res.status(404).json({ message: "Timesheet entry not found" });
+      }
+
+      const entry = existingEntry[0];
+
+      // Update the entry
+      const [updatedEntry] = await db
+        .update(timesheetEntries)
+        .set({
+          ...updateData,
+          updatedAt: new Date(),
+        })
+        .where(and(
+          eq(timesheetEntries.id, entryId),
+          eq(timesheetEntries.tenantId, req.user.tenantId)
+        ))
+        .returning();
+
+      // Recalculate timesheet totals
+      await recalculateTimesheetTotals(entry.timesheetId);
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "admin_edit_timesheet_entry",
+        resourceType: "timesheet_entry",
+        resourceId: entryId,
+        description: `Admin edited timesheet entry`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(updatedEntry);
+    } catch (error) {
+      console.error("Failed to update timesheet entry:", error);
+      res.status(500).json({ message: "Failed to update timesheet entry" });
+    }
+  });
+
+  // Admin: Delete timesheet entry
+  app.delete("/api/admin/timesheet-entries/:entryId", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const entryId = parseInt(req.params.entryId);
+
+      // Get the current entry to verify it exists and get timesheet details
+      const existingEntry = await db
+        .select({
+          id: timesheetEntries.id,
+          timesheetId: timesheetEntries.timesheetId,
+          tenantId: timesheetEntries.tenantId,
+        })
+        .from(timesheetEntries)
+        .where(and(
+          eq(timesheetEntries.id, entryId),
+          eq(timesheetEntries.tenantId, req.user.tenantId)
+        ))
+        .limit(1);
+
+      if (existingEntry.length === 0) {
+        return res.status(404).json({ message: "Timesheet entry not found" });
+      }
+
+      const entry = existingEntry[0];
+
+      // Delete the entry
+      await db
+        .delete(timesheetEntries)
+        .where(and(
+          eq(timesheetEntries.id, entryId),
+          eq(timesheetEntries.tenantId, req.user.tenantId)
+        ));
+
+      // Recalculate timesheet totals
+      await recalculateTimesheetTotals(entry.timesheetId);
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "admin_delete_timesheet_entry",
+        resourceType: "timesheet_entry",
+        resourceId: entryId,
+        description: `Admin deleted timesheet entry`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete timesheet entry:", error);
+      res.status(500).json({ message: "Failed to delete timesheet entry" });
+    }
+  });
+
+  // Helper function to recalculate timesheet totals
+  async function recalculateTimesheetTotals(timesheetId: number) {
+    try {
+      // Get all entries for this timesheet
+      const entries = await db
+        .select({
+          totalHours: timesheetEntries.totalHours,
+          grossPay: timesheetEntries.grossPay,
+        })
+        .from(timesheetEntries)
+        .where(eq(timesheetEntries.timesheetId, timesheetId));
+
+      // Calculate new totals
+      const totalHours = entries.reduce((sum, entry) => sum + parseFloat(entry.totalHours), 0);
+      const totalEarnings = entries.reduce((sum, entry) => sum + parseFloat(entry.grossPay), 0);
+
+      // Update timesheet with new totals
+      await db
+        .update(timesheetsTable)
+        .set({
+          totalHours: totalHours.toFixed(2),
+          totalEarnings: totalEarnings.toFixed(2),
+          updatedAt: new Date(),
+        })
+        .where(eq(timesheetsTable.id, timesheetId));
+    } catch (error) {
+      console.error("Failed to recalculate timesheet totals:", error);
+    }
+  }
+
   // Bulk export timesheets
   app.get("/api/admin/timesheets/bulk-export", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
