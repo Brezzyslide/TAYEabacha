@@ -49,6 +49,28 @@ interface TimesheetEntry {
   clientId?: number;
 }
 
+// Calculate leave accrual based on Australian award standards
+const calculateLeaveAccrual = (totalHours: string, leaveType: 'annual' | 'sick' | 'long_service'): string => {
+  const hoursWorked = parseFloat(totalHours);
+  
+  switch (leaveType) {
+    case 'annual':
+      // 4 weeks annual leave = 152 hours per year for full-time (38 hours/week)
+      // Accrual rate: 152 hours / 1976 hours (52 weeks * 38 hours) = 0.0769 hours per hour worked
+      return (hoursWorked * 0.0769).toFixed(2);
+    case 'sick':
+      // 10 days sick leave = 76 hours per year for full-time
+      // Accrual rate: 76 hours / 1976 hours = 0.0385 hours per hour worked
+      return (hoursWorked * 0.0385).toFixed(2);
+    case 'long_service':
+      // 8.67 weeks long service leave after 10 years = 329.46 hours / 10 years = 32.95 hours per year
+      // Accrual rate: 32.95 hours / 1976 hours = 0.0167 hours per hour worked
+      return (hoursWorked * 0.0167).toFixed(2);
+    default:
+      return '0.00';
+  }
+};
+
 export default function TimesheetHistoryTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -613,33 +635,79 @@ export default function TimesheetHistoryTab() {
                 </CardContent>
               </Card>
 
-              {/* Summary Details */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-sm text-slate-600">Employment Type</div>
-                    <div className="font-medium">{selectedTimesheet.employmentType}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-sm text-slate-600">Pay Classification</div>
-                    <div className="font-medium">{selectedTimesheet.payLevel}.{selectedTimesheet.payPoint}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-sm text-slate-600">Tax Withheld</div>
-                    <div className="font-medium">{formatCurrency(selectedTimesheet.totalTax)}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="text-sm text-slate-600">Net Pay</div>
-                    <div className="font-medium text-green-600">{formatCurrency(selectedTimesheet.netPay)}</div>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Payroll Summary */}
+              <Card className="border-2 border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Payroll Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <span className="text-sm text-slate-600">Employment Type</span>
+                      <div className="font-medium capitalize">
+                        {timesheetData?.timesheet?.employmentType || selectedTimesheet.employmentType || 'Not Set'}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <span className="text-sm text-slate-600">Pay Classification</span>
+                      <div className="font-medium">
+                        {timesheetData?.timesheet?.payLevel && timesheetData?.timesheet?.payPoint 
+                          ? `Level ${timesheetData.timesheet.payLevel}, Point ${timesheetData.timesheet.payPoint}`
+                          : selectedTimesheet.payLevel && selectedTimesheet.payPoint
+                            ? `Level ${selectedTimesheet.payLevel}, Point ${selectedTimesheet.payPoint}`
+                            : 'Not Set'
+                        }
+                      </div>
+                    </div>
+                    <div className="p-4 bg-orange-50 rounded-lg">
+                      <span className="text-sm text-slate-600">Tax Withheld</span>
+                      <div className="font-medium text-orange-600">
+                        {formatCurrency(timesheetData?.timesheet?.totalTax || selectedTimesheet.totalTax || 0)}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-emerald-50 rounded-lg">
+                      <span className="text-sm text-slate-600">Net Pay</span>
+                      <div className="font-medium text-emerald-600">
+                        {formatCurrency(timesheetData?.timesheet?.netPay || selectedTimesheet.netPay || 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Leave Accrual for Permanent Staff */}
+                  {((timesheetData?.timesheet?.employmentType || selectedTimesheet.employmentType) === 'permanent' || 
+                    (timesheetData?.timesheet?.employmentType || selectedTimesheet.employmentType) === 'permanent_part_time') && (
+                    <div className="mt-6 p-4 bg-indigo-50 rounded-lg">
+                      <h4 className="font-medium text-indigo-900 mb-3 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Leave Accrual (Current Pay Period)
+                      </h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <span className="text-sm text-indigo-600">Annual Leave</span>
+                          <div className="font-medium">
+                            {calculateLeaveAccrual(timesheetData?.timesheet?.totalHours || selectedTimesheet.totalHours, 'annual')} hours
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm text-indigo-600">Sick Leave</span>
+                          <div className="font-medium">
+                            {calculateLeaveAccrual(timesheetData?.timesheet?.totalHours || selectedTimesheet.totalHours, 'sick')} hours
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-sm text-indigo-600">Long Service Leave</span>
+                          <div className="font-medium">
+                            {calculateLeaveAccrual(timesheetData?.timesheet?.totalHours || selectedTimesheet.totalHours, 'long_service')} hours
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
           <DialogFooter className="flex justify-between">
