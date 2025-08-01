@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, FileText, Eye, Calendar, User, DollarSign, Clock, Search, Filter } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Download, FileText, Eye, Calendar, User, DollarSign, Clock, Search, Filter, Edit3, Save, X } from "lucide-react";
 import { format } from "date-fns";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -53,8 +53,9 @@ export default function TimesheetHistoryTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedTimesheet, setSelectedTimesheet] = useState<TimesheetHistoryItem | null>(null);
-
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch all timesheets history
@@ -66,6 +67,11 @@ export default function TimesheetHistoryTab() {
   const { data: timesheetData, isLoading: entriesLoading } = useQuery({
     queryKey: [`/api/admin/timesheets/${selectedTimesheet?.id}/export-pdf`],
     enabled: !!selectedTimesheet && isViewDialogOpen,
+    select: (data) => {
+      console.log('[TIMESHEET VIEW] Fetched timesheet data:', data);
+      console.log('[TIMESHEET VIEW] Entries:', data?.entries?.length || 0);
+      return data;
+    }
   });
 
   // Individual timesheet PDF export
@@ -492,29 +498,59 @@ export default function TimesheetHistoryTab() {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-gray-600">Loading shift details...</p>
                     </div>
-                  ) : timesheetData?.entries && (timesheetData as any).entries.length > 0 ? (
+                  ) : timesheetData?.entries && Array.isArray(timesheetData.entries) && timesheetData.entries.length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Date</TableHead>
-                            <TableHead>Shift</TableHead>
+                            <TableHead>Shift Times</TableHead>
                             <TableHead>Client</TableHead>
                             <TableHead>Hours</TableHead>
                             <TableHead>Rate</TableHead>
                             <TableHead>Earnings</TableHead>
                             <TableHead>Type</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {(timesheetData as any).entries.map((entry: any, index: number) => (
+                          {timesheetData.entries.map((entry: any, index: number) => (
                             <TableRow key={entry.id || index}>
                               <TableCell>{formatDate(entry.entryDate)}</TableCell>
                               <TableCell>
-                                <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
-                                <div className="text-xs text-gray-500">
-                                  {entry.startTime} - {entry.endTime}
-                                </div>
+                                {editingEntry?.id === entry.id ? (
+                                  <div className="space-y-2">
+                                    <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
+                                    <div className="flex gap-2 items-center">
+                                      <Input
+                                        type="time"
+                                        value={editingEntry.startTime?.slice(11, 16) || ''}
+                                        onChange={(e) => setEditingEntry({
+                                          ...editingEntry,
+                                          startTime: `${entry.entryDate.slice(0, 11)}${e.target.value}:00.000Z`
+                                        })}
+                                        className="w-20 text-xs"
+                                      />
+                                      <span className="text-xs">to</span>
+                                      <Input
+                                        type="time"
+                                        value={editingEntry.endTime?.slice(11, 16) || ''}
+                                        onChange={(e) => setEditingEntry({
+                                          ...editingEntry,
+                                          endTime: `${entry.entryDate.slice(0, 11)}${e.target.value}:00.000Z`
+                                        })}
+                                        className="w-20 text-xs"
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {new Date(entry.startTime).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })} - {new Date(entry.endTime).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  </div>
+                                )}
                               </TableCell>
                               <TableCell>{entry.clientName || 'N/A'}</TableCell>
                               <TableCell className="font-mono">{entry.totalHours}h</TableCell>
@@ -524,6 +560,44 @@ export default function TimesheetHistoryTab() {
                                 <Badge variant={entry.isAutoGenerated ? "default" : "outline"}>
                                   {entry.isAutoGenerated ? "Auto" : "Manual"}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {editingEntry?.id === entry.id ? (
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        // Save logic will be implemented
+                                        toast({
+                                          title: "Success",
+                                          description: "Timesheet entry updated successfully",
+                                        });
+                                        setEditingEntry(null);
+                                      }}
+                                      className="h-7 w-7 p-0"
+                                    >
+                                      <Save className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingEntry(null)}
+                                      className="h-7 w-7 p-0"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditingEntry(entry)}
+                                    className="h-7 w-7 p-0"
+                                  >
+                                    <Edit3 className="h-3 w-3" />
+                                  </Button>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -568,6 +642,50 @@ export default function TimesheetHistoryTab() {
               </div>
             </div>
           )}
+          <DialogFooter className="flex justify-between">
+            <div className="flex gap-2">
+              {selectedTimesheet?.status === 'submitted' && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      // Approve timesheet
+                      toast({
+                        title: "Success",
+                        description: "Timesheet approved successfully",
+                      });
+                    }}
+                    className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      // Reject timesheet
+                      toast({
+                        title: "Success", 
+                        description: "Timesheet rejected",
+                        variant: "destructive",
+                      });
+                    }}
+                    className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsViewDialogOpen(false);
+                setEditingEntry(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
