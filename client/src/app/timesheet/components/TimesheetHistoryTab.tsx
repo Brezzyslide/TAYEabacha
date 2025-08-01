@@ -62,9 +62,9 @@ export default function TimesheetHistoryTab() {
     queryKey: ["/api/admin/timesheets/history"],
   });
 
-  // Fetch detailed timesheet entries when viewing
-  const { data: timesheetEntries = [], isLoading: entriesLoading } = useQuery<TimesheetEntry[]>({
-    queryKey: ["/api/admin/timesheets", selectedTimesheet?.id, "entries"],
+  // Fetch detailed timesheet data when viewing (same data as PDF export)
+  const { data: timesheetData, isLoading: entriesLoading } = useQuery({
+    queryKey: [`/api/admin/timesheets/${selectedTimesheet?.id}/export-pdf`],
     enabled: !!selectedTimesheet && isViewDialogOpen,
   });
 
@@ -492,7 +492,7 @@ export default function TimesheetHistoryTab() {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-gray-600">Loading shift details...</p>
                     </div>
-                  ) : timesheetEntries.length > 0 ? (
+                  ) : timesheetData?.entries && timesheetData.entries.length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
@@ -507,8 +507,8 @@ export default function TimesheetHistoryTab() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {timesheetEntries.map((entry) => (
-                            <TableRow key={entry.id}>
+                          {timesheetData.entries.map((entry: any, index: number) => (
+                            <TableRow key={entry.id || index}>
                               <TableCell>{formatDate(entry.entryDate)}</TableCell>
                               <TableCell>
                                 <div className="font-medium">{entry.shiftTitle || 'General Shift'}</div>
