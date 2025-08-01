@@ -11457,17 +11457,18 @@ Maximum 400 words.`;
       const entryId = parseInt(req.params.entryId);
       const updateData = req.body;
 
-      // Get the current entry to verify it exists and get timesheet details
+      // Get the current entry to verify it exists and check tenant access through timesheet
       const existingEntry = await db
         .select({
           id: timesheetEntries.id,
           timesheetId: timesheetEntries.timesheetId,
-          tenantId: timesheetEntries.tenantId,
+          tenantId: timesheetsTable.tenantId,
         })
         .from(timesheetEntries)
+        .innerJoin(timesheetsTable, eq(timesheetEntries.timesheetId, timesheetsTable.id))
         .where(and(
           eq(timesheetEntries.id, entryId),
-          eq(timesheetEntries.tenantId, req.user.tenantId)
+          eq(timesheetsTable.tenantId, req.user.tenantId)
         ))
         .limit(1);
 
@@ -11478,17 +11479,19 @@ Maximum 400 words.`;
       const entry = existingEntry[0];
 
       // Update the entry
-      const [updatedEntry] = await db
+      await db
         .update(timesheetEntries)
         .set({
           ...updateData,
-          updatedAt: new Date(),
         })
-        .where(and(
-          eq(timesheetEntries.id, entryId),
-          eq(timesheetEntries.tenantId, req.user.tenantId)
-        ))
-        .returning();
+        .where(eq(timesheetEntries.id, entryId));
+
+      // Get the updated entry
+      const [updatedEntry] = await db
+        .select()
+        .from(timesheetEntries)
+        .where(eq(timesheetEntries.id, entryId))
+        .limit(1);
 
       // Recalculate timesheet totals
       await recalculateTimesheetTotals(entry.timesheetId);
@@ -11515,17 +11518,18 @@ Maximum 400 words.`;
     try {
       const entryId = parseInt(req.params.entryId);
 
-      // Get the current entry to verify it exists and get timesheet details
+      // Get the current entry to verify it exists and check tenant access through timesheet
       const existingEntry = await db
         .select({
           id: timesheetEntries.id,
           timesheetId: timesheetEntries.timesheetId,
-          tenantId: timesheetEntries.tenantId,
+          tenantId: timesheetsTable.tenantId,
         })
         .from(timesheetEntries)
+        .innerJoin(timesheetsTable, eq(timesheetEntries.timesheetId, timesheetsTable.id))
         .where(and(
           eq(timesheetEntries.id, entryId),
-          eq(timesheetEntries.tenantId, req.user.tenantId)
+          eq(timesheetsTable.tenantId, req.user.tenantId)
         ))
         .limit(1);
 
@@ -11538,10 +11542,7 @@ Maximum 400 words.`;
       // Delete the entry
       await db
         .delete(timesheetEntries)
-        .where(and(
-          eq(timesheetEntries.id, entryId),
-          eq(timesheetEntries.tenantId, req.user.tenantId)
-        ));
+        .where(eq(timesheetEntries.id, entryId));
 
       // Recalculate timesheet totals
       await recalculateTimesheetTotals(entry.timesheetId);
