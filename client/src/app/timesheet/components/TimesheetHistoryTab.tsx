@@ -451,7 +451,7 @@ export default function TimesheetHistoryTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Timesheet Details - {selectedTimesheet?.userName}
+              Timesheet Details - {selectedTimesheet?.userName || (timesheetData as any)?.staff?.name || (timesheetData as any)?.user?.fullName || 'Staff Member'}
             </DialogTitle>
           </DialogHeader>
           {selectedTimesheet && (
