@@ -50,19 +50,98 @@ export default function TimesheetHistoryTab() {
       
       const data = await response.json();
       
-      // Generate PDF using the data (simplified for now - returns JSON data)
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json'
+      // Import jsPDF dynamically
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF();
+      
+      // Company header
+      pdf.setFontSize(18);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(data.company?.name || 'Company Name', 20, 25);
+      
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      if (data.company?.businessAddress) {
+        const addressLines = data.company.businessAddress.split('\n');
+        addressLines.forEach((line, index) => {
+          pdf.text(line, 20, 35 + (index * 5));
+        });
+      }
+      
+      // Timesheet title
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("TIMESHEET REPORT", 20, 65);
+      
+      // Employee details
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Staff Member: ${data.timesheet.userName}`, 20, 80);
+      pdf.text(`Email: ${data.timesheet.userEmail}`, 20, 90);
+      pdf.text(`Employment Type: ${data.timesheet.employmentType}`, 20, 100);
+      pdf.text(`Pay Level: ${data.timesheet.payLevel}.${data.timesheet.payPoint}`, 20, 110);
+      
+      // Pay period
+      pdf.text(`Pay Period: ${data.timesheet.payPeriodStart} to ${data.timesheet.payPeriodEnd}`, 20, 125);
+      pdf.text(`Status: ${data.timesheet.status.toUpperCase()}`, 20, 135);
+      
+      // Summary totals
+      pdf.setFont("helvetica", "bold");
+      pdf.text("SUMMARY", 20, 155);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Total Hours: ${data.timesheet.totalHours}`, 20, 165);
+      pdf.text(`Gross Pay: $${data.timesheet.totalEarnings}`, 20, 175);
+      pdf.text(`Tax: $${data.timesheet.totalTax}`, 20, 185);
+      pdf.text(`Net Pay: $${data.timesheet.netPay}`, 20, 195);
+      
+      // Entries table header
+      let yPos = 215;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("SHIFT DETAILS", 20, yPos);
+      yPos += 15;
+      
+      // Table headers
+      pdf.setFontSize(9);
+      pdf.text("Date", 20, yPos);
+      pdf.text("Start", 50, yPos);
+      pdf.text("End", 75, yPos);
+      pdf.text("Break", 95, yPos);
+      pdf.text("Hours", 115, yPos);
+      pdf.text("Rate", 135, yPos);
+      pdf.text("Gross", 155, yPos);
+      pdf.text("Client", 175, yPos);
+      
+      yPos += 5;
+      pdf.line(20, yPos, 190, yPos); // Header line
+      yPos += 10;
+      
+      // Table data
+      pdf.setFont("helvetica", "normal");
+      data.entries.forEach((entry) => {
+        if (yPos > 270) { // New page if needed
+          pdf.addPage();
+          yPos = 30;
+        }
+        
+        pdf.text(entry.entryDate, 20, yPos);
+        pdf.text(entry.startTime, 50, yPos);
+        pdf.text(entry.endTime, 75, yPos);
+        pdf.text(`${entry.breakMinutes}m`, 95, yPos);
+        pdf.text(`${entry.totalHours}h`, 115, yPos);
+        pdf.text(`$${entry.hourlyRate}`, 135, yPos);
+        pdf.text(`$${entry.grossPay}`, 155, yPos);
+        pdf.text(entry.clientName || 'N/A', 175, yPos);
+        
+        yPos += 10;
       });
       
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `timesheet-${data.timesheet.userName}-${data.timesheet.payPeriodStart}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Footer
+      pdf.setFontSize(8);
+      pdf.text(`Exported by: ${data.exportedBy}`, 20, 280);
+      pdf.text(`Export Date: ${new Date(data.exportedAt).toLocaleDateString()}`, 120, 280);
+      
+      // Save the PDF
+      pdf.save(`timesheet-${data.timesheet.userName}-${data.timesheet.payPeriodStart}.pdf`);
     },
     onSuccess: () => {
       toast({
@@ -89,11 +168,35 @@ export default function TimesheetHistoryTab() {
       const response = await fetch(`/api/admin/timesheets/bulk-export?${params}`);
       if (!response.ok) throw new Error("Failed to export timesheets");
       
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const data = await response.json();
+      
+      // Generate CSV format for bulk export
+      const csvContent = [
+        // CSV Header
+        'Staff Name,Email,Pay Period Start,Pay Period End,Status,Total Hours,Gross Pay,Net Pay,Employment Type,Pay Level'
+      ];
+      
+      // Add timesheet data
+      data.timesheets.forEach((timesheet) => {
+        csvContent.push([
+          timesheet.userName,
+          timesheet.userEmail,
+          timesheet.payPeriodStart,
+          timesheet.payPeriodEnd,
+          timesheet.status,
+          timesheet.totalHours,
+          timesheet.totalEarnings,
+          timesheet.netPay,
+          timesheet.employmentType,
+          `${timesheet.payLevel}.${timesheet.payPoint}`
+        ].join(','));
+      });
+      
+      const csvBlob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(csvBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `timesheets-bulk-export-${new Date().toISOString().split('T')[0]}.zip`;
+      a.download = `timesheets-bulk-export-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

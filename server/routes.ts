@@ -11390,7 +11390,7 @@ Maximum 400 words.`;
 
       // Set response headers for PDF download
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename="timesheet-${timesheet.userName}-${timesheet.payPeriodStart}.json"`);
+      res.setHeader('Content-Disposition', `attachment; filename="timesheet-data-${timesheet.userName}-${timesheet.payPeriodStart}.json"`);
 
       res.json(pdfData);
     } catch (error) {
