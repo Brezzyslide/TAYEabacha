@@ -22,22 +22,8 @@ import { format } from "date-fns";
 const incidentSchema = z.object({
   clientId: z.number({ required_error: "Please select a client" }),
   dateTime: z.string().min(1, "Date and time is required"),
-  location: z.string().min(1, "Location is required"),
-  witnessName: z.string().optional(),
-  witnessPhone: z.string().optional(),
   types: z.array(z.string()).min(1, "At least one incident type is required"),
-  isNDISReportable: z.boolean().default(false),
-  triggers: z.array(z.object({
-    label: z.string(),
-    notes: z.string().optional(),
-  })).default([]),
-  intensityRating: z.number().min(1).max(10),
-  staffResponses: z.array(z.object({
-    label: z.string(),
-    notes: z.string().optional(),
-  })).default([]),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  externalRef: z.string().optional(),
 });
 
 type IncidentFormData = z.infer<typeof incidentSchema>;
@@ -46,6 +32,7 @@ interface CreateIncidentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  defaultClientId?: number;
 }
 
 const INCIDENT_TYPES = [
@@ -91,25 +78,17 @@ const RESPONSE_OPTIONS = [
   "Other"
 ];
 
-export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateIncidentModalProps) {
-  const [selectedTriggers, setSelectedTriggers] = useState<Array<{ label: string; notes?: string }>>([]);
-  const [selectedResponses, setSelectedResponses] = useState<Array<{ label: string; notes?: string }>>([]);
-  const [newTrigger, setNewTrigger] = useState("");
-  const [newResponse, setNewResponse] = useState("");
+export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClientId }: CreateIncidentModalProps) {
 
   const { toast } = useToast();
 
   const form = useForm<IncidentFormData>({
     resolver: zodResolver(incidentSchema),
     defaultValues: {
+      clientId: defaultClientId,
       types: [],
-      isNDISReportable: false,
-      triggers: [],
-      intensityRating: 5,
-      staffResponses: [],
       description: "",
       dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"), // Auto-set to current time
-      location: "",
     },
   });
 
@@ -123,8 +102,6 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
       apiRequest("POST", "/api/incident-reports", {
         ...data,
         dateTime: new Date(data.dateTime).toISOString(),
-        triggers: selectedTriggers,
-        staffResponses: selectedResponses,
       }),
     onSuccess: () => {
       toast({
@@ -133,8 +110,6 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
       });
       onSuccess();
       form.reset();
-      setSelectedTriggers([]);
-      setSelectedResponses([]);
     },
     onError: () => {
       toast({
@@ -160,48 +135,19 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
     createIncidentMutation.mutate(submissionData);
   };
 
-  const addTrigger = () => {
-    if (newTrigger && !selectedTriggers.find(t => t.label === newTrigger)) {
-      setSelectedTriggers([...selectedTriggers, { label: newTrigger, notes: "" }]);
-      setNewTrigger("");
-    }
-  };
 
-  const removeTrigger = (index: number) => {
-    setSelectedTriggers(selectedTriggers.filter((_, i) => i !== index));
-  };
-
-  const updateTriggerNotes = (index: number, notes: string) => {
-    const updated = [...selectedTriggers];
-    updated[index].notes = notes;
-    setSelectedTriggers(updated);
-  };
-
-  const addResponse = () => {
-    if (newResponse && !selectedResponses.find(r => r.label === newResponse)) {
-      setSelectedResponses([...selectedResponses, { label: newResponse, notes: "" }]);
-      setNewResponse("");
-    }
-  };
-
-  const removeResponse = (index: number) => {
-    setSelectedResponses(selectedResponses.filter((_, i) => i !== index));
-  };
-
-  const updateResponseNotes = (index: number, notes: string) => {
-    const updated = [...selectedResponses];
-    updated[index].notes = notes;
-    setSelectedResponses(updated);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="incident-form-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-500" />
             Create Incident Report
           </DialogTitle>
+          <p id="incident-form-description" className="text-sm text-muted-foreground">
+            Create a new incident report with basic details and description.
+          </p>
         </DialogHeader>
 
         <Form {...form}>
@@ -252,61 +198,7 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Living room, Kitchen, Community area" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="witnessName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Witness Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Name of witness (if any)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="witnessPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Witness Phone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Witness contact number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="externalRef"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>External Reference</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Police report, medical record, etc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -347,171 +239,9 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess }: CreateInc
               </CardContent>
             </Card>
 
-            {/* NDIS Reportable */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">NDIS Reportable Incident</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="isNDISReportable"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          This incident is reportable to the NDIS Commission
-                        </FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          Check this if the incident involves serious injury, death, abuse, neglect, or exploitation
-                        </p>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
 
-            {/* Triggers */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Triggers/Contributing Factors</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Select value={newTrigger} onValueChange={setNewTrigger}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select a trigger" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TRIGGER_OPTIONS.map((trigger) => (
-                        <SelectItem key={trigger} value={trigger}>{trigger}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" onClick={addTrigger} disabled={!newTrigger}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
 
-                {selectedTriggers.length > 0 && (
-                  <div className="space-y-2">
-                    {selectedTriggers.map((trigger, index) => (
-                      <div key={index} className="flex items-start gap-2 p-3 border rounded">
-                        <Badge variant="outline" className="mt-1">{trigger.label}</Badge>
-                        <Input
-                          placeholder="Additional notes (optional)"
-                          value={trigger.notes || ""}
-                          onChange={(e) => updateTriggerNotes(index, e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => removeTrigger(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Intensity Rating */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Intensity Rating *</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="intensityRating"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Label>Intensity Level: {field.value}/10</Label>
-                          <Badge variant={field.value >= 8 ? "destructive" : field.value >= 5 ? "default" : "secondary"}>
-                            {field.value >= 8 ? "High" : field.value >= 5 ? "Medium" : "Low"}
-                          </Badge>
-                        </div>
-                        <Slider
-                          min={1}
-                          max={10}
-                          step={1}
-                          value={[field.value]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>1 - Minor</span>
-                          <span>5 - Moderate</span>
-                          <span>10 - Severe</span>
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Staff Responses */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Staff Responses</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Select value={newResponse} onValueChange={setNewResponse}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select a response" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RESPONSE_OPTIONS.map((response) => (
-                        <SelectItem key={response} value={response}>{response}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" onClick={addResponse} disabled={!newResponse}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {selectedResponses.length > 0 && (
-                  <div className="space-y-2">
-                    {selectedResponses.map((response, index) => (
-                      <div key={index} className="flex items-start gap-2 p-3 border rounded">
-                        <Badge variant="outline" className="mt-1">{response.label}</Badge>
-                        <Input
-                          placeholder="Additional notes (optional)"
-                          value={response.notes || ""}
-                          onChange={(e) => updateResponseNotes(index, e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => removeResponse(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
             {/* Description */}
             <Card>

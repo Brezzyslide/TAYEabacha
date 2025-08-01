@@ -529,8 +529,8 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
       {/* Modals */}
       {showCreateModal && (
         <CreateIncidentModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
+          open={showCreateModal}
+          onOpenChange={(open) => setShowCreateModal(open)}
           onSuccess={() => {
             setShowCreateModal(false);
             queryClient.invalidateQueries({ queryKey: ["/api/incident-reports", { clientId }] });
