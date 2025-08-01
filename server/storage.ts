@@ -2600,16 +2600,16 @@ export class DatabaseStorage implements IStorage {
       incidentId: incidentReports.incidentId,
       description: incidentReports.description,
       clientId: incidentReports.clientId,
-      userId: incidentReports.userId,
+      userId: incidentReports.staffId,
       dateTime: incidentReports.dateTime,
-      incidentType: incidentReports.incidentType,
+      types: incidentReports.types,
       status: incidentReports.status,
       clientName: clients.fullName,
       reporterName: users.fullName,
     })
     .from(incidentReports)
     .leftJoin(clients, eq(incidentReports.clientId, clients.id))
-    .leftJoin(users, eq(incidentReports.userId, users.id))
+    .leftJoin(users, eq(incidentReports.staffId, users.id))
     .where(and(
       eq(incidentReports.tenantId, tenantId),
       inArray(incidentReports.clientId, assignedClientIds)
