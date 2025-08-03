@@ -108,17 +108,26 @@ export default function IncidentDashboard() {
   }
 
   const filteredIncidents = (incidents || []).filter((incident: IncidentReport) => {
-    const matchesSearch = 
-      incident.incidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.description.toLowerCase().includes(searchTerm.toLowerCase());
+    // Safely handle potentially undefined properties
+    const safeIncidentId = incident.incidentId || '';
+    const safeClientName = incident.clientName || '';
+    const safeDescription = incident.description || '';
+    const safeStatus = incident.status || '';
+    const safeTypes = incident.types || [];
     
-    const matchesStatus = statusFilter === "all" || incident.status.toLowerCase() === statusFilter;
-    const matchesType = typeFilter === "all" || incident.types.some(type => type.toLowerCase().includes(typeFilter.toLowerCase()));
+    const matchesSearch = searchTerm === '' || 
+      safeIncidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      safeClientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      safeDescription.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || safeStatus.toLowerCase() === statusFilter;
+    const matchesType = typeFilter === "all" || safeTypes.some(type => 
+      (type || '').toLowerCase().includes(typeFilter.toLowerCase())
+    );
     const matchesTab = 
       activeTab === "all" ||
-      (activeTab === "open" && incident.status === "Open") ||
-      (activeTab === "closed" && incident.status === "Closed");
+      (activeTab === "open" && safeStatus === "Open") ||
+      (activeTab === "closed" && safeStatus === "Closed");
 
     return matchesSearch && matchesStatus && matchesType && matchesTab;
   });
