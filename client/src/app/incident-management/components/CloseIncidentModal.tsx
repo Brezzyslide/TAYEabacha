@@ -39,28 +39,19 @@ const closureSchema = z.object({
 type ClosureFormData = z.infer<typeof closureSchema>;
 
 interface IncidentReport {
-  report: {
-    id: number;
-    incidentId: string;
-    dateTime: string;
-    location: string;
-    types: string[];
-    isNDISReportable: boolean;
-    intensityRating: number;
-    description: string;
-    status: string;
-  };
-  client: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    clientId: string;
-  };
-  staff: {
-    id: number;
-    firstName: string;
-    lastName: string;
-  };
+  id: number;
+  incidentId: string;
+  dateTime: string;
+  location: string;
+  types: string[];
+  isNDISReportable: boolean;
+  intensityRating: number;
+  description: string;
+  status: string;
+  clientFirstName: string;
+  clientLastName: string;
+  clientIdNumber: string;
+  staffFullName: string;
 }
 
 interface CloseIncidentModalProps {
@@ -76,7 +67,7 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
   const form = useForm<ClosureFormData>({
     resolver: zodResolver(closureSchema),
     defaultValues: {
-      incidentId: incident.report.incidentId,
+      incidentId: incident.incidentId,
       controlReview: false,
       implemented: false,
       controlLevel: "None",
@@ -135,7 +126,7 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-500" />
-            Close Incident: {incident.report.incidentId}
+            Close Incident: {incident.incidentId}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             Complete the incident closure process with detailed review and documentation
@@ -153,21 +144,21 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium">Client:</span> {incident.client.firstName} {incident.client.lastName} ({incident.client.clientId})
+                <span className="font-medium">Client:</span> {incident.clientFirstName} {incident.clientLastName} ({incident.clientIdNumber})
               </div>
               <div>
-                <span className="font-medium">Staff:</span> {incident.staff.firstName} {incident.staff.lastName}
+                <span className="font-medium">Staff:</span> {incident.staffFullName}
               </div>
               <div>
-                <span className="font-medium">Location:</span> {incident.report.location}
+                <span className="font-medium">Location:</span> {incident.location}
               </div>
               <div>
-                <span className="font-medium">Intensity:</span> {incident.report.intensityRating}/10
+                <span className="font-medium">Intensity:</span> {incident.intensityRating}/10
               </div>
               <div className="md:col-span-2">
                 <span className="font-medium">Types:</span>
                 <div className="flex gap-1 mt-1">
-                  {incident.report.types.map((type, index) => (
+                  {incident.types.map((type, index) => (
                     <Badge key={index} variant="outline" className="text-xs">{type}</Badge>
                   ))}
                 </div>

@@ -70,7 +70,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
 
   const handleExportPDF = async () => {
     try {
-      const response = await fetch(`/api/incident-reports/${incident.report.incidentId}/pdf`);
+      const response = await fetch(`/api/incident-reports/${incident.incidentId}/pdf`);
       if (!response.ok) throw new Error('Failed to generate PDF');
       
       const blob = await response.blob();
@@ -78,7 +78,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `incident-report-${incident.report.incidentId}.pdf`;
+      a.download = `incident-report-${incident.incidentId}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -147,11 +147,11 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Incident Report: {incident.report.incidentId}
+              Incident Report: {incident.incidentId}
             </DialogTitle>
             <div className="flex flex-wrap items-center gap-2">
-              {getStatusBadge(incident.report.status)}
-              {incident.report.isNDISReportable && (
+              {getStatusBadge(incident.status)}
+              {incident.isNDISReportable && (
                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                   NDIS Reportable
                 </Badge>
@@ -202,7 +202,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <Clock className="h-4 w-4" />
                     Date & Time
                   </div>
-                  <p className="font-medium">{format(new Date(incident.report.dateTime), "PPP 'at' p")}</p>
+                  <p className="font-medium">{format(new Date(incident.dateTime), "PPP 'at' p")}</p>
                 </div>
 
                 <div className="space-y-1">
@@ -210,32 +210,32 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <MapPin className="h-4 w-4" />
                     Location
                   </div>
-                  <p className="font-medium">{incident.report.location}</p>
+                  <p className="font-medium">{incident.location}</p>
                 </div>
 
-                {incident.report.witnessName && (
+                {incident.witnessName && (
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <User className="h-4 w-4" />
                       Witness
                     </div>
-                    <p className="font-medium">{incident.report.witnessName}</p>
-                    {incident.report.witnessPhone && (
+                    <p className="font-medium">{incident.witnessName}</p>
+                    {incident.witnessPhone && (
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Phone className="h-3 w-3" />
-                        {incident.report.witnessPhone}
+                        {incident.witnessPhone}
                       </div>
                     )}
                   </div>
                 )}
 
-                {incident.report.externalRef && (
+                {incident.externalRef && (
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <ExternalLink className="h-4 w-4" />
                       External Reference
                     </div>
-                    <p className="font-medium">{incident.report.externalRef}</p>
+                    <p className="font-medium">{incident.externalRef}</p>
                   </div>
                 )}
               </div>
@@ -255,7 +255,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                 <div>
                   <h4 className="font-medium mb-2">Incident Types</h4>
                   <div className="flex flex-wrap gap-2">
-                    {incident.report.types.map((type, index) => (
+                    {incident.types.map((type, index) => (
                       <Badge key={index} variant="outline">{type}</Badge>
                     ))}
                   </div>
@@ -263,13 +263,13 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
 
                 <div>
                   <h4 className="font-medium mb-2">Intensity Rating</h4>
-                  {getIntensityBadge(incident.report.intensityRating)}
+                  {getIntensityBadge(incident.intensityRating)}
                 </div>
 
                 <div>
                   <h4 className="font-medium mb-2">Description</h4>
                   <div className="bg-muted/50 p-4 rounded-lg">
-                    <p className="whitespace-pre-wrap">{incident.report.description}</p>
+                    <p className="whitespace-pre-wrap">{incident.description}</p>
                   </div>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
           </Card>
 
           {/* Triggers */}
-          {incident.report.triggers.length > 0 && (
+          {incident.triggers && incident.triggers.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -287,7 +287,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {incident.report.triggers.map((trigger, index) => (
+                  {incident.triggers.map((trigger, index) => (
                     <div key={index} className="border rounded-lg p-3">
                       <div className="flex items-start gap-2">
                         <Badge variant="outline" className="mt-0.5">{trigger.label}</Badge>
@@ -305,7 +305,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
           )}
 
           {/* Staff Responses */}
-          {incident.report.staffResponses.length > 0 && (
+          {incident.staffResponses && incident.staffResponses.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -315,7 +315,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {incident.report.staffResponses.map((response, index) => (
+                  {incident.staffResponses.map((response, index) => (
                     <div key={index} className="border rounded-lg p-3">
                       <div className="flex items-start gap-2">
                         <Badge variant="outline" className="mt-0.5">{response.label}</Badge>
@@ -459,7 +459,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                   <div className="flex-1">
                     <p className="font-medium">Incident Occurred</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(incident.report.dateTime), "PPP 'at' p")}
+                      {format(new Date(incident.dateTime), "PPP 'at' p")}
                     </p>
                   </div>
                 </div>
@@ -469,18 +469,18 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                   <div className="flex-1">
                     <p className="font-medium">Report Created</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(incident.report.createdAt), "PPP 'at' p")}
+                      {format(new Date(incident.createdAt), "PPP 'at' p")}
                     </p>
                   </div>
                 </div>
 
-                {incident.report.updatedAt !== incident.report.createdAt && (
+                {incident.updatedAt !== incident.createdAt && (
                   <div className="flex items-center gap-3 pb-2 border-b">
                     <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                     <div className="flex-1">
                       <p className="font-medium">Report Updated</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(incident.report.updatedAt), "PPP 'at' p")}
+                        {format(new Date(incident.updatedAt), "PPP 'at' p")}
                       </p>
                     </div>
                   </div>
