@@ -1048,18 +1048,51 @@ export class DatabaseStorage implements IStorage {
   async getIncidentReportsWithClosures(tenantId: number): Promise<any[]> {
     try {
       return await db.select({
-        report: incidentReports,
-        closure: incidentClosures,
-        client: {
-          id: clients.id,
-          firstName: clients.firstName,
-          lastName: clients.lastName,
-          clientId: clients.clientId
-        },
-        staff: {
-          id: users.id,
-          username: users.username
-        }
+        // Select all incident report fields
+        id: incidentReports.id,
+        incidentId: incidentReports.incidentId,
+        clientId: incidentReports.clientId,
+        staffId: incidentReports.staffId,
+        dateTime: incidentReports.dateTime,
+        location: incidentReports.location,
+        witnessName: incidentReports.witnessName,
+        witnessPhone: incidentReports.witnessPhone,
+        types: incidentReports.types,
+        isNDISReportable: incidentReports.isNDISReportable,
+        triggers: incidentReports.triggers,
+        intensityRating: incidentReports.intensityRating,
+        staffResponses: incidentReports.staffResponses,
+        description: incidentReports.description,
+        externalRef: incidentReports.externalRef,
+        status: incidentReports.status,
+        tenantId: incidentReports.tenantId,
+        createdAt: incidentReports.createdAt,
+        updatedAt: incidentReports.updatedAt,
+        // Select closure fields when available
+        closureId: incidentClosures.id,
+        closedBy: incidentClosures.closedBy,
+        closureDate: incidentClosures.closureDate,
+        controlReview: incidentClosures.controlReview,
+        improvements: incidentClosures.improvements,
+        implemented: incidentClosures.implemented,
+        controlLevel: incidentClosures.controlLevel,
+        wasLTI: incidentClosures.wasLTI,
+        hazard: incidentClosures.hazard,
+        severity: incidentClosures.severity,
+        externalNotice: incidentClosures.externalNotice,
+        closureNDISReportable: incidentClosures.isNDISReportable,
+        ndisReference: incidentClosures.ndisReference,
+        participantContext: incidentClosures.participantContext,
+        supportPlanAvailable: incidentClosures.supportPlanAvailable,
+        reviewType: incidentClosures.reviewType,
+        outcome: incidentClosures.outcome,
+        // Client information
+        clientFirstName: clients.firstName,
+        clientLastName: clients.lastName,
+        clientIdNumber: clients.clientId,
+        // Staff information
+        staffUsername: users.username,
+        staffFullName: users.fullName
       })
       .from(incidentReports)
       .leftJoin(incidentClosures, eq(incidentReports.incidentId, incidentClosures.incidentId))

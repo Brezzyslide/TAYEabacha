@@ -5404,7 +5404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Management roles can see all incidents
         if (clientId) {
           reports = await storage.getIncidentReportsWithClosures(tenantId);
-          reports = reports.filter((report: any) => report.client.id === clientId);
+          reports = reports.filter((report: any) => report.clientId === clientId);
         } else {
           reports = await storage.getIncidentReportsWithClosures(tenantId);
         }

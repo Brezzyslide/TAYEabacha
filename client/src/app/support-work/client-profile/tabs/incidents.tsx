@@ -27,11 +27,42 @@ interface IncidentReport {
   dateTime: string;
   description: string;
   clientId: number;
-  userId: number;
+  staffId: number;
   types: string[];
   status: string;
-  clientName: string;
-  reporterName: string;
+  clientFirstName: string;
+  clientLastName: string;
+  staffUsername: string;
+  staffFullName: string;
+  intensityRating: number;
+  location: string;
+  triggers: Array<{ label: string; notes?: string }>;
+  staffResponses: Array<{ label: string; notes?: string }>;
+  witnessName?: string;
+  witnessPhone?: string;
+  isNDISReportable: boolean;
+  externalRef?: string;
+  tenantId: number;
+  createdAt: string;
+  updatedAt: string;
+  // Closure fields (optional)
+  closureId?: number;
+  closedBy?: number;
+  closureDate?: string;
+  controlReview?: boolean;
+  improvements?: string;
+  implemented?: boolean;
+  controlLevel?: string;
+  wasLTI?: string;
+  hazard?: string;
+  severity?: string;
+  externalNotice?: boolean;
+  closureNDISReportable?: boolean;
+  ndisReference?: string;
+  participantContext?: string;
+  supportPlanAvailable?: string;
+  reviewType?: string;
+  outcome?: string;
 }
 
 export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps) {
@@ -71,19 +102,8 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
   const { data: incidents = [], isLoading, error } = useQuery({
     queryKey: ["/api/incident-reports", { clientId }],
     queryFn: async () => {
-      const res = await fetch(`/api/incident-reports?clientId=${clientId}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error('Authentication required');
-        }
-        throw new Error('Failed to fetch incidents');
-      }
-      const data = await res.json();
+      const response = await apiRequest("GET", `/api/incident-reports?clientId=${clientId}`);
+      const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
     enabled: !!clientId,
@@ -110,10 +130,11 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
 
   // Filter incidents based on search and filters
   const filteredIncidents = incidents.filter((incident: IncidentReport) => {
+    const reporterName = incident.staffFullName || incident.staffUsername || '';
     const matchesSearch = !searchTerm || 
       incident.incidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incident.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.reporterName.toLowerCase().includes(searchTerm.toLowerCase());
+      reporterName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || 
       incident.status.toLowerCase() === statusFilter.toLowerCase();
