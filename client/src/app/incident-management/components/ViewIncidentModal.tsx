@@ -185,8 +185,8 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <User className="h-4 w-4" />
                     Client
                   </div>
-                  <p className="font-medium">{incident.client.firstName} {incident.client.lastName}</p>
-                  <p className="text-sm text-muted-foreground">ID: {incident.client.clientId}</p>
+                  <p className="font-medium">{incident.clientFirstName} {incident.clientLastName}</p>
+                  <p className="text-sm text-muted-foreground">ID: {incident.clientIdNumber}</p>
                 </div>
                 
                 <div className="space-y-1">
@@ -194,7 +194,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <Users className="h-4 w-4" />
                     Reporting Staff
                   </div>
-                  <p className="font-medium">{incident.staff.firstName} {incident.staff.lastName}</p>
+                  <p className="font-medium">{incident.staffFullName}</p>
                 </div>
 
                 <div className="space-y-1">
