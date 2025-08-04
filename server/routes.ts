@@ -5539,56 +5539,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import jsPDF with proper syntax
       const { jsPDF } = await import('jspdf');
       
-      // Create PDF manually using the same format as PDFExportUtility
-      const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
-      const pageWidth = 297;
-      const pageHeight = 210;
+      // Create PDF in portrait format to match preferred layout
+      const pdf = new jsPDF('p', 'mm', 'a4'); // Portrait A4
+      const pageWidth = 210;
+      const pageHeight = 297;
       const margin = 20;
       const contentWidth = pageWidth - (margin * 2);
       
-      // Add centered header (first page only)
-      pdf.setFillColor(37, 99, 235); // Professional blue
-      pdf.rect(margin, 10, contentWidth, 40, 'F');
-      
-      // Add accent bar
-      pdf.setFillColor(59, 130, 246);
-      pdf.rect(margin, 10, contentWidth, 8, 'F');
-      
-      // Add company name and title (white text)
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(22);
+      // Header - centered title and company name
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       const title = 'Incident Report';
       const titleWidth = pdf.getTextWidth(title);
       pdf.text(title, (pageWidth - titleWidth) / 2, 30);
       
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'normal');
-      const companyText = companyName;
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      const companyText = companyName.toUpperCase();
       const companyWidth = pdf.getTextWidth(companyText);
-      pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
-      
-      // Reset text color to black for content
-      pdf.setTextColor(0, 0, 0);
+      pdf.text(companyText, (pageWidth - companyWidth) / 2, 45);
       
       let currentY = 70;
       
       // Incident Information Section
-      pdf.setFillColor(37, 99, 235);
-      pdf.rect(margin, currentY, contentWidth, 8, 'F');
-      pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Incident Information', margin + 5, currentY + 6);
-      pdf.setTextColor(0, 0, 0);
-      currentY += 15;
+      pdf.text('Incident Information', margin, currentY);
+      currentY += 10;
       
-      // Basic incident details
+      // Basic incident details - match exact format from preferred PDF
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       const incidentDetails = [
         ['Incident ID:', incident.incidentId],
-        ['Date & Time:', new Date(incident.dateTime).toLocaleString('en-AU')],
+        ['Date & Time:', new Date(incident.dateTime).toLocaleString('en-AU', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        })],
         ['Location:', incident.location],
         ['Client:', client ? `${client.firstName} ${client.lastName} (${client.clientId})` : 'Unknown'],
         ['Reporting Staff:', staff ? staff.fullName || staff.username : 'Unknown'],
@@ -5601,57 +5593,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pdf.setFont('helvetica', 'bold');
         pdf.text(label, margin, currentY);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(value, margin + 50, currentY);
+        pdf.text(value, margin + 60, currentY);
         currentY += 8;
       });
       
       // Incident Types
       if (incident.types && incident.types.length > 0) {
-        currentY += 5;
         pdf.setFont('helvetica', 'bold');
         pdf.text('Incident Types:', margin, currentY);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(incident.types.join(', '), margin + 50, currentY);
+        pdf.text(incident.types.join(', '), margin + 60, currentY);
         currentY += 8;
       }
       
       // Witnesses
       if (incident.witnessName) {
-        currentY += 5;
         pdf.setFont('helvetica', 'bold');
         pdf.text('Witness:', margin, currentY);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`${incident.witnessName}${incident.witnessPhone ? ` (${incident.witnessPhone})` : ''}`, margin + 50, currentY);
+        pdf.text(`${incident.witnessName}${incident.witnessPhone ? ` (${incident.witnessPhone})` : ''}`, margin + 60, currentY);
         currentY += 8;
       }
       
       // External Reference
       if (incident.externalRef) {
-        currentY += 5;
         pdf.setFont('helvetica', 'bold');
         pdf.text('External Reference:', margin, currentY);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(incident.externalRef, margin + 50, currentY);
+        pdf.text(incident.externalRef, margin + 60, currentY);
         currentY += 8;
       }
       
-      // Description Section
+      // Description Section  
       if (incident.description) {
-        currentY += 10;
-        pdf.setFillColor(37, 99, 235);
-        pdf.rect(margin, currentY, contentWidth, 8, 'F');
-        pdf.setTextColor(255, 255, 255);
+        currentY += 15;
         pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Description', margin + 5, currentY + 6);
-        pdf.setTextColor(0, 0, 0);
-        currentY += 15;
+        pdf.text('Description', margin, currentY);
+        currentY += 10;
         
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
-        const descriptionLines = pdf.splitTextToSize(incident.description, contentWidth - 20);
+        const descriptionLines = pdf.splitTextToSize(incident.description, contentWidth - 10);
         descriptionLines.forEach((line: string) => {
-          pdf.text(line, margin + 5, currentY);
+          if (currentY + 6 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          pdf.text(line, margin, currentY);
           currentY += 6;
         });
       }
@@ -5659,33 +5648,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Triggers Section
       const triggers = (incident as any).triggers || [];
       if (Array.isArray(triggers) && triggers.length > 0) {
-        currentY += 10;
-        pdf.setFillColor(37, 99, 235);
-        pdf.rect(margin, currentY, contentWidth, 8, 'F');
-        pdf.setTextColor(255, 255, 255);
+        currentY += 15;
         pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Triggers', margin + 5, currentY + 6);
-        pdf.setTextColor(0, 0, 0);
-        currentY += 15;
+        pdf.text('Triggers', margin, currentY);
+        currentY += 10;
         
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         triggers.forEach((trigger: any) => {
-          // Check if we need a new page
           if (currentY + 20 > pageHeight - 30) {
             pdf.addPage();
             currentY = 30;
           }
           
           pdf.setFont('helvetica', 'bold');
-          pdf.text(`• ${trigger.label}`, margin + 5, currentY);
+          pdf.text(`• ${trigger.label}`, margin, currentY);
           currentY += 6;
           if (trigger.notes) {
             pdf.setFont('helvetica', 'normal');
-            const noteLines = pdf.splitTextToSize(trigger.notes, contentWidth - 30);
+            const noteLines = pdf.splitTextToSize(trigger.notes, contentWidth - 10);
             noteLines.forEach((line: string) => {
-              // Check if we need a new page for each line
               if (currentY + 6 > pageHeight - 30) {
                 pdf.addPage();
                 currentY = 30;
@@ -5694,44 +5677,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
               currentY += 6;
             });
           }
+          currentY += 3; // Add spacing between triggers
         });
       }
       
       // Staff Responses Section
       const staffResponses = (incident as any).staffResponses || [];
       if (Array.isArray(staffResponses) && staffResponses.length > 0) {
-        currentY += 10;
-        pdf.setFillColor(37, 99, 235);
-        pdf.rect(margin, currentY, contentWidth, 8, 'F');
-        pdf.setTextColor(255, 255, 255);
+        currentY += 15;
         pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Staff Responses', margin + 5, currentY + 6);
-        pdf.setTextColor(0, 0, 0);
-        currentY += 15;
+        pdf.text('Staff Responses', margin, currentY);
+        currentY += 10;
         
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         staffResponses.forEach((response: any) => {
-          // Check if we need a new page
           if (currentY + 20 > pageHeight - 30) {
             pdf.addPage();
             currentY = 30;
           }
           
           pdf.setFont('helvetica', 'bold');
-          pdf.text(`• ${response.label}`, margin + 5, currentY);
+          pdf.text(`• ${response.label}`, margin, currentY);
           currentY += 6;
           if (response.notes) {
             pdf.setFont('helvetica', 'normal');
-            const noteLines = pdf.splitTextToSize(response.notes, contentWidth - 30);
+            const noteLines = pdf.splitTextToSize(response.notes, contentWidth - 10);
             noteLines.forEach((line: string) => {
-              // Check if we need a new page for each line
               if (currentY + 6 > pageHeight - 30) {
                 pdf.addPage();
                 currentY = 30;
               }
-              pdf.text(line, margin + 10, currentY);
+              pdf.text(line, margin + 15, currentY);
               currentY += 6;
             });
           }
@@ -5740,21 +5718,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Closure Information (if exists)
       if (closure) {
-        // Check if we need a new page for closure section
         if (currentY + 80 > pageHeight - 30) {
           pdf.addPage();
           currentY = 30;
         }
         
-        currentY += 10;
-        pdf.setFillColor(37, 99, 235);
-        pdf.rect(margin, currentY, contentWidth, 8, 'F');
-        pdf.setTextColor(255, 255, 255);
+        currentY += 15;
         pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Closure Information', margin + 5, currentY + 6);
-        pdf.setTextColor(0, 0, 0);
-        currentY += 15;
+        pdf.text('Closure Information', margin, currentY);
+        currentY += 10;
         
         const closureDetails = [
           ['Closure Date:', new Date(closure.closureDate).toLocaleDateString('en-AU')],
