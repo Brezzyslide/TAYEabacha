@@ -90,19 +90,7 @@ export default function IncidentDashboard() {
   const { data: incidents = [], isLoading, error } = useQuery({
     queryKey: ["/api/incident-reports"],
     queryFn: async () => {
-      const res = await fetch("/api/incident-reports", {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error('Authentication required');
-        }
-        throw new Error('Failed to fetch incidents');
-      }
-      const data = await res.json();
+      const data = await apiRequest("/api/incident-reports");
       return Array.isArray(data) ? data : [];
     },
   });
