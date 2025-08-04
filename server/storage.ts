@@ -1047,8 +1047,8 @@ export class DatabaseStorage implements IStorage {
 
   async getIncidentReportsWithClosures(tenantId: number): Promise<any[]> {
     try {
-      return await db.select({
-        // Select all incident report fields
+      // First, get basic incident reports without closures to avoid column issues
+      const basicReports = await db.select({
         id: incidentReports.id,
         incidentId: incidentReports.incidentId,
         clientId: incidentReports.clientId,
@@ -1068,24 +1068,6 @@ export class DatabaseStorage implements IStorage {
         tenantId: incidentReports.tenantId,
         createdAt: incidentReports.createdAt,
         updatedAt: incidentReports.updatedAt,
-        // Select closure fields when available
-        closureId: incidentClosures.id,
-        closedBy: incidentClosures.closedBy,
-        closureDate: incidentClosures.closureDate,
-        controlReview: incidentClosures.controlReview,
-        improvements: incidentClosures.improvements,
-        implemented: incidentClosures.implemented,
-        controlLevel: incidentClosures.controlLevel,
-        wasLTI: incidentClosures.wasLTI,
-        hazard: incidentClosures.hazard,
-        severity: incidentClosures.severity,
-        externalNotice: incidentClosures.externalNotice,
-        closureNDISReportable: incidentClosures.isNDISReportable,
-        ndisReference: incidentClosures.ndisReference,
-        participantContext: incidentClosures.participantContext,
-        supportPlanAvailable: incidentClosures.supportPlanAvailable,
-        reviewType: incidentClosures.reviewType,
-        outcome: incidentClosures.outcome,
         // Client information
         clientFirstName: clients.firstName,
         clientLastName: clients.lastName,
@@ -1095,11 +1077,12 @@ export class DatabaseStorage implements IStorage {
         staffFullName: users.fullName
       })
       .from(incidentReports)
-      .leftJoin(incidentClosures, eq(incidentReports.incidentId, incidentClosures.incidentId))
       .leftJoin(clients, eq(incidentReports.clientId, clients.id))
       .leftJoin(users, eq(incidentReports.staffId, users.id))
       .where(eq(incidentReports.tenantId, tenantId))
       .orderBy(desc(incidentReports.createdAt));
+
+      return basicReports;
     } catch (error) {
       console.error("Error fetching incident reports with closures:", error);
       return [];
