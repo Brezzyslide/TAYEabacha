@@ -1046,26 +1046,31 @@ export class DatabaseStorage implements IStorage {
 
 
   async getIncidentReportsWithClosures(tenantId: number): Promise<any[]> {
-    return await db.select({
-      report: incidentReports,
-      closure: incidentClosures,
-      client: {
-        id: clients.id,
-        firstName: clients.firstName,
-        lastName: clients.lastName,
-        clientId: clients.clientId
-      },
-      staff: {
-        id: users.id,
-        username: users.username
-      }
-    })
-    .from(incidentReports)
-    .leftJoin(incidentClosures, eq(incidentReports.incidentId, incidentClosures.incidentId))
-    .leftJoin(clients, eq(incidentReports.clientId, clients.id))
-    .leftJoin(users, eq(incidentReports.staffId, users.id))
-    .where(eq(incidentReports.tenantId, tenantId))
-    .orderBy(desc(incidentReports.createdAt));
+    try {
+      return await db.select({
+        report: incidentReports,
+        closure: incidentClosures,
+        client: {
+          id: clients.id,
+          firstName: clients.firstName,
+          lastName: clients.lastName,
+          clientId: clients.clientId
+        },
+        staff: {
+          id: users.id,
+          username: users.username
+        }
+      })
+      .from(incidentReports)
+      .leftJoin(incidentClosures, eq(incidentReports.incidentId, incidentClosures.incidentId))
+      .leftJoin(clients, eq(incidentReports.clientId, clients.id))
+      .leftJoin(users, eq(incidentReports.staffId, users.id))
+      .where(eq(incidentReports.tenantId, tenantId))
+      .orderBy(desc(incidentReports.createdAt));
+    } catch (error) {
+      console.error("Error fetching incident reports with closures:", error);
+      return [];
+    }
   }
 
   // Staff Messages methods

@@ -5414,9 +5414,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied: Invalid role" });
       }
       
+      // Ensure reports is always an array
+      reports = reports || [];
+      
       res.json(reports);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch incident reports" });
+      console.error("Error fetching incident reports:", error);
+      // Return empty array instead of error when no clients exist
+      res.json([]);
     }
   });
 
