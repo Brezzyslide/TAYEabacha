@@ -27,6 +27,8 @@ const closureSchema = z.object({
   hazard: z.enum(["Behavioural", "Medical", "Environmental", "Other"]),
   severity: z.enum(["Low", "Medium", "High", "Critical"]),
   externalNotice: z.boolean(),
+  isNDISReportable: z.boolean(),
+  ndisReference: z.string().optional(),
   participantContext: z.enum(["yes", "no", "NA"]),
   supportPlanAvailable: z.enum(["yes", "no", "NA"]),
   reviewType: z.enum(["Root Cause", "Case Conference", "Support Team Review", "Corrective Action", "No Further Action"]),
@@ -82,6 +84,8 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
       hazard: "Other",
       severity: "Low",
       externalNotice: false,
+      isNDISReportable: false,
+      ndisReference: "",
       participantContext: "NA",
       supportPlanAvailable: "NA",
       reviewType: "No Further Action",
@@ -276,6 +280,54 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
                     )}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* NDIS Reporting */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  NDIS Reporting
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="isNDISReportable"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>NDIS Reportable Incident</FormLabel>
+                        <p className="text-xs text-muted-foreground">
+                          This incident must be reported to the NDIS Commission
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("isNDISReportable") && (
+                  <FormField
+                    control={form.control}
+                    name="ndisReference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>NDIS Reference Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter NDIS reference number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </CardContent>
             </Card>
 

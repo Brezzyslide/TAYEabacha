@@ -37,6 +37,8 @@ interface IncidentReport {
     hazard: string;
     severity: string;
     externalNotice: boolean;
+    isNDISReportable: boolean;
+    ndisReference?: string;
     participantContext: string;
     supportPlanAvailable: string;
     reviewType: string;
@@ -381,6 +383,20 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                       {incident.closure.externalNotice ? "Yes" : "No"}
                     </Badge>
                   </div>
+
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">NDIS Reportable</p>
+                    <Badge variant={incident.closure.isNDISReportable ? "destructive" : "secondary"}>
+                      {incident.closure.isNDISReportable ? "Yes" : "No"}
+                    </Badge>
+                  </div>
+
+                  {incident.closure.isNDISReportable && incident.closure.ndisReference && (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">NDIS Reference</p>
+                      <Badge variant="outline">{incident.closure.ndisReference}</Badge>
+                    </div>
+                  )}
 
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Participant Context</p>

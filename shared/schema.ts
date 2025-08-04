@@ -363,6 +363,8 @@ export const incidentClosures = pgTable("incident_closures", {
   hazard: text("hazard").notNull(), // "Behavioural", "Medical", "Environmental", "Other"
   severity: text("severity").notNull(), // "Low", "Medium", "High", "Critical"
   externalNotice: boolean("external_notice").notNull(),
+  isNDISReportable: boolean("is_ndis_reportable").default(false),
+  ndisReference: text("ndis_reference"),
   participantContext: text("participant_context").notNull(), // "yes", "no", "NA"
   supportPlanAvailable: text("support_plan_available").notNull(), // "yes", "no", "NA"
   reviewType: text("review_type").notNull(), // "Root Cause", "Case Conference", "Support Team Review", "Corrective Action", "No Further Action"

@@ -22,7 +22,14 @@ import { format } from "date-fns";
 const incidentSchema = z.object({
   clientId: z.number({ required_error: "Please select a client" }),
   dateTime: z.string().min(1, "Date and time is required"),
+  location: z.string().optional(),
+  intensityRating: z.number().optional(),
+  witnessName: z.string().optional(),
+  witnessPhone: z.string().optional(),
+  externalReference: z.string().optional(),
   types: z.array(z.string()).min(1, "At least one incident type is required"),
+  triggers: z.array(z.string()).optional().default([]),
+  staffResponses: z.array(z.string()).optional().default([]),
   description: z.string().min(10, "Description must be at least 10 characters"),
 });
 
@@ -87,8 +94,14 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
     defaultValues: {
       clientId: defaultClientId,
       types: [],
+      triggers: [],
+      staffResponses: [],
       description: "",
       dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"), // Auto-set to current time
+      location: "",
+      witnessName: "",
+      witnessPhone: "",
+      externalReference: "",
     },
   });
 
@@ -197,8 +210,93 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
                       </FormItem>
                     )}
                   />
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Where did the incident occur?" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
+                  <FormField
+                    control={form.control}
+                    name="intensityRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Intensity Rating (1-10)</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select intensity" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {[1,2,3,4,5,6,7,8,9,10].map((num) => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num} - {num <= 3 ? 'Low' : num <= 6 ? 'Medium' : num <= 8 ? 'High' : 'Critical'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="witnessName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Witness Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Name of witness (if any)" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="witnessPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Witness Phone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Contact number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="externalReference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>External Reference</FormLabel>
+                        <FormControl>
+                          <Input placeholder="External system reference or ID" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -231,6 +329,120 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
                             <Label htmlFor={type} className="text-sm">{type}</Label>
                           </div>
                         ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Triggers Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Triggers</CardTitle>
+                <p className="text-sm text-muted-foreground">What led to this incident?</p>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="triggers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="space-y-3">
+                        {(field.value || []).map((trigger, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={trigger}
+                              onChange={(e) => {
+                                const newTriggers = [...(field.value || [])];
+                                newTriggers[index] = e.target.value;
+                                field.onChange(newTriggers);
+                              }}
+                              placeholder="Describe what triggered this incident"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newTriggers = (field.value || []).filter((_, i) => i !== index);
+                                field.onChange(newTriggers);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            field.onChange([...(field.value || []), ""]);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Trigger
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Staff Responses Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Staff Responses</CardTitle>
+                <p className="text-sm text-muted-foreground">Actions taken by staff during/after the incident</p>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="staffResponses"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="space-y-3">
+                        {(field.value || []).map((response, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={response}
+                              onChange={(e) => {
+                                const newResponses = [...(field.value || [])];
+                                newResponses[index] = e.target.value;
+                                field.onChange(newResponses);
+                              }}
+                              placeholder="Describe actions taken by staff"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newResponses = (field.value || []).filter((_, i) => i !== index);
+                                field.onChange(newResponses);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            field.onChange([...(field.value || []), ""]);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Response
+                        </Button>
                       </div>
                       <FormMessage />
                     </FormItem>
