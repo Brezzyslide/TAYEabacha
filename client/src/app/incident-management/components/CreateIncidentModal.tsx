@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -86,7 +86,7 @@ const RESPONSE_OPTIONS = [
 ];
 
 export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClientId }: CreateIncidentModalProps) {
-
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const form = useForm<IncidentFormData>({
@@ -107,7 +107,10 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
 
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
-    queryFn: () => fetch("/api/clients").then(res => res.json()),
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/clients");
+      return await response.json();
+    },
   });
 
   const createIncidentMutation = useMutation({
@@ -115,19 +118,24 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
       apiRequest("POST", "/api/incident-reports", {
         ...data,
         dateTime: new Date(data.dateTime).toISOString(),
+        triggers: data.triggers?.map(trigger => ({ label: trigger, notes: "" })) || [],
+        staffResponses: data.staffResponses?.map(response => ({ label: response, notes: "" })) || [],
       }),
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Incident report created successfully",
       });
+      // Invalidate queries to refresh the incident list
+      queryClient.invalidateQueries({ queryKey: ["/api/incident-reports"] });
       onSuccess();
       form.reset();
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Incident creation error:", error);
       toast({
         title: "Error",
-        description: "Failed to create incident report",
+        description: error?.message || "Failed to create incident report",
         variant: "destructive",
       });
     },
