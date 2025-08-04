@@ -17,16 +17,53 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
 interface IncidentReport {
-  id: number;
-  incidentId: string;
-  dateTime: string;
-  description: string;
-  clientId: number;
-  userId: number;
-  types: string[];
-  status: string;
-  clientName: string;
-  reporterName: string;
+  report: {
+    id: number;
+    incidentId: string;
+    dateTime: string;
+    location: string;
+    witnessName?: string;
+    witnessPhone?: string;
+    types: string[];
+    isNDISReportable: boolean;
+    triggers: Array<{ label: string; notes?: string }>;
+    intensityRating: number;
+    staffResponses: Array<{ label: string; notes?: string }>;
+    description: string;
+    externalRef?: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  closure?: {
+    id: number;
+    closureDate: string;
+    controlReview: boolean;
+    improvements?: string;
+    implemented: boolean;
+    controlLevel: string;
+    wasLTI: string;
+    hazard: string;
+    severity: string;
+    externalNotice: boolean;
+    participantContext: string;
+    supportPlanAvailable: string;
+    reviewType: string;
+    outcome?: string;
+    attachments: any[];
+    createdAt: string;
+  };
+  client: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    clientId: string;
+  };
+  staff: {
+    id: number;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export default function IncidentDashboard() {
@@ -109,11 +146,11 @@ export default function IncidentDashboard() {
 
   const filteredIncidents = (incidents || []).filter((incident: IncidentReport) => {
     // Safely handle potentially undefined properties
-    const safeIncidentId = incident.incidentId || '';
-    const safeClientName = incident.clientName || '';
-    const safeDescription = incident.description || '';
-    const safeStatus = incident.status || '';
-    const safeTypes = incident.types || [];
+    const safeIncidentId = incident.report?.incidentId || '';
+    const safeClientName = incident.client ? `${incident.client.firstName} ${incident.client.lastName}` : '';
+    const safeDescription = incident.report?.description || '';
+    const safeStatus = incident.report?.status || '';
+    const safeTypes = incident.report?.types || [];
     
     const matchesSearch = searchTerm === '' || 
       safeIncidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -279,10 +316,10 @@ export default function IncidentDashboard() {
 
   const incidentStats = {
     total: incidents.length,
-    open: incidents.filter((i: IncidentReport) => i.status === "Open").length,
-    closed: incidents.filter((i: IncidentReport) => i.status === "Closed").length,
-    ndis: 0, // Simplified - no NDIS field in current data structure
-    highIntensity: 0, // Simplified - no intensity field in current data structure
+    open: incidents.filter((i: IncidentReport) => i.report?.status === "Open").length,
+    closed: incidents.filter((i: IncidentReport) => i.report?.status === "Closed").length,
+    ndis: incidents.filter((i: IncidentReport) => i.report?.isNDISReportable === true).length,
+    highIntensity: incidents.filter((i: IncidentReport) => (i.report?.intensityRating || 0) >= 8).length,
   };
 
   if (isLoading) {
@@ -427,21 +464,21 @@ export default function IncidentDashboard() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {filteredIncidents.map((incident: IncidentReport) => (
-                <Card key={incident.id} className="hover:shadow-md transition-shadow">
+                <Card key={incident.report?.id || Math.random()} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
-                          <h3 className="font-semibold">{incident.incidentId}</h3>
-                          {getStatusBadge(incident.status)}
+                          <h3 className="font-semibold">{incident.report?.incidentId || 'N/A'}</h3>
+                          {getStatusBadge(incident.report?.status || 'Unknown')}
 
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Client: {incident.clientName}</span>
-                          <span>Staff: {incident.reporterName}</span>
+                          <span>Client: {incident.client ? `${incident.client.firstName} ${incident.client.lastName}` : 'N/A'}</span>
+                          <span>Staff: {incident.staff ? `${incident.staff.firstName} ${incident.staff.lastName}` : 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Date: {format(new Date(incident.dateTime), "MMM dd, yyyy 'at' HH:mm")}</span>
+                          <span>Date: {incident.report?.dateTime ? format(new Date(incident.report.dateTime), "MMM dd, yyyy 'at' HH:mm") : 'N/A'}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -451,13 +488,13 @@ export default function IncidentDashboard() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleExportIndividualPDF(incident.incidentId)}
+                          onClick={() => handleExportIndividualPDF(incident.report?.incidentId || '')}
                           className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
                           title="Export to PDF"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
-                        {incident.status === "Open" && canCloseIncident() && (
+                        {incident.report?.status === "Open" && canCloseIncident() && (
                           <Button variant="outline" size="sm" onClick={() => handleCloseIncident(incident)}>
                             <CheckCircle className="h-4 w-4" />
                           </Button>
@@ -465,7 +502,7 @@ export default function IncidentDashboard() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => handleDeleteIncident(incident.incidentId)}
+                          onClick={() => handleDeleteIncident(incident.report?.incidentId || '')}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -479,7 +516,7 @@ export default function IncidentDashboard() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">Types:</span>
                           <div className="flex gap-1">
-                            {incident.types.map((type, index) => (
+                            {(incident.report?.types || []).map((type, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 {type}
                               </Badge>
@@ -495,7 +532,7 @@ export default function IncidentDashboard() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {incident.description}
+                        {incident.report?.description || 'No description available'}
                       </p>
                       {incident.closure && (
                         <div className="text-xs text-muted-foreground pt-2 border-t">
