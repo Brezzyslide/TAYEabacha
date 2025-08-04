@@ -90,7 +90,8 @@ export default function IncidentDashboard() {
   const { data: incidents = [], isLoading, error } = useQuery({
     queryKey: ["/api/incident-reports"],
     queryFn: async () => {
-      const data = await apiRequest("/api/incident-reports");
+      const response = await apiRequest("GET", "/api/incident-reports");
+      const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
   });
