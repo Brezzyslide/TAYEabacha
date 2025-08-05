@@ -1,0 +1,43 @@
+
+> rest-express@1.0.0 dev
+[DATABASE] Connecting to: postgres://postgres:***@54.80.195.220:5430/mydb
+[SCHEMA DEBUG] Compliance tables in schema: {
+  downloadableForms: true,
+  completedMedicationAuthorityForms: true,
+  evacuationDrills: true
+}
+[SESSION STORE] PostgreSQL session store initialized
+[SESSION STORE] Using database pool connection
+[EMAIL] Loaded environment from .env.local
+[ENV] Loaded local environment variables
+[ENV] GMAIL_EMAIL now set to: admin@needscare.io
+[ENV] GMAIL_APP_PASSWORD length: 16
+[ENV] FINAL CHECK:
+[ENV] GMAIL_EMAIL: admin@needscare.io
+[ENV] GMAIL_APP_PASSWORD_SET: true
+[ENV] GMAIL_APP_PASSWORD_LENGTH: 16
+[TIMEZONE] Server timezone set to: Australia/Sydney
+[TIMEZONE] Current server time: 05/08/2025, 11:08:10 am
+[AUTH CONFIG] Environment: development
+[AUTH CONFIG] Session store type: PGStore
+[AUTH CONFIG] Production mode: false
+[AUTH CONFIG] Cookie settings: { secure: false, sameSite: 'lax', httpOnly: true, maxAge: 86400000 }
+[MULTI-TENANT FIX] ALL DEMO DATA PROVISIONING PERMANENTLY DISABLED
+[MULTI-TENANT FIX] New tenants start completely clean - no automatic data creation
+[MULTI-TENANT FIX] Users must create all their own data (clients, shifts, etc.)
+[ZERO PROVISIONING] All tenant fixes and provisioning COMPLETELY DISABLED
+[ZERO PROVISIONING] All new tenants will have absolutely ZERO data
+[ZERO PROVISIONING] Users must create everything manually
+[COMPOSITE FK] Applying database-level tenant isolation constraints
+[COMPOSITE FK MIGRATION] Starting database-level tenant isolation enforcement...
+[COMPOSITE FK] Successfully loaded SQL from: /home/runner/workspace/server/simplified-composite-fk.sql
+[COMPOSITE FK MIGRATION] Step 1: Adding composite unique constraints...
+[COMPOSITE FK MIGRATION] Executing database schema updates...
+[COMPOSITE FK MIGRATION] Migration error: relation "users_id_tenant_unique" already exists
+[COMPOSITE FK MIGRATION] Non-critical constraint error, continuing...
+[COMPOSITE FK MIGRATION] ✅ Migration completed successfully!
+[COMPOSITE FK MIGRATION] Verifying composite foreign key constraints...
+[COMPOSITE FK MIGRATION] ✅ Found 28 composite foreign key constraints:
+  - activity_logs.tenant_id → tenants
+  - cancellation_requests.tenant_id → tenants
+  - case_notes.tenant_id, tenant_id →
