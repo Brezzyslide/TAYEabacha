@@ -57,14 +57,14 @@ const caseNoteSchema = z.object({
   if (data.incidentOccurred) {
     return data.incidentRefNumber && typeof data.incidentLodged === "boolean";
   }
-  // If incident didn't occur, must confirm with "Yes"
+  // If incident didn't occur, must confirm with "Yes" (meaning confirmed no incident)
   if (!data.incidentOccurred) {
     return data.incidentConfirmation === "Yes";
   }
   return true;
 }, {
   message: "Please complete all incident reporting fields",
-  path: ["incidentOccurred"]
+  path: ["incidentConfirmation"]
 }).refine((data) => {
   // If medication administered, must confirm record logged
   if (data.medicationStatus === "yes") {
@@ -75,13 +75,13 @@ const caseNoteSchema = z.object({
   message: "Please confirm if medication record has been logged",
   path: ["medicationRecordLogged"]
 }).refine((data) => {
-  // If medication refused, must have incident reference number
-  if (data.medicationStatus === "refused") {
+  // If medication refused, must have incident reference number (only if incident occurred)
+  if (data.medicationStatus === "refused" && data.incidentOccurred) {
     return data.incidentRefNumber && data.incidentRefNumber.trim().length > 0;
   }
   return true;
 }, {
-  message: "Incident report number is required for medication refusal",
+  message: "Incident report number is required for medication refusal when incident occurred",
   path: ["incidentRefNumber"]
 }).refine((data) => {
   // Progress Notes must have a linked shift
@@ -133,6 +133,7 @@ export default function CreateCaseNoteModal({
       title: editingNote?.title || "",
       category: editingNote?.category || "Progress Note",
       incidentOccurred: editingNote?.incidentOccurred || false,
+      incidentConfirmation: editingNote?.incidentConfirmation || undefined,
       medicationStatus: editingNote?.medicationStatus || undefined,
       progressSections: editingNote?.progressSections || [],
       attachments: editingNote?.attachments || []
@@ -148,6 +149,7 @@ export default function CreateCaseNoteModal({
         content: editingNote.content,
         category: editingNote.category || "Progress Note",
         incidentOccurred: editingNote.incidentOccurred || false,
+        incidentConfirmation: editingNote.incidentConfirmation || undefined,
         medicationStatus: editingNote.medicationStatus || undefined,
         attachments: editingNote.attachments || []
       });
@@ -158,6 +160,7 @@ export default function CreateCaseNoteModal({
         title: "",
         category: "Progress Note",
         incidentOccurred: false,
+        incidentConfirmation: undefined,
         medicationStatus: undefined,
         attachments: []
       });
