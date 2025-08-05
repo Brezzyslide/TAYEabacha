@@ -5551,7 +5551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const margin = 20;
       const contentWidth = pageWidth - (margin * 2);
       
-      // Header - centered title and company name
+      // Header with colored background for business name
       pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
@@ -5559,11 +5559,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const titleWidth = pdf.getTextWidth(title);
       pdf.text(title, (pageWidth - titleWidth) / 2, 30);
       
-      pdf.setFontSize(12);
+      // Company name with colored background
+      pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
       const companyText = companyName.toUpperCase();
       const companyWidth = pdf.getTextWidth(companyText);
-      pdf.text(companyText, (pageWidth - companyWidth) / 2, 45);
+      const companyX = (pageWidth - companyWidth) / 2;
+      
+      // Add colored background rectangle for company name
+      pdf.setFillColor(37, 99, 235); // Professional blue
+      pdf.rect(companyX - 5, 37, companyWidth + 10, 12, 'F');
+      
+      // Company name in white text on colored background
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(companyText, companyX, 45);
+      
+      // Reset text color for rest of document
+      pdf.setTextColor(0, 0, 0);
       
       let currentY = 70;
       
