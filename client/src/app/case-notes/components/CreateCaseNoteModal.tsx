@@ -157,6 +157,14 @@ export default function CreateCaseNoteModal({
   const incidentRefNumber = form.watch("incidentRefNumber");
   const medicationStatus = form.watch("medicationStatus");
   const selectedCategory = form.watch("category");
+  
+  // Auto-set incidentLodged to true when incident reference number is provided
+  useEffect(() => {
+    if (incidentOccurred && incidentRefNumber && incidentRefNumber.trim().length > 0) {
+      console.log(`[CASE NOTE] Auto-setting incidentLodged to true for incident ref: ${incidentRefNumber}`);
+      form.setValue("incidentLodged", true);
+    }
+  }, [incidentRefNumber, incidentOccurred, form]);
 
   // Fetch selected client data for auto-population
   const { data: selectedClient } = useQuery<Client>({
