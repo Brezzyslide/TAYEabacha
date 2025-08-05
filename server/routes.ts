@@ -5443,11 +5443,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/incident-reports", requireAuth, async (req: any, res) => {
     try {
+      // Generate new incident ID with business name format
+      const incidentId = await storage.generateIncidentId(req.user.tenantId);
+      
       const reportData = insertIncidentReportSchema.parse({
         ...req.body,
         staffId: req.user.id,
         tenantId: req.user.tenantId,
-        incidentId: `INC-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        incidentId: incidentId,
       });
 
       const report = await storage.createIncidentReport(reportData);

@@ -992,6 +992,29 @@ export class DatabaseStorage implements IStorage {
     return report;
   }
 
+  async generateIncidentId(tenantId: number): Promise<string> {
+    try {
+      // Get company information to extract first 3 letters
+      const company = await this.getCompanyByTenantId(tenantId);
+      const businessName = company?.name || 'DEFAULT';
+      const businessPrefix = businessName.replace(/[^A-Za-z]/g, '').substring(0, 3).toUpperCase();
+      
+      // Get the count of existing incident reports for this tenant
+      const [countResult] = await db.select({ count: count() })
+        .from(incidentReports)
+        .where(eq(incidentReports.tenantId, tenantId));
+      
+      const incidentCount = countResult.count + 1;
+      const paddedCount = incidentCount.toString().padStart(3, '0');
+      
+      return `IR_${businessPrefix}_${paddedCount}`;
+    } catch (error) {
+      console.error('Error generating incident ID:', error);
+      // Fallback to timestamp-based ID if generation fails
+      return `IR_DEFAULT_${Date.now()}`;
+    }
+  }
+
   async createIncidentReport(insertReport: InsertIncidentReport): Promise<IncidentReport> {
     const [report] = await db.insert(incidentReports).values(insertReport).returning();
     return report;
