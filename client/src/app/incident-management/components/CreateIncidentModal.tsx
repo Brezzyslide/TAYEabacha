@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { TriggerSelector } from "./TriggerSelector";
+import { StaffResponseSelector } from "./StaffResponseSelector";
 
 const incidentSchema = z.object({
   clientId: z.number({ required_error: "Please select a client" }),
@@ -34,7 +35,11 @@ const incidentSchema = z.object({
     label: z.string(),
     details: z.string()
   })).optional().default([]),
-  staffResponses: z.array(z.string()).optional().default([]),
+  staffResponses: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    details: z.string()
+  })).optional().default([]),
   description: z.string().min(10, "Description must be at least 10 characters"),
 });
 
@@ -124,7 +129,7 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
         ...data,
         dateTime: new Date(data.dateTime).toISOString(),
         triggers: data.triggers || [],
-        staffResponses: data.staffResponses?.map(response => ({ label: response, notes: "" })) || [],
+        staffResponses: data.staffResponses || [],
       }),
     onSuccess: () => {
       toast({
@@ -366,61 +371,19 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
             />
 
             {/* Staff Responses Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Staff Responses</CardTitle>
-                <p className="text-sm text-muted-foreground">Actions taken by staff during/after the incident</p>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="staffResponses"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="space-y-3">
-                        {(field.value || []).map((response, index) => (
-                          <div key={index} className="flex gap-2">
-                            <Input
-                              value={response}
-                              onChange={(e) => {
-                                const newResponses = [...(field.value || [])];
-                                newResponses[index] = e.target.value;
-                                field.onChange(newResponses);
-                              }}
-                              placeholder="Describe actions taken by staff"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newResponses = (field.value || []).filter((_, i) => i !== index);
-                                field.onChange(newResponses);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            field.onChange([...(field.value || []), ""]);
-                          }}
-                          className="flex items-center gap-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add Response
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+            <FormField
+              control={form.control}
+              name="staffResponses"
+              render={({ field }) => (
+                <FormItem>
+                  <StaffResponseSelector
+                    value={field.value || []}
+                    onChange={field.onChange}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
 
 
