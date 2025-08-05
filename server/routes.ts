@@ -6012,6 +6012,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/incident-closures", requireAuth, requireRole(["admin", "coordinator", "consolemanager"]), async (req: any, res) => {
     try {
+      console.log(`[INCIDENT CLOSURE] Processing closure request for incident: ${req.body.incidentId}`);
+      
+      // Check if incident already has a closure FIRST
+      const existingClosure = await storage.getIncidentClosure(req.body.incidentId, req.user.tenantId);
+      
+      if (existingClosure) {
+        console.log(`[INCIDENT CLOSURE] Incident ${req.body.incidentId} already has closure`);
+        return res.status(400).json({ 
+          message: "Incident has already been closed",
+          existingClosure: existingClosure
+        });
+      }
+
       const closureData = insertIncidentClosureSchema.parse({
         ...req.body,
         closedBy: req.user.id,
@@ -6019,20 +6032,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         closureDate: new Date(),
       });
 
-      // Check if incident already has a closure
-      const existingClosure = await storage.getIncidentClosure(closureData.incidentId, req.user.tenantId);
-      
-      if (existingClosure) {
-        return res.status(400).json({ 
-          message: "Incident has already been closed",
-          existingClosure: existingClosure
-        });
-      }
-
+      console.log(`[INCIDENT CLOSURE] Creating new closure for incident: ${closureData.incidentId}`);
       const closure = await storage.createIncidentClosure(closureData);
       
       // Update incident status to Closed
-      await storage.updateIncidentReport(closureData.incidentId, { status: "Closed" }, req.user.tenantId);
+      console.log(`[INCIDENT CLOSURE] Updating incident ${closureData.incidentId} status to Closed`);
+      const updatedIncident = await storage.updateIncidentReport(closureData.incidentId, { status: "Closed" }, req.user.tenantId);
+      console.log(`[INCIDENT CLOSURE] Status update result:`, updatedIncident?.status);
       
       await storage.createActivityLog({
         userId: req.user.id,

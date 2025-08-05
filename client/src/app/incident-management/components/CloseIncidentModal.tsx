@@ -119,6 +119,8 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
         title: "Success",
         description: "Incident closed successfully",
       });
+      // Invalidate incident queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/incident-reports"] });
       onSuccess();
       form.reset();
     },
