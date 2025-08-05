@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Download, FileText, AlertTriangle, Pill } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Download, FileText, AlertTriangle, Pill, User, Clock, Eye, X } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useAuth } from "@/hooks/use-auth";
@@ -22,6 +24,7 @@ export default function CaseNoteDashboard() {
   const [viewMode, setViewMode] = useState<"card" | "list">("list");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<CaseNote | undefined>();
+  const [viewingNote, setViewingNote] = useState<CaseNote | undefined>();
   const [selectedTab, setSelectedTab] = useState("all");
   
   const { user } = useAuth();
@@ -191,9 +194,9 @@ export default function CaseNoteDashboard() {
     setIsModalOpen(true);
   };
 
-  // Handle note viewing (could open a detailed view modal)
+  // Handle note viewing
   const handleView = (note: CaseNote) => {
-    // For now, we'll just expand it in place
+    setViewingNote(note);
     console.log("Viewing note:", note);
   };
 
@@ -418,6 +421,139 @@ export default function CaseNoteDashboard() {
         }}
         editingNote={editingNote}
       />
+
+      {/* View Modal */}
+      <Dialog open={!!viewingNote} onOpenChange={() => setViewingNote(undefined)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                {viewingNote?.title || "Case Note Details"}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewingNote(undefined)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {viewingNote && (
+            <div className="space-y-6">
+              {/* Case Note Header */}
+              <div className="border-b pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-semibold">{viewingNote.title}</h2>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        <span>Client: {clients.find(c => c.id === viewingNote.clientId)?.fullName || 'Loading...'}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{format(new Date(viewingNote.createdAt), "MMM d, yyyy 'at' h:mm a")}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {viewingNote.category === 'incident' && (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Incident
+                      </Badge>
+                    )}
+                    {viewingNote.category === 'medication' && (
+                      <Badge className="bg-blue-600 flex items-center gap-1">
+                        <Pill className="w-3 h-3" />
+                        Medication
+                      </Badge>
+                    )}
+                    {viewingNote.priority && (
+                      <Badge variant={viewingNote.priority === 'urgent' ? 'destructive' : 'secondary'}>
+                        {viewingNote.priority.charAt(0).toUpperCase() + viewingNote.priority.slice(1)}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Case Note Content */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium mb-2">Content:</h3>
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <p className="whitespace-pre-wrap leading-relaxed">{viewingNote.content}</p>
+                  </div>
+                </div>
+
+                {/* Additional Details */}
+                {(viewingNote.incidentData || viewingNote.medicationData || viewingNote.tags?.length) && (
+                  <div className="space-y-3">
+                    <h3 className="font-medium">Additional Details:</h3>
+                    
+                    {viewingNote.incidentData && typeof viewingNote.incidentData === 'object' && (
+                      <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                        <h4 className="font-medium text-red-800 mb-2">Incident Information:</h4>
+                        <div className="text-sm space-y-1">
+                          {(viewingNote.incidentData as any).refNumber && (
+                            <p><strong>Reference:</strong> {(viewingNote.incidentData as any).refNumber}</p>
+                          )}
+                          {(viewingNote.incidentData as any).severity && (
+                            <p><strong>Severity:</strong> {(viewingNote.incidentData as any).severity}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {viewingNote.medicationData && typeof viewingNote.medicationData === 'object' && (
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <h4 className="font-medium text-blue-800 mb-2">Medication Information:</h4>
+                        <div className="text-sm space-y-1">
+                          {(viewingNote.medicationData as any).status && (
+                            <p><strong>Status:</strong> {(viewingNote.medicationData as any).status.replace('_', ' ')}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {viewingNote.tags && viewingNote.tags.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-2">Tags:</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {viewingNote.tags.map((tag: any, index: number) => (
+                            <Badge key={index} variant="outline">
+                              {String(tag)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setViewingNote(undefined)}>
+                  Close
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleEdit(viewingNote);
+                    setViewingNote(undefined);
+                  }}
+                >
+                  Edit Note
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
