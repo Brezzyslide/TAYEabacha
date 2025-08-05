@@ -1047,8 +1047,7 @@ export class DatabaseStorage implements IStorage {
 
   async getIncidentReportsWithClosures(tenantId: number): Promise<any[]> {
     try {
-      // First, get basic incident reports without closures to avoid column issues
-      const basicReports = await db.select({
+      const reports = await db.select({
         id: incidentReports.id,
         incidentId: incidentReports.incidentId,
         clientId: incidentReports.clientId,
@@ -1074,15 +1073,59 @@ export class DatabaseStorage implements IStorage {
         clientIdNumber: clients.clientId,
         // Staff information
         staffUsername: users.username,
-        staffFullName: users.fullName
+        staffFullName: users.fullName,
+        // Closure information with new standardized fields
+        closureId: incidentClosures.id,
+        closureDate: incidentClosures.closureDate,
+        findings: incidentClosures.findings,
+        rootCause: incidentClosures.rootCause,
+        recommendations: incidentClosures.recommendations,
+        outcomes: incidentClosures.outcomes,
+        controls: incidentClosures.controls,
+        externalReporting: incidentClosures.externalReporting,
+        externalReference: incidentClosures.externalReference,
+        followUpDate: incidentClosures.followUpDate,
+        closureStatus: incidentClosures.status,
+        closureCreatedAt: incidentClosures.createdAt
       })
       .from(incidentReports)
       .leftJoin(clients, eq(incidentReports.clientId, clients.id))
       .leftJoin(users, eq(incidentReports.staffId, users.id))
+      .leftJoin(incidentClosures, eq(incidentReports.incidentId, incidentClosures.incidentId))
       .where(eq(incidentReports.tenantId, tenantId))
       .orderBy(desc(incidentReports.createdAt));
 
-      return basicReports;
+      // Transform the data to match the expected frontend structure
+      return reports.map(report => ({
+        ...report,
+        closure: report.closureId ? {
+          id: report.closureId,
+          closureDate: report.closureDate,
+          findings: report.findings,
+          rootCause: report.rootCause,
+          recommendations: report.recommendations,
+          outcomes: report.outcomes,
+          controls: report.controls,
+          externalReporting: report.externalReporting,
+          externalReference: report.externalReference,
+          followUpDate: report.followUpDate,
+          status: report.closureStatus,
+          createdAt: report.closureCreatedAt
+        } : null,
+        // Remove the flattened closure fields from the main object
+        closureId: undefined,
+        closureDate: undefined,
+        findings: undefined,
+        rootCause: undefined,
+        recommendations: undefined,
+        outcomes: undefined,
+        controls: undefined,
+        externalReporting: undefined,
+        externalReference: undefined,
+        followUpDate: undefined,
+        closureStatus: undefined,
+        closureCreatedAt: undefined
+      }));
     } catch (error) {
       console.error("Error fetching incident reports with closures:", error);
       return [];

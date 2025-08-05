@@ -29,21 +29,15 @@ interface IncidentReport {
   closure?: {
     id: number;
     closureDate: string;
-    controlReview: boolean;
-    improvements?: string;
-    implemented: boolean;
-    controlLevel: string;
-    wasLTI: string;
-    hazard: string;
-    severity: string;
-    externalNotice: boolean;
-    isNDISReportable: boolean;
-    ndisReference?: string;
-    participantContext: string;
-    supportPlanAvailable: string;
-    reviewType: string;
-    outcome?: string;
-    attachments: any[];
+    findings: string;
+    rootCause?: string;
+    recommendations: string;
+    outcomes: string[];
+    controls: string[];
+    externalReporting: any[];
+    externalReference?: string;
+    followUpDate?: string;
+    status: string;
     createdAt: string;
   };
   client: {
@@ -342,104 +336,104 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Closure Date</p>
-                    <p className="font-medium">{format(new Date(incident.closure.closureDate), "PPP")}</p>
+                    <p className="font-medium">{format(new Date(incident.closure.closureDate), "PPP 'at' p")}</p>
                   </div>
 
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Severity Level</p>
-                    {getSeverityBadge(incident.closure.severity)}
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <Badge variant="outline">{incident.closure.status}</Badge>
                   </div>
 
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Hazard Type</p>
-                    <Badge variant="outline">{incident.closure.hazard}</Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Control Level</p>
-                    <Badge variant="outline" className={getControlLevelColor(incident.closure.controlLevel)}>
-                      {incident.closure.controlLevel}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Review Type</p>
-                    <Badge variant="outline">{incident.closure.reviewType}</Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Lost Time Injury</p>
-                    <Badge variant={incident.closure.wasLTI === "yes" ? "destructive" : "secondary"}>
-                      {incident.closure.wasLTI.toUpperCase()}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">External Notice</p>
-                    <Badge variant={incident.closure.externalNotice ? "destructive" : "secondary"}>
-                      {incident.closure.externalNotice ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">NDIS Reportable</p>
-                    <Badge variant={incident.closure.isNDISReportable ? "destructive" : "secondary"}>
-                      {incident.closure.isNDISReportable ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-
-                  {incident.closure.isNDISReportable && incident.closure.ndisReference && (
+                  {incident.closure.followUpDate && (
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">NDIS Reference</p>
-                      <Badge variant="outline">{incident.closure.ndisReference}</Badge>
+                      <p className="text-sm font-medium text-muted-foreground">Follow-up Date</p>
+                      <p className="font-medium">{format(new Date(incident.closure.followUpDate), "PPP")}</p>
                     </div>
                   )}
 
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Participant Context</p>
-                    <Badge variant="outline">{incident.closure.participantContext.toUpperCase()}</Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Support Plan Available</p>
-                    <Badge variant="outline">{incident.closure.supportPlanAvailable.toUpperCase()}</Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Control Review</p>
-                    <Badge variant={incident.closure.controlReview ? "default" : "secondary"}>
-                      {incident.closure.controlReview ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Improvements Implemented</p>
-                    <Badge variant={incident.closure.implemented ? "default" : "secondary"}>
-                      {incident.closure.implemented ? "Yes" : "No"}
-                    </Badge>
-                  </div>
+                  {incident.closure.externalReference && (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">External Reference</p>
+                      <Badge variant="outline">{incident.closure.externalReference}</Badge>
+                    </div>
+                  )}
                 </div>
 
-                {incident.closure.improvements && (
+                <div className="space-y-4">
+                  {/* Findings */}
                   <div className="space-y-2">
-                    <h4 className="font-medium">Improvements/Actions</h4>
+                    <h4 className="font-medium text-lg">Investigation Findings</h4>
                     <div className="bg-muted/50 p-4 rounded-lg">
-                      <p className="whitespace-pre-wrap">{incident.closure.improvements}</p>
+                      <p className="whitespace-pre-wrap">{incident.closure.findings}</p>
                     </div>
                   </div>
-                )}
 
-                {incident.closure.outcome && (
+                  {/* Root Cause */}
+                  {incident.closure.rootCause && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-lg">Root Cause Analysis</h4>
+                      <div className="bg-muted/50 p-4 rounded-lg">
+                        <p className="whitespace-pre-wrap">{incident.closure.rootCause}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recommendations */}
                   <div className="space-y-2">
-                    <h4 className="font-medium">Outcome</h4>
+                    <h4 className="font-medium text-lg">Recommendations</h4>
                     <div className="bg-muted/50 p-4 rounded-lg">
-                      <p className="whitespace-pre-wrap">{incident.closure.outcome}</p>
+                      <p className="whitespace-pre-wrap">{incident.closure.recommendations}</p>
                     </div>
                   </div>
-                )}
+
+                  {/* Outcome Actions */}
+                  {incident.closure.outcomes && incident.closure.outcomes.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-lg">Outcome Actions</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {incident.closure.outcomes.map((outcome, index) => (
+                          <Badge key={index} variant="default">{outcome}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Controls Achieved */}
+                  {incident.closure.controls && incident.closure.controls.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-lg">Controls Achieved</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {incident.closure.controls.map((control, index) => (
+                          <Badge key={index} variant="secondary">{control}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* External Reporting */}
+                  {incident.closure.externalReporting && incident.closure.externalReporting.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-lg">External Reporting</h4>
+                      <div className="space-y-2">
+                        {incident.closure.externalReporting.map((report: any, index: number) => (
+                          <div key={index} className="border rounded-lg p-3">
+                            <div className="flex items-start gap-2">
+                              <Badge variant="outline" className="mt-0.5">{report.agency || 'External Agency'}</Badge>
+                              {report.details && (
+                                <div className="flex-1">
+                                  <p className="text-sm text-muted-foreground">{report.details}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
