@@ -4188,10 +4188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Import XLSX with error handling
+      // Import XLSX with error handling (using ES module import)
       let XLSX;
       try {
-        XLSX = require('xlsx');
+        XLSX = await import('xlsx');
         console.log("[OBSERVATIONS EXCEL EXPORT] XLSX library loaded successfully");
       } catch (xlsxError) {
         console.error("[OBSERVATIONS EXCEL EXPORT] Failed to load XLSX library:", xlsxError);

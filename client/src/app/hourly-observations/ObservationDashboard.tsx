@@ -1011,14 +1011,21 @@ export default function ObservationDashboard() {
         return;
       }
       
-      const response = await apiRequest("POST", "/api/observations/export/excel", {
-        clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
-        observationType: selectedType !== "all" ? selectedType : null,
-        dateFilter,
-        dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
-        dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
-        searchTerm: searchTerm || null,
-        observations: filteredObservations
+      const response = await fetch("/api/observations/export/excel", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          clientId: selectedClient !== "all" ? parseInt(selectedClient) : null,
+          observationType: selectedType !== "all" ? selectedType : null,
+          dateFilter,
+          dateRangeStart: dateFilter === "custom" ? dateRangeStart : null,
+          dateRangeEnd: dateFilter === "custom" ? dateRangeEnd : null,
+          searchTerm: searchTerm || null,
+          observations: filteredObservations
+        })
       });
       
       console.log("[EXCEL EXPORT DEBUG] Raw response status:", response.status);
@@ -1027,7 +1034,16 @@ export default function ObservationDashboard() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("[EXCEL EXPORT DEBUG] Error response:", errorText);
-        throw new Error(`Export failed: ${response.status} ${errorText}`);
+        let errorMessage = `Export failed: ${response.status}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
       
       const responseData = await response.json();
@@ -1059,16 +1075,16 @@ export default function ObservationDashboard() {
         description: "Excel export completed successfully.",
         variant: "default",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("[EXCEL EXPORT DEBUG] Excel export failed:", error);
       console.error("[EXCEL EXPORT DEBUG] Error details:", {
-        message: error.message,
-        stack: error.stack,
-        response: error.response?.data
+        message: error?.message,
+        stack: error?.stack,
+        response: error?.response?.data
       });
       toast({
         title: "Export Failed",
-        description: `Failed to export observations to Excel: ${error.message || 'Unknown error'}`,
+        description: `Failed to export observations to Excel: ${error?.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }
