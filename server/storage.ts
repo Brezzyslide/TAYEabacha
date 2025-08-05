@@ -129,6 +129,20 @@ export interface IStorage {
   deleteMedicationRecord(id: number, tenantId: number): Promise<boolean>;
   getMedicationRecordsByPlan(planId: number, tenantId: number): Promise<MedicationRecord[]>;
 
+  // Incident Reports
+  getIncidentReports(tenantId: number): Promise<IncidentReport[]>;
+  getIncidentReportsWithClosures(tenantId: number): Promise<any[]>;
+  getIncidentReport(incidentId: string, tenantId: number): Promise<IncidentReport | undefined>;
+  generateIncidentId(tenantId: number): Promise<string>;
+  createIncidentReport(report: InsertIncidentReport): Promise<IncidentReport>;
+  updateIncidentReport(incidentId: string, report: Partial<InsertIncidentReport>, tenantId: number): Promise<IncidentReport | undefined>;
+  deleteIncidentReport(incidentId: string, tenantId: number): Promise<boolean>;
+
+  // Incident Closures
+  getIncidentClosure(incidentId: string, tenantId: number): Promise<IncidentClosure | undefined>;
+  createIncidentClosure(closure: InsertIncidentClosure): Promise<IncidentClosure>;
+  updateIncidentClosure(incidentId: string, closure: Partial<InsertIncidentClosure>, tenantId: number): Promise<IncidentClosure | undefined>;
+
   // Staff Messages
   getStaffMessages(tenantId: number): Promise<StaffMessage[]>;
   getStaffMessage(id: number, tenantId: number): Promise<StaffMessage | undefined>;
