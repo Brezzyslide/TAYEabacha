@@ -513,15 +513,17 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
                             Close
                           </Button>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteIncident(incident.incidentId)}
-                          className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Delete
-                        </Button>
+                        {canCloseIncident() && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteIncident(incident.incidentId)}
+                            className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
