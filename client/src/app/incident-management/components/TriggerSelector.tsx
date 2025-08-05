@@ -122,6 +122,10 @@ export function TriggerSelector({ value, onChange }: TriggerSelectorProps) {
       return
     }
     
+    console.log("[TRIGGER DEBUG] Saving details for trigger:", currentTrigger);
+    console.log("[TRIGGER DEBUG] User entered tempDetails:", tempDetails);
+    console.log("[TRIGGER DEBUG] tempOtherLabel:", tempOtherLabel);
+    
     const newSelected = [...selectedTriggers, currentTrigger]
     const newDetails = { 
       ...details, 
@@ -129,6 +133,8 @@ export function TriggerSelector({ value, onChange }: TriggerSelectorProps) {
         ? `${tempOtherLabel}: ${tempDetails}`
         : tempDetails
     }
+    
+    console.log("[TRIGGER DEBUG] Updated details object:", newDetails);
     
     setSelectedTriggers(newSelected)
     setDetails(newDetails)
@@ -160,6 +166,7 @@ export function TriggerSelector({ value, onChange }: TriggerSelectorProps) {
           : triggerDetails[triggerId] || ''
       }
     })
+    console.log("[TRIGGER DEBUG] Sending to parent form:", triggerData);
     onChange(triggerData)
   }
 
