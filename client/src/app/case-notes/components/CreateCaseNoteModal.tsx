@@ -1151,6 +1151,8 @@ export default function CreateCaseNoteModal({
                 <CheckCircle className="h-4 w-4" />
                 {isSubmitting ? "Submitting..." : "Submit Case Note"}
               </Button>
+              
+
             </DialogFooter>
           </form>
         </Form>

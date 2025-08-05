@@ -65,7 +65,7 @@ export default function CaseNoteDashboard() {
       setIsModalOpen(false);
       setEditingNote(undefined);
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: "Failed to create case note. Please try again.",
