@@ -121,16 +121,27 @@ export default function CaseNoteCard({
           <div className="flex items-start justify-between">
             <div className="flex-1 space-y-2">
               {/* Header row */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-medium text-lg">{note.title}</h3>
-                {getTypeBadge()}
-                {getPriorityBadge()}
-                {note.attachments && Array.isArray(note.attachments) && note.attachments.length > 0 && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Paperclip className="w-3 h-3" />
-                    {note.attachments.length}
-                  </Badge>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-medium text-lg">{note.title}</h3>
+                  {getTypeBadge()}
+                  {getPriorityBadge()}
+                  {note.attachments && Array.isArray(note.attachments) && note.attachments.length > 0 && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Paperclip className="w-3 h-3" />
+                      {Array.isArray(note.attachments) ? note.attachments.length : 0}
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onView?.(note)}
+                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                  title="View full case note"
+                >
+                  <Eye className="h-4 w-4 text-blue-600" />
+                </Button>
               </div>
 
               {/* Client and staff info */}
@@ -244,14 +255,25 @@ export default function CaseNoteCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg mb-2">{note.title}</CardTitle>
+            <div className="flex items-center justify-between mb-2">
+              <CardTitle className="text-lg">{note.title}</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onView?.(note)}
+                className="h-8 w-8 p-0 hover:bg-blue-100"
+                title="View full case note"
+              >
+                <Eye className="h-4 w-4 text-blue-600" />
+              </Button>
+            </div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
               {getTypeBadge()}
               {getPriorityBadge()}
               {note.attachments && Array.isArray(note.attachments) && note.attachments.length > 0 && (
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Paperclip className="w-3 h-3" />
-                  {note.attachments.length} files
+                  {Array.isArray(note.attachments) ? note.attachments.length : 0} files
                 </Badge>
               )}
             </div>
@@ -329,9 +351,9 @@ export default function CaseNoteCard({
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1">Tags:</p>
               <div className="flex flex-wrap gap-1">
-                {note.tags.map((tag: string, index: number) => (
+                {note.tags.map((tag: any, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
-                    {tag}
+                    {String(tag)}
                   </Badge>
                 ))}
               </div>

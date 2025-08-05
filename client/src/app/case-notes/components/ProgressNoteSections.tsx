@@ -5,7 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Target, AlertTriangle, HandHeart, Lightbulb, FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Heart, Target, AlertTriangle, HandHeart, Lightbulb, FileText, Eye, Sparkles } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 const PROGRESS_NOTE_SECTIONS = [
   {
@@ -60,10 +63,11 @@ const PROGRESS_NOTE_SECTIONS = [
 
 interface ProgressNoteSectionsProps {
   value: Array<{ id: string; content: string }>;
-  onChange: (sections: Array<{ id: string; content: string }>) => void;
+  onChange: (sections: Array<{ id: string; content: string }>, additionalNotes?: string) => void;
 }
 
 export default function ProgressNoteSections({ value, onChange }: ProgressNoteSectionsProps) {
+  const { toast } = useToast();
   const [selectedSections, setSelectedSections] = useState<string[]>(
     value.map(s => s.id) || []
   );
@@ -73,14 +77,52 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
   const [showDialog, setShowDialog] = useState(false);
   const [currentSection, setCurrentSection] = useState<string | null>(null);
   const [tempContent, setTempContent] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
+  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [spellCheckCount, setSpellCheckCount] = useState(0);
+  const [showSpellCheckPreview, setShowSpellCheckPreview] = useState(false);
+  const [spellCheckResult, setSpellCheckResult] = useState<{ original: string; corrected: string } | null>(null);
 
-  const updateParent = (selected: string[], content: Record<string, string>) => {
+  // Word count calculation
+  const getWordCount = (text: string) => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  const updateParent = (selected: string[], content: Record<string, string>, notes?: string) => {
     const sections = selected.map(id => ({
       id,
       content: content[id] || ""
     }));
-    onChange(sections);
+    onChange(sections, notes);
   };
+
+  // Spell check mutation for additional notes
+  const spellCheckMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const response = await fetch("/api/spellcheck-gpt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!response.ok) throw new Error('Spell check failed');
+      return response.json();
+    },
+    onSuccess: (data: { original: string; corrected: string }) => {
+      setSpellCheckResult(data);
+      setShowSpellCheckPreview(true);
+      toast({
+        title: "Spell Check Complete",
+        description: "Review the suggested corrections below.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Spell Check Failed",
+        description: "Unable to perform spell check. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const toggleSection = (id: string) => {
     if (selectedSections.includes(id)) {
@@ -102,17 +144,68 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
 
   const saveSection = () => {
     if (currentSection && tempContent.trim()) {
+      const wordCount = getWordCount(tempContent);
+      if (wordCount < 30) {
+        toast({
+          title: "Insufficient Content",
+          description: `This section requires at least 30 words. Current: ${wordCount} words.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const newSelected = [...selectedSections, currentSection];
       const newContent = { ...sectionContent, [currentSection]: tempContent.trim() };
       
       setSelectedSections(newSelected);
       setSectionContent(newContent);
-      updateParent(newSelected, newContent);
+      updateParent(newSelected, newContent, additionalNotes);
       
       setShowDialog(false);
       setCurrentSection(null);
       setTempContent("");
     }
+  };
+
+  const handleSpellCheck = () => {
+    if (spellCheckCount >= 2) {
+      toast({
+        title: "Spell Check Limit Reached",
+        description: "You have used all 2 spell checks for additional notes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!additionalNotes.trim()) {
+      toast({
+        title: "No Content",
+        description: "Please enter some content before spell checking.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSpellCheckCount(prev => prev + 1);
+    spellCheckMutation.mutate(additionalNotes);
+  };
+
+  const acceptSpellCheck = () => {
+    if (spellCheckResult) {
+      setAdditionalNotes(spellCheckResult.corrected);
+      setShowSpellCheckPreview(false);
+      setSpellCheckResult(null);
+      updateParent(selectedSections, sectionContent, spellCheckResult.corrected);
+      toast({
+        title: "Corrections Applied",
+        description: "Spell check corrections have been applied.",
+      });
+    }
+  };
+
+  const rejectSpellCheck = () => {
+    setShowSpellCheckPreview(false);
+    setSpellCheckResult(null);
   };
 
   const cancelSection = () => {
@@ -179,7 +272,26 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
                   
                   {isSelected && hasContent && (
                     <div className="mt-2 p-3 bg-white/50 rounded border text-sm">
-                      <p className="font-medium text-xs text-muted-foreground mb-1">Content Preview:</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-xs text-muted-foreground">Content Preview:</p>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {getWordCount(sectionContent[section.id])} words
+                          </Badge>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setTempContent(sectionContent[section.id]);
+                              setShowPreview(true);
+                            }}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                       <p className="line-clamp-2">{sectionContent[section.id]}</p>
                       <Button 
                         type="button"
@@ -199,6 +311,111 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
         })}
       </div>
 
+      {/* Additional Notes Section - Mandatory 30 words */}
+      <Card className="border-2 border-orange-200 bg-orange-50/30">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Additional Notes & Observations
+            <Badge variant="destructive" className="text-xs">Required - 30 words minimum</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="additional-notes" className="text-sm font-medium">
+              Please provide any additional observations, communications, or important details not covered above *
+            </Label>
+            <Textarea
+              id="additional-notes"
+              value={additionalNotes}
+              onChange={(e) => {
+                setAdditionalNotes(e.target.value);
+                updateParent(selectedSections, sectionContent, e.target.value);
+              }}
+              placeholder="Include any additional observations, family communications, follow-up actions, or other relevant details not covered in the structured sections above..."
+              className="mt-1 min-h-[100px]"
+              rows={4}
+            />
+            <div className="flex items-center justify-between mt-1">
+              <div className="text-xs text-muted-foreground">
+                Word count: {getWordCount(additionalNotes)} / 30 minimum
+                {getWordCount(additionalNotes) >= 30 && (
+                  <span className="text-green-600 ml-2">✓ Meets requirement</span>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setTempContent(additionalNotes);
+                  setShowPreview(true);
+                }}
+                className="h-6 w-6 p-0"
+                disabled={!additionalNotes.trim()}
+              >
+                <Eye className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSpellCheck}
+                disabled={spellCheckCount >= 2 || spellCheckMutation.isPending || !additionalNotes.trim()}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Check Spelling
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {2 - spellCheckCount} checks remaining
+              </span>
+            </div>
+            
+            {spellCheckMutation.isPending && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                Checking spelling...
+              </div>
+            )}
+          </div>
+
+          {/* Spell Check Preview */}
+          {showSpellCheckPreview && spellCheckResult && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Spell Check Results
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Corrected Version:</p>
+                    <div className="bg-white p-3 rounded border text-sm">
+                      {spellCheckResult.corrected}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" onClick={acceptSpellCheck}>
+                      Accept Changes
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={rejectSpellCheck}>
+                      Keep Original
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
+
       {selectedSections.length > 0 && (
         <div className="p-4 bg-muted/50 rounded-lg">
           <h4 className="font-medium mb-2 flex items-center gap-2">
@@ -214,12 +431,20 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
                 <div key={id} className="text-sm">
                   <span className="font-medium">{section?.label}:</span>{" "}
                   <span className="text-muted-foreground">
-                    {content?.trim() ? `${content.substring(0, 50)}...` : "Content pending..."}
+                    {content?.trim() ? `${getWordCount(content)} words - ${content.substring(0, 50)}...` : "Content pending..."}
                   </span>
                 </div>
               );
             })}
           </div>
+          {additionalNotes && (
+            <div className="text-sm mt-2">
+              <span className="font-medium">Additional Notes:</span>{" "}
+              <span className="text-muted-foreground">
+                {getWordCount(additionalNotes)} words - {additionalNotes.substring(0, 50)}...
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -246,7 +471,7 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
             
             <div>
               <Label htmlFor="section-content" className="text-sm font-medium">
-                Please provide detailed information for this section *
+                Please provide detailed information for this section * (Minimum 30 words)
               </Label>
               <Textarea
                 id="section-content"
@@ -256,8 +481,13 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
                 className="mt-1 min-h-[120px]"
                 rows={6}
               />
-              <div className="text-xs text-muted-foreground mt-1">
-                Current length: {tempContent.length} characters
+              <div className="flex items-center justify-between mt-1">
+                <div className="text-xs text-muted-foreground">
+                  Word count: {getWordCount(tempContent)} / 30 minimum
+                  {getWordCount(tempContent) >= 30 && (
+                    <span className="text-green-600 ml-2">✓ Meets requirement</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -269,9 +499,38 @@ export default function ProgressNoteSections({ value, onChange }: ProgressNoteSe
             <Button 
               type="button" 
               onClick={saveSection}
-              disabled={!tempContent.trim()}
+              disabled={!tempContent.trim() || getWordCount(tempContent) < 30}
             >
               Save Section
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Content Preview
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-muted/20 rounded-lg">
+              <div className="whitespace-pre-wrap text-sm">
+                {tempContent || "No content to preview"}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Word count: {getWordCount(tempContent)} words
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button type="button" onClick={() => setShowPreview(false)}>
+              Close Preview
             </Button>
           </div>
         </DialogContent>

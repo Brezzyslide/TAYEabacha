@@ -43,6 +43,9 @@ const caseNoteSchema = z.object({
     content: z.string()
   })).default([]),
   
+  // Additional notes for progress notes
+  additionalNotes: z.string().optional(),
+  
   attachments: z.array(z.object({
     name: z.string(),
     url: z.string(),
@@ -168,6 +171,7 @@ export default function CreateCaseNoteModal({
   const medicationStatus = form.watch("medicationStatus");
   const selectedCategory = form.watch("category");
   const progressSections = form.watch("progressSections");
+  const additionalNotesValue = form.watch("additionalNotes");
   
   // Auto-set incidentLodged to true when incident reference number is provided
   useEffect(() => {
@@ -228,10 +232,15 @@ export default function CreateCaseNoteModal({
   const wordCount = useMemo(() => {
     let text = contentValue;
     
-    // For Progress Notes, include content from structured sections
-    if (selectedCategory === "Progress Note" && progressSections && progressSections.length > 0) {
-      const sectionsText = progressSections.map(s => s.content).join(' ');
-      text = contentValue + ' ' + sectionsText;
+    // For Progress Notes, include content from structured sections and additional notes
+    if (selectedCategory === "Progress Note") {
+      if (progressSections && progressSections.length > 0) {
+        const sectionsText = progressSections.map(s => s.content).join(' ');
+        text += ' ' + sectionsText;
+      }
+      if (additionalNotesValue) {
+        text += ' ' + additionalNotesValue;
+      }
     }
     
     const plainText = text.replace(/<[^>]*>/g, '').trim();
@@ -1003,7 +1012,10 @@ export default function CreateCaseNoteModal({
                       <FormItem>
                         <ProgressNoteSections
                           value={field.value || []}
-                          onChange={field.onChange}
+                          onChange={(sections, additionalNotes) => {
+                            field.onChange(sections);
+                            form.setValue("additionalNotes", additionalNotes || "");
+                          }}
                         />
                         <FormMessage />
                       </FormItem>
@@ -1116,7 +1128,14 @@ export default function CreateCaseNoteModal({
               </Button>
               <Button 
                 type="submit"
-                disabled={wordCount < 130 || isSubmitting}
+                disabled={
+                  wordCount < 130 || 
+                  isSubmitting || 
+                  (selectedCategory === "Progress Note" && 
+                    (!progressSections || progressSections.length === 0 || 
+                     !additionalNotesValue || additionalNotesValue.trim().split(/\s+/).filter(w => w.length > 0).length < 30)
+                  )
+                }
                 className="flex items-center gap-2"
                 onClick={(e) => {
                   // Prevent rapid double-clicking
