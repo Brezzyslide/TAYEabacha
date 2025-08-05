@@ -102,15 +102,8 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
   const { data: incidents = [], isLoading, error } = useQuery({
     queryKey: ["/api/incident-reports", { clientId }],
     queryFn: async () => {
-      console.log("[CLIENT INCIDENT TAB] Fetching incidents for clientId:", clientId);
       const response = await apiRequest("GET", `/api/incident-reports?clientId=${clientId}`);
       const data = await response.json();
-      console.log("[CLIENT INCIDENT TAB] Raw API response:", data);
-      console.log("[CLIENT INCIDENT TAB] Is array:", Array.isArray(data));
-      if (Array.isArray(data) && data.length > 0) {
-        console.log("[CLIENT INCIDENT TAB] First incident keys:", Object.keys(data[0]));
-        console.log("[CLIENT INCIDENT TAB] First incident clientFirstName:", data[0].clientFirstName);
-      }
       return Array.isArray(data) ? data : [];
     },
     enabled: !!clientId,
@@ -196,9 +189,6 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
   };
 
   const handleViewIncident = (incident: IncidentReport) => {
-    console.log("[CLIENT INCIDENT TAB] View incident clicked:", incident);
-    console.log("[CLIENT INCIDENT TAB] Incident has clientFirstName:", incident.clientFirstName);
-    console.log("[CLIENT INCIDENT TAB] Incident keys:", Object.keys(incident));
     setSelectedIncident(incident);
     setShowViewModal(true);
   };
@@ -570,18 +560,18 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
         />
       )}
 
-      {showViewModal && selectedIncident && (
+      {selectedIncident && (
         <ViewIncidentModal
-          isOpen={showViewModal}
-          onClose={() => setShowViewModal(false)}
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
           incident={selectedIncident}
         />
       )}
 
-      {showCloseModal && selectedIncident && (
+      {selectedIncident && (
         <CloseIncidentModal
-          isOpen={showCloseModal}
-          onClose={() => setShowCloseModal(false)}
+          open={showCloseModal}
+          onOpenChange={setShowCloseModal}
           incident={selectedIncident}
           onSuccess={() => {
             setShowCloseModal(false);
