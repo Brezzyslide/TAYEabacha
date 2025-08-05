@@ -2658,6 +2658,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = await storage.getClient(caseNote.clientId, tenantId);
       const clientName = client ? `${client.firstName} ${client.lastName}` : "Unknown Client";
       
+      // Get staff information
+      const staff = await storage.getUser(caseNote.userId, tenantId);
+      const staffName = staff?.fullName || "Unknown Staff";
+      
       // Create PDF using jsPDF
       const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
@@ -2696,6 +2700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Case Note ID": caseNote.id,
         "Title": caseNote.title,
         "Client": clientName,
+        "Completed By": staffName,
         "Date Created": new Date(caseNote.createdAt).toLocaleDateString('en-AU'),
         "Category": caseNote.category || "Progress Note",
         "Priority": caseNote.priority || "Normal",
@@ -2714,9 +2719,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create stylish header box with case note details
       pdf.setFillColor(248, 250, 252); // Light gray background
-      pdf.rect(margin, currentY, contentWidth, 45, 'F');
+      pdf.rect(margin, currentY, contentWidth, 55, 'F');
       pdf.setDrawColor(226, 232, 240); // Gray border
-      pdf.rect(margin, currentY, contentWidth, 45, 'S');
+      pdf.rect(margin, currentY, contentWidth, 55, 'S');
       
       // Header information in boxes
       pdf.setFontSize(12);
@@ -2736,11 +2741,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Third row
       boxY += 10;
       pdf.text(`Priority: ${caseNote.priority || "Normal"}`, margin + 5, boxY);
+      pdf.text(`Completed By: ${staffName}`, margin + 140, boxY);
+      
+      // Fourth row (if needed for shift info)
       if (caseNote.linkedShiftId) {
-        pdf.text(`Shift ID: ${caseNote.linkedShiftId}`, margin + 140, boxY);
+        boxY += 10;
+        pdf.text(`Shift ID: ${caseNote.linkedShiftId}`, margin + 5, boxY);
       }
       
-      currentY += 60; // Move below the header box
+      currentY += 70; // Move below the header box
       
       // Content section with clean styling
       pdf.setFillColor(255, 255, 255); // White background

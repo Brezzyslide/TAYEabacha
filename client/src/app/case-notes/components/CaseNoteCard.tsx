@@ -159,7 +159,7 @@ export default function CaseNoteCard({
                 </div>
                 <div className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  <span>by {staff?.username || 'Loading...'}</span>
+                  <span>by {staff?.fullName || 'Loading...'}</span>
                 </div>
               </div>
 
@@ -291,7 +291,7 @@ export default function CaseNoteCard({
               </div>
               <div className="flex items-center gap-1">
                 <User className="w-4 h-4" />
-                <span>by {staff?.username || 'Loading...'}</span>
+                <span>by {staff?.fullName || 'Loading...'}</span>
               </div>
             </div>
           </div>
