@@ -2712,38 +2712,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       };
 
-      // Add content
+      // Create stylish header box with case note details
+      pdf.setFillColor(248, 250, 252); // Light gray background
+      pdf.rect(margin, currentY, contentWidth, 45, 'F');
+      pdf.setDrawColor(226, 232, 240); // Gray border
+      pdf.rect(margin, currentY, contentWidth, 45, 'S');
+      
+      // Header information in boxes
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(30, 41, 59); // Dark slate
+      
+      // First row of info
+      let boxY = currentY + 8;
+      pdf.text(`Case Note: ${caseNote.title}`, margin + 5, boxY);
+      pdf.text(`Client: ${clientName}`, margin + 140, boxY);
+      
+      // Second row
+      boxY += 10;
+      pdf.text(`Date: ${new Date(caseNote.createdAt).toLocaleDateString('en-AU')}`, margin + 5, boxY);
+      pdf.text(`Category: ${caseNote.category || "Progress Note"}`, margin + 140, boxY);
+      
+      // Third row
+      boxY += 10;
+      pdf.text(`Priority: ${caseNote.priority || "Normal"}`, margin + 5, boxY);
+      if (caseNote.linkedShiftId) {
+        pdf.text(`Shift ID: ${caseNote.linkedShiftId}`, margin + 140, boxY);
+      }
+      
+      currentY += 60; // Move below the header box
+      
+      // Content section with clean styling
+      pdf.setFillColor(255, 255, 255); // White background
+      pdf.setTextColor(0, 0, 0); // Black text
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CASE NOTE CONTENT', margin, currentY);
+      
+      currentY += 12;
+      
+      // Add content box
+      const contentLines = pdf.splitTextToSize(caseNote.content, contentWidth - 10);
+      const contentHeight = Math.max(contentLines.length * 5 + 10, 30);
+      
+      pdf.setFillColor(249, 250, 251); // Very light gray
+      pdf.rect(margin, currentY, contentWidth, contentHeight, 'F');
+      pdf.setDrawColor(229, 231, 235);
+      pdf.rect(margin, currentY, contentWidth, contentHeight, 'S');
+      
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
+      pdf.text(contentLines, margin + 5, currentY + 8);
       
-      const addPageBreakIfNeeded = (additionalHeight: number = 15) => {
-        if (currentY > pageHeight - additionalHeight) {
-          pdf.addPage('l', 'a4'); // Landscape A4
-          currentY = 30;
-          return true;
-        }
-        return false;
-      };
-
-      for (const [key, value] of Object.entries(noteData)) {
-        addPageBreakIfNeeded(30);
-        
-        // Key
+      currentY += contentHeight + 20;
+      
+      // Additional details if present
+      if (caseNote.incidentData || caseNote.medicationData || (caseNote.tags && caseNote.tags.length > 0)) {
+        pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`${key}:`, margin + 5, currentY);
-        
-        // Value with wrapping and proper page breaks
-        pdf.setFont('helvetica', 'normal');
-        const lines = pdf.splitTextToSize(String(value || 'Not specified'), contentWidth - 90);
-        
-        for (let i = 0; i < lines.length; i++) {
-          if (i > 0) {
-            currentY += 6;
-            addPageBreakIfNeeded();
-          }
-          pdf.text(lines[i], margin + 85, currentY);
-        }
+        pdf.text('ADDITIONAL DETAILS', margin, currentY);
         currentY += 12;
+        
+        if (caseNote.incidentData) {
+          pdf.setFillColor(254, 226, 226); // Light red
+          pdf.rect(margin, currentY, contentWidth, 25, 'F');
+          pdf.setDrawColor(248, 113, 113);
+          pdf.rect(margin, currentY, contentWidth, 25, 'S');
+          
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(153, 27, 27); // Dark red
+          pdf.text('INCIDENT INFORMATION', margin + 5, currentY + 8);
+          
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(0, 0, 0);
+          const incidentText = JSON.stringify(caseNote.incidentData, null, 2)
+            .replace(/[{}",]/g, '')
+            .replace(/\n\s+/g, ' ')
+            .trim();
+          pdf.text(incidentText, margin + 5, currentY + 18);
+          currentY += 35;
+        }
+        
+        if (caseNote.medicationData) {
+          pdf.setFillColor(219, 234, 254); // Light blue
+          pdf.rect(margin, currentY, contentWidth, 25, 'F');
+          pdf.setDrawColor(59, 130, 246);
+          pdf.rect(margin, currentY, contentWidth, 25, 'S');
+          
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(30, 64, 175); // Dark blue
+          pdf.text('MEDICATION INFORMATION', margin + 5, currentY + 8);
+          
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(0, 0, 0);
+          const medicationText = JSON.stringify(caseNote.medicationData, null, 2)
+            .replace(/[{}",]/g, '')
+            .replace(/\n\s+/g, ' ')
+            .trim();
+          pdf.text(medicationText, margin + 5, currentY + 18);
+          currentY += 35;
+        }
+        
+        if (caseNote.tags && caseNote.tags.length > 0) {
+          pdf.setFillColor(240, 253, 244); // Light green
+          pdf.rect(margin, currentY, contentWidth, 20, 'F');
+          pdf.setDrawColor(34, 197, 94);
+          pdf.rect(margin, currentY, contentWidth, 20, 'S');
+          
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(22, 101, 52); // Dark green
+          pdf.text('TAGS', margin + 5, currentY + 8);
+          
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(caseNote.tags.join(", "), margin + 5, currentY + 16);
+          currentY += 30;
+        }
       }
       
       // Add footer to all pages
