@@ -79,11 +79,11 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Permission check: Only Admin and Coordinator can close incidents
+  // Permission check: Only TeamLeader, Coordinator, and Admin can close/delete incidents
   const canCloseIncident = () => {
     if (!user?.role) return false;
     const userRole = user.role.toLowerCase();
-    return userRole === "admin" || userRole === "coordinator" || userRole === "consolemanager";
+    return userRole === "admin" || userRole === "coordinator" || userRole === "teamleader" || userRole === "consolemanager";
   };
 
   // Handle missing clientId

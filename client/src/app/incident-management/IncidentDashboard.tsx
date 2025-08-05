@@ -80,11 +80,11 @@ export default function IncidentDashboard() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Permission check: Only Admin and Coordinator can close incidents
+  // Permission check: Only TeamLeader, Coordinator, and Admin can close/delete incidents
   const canCloseIncident = () => {
     if (!user?.role) return false;
     const userRole = user.role.toLowerCase();
-    return userRole === "admin" || userRole === "coordinator" || userRole === "consolemanager";
+    return userRole === "admin" || userRole === "coordinator" || userRole === "teamleader" || userRole === "consolemanager";
   };
 
   const { data: incidents = [], isLoading, error } = useQuery({
@@ -488,14 +488,16 @@ export default function IncidentDashboard() {
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleDeleteIncident(incident.report?.incidentId || '')}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canCloseIncident() && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleDeleteIncident(incident.report?.incidentId || '')}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
