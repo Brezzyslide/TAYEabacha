@@ -5736,16 +5736,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const closureDetails = [
           ['Closure Date:', new Date(closure.closureDate).toLocaleDateString('en-AU')],
-          ['Severity Level:', closure.severity],
-          ['Hazard Type:', closure.hazard],
-          ['Control Level:', closure.controlLevel],
-          ['Review Type:', closure.reviewType],
-          ['Lost Time Injury:', closure.wasLTI?.toUpperCase() || 'No'],
-          ['External Notice:', closure.externalNotice ? 'Yes' : 'No'],
-          ['Control Review:', closure.controlReview ? 'Yes' : 'No'],
-          ['Improvements Implemented:', closure.implemented ? 'Yes' : 'No'],
-          ['Participant Context:', closure.participantContext?.toUpperCase() || 'Not specified'],
-          ['Support Plan Available:', closure.supportPlanAvailable?.toUpperCase() || 'Not specified']
+          ['Status:', closure.status || 'Not specified'],
+          ...(closure.followUpDate ? [['Follow-up Date:', new Date(closure.followUpDate).toLocaleDateString('en-AU')]] : []),
+          ...(closure.externalReference ? [['External Reference:', closure.externalReference]] : [])
         ];
         
         pdf.setFontSize(10);
@@ -5753,12 +5746,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdf.setFont('helvetica', 'bold');
           pdf.text(label, margin, currentY);
           pdf.setFont('helvetica', 'normal');
-          pdf.text(value, margin + 70, currentY);
+          pdf.text(String(value), margin + 70, currentY);
           currentY += 8;
         });
         
-        // Improvements/Actions
-        if (closure.improvements) {
+        // Investigation Findings
+        if (closure.findings) {
           // Check if we need a new page
           if (currentY + 30 > pageHeight - 30) {
             pdf.addPage();
@@ -5767,11 +5760,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           currentY += 5;
           pdf.setFont('helvetica', 'bold');
-          pdf.text('Improvements/Actions:', margin, currentY);
+          pdf.text('Investigation Findings:', margin, currentY);
           currentY += 8;
           pdf.setFont('helvetica', 'normal');
-          const improvementLines = pdf.splitTextToSize(closure.improvements, contentWidth - 20);
-          improvementLines.forEach((line: string) => {
+          const findingsLines = pdf.splitTextToSize(closure.findings, contentWidth - 20);
+          findingsLines.forEach((line: string) => {
             // Check if we need a new page for each line
             if (currentY + 6 > pageHeight - 30) {
               pdf.addPage();
@@ -5782,8 +5775,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Outcome
-        if (closure.outcome) {
+        // Root Cause Analysis
+        if (closure.rootCause) {
           // Check if we need a new page
           if (currentY + 30 > pageHeight - 30) {
             pdf.addPage();
@@ -5792,17 +5785,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           currentY += 5;
           pdf.setFont('helvetica', 'bold');
-          pdf.text('Outcome:', margin, currentY);
+          pdf.text('Root Cause Analysis:', margin, currentY);
           currentY += 8;
           pdf.setFont('helvetica', 'normal');
-          const outcomeLines = pdf.splitTextToSize(closure.outcome, contentWidth - 20);
-          outcomeLines.forEach((line: string) => {
+          const rootCauseLines = pdf.splitTextToSize(closure.rootCause, contentWidth - 20);
+          rootCauseLines.forEach((line: string) => {
             // Check if we need a new page for each line
             if (currentY + 6 > pageHeight - 30) {
               pdf.addPage();
               currentY = 30;
             }
             pdf.text(line, margin + 5, currentY);
+            currentY += 6;
+          });
+        }
+        
+        // Recommendations
+        if (closure.recommendations) {
+          // Check if we need a new page
+          if (currentY + 30 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
+          currentY += 5;
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Recommendations:', margin, currentY);
+          currentY += 8;
+          pdf.setFont('helvetica', 'normal');
+          const recommendationLines = pdf.splitTextToSize(closure.recommendations, contentWidth - 20);
+          recommendationLines.forEach((line: string) => {
+            // Check if we need a new page for each line
+            if (currentY + 6 > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
+            pdf.text(line, margin + 5, currentY);
+            currentY += 6;
+          });
+        }
+        
+        // Outcome Actions
+        if (closure.outcomes && Array.isArray(closure.outcomes) && closure.outcomes.length > 0) {
+          // Check if we need a new page
+          if (currentY + 30 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
+          currentY += 5;
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Outcome Actions:', margin, currentY);
+          currentY += 8;
+          pdf.setFont('helvetica', 'normal');
+          closure.outcomes.forEach((outcome: string) => {
+            if (currentY + 6 > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
+            pdf.text(`• ${outcome}`, margin + 5, currentY);
+            currentY += 6;
+          });
+        }
+        
+        // Controls Achieved
+        if (closure.controls && Array.isArray(closure.controls) && closure.controls.length > 0) {
+          // Check if we need a new page
+          if (currentY + 30 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
+          currentY += 5;
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Controls Achieved:', margin, currentY);
+          currentY += 8;
+          pdf.setFont('helvetica', 'normal');
+          closure.controls.forEach((control: string) => {
+            if (currentY + 6 > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
+            pdf.text(`• ${control}`, margin + 5, currentY);
+            currentY += 6;
+          });
+        }
+        
+        // External Reporting
+        if (closure.externalReporting && Array.isArray(closure.externalReporting) && closure.externalReporting.length > 0) {
+          // Check if we need a new page
+          if (currentY + 30 > pageHeight - 30) {
+            pdf.addPage();
+            currentY = 30;
+          }
+          
+          currentY += 5;
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('External Reporting:', margin, currentY);
+          currentY += 8;
+          pdf.setFont('helvetica', 'normal');
+          closure.externalReporting.forEach((report: any) => {
+            if (currentY + 6 > pageHeight - 30) {
+              pdf.addPage();
+              currentY = 30;
+            }
+            const agency = report.agency || 'External Agency';
+            const details = report.details || '';
+            pdf.text(`• ${agency}${details ? ': ' + details : ''}`, margin + 5, currentY);
             currentY += 6;
           });
         }
