@@ -132,6 +132,11 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
   });
 
   const onSubmit = (data: ClosureFormData) => {
+    if (!data.findings.trim() || !data.recommendations.trim()) {
+      alert("Please fill out all required fields.");
+      return;
+    }
+
     const payload = {
       ...data,
       followUpDate: followUpDate ? followUpDate.toISOString().split('T')[0] : "",
