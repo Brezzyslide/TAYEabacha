@@ -6,7 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, AlertTriangle, Clock, CheckCircle, Eye, Edit, Trash2, Download } from "lucide-react";
+import { Plus, Search, Filter, AlertTriangle, Clock, CheckCircle, Eye, Edit, Trash2, Download, RefreshCw } from "lucide-react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
+import { RefreshHandler } from "@/components/RefreshHandler";
 
 import { CreateIncidentModal } from "./components/CreateIncidentModal";
 import { ViewIncidentModal } from "./components/ViewIncidentModal";
@@ -79,6 +82,26 @@ export default function IncidentDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Auto-refresh for real-time updates with production-optimized intervals
+  const { manualRefresh } = useAutoRefresh({
+    queryKeys: ["/api/incident-reports", "/api/notifications"],
+    interval: 45000, // 45 seconds for production stability
+    enabled: true
+  });
+
+  // Setup realtime updates via WebSocket
+  useRealtimeUpdates({
+    enabled: true,
+    onUpdate: (data) => {
+      if (data.type.includes('incident')) {
+        toast({
+          title: "Real-time Update",
+          description: "Incident data has been updated",
+        });
+      }
+    }
+  });
 
   // Permission check: Only TeamLeader, Coordinator, and Admin can close/delete incidents
   const canCloseIncident = () => {
@@ -319,6 +342,7 @@ export default function IncidentDashboard() {
 
   return (
     <div className="p-6 space-y-6">
+      <RefreshHandler />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -326,6 +350,14 @@ export default function IncidentDashboard() {
           <p className="text-muted-foreground">Comprehensive incident reporting and closure tracking</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={manualRefresh}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
           <Button 
             variant="outline" 
             onClick={handleExportExcel}
