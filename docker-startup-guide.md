@@ -61,6 +61,14 @@ docker logs needscareai
 1. **Database Connection Failed**: Verify DATABASE_URL is correct and database is accessible
 2. **Session Secret Missing**: Ensure SESSION_SECRET is set and has sufficient entropy
 3. **Email Service Errors**: Check GMAIL_EMAIL and GMAIL_APP_PASSWORD are valid
+4. **import.meta.dirname Error on Linux Servers**: Use the production-start.js script (already configured in Dockerfile)
+
+### Linux Server Specific Issues
+If you get `TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined`:
+
+1. **Check startup logs**: `docker logs needscareai` should show polyfill messages
+2. **Run debug script**: `./docker-debug.sh` for detailed diagnostics  
+3. **Verify Node.js version**: Container should use Node.js 20+
 
 ### Health Check
 The application includes a health check endpoint:

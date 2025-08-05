@@ -34,6 +34,7 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
+COPY production-start.js ./
 
 # Set default environment variables (can be overridden at runtime)
 ENV NODE_ENV=production
@@ -54,5 +55,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
 
-# Start the application with polyfill loader and Node.js compatibility flags
-CMD ["node", "--experimental-import-meta-resolve", "--loader", "./server/dirname-polyfill.js", "dist/index.js"]
+# Start the application using the production startup script
+CMD ["node", "production-start.js"]
