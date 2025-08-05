@@ -234,33 +234,29 @@ export default function CreateCaseNoteModal({
         return true;
       }
       
-      // Include past shifts within 30 days (completed only for retrospective case notes)
-      if (shiftDateOnly < today && shiftDateOnly >= thirtyDaysAgo) {
-        const shiftStatus = (shift as any).status;
-        return shiftStatus === "completed";
-      }
-      
-      // For Progress Notes, be more flexible to include demo/test data
+      // For Progress Notes, be more flexible to include relevant shifts
       if (selectedCategory === "Progress Note") {
-        // Include shifts from the last 7 days regardless of status (for ongoing documentation)
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
-        if (shiftDateOnly >= sevenDaysAgo && shiftDateOnly <= today) {
-          return true;
+        // Include shifts from the last 30 days regardless of status (for retrospective documentation)
+        if (shiftDateOnly >= thirtyDaysAgo && shiftDateOnly <= today) {
+          return true; // Include any shift in the last 30 days for progress notes
         }
         
-        // For demo purposes: also include some future shifts if they're assigned/in-progress
-        const nextWeek = new Date(today);
-        nextWeek.setDate(nextWeek.getDate() + 7);
+        // Include future shifts that are assigned (for upcoming documentation)
+        const twoWeeksFromNow = new Date(today);
+        twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
         
-        if (shiftDateOnly <= nextWeek) {
+        if (shiftDateOnly > today && shiftDateOnly <= twoWeeksFromNow) {
           const shiftStatus = (shift as any).status;
-          return shiftStatus === "assigned" || shiftStatus === "in-progress" || shiftStatus === "completed";
+          return shiftStatus === "assigned" || shiftStatus === "in-progress";
+        }
+      } else {
+        // For other case note types, include past shifts within 30 days (completed only)
+        if (shiftDateOnly < today && shiftDateOnly >= thirtyDaysAgo) {
+          const shiftStatus = (shift as any).status;
+          return shiftStatus === "completed";
         }
       }
       
-      // Exclude distant future shifts (but allow for testing with demo data)
       return false;
     });
     
@@ -268,19 +264,7 @@ export default function CreateCaseNoteModal({
     // Only show shifts that meet strict criteria - no "closest proximity" fallbacks
     // This prevents phantom shift dates from appearing in production
     
-    console.log(`[CASE NOTE] PRODUCTION FIX - Filtered ${filtered.length} shifts from ${availableShifts.length} total:`, filtered.map(s => ({
-      id: s.id,
-      title: s.title,
-      date: new Date(s.startTime).toLocaleDateString(),
-      status: (s as any).status,
-      userId: s.userId,
-      clientId: s.clientId
-    })));
-    
-    // PRODUCTION VALIDATION: Verify no phantom dates appear
-    if (filtered.length === 0 && availableShifts.length > 0) {
-      console.warn(`[CASE NOTE] No eligible shifts found despite ${availableShifts.length} available shifts. This is expected behavior with the production fix.`);
-    }
+    console.log(`[CASE NOTE] Filtered ${filtered.length} shifts from ${availableShifts.length} total for ${selectedCategory}`);
     
     return filtered;
   }, [availableShifts, existingCaseNotes, selectedCategory]);
