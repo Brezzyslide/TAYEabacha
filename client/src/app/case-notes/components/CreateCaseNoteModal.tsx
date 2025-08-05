@@ -380,6 +380,14 @@ export default function CreateCaseNoteModal({
 
 
 
+  // Clear content when category changes to non-Progress Note types
+  useEffect(() => {
+    if (selectedCategory !== "Progress Note") {
+      // Clear content for all non-Progress Note types to leave text boxes blank
+      form.setValue("content", "");
+    }
+  }, [selectedCategory, form]);
+
   // Auto-select suggested shift and populate content
   useEffect(() => {
     if (suggestedShift && !form.getValues("linkedShiftId")) {
