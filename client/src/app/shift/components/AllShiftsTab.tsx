@@ -39,46 +39,56 @@ export default function AllShiftsTab() {
     queryKey: ["/api/clients"],
   });
 
-  // Filter shifts by period
+  // Filter and sort shifts by period and date
   const filteredShifts = useMemo(() => {
-    if (filterPeriod === "all") {
-      return shifts; // Show all shifts when "all" is selected
+    let filteredData = shifts;
+
+    // Apply period filter if not "all"
+    if (filterPeriod !== "all") {
+      const now = new Date();
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
+
+      switch (filterPeriod) {
+        case "daily":
+          startDate = startOfDay(now);
+          endDate = endOfDay(now);
+          break;
+        case "weekly":
+          startDate = startOfWeek(now);
+          endDate = endOfWeek(now);
+          break;
+        case "fortnightly":
+          startDate = subDays(startOfWeek(now), 7);
+          endDate = addDays(endOfWeek(now), 7);
+          break;
+        case "monthly":
+          // Show 6 months for recurring shifts
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 6, 0);
+          break;
+        case "yearly":
+          // Full year range for long-term recurring shifts
+          startDate = new Date(now.getFullYear(), 0, 1);
+          endDate = new Date(now.getFullYear() + 1, 11, 31);
+          break;
+        default:
+          break;
+      }
+
+      if (startDate && endDate) {
+        filteredData = shifts.filter(shift => {
+          const shiftDate = new Date(shift.startTime);
+          return shiftDate >= startDate! && shiftDate <= endDate!;
+        });
+      }
     }
 
-    const now = new Date();
-    let startDate: Date;
-    let endDate: Date;
-
-    switch (filterPeriod) {
-      case "daily":
-        startDate = startOfDay(now);
-        endDate = endOfDay(now);
-        break;
-      case "weekly":
-        startDate = startOfWeek(now);
-        endDate = endOfWeek(now);
-        break;
-      case "fortnightly":
-        startDate = subDays(startOfWeek(now), 7);
-        endDate = addDays(endOfWeek(now), 7);
-        break;
-      case "monthly":
-        // Show 6 months for recurring shifts
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 6, 0);
-        break;
-      case "yearly":
-        // Full year range for long-term recurring shifts
-        startDate = new Date(now.getFullYear(), 0, 1);
-        endDate = new Date(now.getFullYear() + 1, 11, 31);
-        break;
-      default:
-        return shifts;
-    }
-
-    return shifts.filter(shift => {
-      const shiftDate = new Date(shift.startTime);
-      return shiftDate >= startDate && shiftDate <= endDate;
+    // Sort all shifts by date and time (chronological order)
+    return filteredData.sort((a, b) => {
+      const dateA = new Date(a.startTime);
+      const dateB = new Date(b.startTime);
+      return dateA.getTime() - dateB.getTime();
     });
   }, [shifts, filterPeriod]);
 
@@ -126,7 +136,7 @@ export default function AllShiftsTab() {
       const userRole = user?.role?.toLowerCase();
       const isAdminRole = userRole === "admin" || userRole === "consolemanager" || userRole === "coordinator" || userRole === "teamleader";
       
-      if (isAdminRole) {
+      if (isAdminRole && user) {
         console.log(`[ADMIN ALL-SHIFTS CLICK] Admin user ${user.role} clicked shift ${shift.id}, opening edit modal`);
         handleEditShift(shift);
         return;
@@ -358,6 +368,11 @@ export default function AllShiftsTab() {
             }}
             onEditSeries={() => {
               setEditType("series");
+              setIsRecurringChoiceDialogOpen(false);
+              setIsEditModalOpen(true);
+            }}
+            onEditFuture={() => {
+              setEditType("single");
               setIsRecurringChoiceDialogOpen(false);
               setIsEditModalOpen(true);
             }}
