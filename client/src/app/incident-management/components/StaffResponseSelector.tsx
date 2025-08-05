@@ -9,59 +9,84 @@ import { Input } from "@/components/ui/input"
 
 const RESPONSES = [
   {
-    id: "de_escalation",
-    label: "De-escalation techniques",
-    description: "Verbal techniques, calm communication, redirection strategies, or environmental modifications to reduce tension.",
-  },
-  {
-    id: "physical_intervention",
-    label: "Physical intervention",
-    description: "Physical restraint, blocking, or protective positioning as per approved techniques and training.",
+    id: "co_regulation",
+    label: "Co-regulation",
+    description: "Staff remained calm, offered emotional presence, and helped regulate the participant's emotional state.",
   },
   {
     id: "redirection",
     label: "Redirection",
-    description: "Guided the individual to alternative activities or environments to prevent escalation.",
+    description: "Participant was gently guided to a different task, topic, or setting to reduce escalation.",
   },
   {
-    id: "environmental_modification",
-    label: "Environmental modification",
-    description: "Changes to the immediate environment such as reducing noise, adjusting lighting, or removing triggers.",
+    id: "self_regulation_strategy",
+    label: "Self-regulation strategy prompted",
+    description: "Participant was reminded to use their own strategies (e.g. deep breathing, sensory tools).",
   },
   {
-    id: "medication_administration",
-    label: "Medication administration",
-    description: "PRN medication given as prescribed, including time, dosage, and authorization details.",
+    id: "replacement_behaviour",
+    label: "Replacement behaviour encouraged",
+    description: "Staff promoted a safer or more appropriate behaviour (e.g. using words instead of hitting).",
   },
   {
-    id: "medical_attention",
-    label: "Medical attention",
-    description: "First aid provided, injury assessment, or medical professional consultation.",
+    id: "alternative_activity",
+    label: "Suggested alternative activity",
+    description: "A preferred or calming activity was offered as a substitute.",
   },
   {
-    id: "emergency_services",
-    label: "Emergency services called",
-    description: "Police, ambulance, or fire services contacted due to severity of incident or safety concerns.",
+    id: "environmental_control",
+    label: "Environmental control",
+    description: "Adjustments were made to lighting, sound, crowding, or proximity to reduce overload.",
   },
   {
-    id: "supervisor_notified",
-    label: "Supervisor notified",
-    description: "Team leader, coordinator, or manager informed of the incident and response actions.",
+    id: "staff_withdrawal",
+    label: "Staff withdrawal / space provided",
+    description: "Staff stepped back to reduce stimulation or confrontation.",
+  },
+  {
+    id: "increased_supervision",
+    label: "Increased supervision applied",
+    description: "Additional staff or closer monitoring was initiated.",
+  },
+  {
+    id: "pbs_strategy",
+    label: "Positive Behaviour Support strategy used",
+    description: "Intervention aligned with PBS plan (e.g. proactive/reinforcement-based strategy).",
+  },
+  {
+    id: "prn_medication",
+    label: "PRN medication administered",
+    description: "As per medication protocol and with required authorisation.",
+  },
+  {
+    id: "restrictive_practice",
+    label: "Restrictive practice implemented",
+    description: "Time-limited restriction used (e.g. physical, mechanical, environmental) — must be recorded per NDIS rules.",
+  },
+  {
+    id: "verbal_de_escalation",
+    label: "Verbal de-escalation",
+    description: "Used calm tone, validation, and reassurance.",
+  },
+  {
+    id: "emergency_response",
+    label: "Emergency response activated",
+    description: "Security, emergency services, or on-call support contacted.",
   },
   {
     id: "family_contacted",
-    label: "Family contacted",
-    description: "Next of kin, guardian, or family member informed about the incident.",
+    label: "Parent / Guardian / Substitute Decision Maker contacted",
+    description: "Family or guardian notified during or after the incident.",
   },
   {
-    id: "documentation_completed",
-    label: "Documentation completed",
-    description: "Incident reports, behavior charts, or other required documentation filled out.",
+    id: "medical_support",
+    label: "Medical support provided",
+    description: "First aid or clinical team engaged.",
   },
   {
-    id: "other",
-    label: "Other response",
-    description: "A response action not covered by the above categories.",
+    id: "debrief_offered",
+    label: "Debrief offered to participant",
+    description: "Post-incident support provided to participant, if appropriate.",
   },
 ]
 
@@ -86,7 +111,7 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
   const [showDialog, setShowDialog] = useState(false)
   const [currentResponse, setCurrentResponse] = useState<string | null>(null)
   const [tempDetails, setTempDetails] = useState("")
-  const [tempOtherLabel, setTempOtherLabel] = useState("")
+
 
   const toggleResponse = (id: string) => {
     if (selectedResponses.includes(id)) {
@@ -102,7 +127,6 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
       // Checking - show popup for details
       setCurrentResponse(id)
       setTempDetails(details[id] || "")
-      setTempOtherLabel(id === "other" ? (details[id]?.split(":")[0] || "") : "")
       setShowDialog(true)
     }
   }
@@ -115,17 +139,12 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
       return
     }
     
-    if (currentResponse === "other" && !tempOtherLabel.trim()) {
-      alert("Please specify what the 'Other' response action was.")
-      return
-    }
+
     
     const newSelected = [...selectedResponses, currentResponse]
     const newDetails = { 
       ...details, 
-      [currentResponse]: currentResponse === "other" 
-        ? `${tempOtherLabel}: ${tempDetails}`
-        : tempDetails
+      [currentResponse]: tempDetails
     }
     
     setSelectedResponses(newSelected)
@@ -133,7 +152,6 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
     setShowDialog(false)
     setCurrentResponse(null)
     setTempDetails("")
-    setTempOtherLabel("")
     
     updateParent(newSelected, newDetails)
   }
@@ -142,7 +160,6 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
     setShowDialog(false)
     setCurrentResponse(null)
     setTempDetails("")
-    setTempOtherLabel("")
   }
 
   const updateParent = (responses: string[], responseDetails: Record<string, string>) => {
@@ -150,12 +167,8 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
       const response = RESPONSES.find(r => r.id === responseId)
       return {
         id: responseId,
-        label: responseId === "other" 
-          ? responseDetails[responseId]?.split(":")[0] || "Other"
-          : response?.label || '',
-        details: responseId === "other"
-          ? responseDetails[responseId]?.split(":").slice(1).join(":").trim() || ""
-          : responseDetails[responseId] || ''
+        label: response?.label || '',
+        details: responseDetails[responseId] || ''
       }
     })
     onChange(responseData)
@@ -193,12 +206,8 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
             <div className="space-y-2">
               {selectedResponses.map(id => {
                 const response = RESPONSES.find(r => r.id === id)
-                const responseLabel = id === "other" 
-                  ? details[id]?.split(":")[0] || "Other"
-                  : response?.label
-                const responseDetails = id === "other"
-                  ? details[id]?.split(":").slice(1).join(":").trim()
-                  : details[id]
+                const responseLabel = response?.label
+                const responseDetails = details[id]
                 
                 return (
                   <div key={id} className="text-sm">
@@ -218,7 +227,7 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {currentResponse === "other" ? "Specify Other Response" : "Response Details Required"}
+              Response Details Required
             </DialogTitle>
           </DialogHeader>
           
@@ -234,20 +243,7 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
               </div>
             )}
             
-            {currentResponse === "other" && (
-              <div>
-                <Label htmlFor="other-response-label" className="text-sm font-medium">
-                  What was the specific response action? *
-                </Label>
-                <Input
-                  id="other-response-label"
-                  value={tempOtherLabel}
-                  onChange={(e) => setTempOtherLabel(e.target.value)}
-                  placeholder="e.g., Called care coordinator, Adjusted seating, etc."
-                  className="mt-1"
-                />
-              </div>
-            )}
+
             
             <div>
               <Label htmlFor="response-details" className="text-sm font-medium">
