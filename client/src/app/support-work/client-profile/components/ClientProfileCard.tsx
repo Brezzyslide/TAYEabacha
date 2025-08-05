@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreVertical, Eye, Edit, Archive, User, Calendar, Hash } from "lucide-react";
 import { Client } from "@shared/schema";
 import { usePermission } from "@/components/auth/PermissionGuard";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 interface ClientProfileCardProps {
   client: Client;
@@ -79,9 +79,11 @@ export function ClientProfileCard({ client, onQuickView, onEdit, onArchive }: Cl
                 Quick View
               </DropdownMenuItem>
               {canEdit && (
-                <DropdownMenuItem onClick={() => onEdit(client)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Client Info
+                <DropdownMenuItem asChild>
+                  <Link href={`/support-work/client-profile/edit/${client.id}`}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Client Info
+                  </Link>
                 </DropdownMenuItem>
               )}
               {canArchive && (

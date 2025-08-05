@@ -21,6 +21,7 @@ import ClientProfilePage from "@/app/support-work/client-profile/ClientProfilePa
 import ClientProfileDashboard from "@/app/support-work/client-profile/ClientProfileDashboard";
 import SimpleCreateClientForm from "@/app/support-work/client-profile/components/SimpleCreateClientForm";
 import ClientListPage from "@/app/support-work/client-profile/components/ClientListPage";
+import EditClientForm from "@/app/support-work/client-profile/components/EditClientForm";
 import SupportWorkPage from "@/pages/support-work";
 import ShiftDashboard from "@/app/shift/ShiftDashboard";
 import ShiftCalendar from "@/app/shift/ShiftCalendar";
@@ -58,6 +59,7 @@ function Router() {
       <ProtectedRoute path="/client/:clientId" component={ClientProfilePage} />
       <ProtectedRoute path="/support-work" component={SupportWorkPage} />
       <ProtectedRoute path="/support-work/client-profile/create" component={() => <SimpleCreateClientForm />} />
+      <ProtectedRoute path="/support-work/client-profile/edit/:clientId" component={EditClientForm} />
       <ProtectedRoute path="/support-work/client-profile/:clientId" component={ClientProfilePage} />
       <ProtectedRoute path="/support-work/client-profile" component={ClientProfileDashboard} />
       <ProtectedRoute path="/shift" component={ShiftDashboard} />

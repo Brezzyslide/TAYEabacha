@@ -53,7 +53,7 @@ const ClientCard = ({ client, onQuickView, onArchive }: ClientCardProps) => {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/support-work/client-profile/edit?clientId=${client.clientId}`}>
+                <Link href={`/support-work/client-profile/edit/${client.id}`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Profile
                 </Link>
