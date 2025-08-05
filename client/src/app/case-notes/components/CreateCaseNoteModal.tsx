@@ -559,9 +559,20 @@ export default function CreateCaseNoteModal({
       // For Progress Notes, convert structured sections into content
       let finalContent = data.content;
       if (data.category === "Progress Note" && data.progressSections && data.progressSections.length > 0) {
+        // Section titles mapping
+        const sectionTitles = {
+          "presentation_mood": "Client Presentation & Mood",
+          "activities_completed": "Activities Completed",
+          "goals_worked_on": "Goals Worked On",
+          "challenges_concerns": "Challenges or Concerns",
+          "support_provided": "Support Provided",
+          "recommendations": "Recommendations for Future"
+        };
+        
         // Build content from structured sections
         const sectionsContent = data.progressSections.map(section => {
-          return `${section.title}:\n${section.content || '[No content provided]'}\n`;
+          const title = sectionTitles[section.id] || section.id;
+          return `${title}:\n${section.content || '[No content provided]'}\n`;
         }).join('\n');
         
         // Combine sections with additional notes
