@@ -414,6 +414,10 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
                           placeholder="Provide a detailed description of the incident, including what happened before, during, and after..."
                           className="min-h-[120px]"
                           {...field}
+                          onChange={(e) => {
+                            console.log("[DESCRIPTION DEBUG] User typing in description:", e.target.value);
+                            field.onChange(e);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
