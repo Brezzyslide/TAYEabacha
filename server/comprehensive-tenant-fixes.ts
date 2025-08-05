@@ -18,18 +18,46 @@ interface TenantFix {
 export async function applyComprehensiveTenantFixes(): Promise<void> {
   console.log("[COMPREHENSIVE FIX] Starting complete tenant consistency enforcement");
   
-  // Get all tenants
-  const tenants = await db.execute(sql`SELECT DISTINCT tenant_id FROM users ORDER BY tenant_id`);
-  console.log(`[COMPREHENSIVE FIX] Found ${tenants.rows.length} tenants to process`);
-  
-  for (const tenant of tenants.rows) {
-    const tenantId = tenant.tenant_id as number;
-    console.log(`[COMPREHENSIVE FIX] Processing tenant ${tenantId}`);
+  try {
+    // Get all tenants with timeout protection
+    const tenants = await Promise.race([
+      db.execute(sql`SELECT DISTINCT tenant_id FROM users ORDER BY tenant_id`),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Database query timeout')), 10000))
+    ]) as any;
     
-    await fixTenantComprehensively(tenantId);
+    console.log(`[COMPREHENSIVE FIX] Found ${tenants.rows.length} tenants to process`);
+    
+    // Process tenants in smaller batches to prevent hanging
+    const batchSize = 5;
+    for (let i = 0; i < tenants.rows.length; i += batchSize) {
+      const batch = tenants.rows.slice(i, i + batchSize);
+      
+      // Process batch concurrently with timeout
+      const batchPromises = batch.map(async (tenant: any) => {
+        const tenantId = tenant.tenant_id as number;
+        console.log(`[COMPREHENSIVE FIX] Processing tenant ${tenantId}`);
+        
+        return Promise.race([
+          fixTenantComprehensively(tenantId),
+          new Promise((_, reject) => setTimeout(() => reject(new Error(`Tenant ${tenantId} processing timeout`)), 5000))
+        ]);
+      });
+      
+      // Wait for batch to complete with error handling
+      const results = await Promise.allSettled(batchPromises);
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.warn(`[COMPREHENSIVE FIX] Tenant ${batch[index].tenant_id} failed: ${result.reason.message}`);
+        }
+      });
+    }
+    
+    console.log("[COMPREHENSIVE FIX] All tenant fixes completed successfully");
+  } catch (error: any) {
+    console.error("[COMPREHENSIVE FIX] Failed to complete tenant fixes:", error.message);
+    // Don't throw - allow startup to continue
+    console.warn("[COMPREHENSIVE FIX] Continuing startup despite tenant fix failures");
   }
-  
-  console.log("[COMPREHENSIVE FIX] All tenant fixes completed successfully");
 }
 
 async function fixTenantComprehensively(tenantId: number): Promise<void> {

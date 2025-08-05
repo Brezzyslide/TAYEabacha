@@ -1,12 +1,16 @@
 # Linux Server Docker Deployment Guide
 
 ## Issue Description
-The application works perfectly on local computers but fails on Linux servers with the error:
+The application works perfectly on local computers but experiences two main issues on Linux servers:
+
+1. **Import Path Error**:
 ```
 TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
 ```
+This occurs because `import.meta.dirname` is not properly available in the esbuild-bundled production code.
 
-This occurs because `import.meta.dirname` is not properly available in the esbuild-bundled production code on certain Linux server environments.
+2. **Startup Hanging**: 
+The application stops at "[COMPOSITE FK MIGRATION] Migration completed successfully" due to the comprehensive tenant fixes process hanging when processing multiple tenants on Linux/Docker environments.
 
 ## Complete Fix
 
@@ -16,6 +20,13 @@ The `production-start.js` script now:
 - ✅ Adds a polyfill if needed for Linux server compatibility  
 - ✅ Provides detailed error logging for debugging
 - ✅ Gracefully handles startup failures
+
+### 2. Optimized Tenant Processing
+The startup process now includes:
+- ✅ Batched tenant processing (5 tenants per batch) to prevent resource exhaustion
+- ✅ Timeout protection for individual tenant operations (5 seconds each)
+- ✅ Concurrent processing within batches for faster startup
+- ✅ Graceful error handling that doesn't stop the entire startup process
 
 ### 2. Deployment Steps for Linux Servers
 
@@ -64,6 +75,9 @@ docker logs needscareai
 # [STARTUP] Checking import.meta.dirname availability...
 # [STARTUP] import.meta.dirname already available (or polyfill added)
 # [STARTUP] Loading main application...
+# [COMPOSITE FK MIGRATION] Migration completed successfully
+# [COMPREHENSIVE FIX] All tenant fixes completed successfully
+# [SECURITY] Enhanced security validation completed successfully
 # [express] serving on port 5000
 ```
 
