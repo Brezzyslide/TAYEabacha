@@ -109,6 +109,7 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
       description: "",
       dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"), // Auto-set to current time
       location: "",
+      intensityRating: 1, // Default to 1 to prevent validation error
       witnessName: "",
       witnessPhone: "",
       externalReference: "",

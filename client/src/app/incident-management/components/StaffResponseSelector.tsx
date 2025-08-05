@@ -256,11 +256,18 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
               <Textarea
                 id="response-details"
                 value={tempDetails}
-                onChange={(e) => setTempDetails(e.target.value)}
+                onChange={(e) => {
+                  console.log("[TEXTAREA DEBUG] User typing:", e.target.value);
+                  setTempDetails(e.target.value);
+                }}
                 placeholder="Describe exactly what was done, when, and the outcome of this response action..."
                 className="mt-1 min-h-[100px]"
                 rows={4}
               />
+              {/* DEBUG INFO */}
+              <div className="text-xs text-muted-foreground mt-1">
+                DEBUG: Current tempDetails length: {tempDetails.length}
+              </div>
             </div>
           </div>
           

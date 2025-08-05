@@ -265,11 +265,18 @@ export function TriggerSelector({ value, onChange }: TriggerSelectorProps) {
               <Textarea
                 id="trigger-details"
                 value={tempDetails}
-                onChange={(e) => setTempDetails(e.target.value)}
+                onChange={(e) => {
+                  console.log("[TEXTAREA DEBUG TRIGGER] User typing:", e.target.value);
+                  setTempDetails(e.target.value);
+                }}
                 placeholder="Provide specific details about how this trigger led to or contributed to the incident..."
                 className="mt-1 min-h-[100px]"
                 rows={4}
               />
+              {/* DEBUG INFO */}
+              <div className="text-xs text-muted-foreground mt-1">
+                DEBUG: Current tempDetails length: {tempDetails.length}
+              </div>
             </div>
           </div>
           
