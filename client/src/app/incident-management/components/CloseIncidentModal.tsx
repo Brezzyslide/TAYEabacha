@@ -122,12 +122,24 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
       onSuccess();
       form.reset();
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to close incident",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error("Close incident error:", error);
+      
+      // Check if it's a duplicate closure error
+      if (error?.message?.includes("already been closed")) {
+        toast({
+          title: "Incident Already Closed",
+          description: "This incident has already been closed by another user.",
+          variant: "destructive",
+        });
+        onSuccess(); // Refresh the incident view
+      } else {
+        toast({
+          title: "Error",
+          description: error?.message || "Failed to close incident",
+          variant: "destructive",
+        });
+      }
     },
   });
 

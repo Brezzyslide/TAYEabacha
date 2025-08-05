@@ -6019,6 +6019,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         closureDate: new Date(),
       });
 
+      // Check if incident already has a closure
+      const existingClosure = await storage.getIncidentClosure(closureData.incidentId, req.user.tenantId);
+      
+      if (existingClosure) {
+        return res.status(400).json({ 
+          message: "Incident has already been closed",
+          existingClosure: existingClosure
+        });
+      }
+
       const closure = await storage.createIncidentClosure(closureData);
       
       // Update incident status to Closed
