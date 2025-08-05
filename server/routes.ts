@@ -2751,33 +2751,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       currentY += 12;
       
-      // Add content box
-      const contentLines = pdf.splitTextToSize(caseNote.content, contentWidth - 10);
-      const contentHeight = Math.max(contentLines.length * 5 + 10, 30);
+      // Clean content by removing emoji and special Unicode characters
+      const cleanContent = caseNote.content
+        .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters (including emojis)
+        .replace(/═+/g, '') // Remove box drawing characters
+        .replace(/^\s*[•\-\*]\s*/gm, '• ') // Normalize bullet points
+        .replace(/\n{3,}/g, '\n\n') // Remove excessive line breaks
+        .trim();
+
+      // Add content with proper page breaks
+      const contentLines = pdf.splitTextToSize(cleanContent, contentWidth - 10);
+      const lineHeight = 5;
+      const linesPerPage = Math.floor((pageHeight - currentY - 50) / lineHeight);
       
-      pdf.setFillColor(249, 250, 251); // Very light gray
-      pdf.rect(margin, currentY, contentWidth, contentHeight, 'F');
-      pdf.setDrawColor(229, 231, 235);
-      pdf.rect(margin, currentY, contentWidth, contentHeight, 'S');
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(contentLines, margin + 5, currentY + 8);
-      
-      currentY += contentHeight + 20;
+      let lineIndex = 0;
+      while (lineIndex < contentLines.length) {
+        // Check if we need a new page
+        if (currentY > pageHeight - 50) {
+          pdf.addPage('l', 'a4');
+          currentY = 30;
+        }
+        
+        // Calculate how many lines we can fit on this page
+        const remainingSpace = pageHeight - currentY - 30;
+        const maxLinesThisPage = Math.floor(remainingSpace / lineHeight);
+        const linesToAdd = Math.min(maxLinesThisPage, contentLines.length - lineIndex);
+        const currentPageLines = contentLines.slice(lineIndex, lineIndex + linesToAdd);
+        
+        // Draw content box for this page
+        const boxHeight = Math.max(linesToAdd * lineHeight + 10, 30);
+        pdf.setFillColor(249, 250, 251); // Very light gray
+        pdf.rect(margin, currentY, contentWidth, boxHeight, 'F');
+        pdf.setDrawColor(229, 231, 235);
+        pdf.rect(margin, currentY, contentWidth, boxHeight, 'S');
+        
+        // Add text
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(currentPageLines, margin + 5, currentY + 8);
+        
+        currentY += boxHeight + 10;
+        lineIndex += linesToAdd;
+      }
       
       // Additional details if present
       if (caseNote.incidentData || caseNote.medicationData || (caseNote.tags && caseNote.tags.length > 0)) {
+        // Check if we need a new page for additional details
+        if (currentY > pageHeight - 80) {
+          pdf.addPage('l', 'a4');
+          currentY = 30;
+        }
+        
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
         pdf.text('ADDITIONAL DETAILS', margin, currentY);
         currentY += 12;
         
         if (caseNote.incidentData) {
+          // Check page space
+          if (currentY > pageHeight - 60) {
+            pdf.addPage('l', 'a4');
+            currentY = 30;
+          }
+          
           pdf.setFillColor(254, 226, 226); // Light red
-          pdf.rect(margin, currentY, contentWidth, 25, 'F');
+          pdf.rect(margin, currentY, contentWidth, 35, 'F');
           pdf.setDrawColor(248, 113, 113);
-          pdf.rect(margin, currentY, contentWidth, 25, 'S');
+          pdf.rect(margin, currentY, contentWidth, 35, 'S');
           
           pdf.setFontSize(11);
           pdf.setFont('helvetica', 'bold');
@@ -2790,16 +2830,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const incidentText = JSON.stringify(caseNote.incidentData, null, 2)
             .replace(/[{}",]/g, '')
             .replace(/\n\s+/g, ' ')
+            .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII
             .trim();
-          pdf.text(incidentText, margin + 5, currentY + 18);
-          currentY += 35;
+          const incidentLines = pdf.splitTextToSize(incidentText, contentWidth - 10);
+          pdf.text(incidentLines, margin + 5, currentY + 18);
+          currentY += 45;
         }
         
         if (caseNote.medicationData) {
+          // Check page space
+          if (currentY > pageHeight - 60) {
+            pdf.addPage('l', 'a4');
+            currentY = 30;
+          }
+          
           pdf.setFillColor(219, 234, 254); // Light blue
-          pdf.rect(margin, currentY, contentWidth, 25, 'F');
+          pdf.rect(margin, currentY, contentWidth, 35, 'F');
           pdf.setDrawColor(59, 130, 246);
-          pdf.rect(margin, currentY, contentWidth, 25, 'S');
+          pdf.rect(margin, currentY, contentWidth, 35, 'S');
           
           pdf.setFontSize(11);
           pdf.setFont('helvetica', 'bold');
@@ -2812,16 +2860,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const medicationText = JSON.stringify(caseNote.medicationData, null, 2)
             .replace(/[{}",]/g, '')
             .replace(/\n\s+/g, ' ')
+            .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII
             .trim();
-          pdf.text(medicationText, margin + 5, currentY + 18);
-          currentY += 35;
+          const medicationLines = pdf.splitTextToSize(medicationText, contentWidth - 10);
+          pdf.text(medicationLines, margin + 5, currentY + 18);
+          currentY += 45;
         }
         
         if (caseNote.tags && caseNote.tags.length > 0) {
+          // Check page space
+          if (currentY > pageHeight - 40) {
+            pdf.addPage('l', 'a4');
+            currentY = 30;
+          }
+          
           pdf.setFillColor(240, 253, 244); // Light green
-          pdf.rect(margin, currentY, contentWidth, 20, 'F');
+          pdf.rect(margin, currentY, contentWidth, 25, 'F');
           pdf.setDrawColor(34, 197, 94);
-          pdf.rect(margin, currentY, contentWidth, 20, 'S');
+          pdf.rect(margin, currentY, contentWidth, 25, 'S');
           
           pdf.setFontSize(11);
           pdf.setFont('helvetica', 'bold');
@@ -2831,8 +2887,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdf.setFontSize(9);
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(0, 0, 0);
-          pdf.text(caseNote.tags.join(", "), margin + 5, currentY + 16);
-          currentY += 30;
+          const tagsText = caseNote.tags.join(", ").replace(/[^\x00-\x7F]/g, ''); // Remove non-ASCII
+          const tagLines = pdf.splitTextToSize(tagsText, contentWidth - 10);
+          pdf.text(tagLines, margin + 5, currentY + 16);
+          currentY += 35;
         }
       }
       
