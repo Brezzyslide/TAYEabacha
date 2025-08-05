@@ -54,5 +54,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
 
-# Start the application
-CMD ["node", "dist/index.js"]
+# Start the application with Node.js compatibility flags
+CMD ["node", "--experimental-import-meta-resolve", "dist/index.js"]

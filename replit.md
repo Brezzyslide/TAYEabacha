@@ -9,7 +9,8 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 **2025-08-05**: ✅ **DOCKER PRODUCTION DEPLOYMENT FIXED** - Resolved critical Docker startup issues:
 - Fixed Node.js path resolution by upgrading from Node.js 18 to Node.js 20 in Dockerfile
-- Identified missing environment variables causing startup failures
+- Added `--experimental-import-meta-resolve` flag to handle esbuild bundling compatibility
+- Verified production build works: health endpoint responds successfully with 200 status
 - Created comprehensive Docker configuration with docker-compose.yml and environment templates
 - Added detailed startup guide with troubleshooting steps
 - Docker containers now start successfully with proper environment configuration
