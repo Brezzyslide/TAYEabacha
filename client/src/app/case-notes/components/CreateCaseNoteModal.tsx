@@ -1141,10 +1141,7 @@ export default function CreateCaseNoteModal({
                 type="submit"
                 disabled={
                   isSubmitting || 
-                  (selectedCategory === "Progress Note" && 
-                    (!progressSections || progressSections.length === 0 || 
-                     !additionalNotesValue || additionalNotesValue.trim().split(/\s+/).filter(w => w.length > 0).length < 30)
-                  ) ||
+                  (selectedCategory === "Progress Note" && wordCount < 130) ||
                   (selectedCategory !== "Progress Note" && 
                     (!contentValue || contentValue.trim().split(/\s+/).filter(w => w.length > 0).length < 30)
                   )
