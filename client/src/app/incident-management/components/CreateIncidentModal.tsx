@@ -34,12 +34,12 @@ const incidentSchema = z.object({
     id: z.string(),
     label: z.string(),
     details: z.string()
-  })).optional().default([]),
+  })).min(1, "At least one trigger must be selected"),
   staffResponses: z.array(z.object({
     id: z.string(),
     label: z.string(),
     details: z.string()
-  })).optional().default([]),
+  })).min(1, "At least one staff response must be selected"),
   description: z.string().min(10, "Description must be at least 10 characters"),
 });
 

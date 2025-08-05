@@ -178,9 +178,9 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
     <>
       <Card className="space-y-4 p-4">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Staff Response Actions</h3>
+          <h3 className="text-lg font-semibold mb-2">Staff Response Actions *</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Select all actions taken by staff during or after the incident. You'll be prompted to provide details for each response.
+            Select all actions taken by staff during or after the incident. You'll be prompted to provide details for each response. <span className="text-red-500 font-medium">At least one response must be selected.</span>
           </p>
         </div>
         

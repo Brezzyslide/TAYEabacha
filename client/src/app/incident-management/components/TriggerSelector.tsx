@@ -167,9 +167,9 @@ export function TriggerSelector({ value, onChange }: TriggerSelectorProps) {
     <>
       <Card className="space-y-4 p-4">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Select Incident Triggers</h3>
+          <h3 className="text-lg font-semibold mb-2">Select Incident Triggers *</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Choose all triggers that may have contributed to this incident. You'll be prompted to provide details for each selection.
+            Choose all triggers that may have contributed to this incident. You'll be prompted to provide details for each selection. <span className="text-red-500 font-medium">At least one trigger must be selected.</span>
           </p>
         </div>
         
