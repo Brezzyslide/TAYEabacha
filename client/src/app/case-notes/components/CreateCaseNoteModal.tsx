@@ -524,13 +524,17 @@ export default function CreateCaseNoteModal({
   };
 
   const handleSubmit = async (data: CaseNoteFormData) => {
+    console.log("[CASE NOTE SUBMIT] Starting submission with data:", data);
+    
     // Prevent duplicate submissions
     if (isSubmitting) {
+      console.log("[CASE NOTE SUBMIT] Already submitting, skipping");
       return;
     }
     
     try {
       setIsSubmitting(true);
+      console.log("[CASE NOTE SUBMIT] Set isSubmitting to true");
       
       // Build case note tags structure
       const caseNoteTags = {
@@ -562,7 +566,12 @@ export default function CreateCaseNoteModal({
         updatedAt: new Date().toISOString()
       };
 
+      console.log("[CASE NOTE SUBMIT] Built submission data:", submissionData);
+      console.log("[CASE NOTE SUBMIT] Calling onSubmit function");
+
       await onSubmit(submissionData);
+      
+      console.log("[CASE NOTE SUBMIT] onSubmit completed successfully");
       
       // Reset form
       form.reset();
@@ -571,10 +580,13 @@ export default function CreateCaseNoteModal({
       setSpellCheckResult(null);
       setShowSpellCheckPreview(false);
       onClose();
+      
+      console.log("[CASE NOTE SUBMIT] Form reset and modal closed");
     } catch (error) {
-      console.error("Form submission error:", error);
+      console.error("[CASE NOTE SUBMIT] Form submission error:", error);
     } finally {
       setIsSubmitting(false);
+      console.log("[CASE NOTE SUBMIT] Set isSubmitting to false");
     }
   };
 
@@ -1139,13 +1151,24 @@ export default function CreateCaseNoteModal({
               </Button>
               <Button 
                 type="submit"
-                disabled={
-                  isSubmitting || 
-                  (selectedCategory === "Progress Note" && wordCount < 130) ||
-                  (selectedCategory !== "Progress Note" && 
-                    (!contentValue || contentValue.trim().split(/\s+/).filter(w => w.length > 0).length < 30)
-                  )
-                }
+                disabled={(() => {
+                  const isDisabled = isSubmitting || 
+                    (selectedCategory === "Progress Note" && wordCount < 130) ||
+                    (selectedCategory !== "Progress Note" && 
+                      (!contentValue || contentValue.trim().split(/\s+/).filter(w => w.length > 0).length < 30)
+                    );
+                  
+                  console.log("[SUBMIT BUTTON] Debug:", {
+                    isSubmitting,
+                    selectedCategory,
+                    wordCount,
+                    contentValue: contentValue?.length || 0,
+                    contentWords: contentValue?.trim().split(/\s+/).filter(w => w.length > 0).length || 0,
+                    isDisabled
+                  });
+                  
+                  return isDisabled;
+                })()}
                 className="flex items-center gap-2"
                 onClick={(e) => {
                   // Prevent rapid double-clicking
