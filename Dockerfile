@@ -35,6 +35,10 @@ RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 
+# Set default environment variables (can be overridden at runtime)
+ENV NODE_ENV=production
+ENV PORT=5000
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S needscareai -u 1001
