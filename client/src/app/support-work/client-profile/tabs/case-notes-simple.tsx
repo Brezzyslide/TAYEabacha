@@ -1,7 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, ShieldCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { FileText, ShieldCheck, Eye, User, Clock, AlertTriangle, Pill, X } from "lucide-react";
+import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import CaseNoteCard from "@/app/case-notes/components/CaseNoteCard";
 import type { CaseNote } from "@shared/schema";
@@ -31,6 +35,7 @@ function hasPermission(user: any, resource: string, action: string): boolean {
 
 export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps) {
   const { user } = useAuth();
+  const [viewingNote, setViewingNote] = useState<CaseNote | undefined>();
 
   // Handle missing clientId
   if (!clientId) {
@@ -60,6 +65,18 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
     return allCaseNotes.filter((note: CaseNote) => note.clientId === parseInt(clientId))
       .sort((a: CaseNote, b: CaseNote) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [allCaseNotes, clientId]);
+
+  // Fetch client data for the modal
+  const { data: client } = useQuery({
+    queryKey: [`/api/clients/${clientId}`],
+    enabled: !!clientId,
+  });
+
+  // Fetch staff data for the modal
+  const { data: staffList } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: !!viewingNote,
+  });
 
   if (!canViewCaseNotes) {
     return (
@@ -107,8 +124,134 @@ export default function CaseNotesTab({ clientId, companyId }: CaseNotesTabProps)
           key={note.id}
           note={note}
           viewMode="card"
+          onView={() => setViewingNote(note)}
         />
       ))}
+      
+      {/* Case Note View Modal */}
+      <Dialog open={!!viewingNote} onOpenChange={() => setViewingNote(undefined)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                {viewingNote?.title || "Case Note Details"}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewingNote(undefined)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {viewingNote && (
+            <div className="space-y-6">
+              {/* Case Note Header */}
+              <div className="border-b pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-semibold">{viewingNote.title}</h2>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        <span>Client: {client?.fullName || 'Loading...'}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{format(new Date(viewingNote.createdAt), "MMM d, yyyy 'at' h:mm a")}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {viewingNote.category === 'incident' && (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Incident
+                      </Badge>
+                    )}
+                    {viewingNote.category === 'medication' && (
+                      <Badge className="bg-blue-600 flex items-center gap-1">
+                        <Pill className="w-3 h-3" />
+                        Medication
+                      </Badge>
+                    )}
+                    {viewingNote.priority && (
+                      <Badge variant={viewingNote.priority === 'urgent' ? 'destructive' : 'secondary'}>
+                        {viewingNote.priority.charAt(0).toUpperCase() + viewingNote.priority.slice(1)}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Case Note Content */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Case Note Content</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{viewingNote.content}</p>
+                  </div>
+                </div>
+
+                {/* Additional Details */}
+                {(viewingNote.incidentData || viewingNote.medicationData || viewingNote.tags?.length) && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium">Additional Details</h3>
+                    
+                    {/* Tags */}
+                    {viewingNote.tags && viewingNote.tags.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Tags</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {viewingNote.tags.map((tag: string, index: number) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Incident Data */}
+                    {viewingNote.incidentData && typeof viewingNote.incidentData === 'object' && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Incident Information</h4>
+                        <div className="bg-red-50 p-3 rounded border border-red-200">
+                          <pre className="text-sm text-gray-700 whitespace-pre-wrap">
+                            {JSON.stringify(viewingNote.incidentData, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Medication Data */}
+                    {viewingNote.medicationData && typeof viewingNote.medicationData === 'object' && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Medication Information</h4>
+                        <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                          <pre className="text-sm text-gray-700 whitespace-pre-wrap">
+                            {JSON.stringify(viewingNote.medicationData, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Created by information */}
+                <div className="border-t pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Created by: {staffList?.find((s: any) => s.id === viewingNote.userId)?.username || 'Loading...'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
