@@ -556,9 +556,25 @@ export default function CreateCaseNoteModal({
         } : undefined
       };
 
+      // For Progress Notes, convert structured sections into content
+      let finalContent = data.content;
+      if (data.category === "Progress Note" && data.progressSections && data.progressSections.length > 0) {
+        // Build content from structured sections
+        const sectionsContent = data.progressSections.map(section => {
+          return `${section.title}:\n${section.content || '[No content provided]'}\n`;
+        }).join('\n');
+        
+        // Combine sections with additional notes
+        finalContent = sectionsContent;
+        if (data.additionalNotes && data.additionalNotes.trim()) {
+          finalContent += `\nADDITIONAL NOTES:\n${data.additionalNotes}`;
+        }
+      }
+
       // Auto-populate timestamp with current time for case note creation
       const submissionData = {
         ...data,
+        content: finalContent, // Use the processed content
         attachments,
         caseNoteTags,
         spellCheckCount,
