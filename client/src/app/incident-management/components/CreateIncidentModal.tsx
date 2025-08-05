@@ -157,11 +157,19 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
       return;
     }
     
+    // DEBUG: Log form data to identify corruption source
+    console.log("[INCIDENT FORM DEBUG] Raw form data:", data);
+    console.log("[INCIDENT FORM DEBUG] Description field:", data.description);
+    console.log("[INCIDENT FORM DEBUG] Triggers:", data.triggers);
+    console.log("[INCIDENT FORM DEBUG] Staff Responses:", data.staffResponses);
+    
     // Auto-populate timestamp with current time for immediate reporting
     const submissionData = {
       ...data,
       dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm")
     };
+    
+    console.log("[INCIDENT FORM DEBUG] Final submission data:", submissionData);
     
     createIncidentMutation.mutate(submissionData);
   };

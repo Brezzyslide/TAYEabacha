@@ -139,13 +139,16 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
       return
     }
     
-
+    console.log("[STAFF RESPONSE DEBUG] Saving details for response:", currentResponse);
+    console.log("[STAFF RESPONSE DEBUG] User entered details:", tempDetails);
     
     const newSelected = [...selectedResponses, currentResponse]
     const newDetails = { 
       ...details, 
       [currentResponse]: tempDetails
     }
+    
+    console.log("[STAFF RESPONSE DEBUG] Updated details object:", newDetails);
     
     setSelectedResponses(newSelected)
     setDetails(newDetails)
@@ -171,6 +174,7 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
         details: responseDetails[responseId] || ''
       }
     })
+    console.log("[STAFF RESPONSE DEBUG] Sending to parent form:", responseData);
     onChange(responseData)
   }
 
