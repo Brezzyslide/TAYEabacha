@@ -772,6 +772,7 @@ const ObservationFormModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
 export default function ObservationDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState<string>("all");
