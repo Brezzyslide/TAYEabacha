@@ -1,0 +1,138 @@
+Replit Prompt — Selectable Incident Trigger Form (React + Tailwind + ShadCN UI)
+tsx
+Copy
+Edit
+// File: src/components/incident/TriggerSelector.tsx
+
+import { useState } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+
+const TRIGGERS = [
+  {
+    id: "choice_control",
+    label: "Lack of choice and control",
+    description: "Individual is not offered options or autonomy in daily decisions (e.g. meals, activities, clothing).",
+  },
+  {
+    id: "change_routine",
+    label: "Changes in routine",
+    description: "Unplanned or unexplained disruptions to known schedules (e.g. missed outings, new support worker).",
+  },
+  {
+    id: "unmet_needs",
+    label: "Unmet needs",
+    description: "Delays or absence of support for basic needs (e.g. hunger, hygiene, rest, medical care, emotional regulation).",
+  },
+  {
+    id: "sensory",
+    label: "Sensory overload or discomfort",
+    description: "Exposure to overwhelming stimuli (e.g. loud noises, bright lights, strong smells, physical touch).",
+  },
+  {
+    id: "communication",
+    label: "Poor communication or being misunderstood",
+    description: "Limited access to AAC, complex instructions, or lack of validation leading to frustration.",
+  },
+  {
+    id: "structure_loss",
+    label: "Loss of predictability or structure",
+    description: "Inconsistent support routines, unclear expectations, or lack of visual/temporal cues.",
+  },
+  {
+    id: "disrespect",
+    label: "Feeling disrespected or excluded",
+    description: "Not being heard, ignored, spoken over, or left out of peer/staff interaction.",
+  },
+  {
+    id: "unfamiliarity",
+    label: "Unfamiliar environments or people",
+    description: "Anxiety or distress from being in a new setting or interacting with unfamiliar staff/peers.",
+  },
+  {
+    id: "health_discomfort",
+    label: "Health discomfort or untreated pain",
+    description: "Physical distress due to illness, pain, or side effects of medication not being identified or addressed.",
+  },
+  {
+    id: "trauma_triggers",
+    label: "Past trauma or distress triggers",
+    description: "Exposure to reminders of past trauma (e.g. restraint, tone of voice, uniforms, confrontation).",
+  },
+]
+
+export default function TriggerSelector({ onSubmit }: { onSubmit: (data: Record<string, string>) => void }) {
+  const [selectedTriggers, setSelectedTriggers] = useState<string[]>([])
+  const [details, setDetails] = useState<Record<string, string>>({})
+  const [showInputs, setShowInputs] = useState(false)
+
+  const toggleTrigger = (id: string) => {
+    setSelectedTriggers(prev =>
+      prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
+    )
+  }
+
+  const handleAdd = () => {
+    if (selectedTriggers.length === 0) return
+    setShowInputs(true)
+  }
+
+  const handleSubmit = () => {
+    const incomplete = selectedTriggers.some(id => !details[id]?.trim())
+    if (incomplete) {
+      alert("Please provide further details for all selected triggers.")
+      return
+    }
+    onSubmit(details)
+  }
+
+  return (
+    <Card className="space-y-4 p-4">
+      <h2 className="text-xl font-bold">Select Incident Triggers</h2>
+      {TRIGGERS.map(trigger => (
+        <div key={trigger.id} className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={selectedTriggers.includes(trigger.id)}
+              onCheckedChange={() => toggleTrigger(trigger.id)}
+              id={trigger.id}
+            />
+            <Label htmlFor={trigger.id}>{trigger.label}</Label>
+          </div>
+          <p className="text-sm text-muted-foreground ml-6">{trigger.description}</p>
+        </div>
+      ))}
+
+      {!showInputs && (
+        <Button onClick={handleAdd} className="mt-4">Add</Button>
+      )}
+
+      {showInputs && selectedTriggers.map(id => {
+        const trigger = TRIGGERS.find(t => t.id === id)
+        return (
+          <div key={id} className="mt-4">
+            <Label className="font-semibold">{trigger?.label}</Label>
+            <Textarea
+              placeholder="Describe how this trigger contributed to the incident..."
+              value={details[id] || ""}
+              onChange={(e) =>
+                setDetails(prev => ({ ...prev, [id]: e.target.value }))
+              }
+              className="mt-2"
+              required
+            />
+          </div>
+        )
+      })}
+
+      {showInputs && (
+        <Button onClick={handleSubmit} className="mt-6">
+          Submit
+        </Button>
+      )}
+    </Card>
+  )
+}

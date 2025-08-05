@@ -338,7 +338,7 @@ export const incidentReports = pgTable("incident_reports", {
   witnessPhone: text("witness_phone"),
   types: text("types").array().notNull(),
   isNDISReportable: boolean("is_ndis_reportable").default(false),
-  triggers: jsonb("triggers").default([]), // [{ label: string, notes?: string }]
+  triggers: jsonb("triggers").default([]), // [{ id: string, label: string, details: string }]
   intensityRating: integer("intensity_rating").notNull(),
   staffResponses: jsonb("staff_responses").default([]), // [{ label: string, notes?: string }]
   description: text("description").notNull(),

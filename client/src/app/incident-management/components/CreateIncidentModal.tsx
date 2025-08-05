@@ -18,6 +18,7 @@ import { Plus, X, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { TriggerSelector } from "./TriggerSelector";
 
 const incidentSchema = z.object({
   clientId: z.number({ required_error: "Please select a client" }),
@@ -28,7 +29,11 @@ const incidentSchema = z.object({
   witnessPhone: z.string().optional(),
   externalReference: z.string().optional(),
   types: z.array(z.string()).min(1, "At least one incident type is required"),
-  triggers: z.array(z.string()).optional().default([]),
+  triggers: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    details: z.string()
+  })).optional().default([]),
   staffResponses: z.array(z.string()).optional().default([]),
   description: z.string().min(10, "Description must be at least 10 characters"),
 });
@@ -118,7 +123,7 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
       apiRequest("POST", "/api/incident-reports", {
         ...data,
         dateTime: new Date(data.dateTime).toISOString(),
-        triggers: data.triggers?.map(trigger => ({ label: trigger, notes: "" })) || [],
+        triggers: data.triggers || [],
         staffResponses: data.staffResponses?.map(response => ({ label: response, notes: "" })) || [],
       }),
     onSuccess: () => {
@@ -346,61 +351,19 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
             </Card>
 
             {/* Triggers Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Triggers</CardTitle>
-                <p className="text-sm text-muted-foreground">What led to this incident?</p>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="triggers"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="space-y-3">
-                        {(field.value || []).map((trigger, index) => (
-                          <div key={index} className="flex gap-2">
-                            <Input
-                              value={trigger}
-                              onChange={(e) => {
-                                const newTriggers = [...(field.value || [])];
-                                newTriggers[index] = e.target.value;
-                                field.onChange(newTriggers);
-                              }}
-                              placeholder="Describe what triggered this incident"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newTriggers = (field.value || []).filter((_, i) => i !== index);
-                                field.onChange(newTriggers);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            field.onChange([...(field.value || []), ""]);
-                          }}
-                          className="flex items-center gap-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add Trigger
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+            <FormField
+              control={form.control}
+              name="triggers"
+              render={({ field }) => (
+                <FormItem>
+                  <TriggerSelector
+                    value={field.value || []}
+                    onChange={field.onChange}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Staff Responses Section */}
             <Card>
