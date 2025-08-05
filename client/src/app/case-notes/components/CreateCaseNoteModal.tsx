@@ -1140,11 +1140,13 @@ export default function CreateCaseNoteModal({
               <Button 
                 type="submit"
                 disabled={
-                  wordCount < 130 || 
                   isSubmitting || 
                   (selectedCategory === "Progress Note" && 
                     (!progressSections || progressSections.length === 0 || 
                      !additionalNotesValue || additionalNotesValue.trim().split(/\s+/).filter(w => w.length > 0).length < 30)
+                  ) ||
+                  (selectedCategory !== "Progress Note" && 
+                    (!contentValue || contentValue.trim().split(/\s+/).filter(w => w.length > 0).length < 30)
                   )
                 }
                 className="flex items-center gap-2"
