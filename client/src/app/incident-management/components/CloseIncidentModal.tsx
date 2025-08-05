@@ -106,7 +106,7 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
       controls: [],
       externalReporting: [],
       externalReference: "",
-      followUpDate: "",
+      followUpDate: undefined,
       status: "Closed – All actions complete",
     },
   });
@@ -134,7 +134,7 @@ export function CloseIncidentModal({ open, onOpenChange, incident, onSuccess }: 
   const onSubmit = (data: ClosureFormData) => {
     const payload = {
       ...data,
-      followUpDate: followUpDate ? followUpDate.toISOString().split('T')[0] : undefined,
+      followUpDate: followUpDate ? followUpDate.toISOString().split('T')[0] : "",
     };
     closeIncidentMutation.mutate(payload);
   };

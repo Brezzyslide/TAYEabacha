@@ -926,6 +926,11 @@ export const insertIncidentReportSchema = createInsertSchema(incidentReports).om
 export const insertIncidentClosureSchema = createInsertSchema(incidentClosures).omit({
   id: true,
   createdAt: true,
+}).extend({
+  followUpDate: z.string().optional().transform((val) => {
+    if (!val || val === "") return undefined;
+    return new Date(val);
+  }),
 });
 
 export const insertStaffMessageSchema = createInsertSchema(staffMessages).omit({
