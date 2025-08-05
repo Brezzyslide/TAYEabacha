@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, Sparkles, AlertTriangle, Pill, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import ProgressNoteSections from "./ProgressNoteSections";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,6 +36,12 @@ const caseNoteSchema = z.object({
   // Medication administration  
   medicationStatus: z.enum(["yes", "none", "refused"]).optional(),
   medicationRecordLogged: z.boolean().optional(),
+  
+  // Progress note sections (for structured approach)
+  progressSections: z.array(z.object({
+    id: z.string(),
+    content: z.string()
+  })).default([]),
   
   attachments: z.array(z.object({
     name: z.string(),
@@ -84,7 +91,9 @@ const caseNoteSchema = z.object({
   path: ["linkedShiftId"]
 });
 
-type CaseNoteFormData = z.infer<typeof caseNoteSchema>;
+type CaseNoteFormData = z.infer<typeof caseNoteSchema> & {
+  progressSections?: Array<{ id: string; content: string }>;
+};
 
 interface CreateCaseNoteModalProps {
   isOpen: boolean;
@@ -122,6 +131,7 @@ export default function CreateCaseNoteModal({
       category: editingNote?.category || "Progress Note",
       incidentOccurred: editingNote?.incidentOccurred || false,
       medicationStatus: editingNote?.medicationStatus || undefined,
+      progressSections: editingNote?.progressSections || [],
       attachments: editingNote?.attachments || []
     },
   });
@@ -157,6 +167,7 @@ export default function CreateCaseNoteModal({
   const incidentRefNumber = form.watch("incidentRefNumber");
   const medicationStatus = form.watch("medicationStatus");
   const selectedCategory = form.watch("category");
+  const progressSections = form.watch("progressSections");
   
   // Auto-set incidentLodged to true when incident reference number is provided
   useEffect(() => {
@@ -213,10 +224,20 @@ export default function CreateCaseNoteModal({
     existingCaseNotesCount: existingCaseNotes.length
   });
 
-  // Word count calculation
+  // Word count calculation (excluding HTML tags and considering progress sections)
   const wordCount = useMemo(() => {
-    return contentValue.trim().split(/\s+/).filter(word => word.length > 0).length;
-  }, [contentValue]);
+    let text = contentValue;
+    
+    // For Progress Notes, include content from structured sections
+    if (selectedCategory === "Progress Note" && progressSections && progressSections.length > 0) {
+      const sectionsText = progressSections.map(s => s.content).join(' ');
+      text = contentValue + ' ' + sectionsText;
+    }
+    
+    const plainText = text.replace(/<[^>]*>/g, '').trim();
+    if (!plainText) return 0;
+    return plainText.split(/\s+/).filter(word => word.length > 0).length;
+  }, [contentValue, selectedCategory, progressSections]);
 
   // Smart filtering logic for shift suggestions
   const filteredShifts = useMemo(() => {
@@ -957,100 +978,137 @@ export default function CreateCaseNoteModal({
               </CardContent>
             </Card>
 
-            {/* Case Note Content */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Case Note Content
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={wordCount >= 130 ? "default" : "destructive"}>
-                      {wordCount} words
-                    </Badge>
-                    {wordCount >= 130 && <CheckCircle className="h-4 w-4 text-green-600" />}
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Case Note Details *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter detailed case note content (minimum 130 words)..."
-                          className="min-h-[200px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Minimum 130 words required. Current: {wordCount} words
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleSpellCheck}
-                      disabled={spellCheckCount >= 2 || spellCheckMutation.isPending || !contentValue.trim()}
-                      className="flex items-center gap-2"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Check Spelling
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      {2 - spellCheckCount} checks remaining
+            {/* Progress Note Sections - Interactive Checkbox Approach */}
+            {selectedCategory === "Progress Note" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Structured Progress Documentation
                     </span>
-                  </div>
-                  
-                  {spellCheckMutation.isPending && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                      Checking spelling...
+                    <div className="flex items-center gap-2">
+                      <Badge variant={wordCount >= 130 ? "default" : "destructive"}>
+                        {wordCount} words
+                      </Badge>
+                      {wordCount >= 130 && <CheckCircle className="h-4 w-4 text-green-600" />}
                     </div>
-                  )}
-                </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="progressSections"
+                    render={({ field }) => (
+                      <FormItem>
+                        <ProgressNoteSections
+                          value={field.value || []}
+                          onChange={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
-                {/* Spell Check Preview */}
-                {showSpellCheckPreview && spellCheckResult && (
-                  <Card className="border-blue-200 bg-blue-50">
-                    <CardHeader>
-                      <CardTitle className="text-sm flex items-center gap-2">
+            {/* Traditional Case Note Content for non-Progress Notes */}
+            {selectedCategory !== "Progress Note" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Case Note Content
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={wordCount >= 130 ? "default" : "destructive"}>
+                        {wordCount} words
+                      </Badge>
+                      {wordCount >= 130 && <CheckCircle className="h-4 w-4 text-green-600" />}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Case Note Details *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter detailed case note content (minimum 130 words)..."
+                            className="min-h-[200px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Minimum 130 words required. Current: {wordCount} words
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSpellCheck}
+                        disabled={spellCheckCount >= 2 || spellCheckMutation.isPending || !contentValue.trim()}
+                        className="flex items-center gap-2"
+                      >
                         <Sparkles className="h-4 w-4" />
-                        Spell Check Results
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">Corrected Version:</p>
-                          <div className="bg-white p-3 rounded border text-sm">
-                            {spellCheckResult.corrected}
+                        Check Spelling
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {2 - spellCheckCount} checks remaining
+                      </span>
+                    </div>
+                    
+                    {spellCheckMutation.isPending && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                        Checking spelling...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Spell Check Preview */}
+                  {showSpellCheckPreview && spellCheckResult && (
+                    <Card className="border-blue-200 bg-blue-50">
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          Spell Check Results
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Corrected Version:</p>
+                            <div className="bg-white p-3 rounded border text-sm">
+                              {spellCheckResult.corrected}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button type="button" size="sm" onClick={acceptSpellCheck}>
+                              Accept Changes
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={rejectSpellCheck}>
+                              Keep Original
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button type="button" size="sm" onClick={acceptSpellCheck}>
-                            Accept Changes
-                          </Button>
-                          <Button type="button" size="sm" variant="outline" onClick={rejectSpellCheck}>
-                            Keep Original
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </CardContent>
-            </Card>
+                      </CardContent>
+                    </Card>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
