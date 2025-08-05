@@ -133,27 +133,23 @@ export default function IncidentDashboard() {
     );
   }
 
-  const filteredIncidents = (incidents || []).filter((incident: IncidentReport) => {
-    // Safely handle potentially undefined properties
-    const safeIncidentId = incident.report?.incidentId || '';
-    const safeClientName = incident.client ? `${incident.client.firstName} ${incident.client.lastName}` : '';
-    const safeDescription = incident.report?.description || '';
-    const safeStatus = incident.report?.status || '';
-    const safeTypes = incident.report?.types || [];
-    
+  const filteredIncidents = (incidents || []).filter((incident: any) => {
     const matchesSearch = searchTerm === '' || 
-      safeIncidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      safeClientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      safeDescription.toLowerCase().includes(searchTerm.toLowerCase());
+      incident.incidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${incident.clientFirstName} ${incident.clientLastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || safeStatus.toLowerCase() === statusFilter;
-    const matchesType = typeFilter === "all" || safeTypes.some(type => 
-      (type || '').toLowerCase().includes(typeFilter.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || incident.status === statusFilter;
+    
+    const matchesType = typeFilter === 'all' || incident.types.some((type: string) => 
+      type.toLowerCase().includes(typeFilter.toLowerCase())
     );
+    
     const matchesTab = 
       activeTab === "all" ||
-      (activeTab === "open" && safeStatus === "Open") ||
-      (activeTab === "closed" && safeStatus === "Closed");
+      (activeTab === "open" && incident.status === "Open") ||
+      (activeTab === "closed" && incident.status === "Closed") ||
+      (activeTab === "ndis" && incident.isNDISReportable === true);
 
     return matchesSearch && matchesStatus && matchesType && matchesTab;
   });
@@ -305,10 +301,10 @@ export default function IncidentDashboard() {
 
   const incidentStats = {
     total: incidents.length,
-    open: incidents.filter((i: IncidentReport) => i.report?.status === "Open").length,
-    closed: incidents.filter((i: IncidentReport) => i.report?.status === "Closed").length,
-    ndis: incidents.filter((i: IncidentReport) => i.report?.isNDISReportable === true).length,
-    highIntensity: incidents.filter((i: IncidentReport) => (i.report?.intensityRating || 0) >= 8).length,
+    open: incidents.filter((i: any) => i.status === "Open").length,
+    closed: incidents.filter((i: any) => i.status === "Closed").length,
+    ndis: incidents.filter((i: any) => i.isNDISReportable === true).length,
+    highIntensity: incidents.filter((i: any) => (i.intensityRating || 0) >= 8).length,
   };
 
   if (isLoading) {
@@ -452,87 +448,82 @@ export default function IncidentDashboard() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {filteredIncidents.map((incident: IncidentReport) => (
-                <Card key={incident.report?.id || Math.random()} className="hover:shadow-md transition-shadow">
+              {filteredIncidents.map((incident: any) => (
+                <Card key={incident.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h3 className="font-semibold">{incident.report?.incidentId || 'N/A'}</h3>
-                          {getStatusBadge(incident.report?.status || 'Unknown')}
-
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="font-semibold">{incident.incidentId}</h3>
+                          {getStatusBadge(incident.status)}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Client: {incident.client ? `${incident.client.firstName} ${incident.client.lastName}` : 'N/A'}</span>
-                          <span>Staff: {incident.staff ? `${incident.staff.firstName} ${incident.staff.lastName}` : 'N/A'}</span>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                          <span>Client: {incident.clientFirstName} {incident.clientLastName}</span>
+                          <span>Staff: {incident.staffFullName}</span>
+                          <span>Date: {format(new Date(incident.dateTime), 'MMM dd, yyyy HH:mm')}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Date: {incident.report?.dateTime ? format(new Date(incident.report.dateTime), "MMM dd, yyyy 'at' HH:mm") : 'N/A'}</span>
+                        <div className="text-sm text-muted-foreground">
+                          Types: {incident.types.join(', ')}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleViewIncident(incident)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleExportIndividualPDF(incident.report?.incidentId || '')}
-                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                          title="Export to PDF"
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleExportIndividualPDF(incident.incidentId)}
+                          className="flex items-center gap-1"
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-3 w-3" />
+                          PDF
                         </Button>
-                        {incident.report?.status === "Open" && canCloseIncident() && (
-                          <Button variant="outline" size="sm" onClick={() => handleCloseIncident(incident)}>
-                            <CheckCircle className="h-4 w-4" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewIncident(incident)}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Button>
+                        {incident.status === "Open" && canCloseIncident() && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCloseIncident(incident)}
+                            className="flex items-center gap-1 text-green-600 hover:text-green-700"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                            Close
                           </Button>
                         )}
                         {canCloseIncident() && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleDeleteIncident(incident.report?.incidentId || '')}
-                            className="text-red-600 hover:text-red-700"
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteIncident(incident.incidentId)}
+                            className="flex items-center gap-1 text-red-600 hover:text-red-700"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
+                            Delete
                           </Button>
                         )}
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Types:</span>
-                          <div className="flex gap-1">
-                            {(incident.report?.types || []).map((type, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {type}
-                              </Badge>
-                            ))}
-                          </div>
+                    <p className="text-sm mb-4">{incident.description}</p>
+                    {incident.closure && (
+                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span className="font-medium text-green-800">Closed on {format(new Date(incident.closure.closureDate), 'MMM dd, yyyy')}</span>
                         </div>
-
-                        {incident.closure && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Severity:</span>
-                            {getSeverityBadge(incident.closure.severity)}
-                          </div>
-                        )}
+                        <div className="text-sm text-green-700 space-y-1">
+                          <div><strong>Hazard:</strong> {incident.closure.hazard}</div>
+                          <div><strong>Review Type:</strong> {incident.closure.reviewType}</div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {incident.report?.description || 'No description available'}
-                      </p>
-                      {incident.closure && (
-                        <div className="text-xs text-muted-foreground pt-2 border-t">
-                          Closed on {format(new Date(incident.closure.closureDate), "MMM dd, yyyy")} • 
-                          Review Type: {incident.closure.reviewType} • 
-                          Hazard: {incident.closure.hazard}
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
