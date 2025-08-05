@@ -355,21 +355,15 @@ export const incidentClosures = pgTable("incident_closures", {
   incidentId: text("incident_id").notNull().unique(),
   closedBy: integer("closed_by").notNull().references(() => users.id),
   closureDate: timestamp("closure_date").notNull(),
-  controlReview: boolean("control_review").notNull(),
-  improvements: text("improvements"),
-  implemented: boolean("implemented").notNull(),
-  controlLevel: text("control_level").notNull(), // "Elimination", "Engineering", "Behavioural", "Admin", "PPE", "None"
-  wasLTI: text("was_lti").notNull(), // "yes", "no", "NA"
-  hazard: text("hazard").notNull(), // "Behavioural", "Medical", "Environmental", "Other"
-  severity: text("severity").notNull(), // "Low", "Medium", "High", "Critical"
-  externalNotice: boolean("external_notice").notNull(),
-  isNDISReportable: boolean("is_ndis_reportable").default(false),
-  ndisReference: text("ndis_reference"),
-  participantContext: text("participant_context").notNull(), // "yes", "no", "NA"
-  supportPlanAvailable: text("support_plan_available").notNull(), // "yes", "no", "NA"
-  reviewType: text("review_type").notNull(), // "Root Cause", "Case Conference", "Support Team Review", "Corrective Action", "No Further Action"
-  outcome: text("outcome"),
-  attachments: jsonb("attachments").default([]),
+  findings: text("findings").notNull(),
+  rootCause: text("root_cause"),
+  recommendations: text("recommendations").notNull(),
+  outcomes: jsonb("outcomes").default([]),
+  controls: jsonb("controls").default([]),
+  externalReporting: jsonb("external_reporting").default([]),
+  externalReference: text("external_reference"),
+  followUpDate: timestamp("follow_up_date"),
+  status: text("status").notNull(), // "Closed – All actions complete", "Closed – Monitoring required", etc.
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

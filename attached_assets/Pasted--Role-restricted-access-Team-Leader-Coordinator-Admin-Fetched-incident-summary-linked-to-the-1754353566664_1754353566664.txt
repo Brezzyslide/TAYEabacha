@@ -1,0 +1,259 @@
+✅ Role-restricted access (Team Leader, Coordinator, Admin)
+✅ Fetched incident summary (linked to the submitted report)
+✅ Merged output for PDF export or audit as a single, unified document
+✅ External reporting logic, control actions, follow-up and final status
+
+📁 File: src/components/incident/IncidentCloseOutForm.tsx
+tsx
+Copy
+Edit
+import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { useSession } from "@/lib/auth-provider"
+import { getIncidentById } from "@/api/incidents" // Assume this API exists
+
+const allowedRoles = ["Admin", "TeamLeader", "Coordinator"]
+
+export default function IncidentCloseOutForm({ incidentId, onSubmit }: { incidentId: string, onSubmit: (data: any) => void }) {
+  const { role } = useSession()
+  const [incident, setIncident] = useState<any>(null)
+  const [recommendations, setRecommendations] = useState("")
+  const [findings, setFindings] = useState("")
+  const [rootCause, setRootCause] = useState("")
+  const [outcomes, setOutcomes] = useState<string[]>([])
+  const [controls, setControls] = useState<string[]>([])
+  const [externalRequired, setExternalRequired] = useState(false)
+  const [externalOrgs, setExternalOrgs] = useState<string[]>([])
+  const [externalRef, setExternalRef] = useState("")
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined)
+  const [status, setStatus] = useState("Closed – All actions complete")
+
+  const OUTCOME_OPTIONS = [
+    "Staff debrief conducted",
+    "Client debrief/check-in",
+    "Supervisor follow-up",
+    "Support or Safety Plan updated",
+    "Risk rating updated",
+    "Staff training scheduled",
+    "Communication method revised",
+    "Shift handover/team briefing",
+    "External referral made",
+    "PBS practitioner engaged",
+  ]
+
+  const CONTROL_OPTIONS = [
+    "Environmental modification",
+    "Policy or procedure updated",
+    "Hazard removed/addressed",
+    "Supervision level adjusted",
+    "Routine or schedule modified",
+    "Strategy added to Behaviour Plan",
+    "Other",
+  ]
+
+  const EXTERNAL_ORGS = [
+    "WorkCover",
+    "NDIS Quality & Safeguards Commission",
+    "Victoria Police",
+    "Other",
+  ]
+
+  const STATUS_OPTIONS = [
+    "Closed – All actions complete",
+    "Closed – Monitoring required",
+    "Escalated – Senior management review",
+    "Pending – Awaiting documentation",
+    "In Progress – Follow-up underway",
+  ]
+
+  useEffect(() => {
+    if (incidentId) {
+      getIncidentById(incidentId).then(data => {
+        setIncident(data)
+      })
+    }
+  }, [incidentId])
+
+  const toggle = (value: string, setFn: any, state: string[]) => {
+    setFn(state.includes(value) ? state.filter(i => i !== value) : [...state, value])
+  }
+
+  const handleSubmit = () => {
+    if (!findings.trim() || !recommendations.trim()) {
+      alert("Please fill out all required fields.")
+      return
+    }
+
+    if (externalRequired && externalOrgs.length === 0) {
+      alert("Select at least one external organisation.")
+      return
+    }
+
+    const payload = {
+      incidentSummary: incident,
+      findings,
+      rootCause,
+      recommendations,
+      outcomes,
+      controls,
+      externalReporting: externalRequired ? externalOrgs : [],
+      externalReference: externalRequired ? externalRef : null,
+      followUpDate: followUpDate ? format(followUpDate, "yyyy-MM-dd") : null,
+      status,
+    }
+
+    onSubmit(payload)
+  }
+
+  if (!allowedRoles.includes(role)) {
+    return (
+      <Card className="p-4">
+        <h2 className="text-lg font-semibold">Access Denied</h2>
+        <p className="text-sm text-muted-foreground">You do not have permission to close incidents.</p>
+      </Card>
+    )
+  }
+
+  if (!incident) {
+    return (
+      <Card className="p-4">
+        <h2 className="text-lg font-semibold">Loading Incident...</h2>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="space-y-4 p-4">
+      <h2 className="text-xl font-bold">Incident Close-Out</h2>
+
+      <div>
+        <Label className="text-md font-semibold">🔎 Lodged Incident Summary</Label>
+        <div className="bg-muted text-sm p-3 rounded-md mt-2 whitespace-pre-wrap">
+          {incident.description || "No summary found."}
+        </div>
+      </div>
+
+      <div>
+        <Label>Findings</Label>
+        <Textarea value={findings} onChange={(e) => setFindings(e.target.value)} required />
+      </div>
+
+      <div>
+        <Label>Root Cause (if known)</Label>
+        <Textarea value={rootCause} onChange={(e) => setRootCause(e.target.value)} />
+      </div>
+
+      <div>
+        <Label>Recommendations</Label>
+        <Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} required />
+      </div>
+
+      <div>
+        <Label>Outcome Actions</Label>
+        {OUTCOME_OPTIONS.map(opt => (
+          <div key={opt} className="flex items-center space-x-2 mt-2">
+            <Checkbox
+              checked={outcomes.includes(opt)}
+              onCheckedChange={() => toggle(opt, setOutcomes, outcomes)}
+            />
+            <span>{opt}</span>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <Label>Controls Achieved</Label>
+        {CONTROL_OPTIONS.map(opt => (
+          <div key={opt} className="flex items-center space-x-2 mt-2">
+            <Checkbox
+              checked={controls.includes(opt)}
+              onCheckedChange={() => toggle(opt, setControls, controls)}
+            />
+            <span>{opt}</span>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <Label>External Reporting Required?</Label>
+        <div className="flex space-x-4 mt-2">
+          <Button
+            variant={externalRequired ? "default" : "outline"}
+            onClick={() => setExternalRequired(true)}
+          >Yes</Button>
+          <Button
+            variant={!externalRequired ? "default" : "outline"}
+            onClick={() => {
+              setExternalRequired(false)
+              setExternalOrgs([])
+              setExternalRef("")
+            }}
+          >No</Button>
+        </div>
+
+        {externalRequired && (
+          <div className="mt-4 space-y-2">
+            {EXTERNAL_ORGS.map(org => (
+              <div key={org} className="flex items-center space-x-2">
+                <Checkbox
+                  checked={externalOrgs.includes(org)}
+                  onCheckedChange={() => toggle(org, setExternalOrgs, externalOrgs)}
+                />
+                <span>{org}</span>
+              </div>
+            ))}
+            <Label className="mt-2">External Reference Number</Label>
+            <Input
+              placeholder="e.g. NDIS-12345"
+              value={externalRef}
+              onChange={(e) => setExternalRef(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+
+      <div>
+        <Label>Follow-Up Date (if required)</Label>
+        <Calendar selected={followUpDate} onSelect={setFollowUpDate} mode="single" className="mt-2" />
+      </div>
+
+      <div>
+        <Label>Final Status</Label>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="mt-2">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map(stat => (
+              <SelectItem key={stat} value={stat}>{stat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button className="mt-6" onClick={handleSubmit}>Close Incident</Button>
+    </Card>
+  )
+}
+✅ Instructions
+Save the file: IncidentCloseOutForm.tsx under src/components/incident/
+
+Ensure the incident API exists:
+Endpoint like /api/incidents/:id should return the incident description.
+
+Embed in Incident Dashboard (TeamLeader+ only):
+
+tsx
+Copy
+Edit
+<IncidentCloseOutForm incidentId={incident.id} onSubmit={handleCloseOutSave} />
+PDF export or storage:
+Send the merged output (incident + close-out) to your PDF service or database.
