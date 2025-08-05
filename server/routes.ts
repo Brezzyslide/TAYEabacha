@@ -5443,15 +5443,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/incident-reports", requireAuth, async (req: any, res) => {
     try {
+      // DEBUG: Log incoming request body to trace corruption
+      console.log("[SERVER DEBUG] Raw request body:", JSON.stringify(req.body, null, 2));
+      console.log("[SERVER DEBUG] Description field from request:", req.body.description);
+      console.log("[SERVER DEBUG] Triggers from request:", req.body.triggers);
+      console.log("[SERVER DEBUG] Staff responses from request:", req.body.staffResponses);
+      
       // Generate new incident ID with business name format
       const incidentId = await storage.generateIncidentId(req.user.tenantId);
       
+      // CRITICAL FIX: Explicitly preserve description field
+      const preservedDescription = req.body.description || "";
+      
       const reportData = insertIncidentReportSchema.parse({
         ...req.body,
+        description: preservedDescription, // Explicitly set description
         staffId: req.user.id,
         tenantId: req.user.tenantId,
         incidentId: incidentId,
       });
+      
+      console.log("[SERVER DEBUG] Final reportData description:", reportData.description);
 
       const report = await storage.createIncidentReport(reportData);
       

@@ -283,11 +283,12 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                 <div className="space-y-3">
                   {incident.triggers.map((trigger, index) => (
                     <div key={index} className="border rounded-lg p-3">
-                      <div className="flex items-start gap-2">
-                        <Badge variant="outline" className="mt-0.5">{trigger.label}</Badge>
-                        {trigger.notes && (
-                          <div className="flex-1">
-                            <p className="text-sm text-muted-foreground">{trigger.notes}</p>
+                      <div className="space-y-2">
+                        <Badge variant="outline">{trigger.label}</Badge>
+                        {trigger.details && (
+                          <div className="bg-muted/30 p-2 rounded text-sm">
+                            <p className="font-medium text-muted-foreground mb-1">Details:</p>
+                            <p className="whitespace-pre-wrap">{trigger.details}</p>
                           </div>
                         )}
                       </div>
@@ -311,11 +312,12 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                 <div className="space-y-3">
                   {incident.staffResponses.map((response, index) => (
                     <div key={index} className="border rounded-lg p-3">
-                      <div className="flex items-start gap-2">
-                        <Badge variant="outline" className="mt-0.5">{response.label}</Badge>
-                        {response.notes && (
-                          <div className="flex-1">
-                            <p className="text-sm text-muted-foreground">{response.notes}</p>
+                      <div className="space-y-2">
+                        <Badge variant="outline">{response.label}</Badge>
+                        {response.details && (
+                          <div className="bg-muted/30 p-2 rounded text-sm">
+                            <p className="font-medium text-muted-foreground mb-1">Details:</p>
+                            <p className="whitespace-pre-wrap">{response.details}</p>
                           </div>
                         )}
                       </div>

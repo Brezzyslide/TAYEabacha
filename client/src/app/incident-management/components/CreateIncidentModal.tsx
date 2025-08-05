@@ -67,33 +67,7 @@ const INCIDENT_TYPES = [
   "Other"
 ];
 
-const TRIGGER_OPTIONS = [
-  "Denied request",
-  "Change in routine",
-  "Sensory overload",
-  "Social conflict",
-  "Medical condition",
-  "Medication change",
-  "Environmental factors",
-  "Communication breakdown",
-  "Unmet needs",
-  "Past trauma",
-  "Other"
-];
-
-const RESPONSE_OPTIONS = [
-  "De-escalation techniques",
-  "Physical intervention",
-  "Redirection",
-  "Environmental modification",
-  "Medication administration",
-  "Medical attention",
-  "Emergency services called",
-  "Supervisor notified",
-  "Family contacted",
-  "Documentation completed",
-  "Other"
-];
+// Note: Trigger and response options are now handled by dedicated selector components
 
 export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClientId }: CreateIncidentModalProps) {
   const queryClient = useQueryClient();
@@ -158,19 +132,23 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
       return;
     }
     
+    // CRITICAL FIX: Preserve the actual description field and ensure no contamination
+    const preservedDescription = data.description || "";
+    
     // DEBUG: Log form data to identify corruption source
     console.log("[INCIDENT FORM DEBUG] Raw form data:", data);
-    console.log("[INCIDENT FORM DEBUG] Description field:", data.description);
-    console.log("[INCIDENT FORM DEBUG] Triggers:", data.triggers);
-    console.log("[INCIDENT FORM DEBUG] Staff Responses:", data.staffResponses);
+    console.log("[INCIDENT FORM DEBUG] Preserved description:", preservedDescription);
+    console.log("[INCIDENT FORM DEBUG] Triggers count:", data.triggers?.length || 0);
+    console.log("[INCIDENT FORM DEBUG] Staff Responses count:", data.staffResponses?.length || 0);
     
     // Auto-populate timestamp with current time for immediate reporting
     const submissionData = {
       ...data,
+      description: preservedDescription, // Explicitly preserve description
       dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm")
     };
     
-    console.log("[INCIDENT FORM DEBUG] Final submission data:", submissionData);
+    console.log("[INCIDENT FORM DEBUG] Final submission data with preserved description:", submissionData);
     
     createIncidentMutation.mutate(submissionData);
   };
