@@ -264,26 +264,23 @@ export default function CreateCaseNoteModal({
       return false;
     });
     
-    // If no eligible shifts found but we have shifts available, include recent ones prioritized by proximity to today
-    if (filtered.length === 0 && availableShifts.length > 0) {
-      // Sort all shifts by proximity to today (closest dates first)
-      const sortedByProximity = [...availableShifts].sort((a, b) => {
-        const aDate = new Date(a.startTime);
-        const bDate = new Date(b.startTime);
-        const aDiff = Math.abs(aDate.getTime() - today.getTime());
-        const bDiff = Math.abs(bDate.getTime() - today.getTime());
-        return aDiff - bDiff;
-      });
-      
-      filtered.push(...sortedByProximity.slice(0, 5));
-    }
+    // PRODUCTION FIX: Remove fallback logic that shows non-existent or irrelevant shifts
+    // Only show shifts that meet strict criteria - no "closest proximity" fallbacks
+    // This prevents phantom shift dates from appearing in production
     
-    console.log(`[CASE NOTE] Filtered ${filtered.length} shifts from ${availableShifts.length} total:`, filtered.map(s => ({
+    console.log(`[CASE NOTE] PRODUCTION FIX - Filtered ${filtered.length} shifts from ${availableShifts.length} total:`, filtered.map(s => ({
       id: s.id,
       title: s.title,
       date: new Date(s.startTime).toLocaleDateString(),
-      status: (s as any).status
+      status: (s as any).status,
+      userId: s.userId,
+      clientId: s.clientId
     })));
+    
+    // PRODUCTION VALIDATION: Verify no phantom dates appear
+    if (filtered.length === 0 && availableShifts.length > 0) {
+      console.warn(`[CASE NOTE] No eligible shifts found despite ${availableShifts.length} available shifts. This is expected behavior with the production fix.`);
+    }
     
     return filtered;
   }, [availableShifts, existingCaseNotes, selectedCategory]);

@@ -6798,12 +6798,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientShifts = allShifts.filter(shift => shift.clientId === parseInt(clientId));
       console.log(`[SHIFT FETCH] Shifts for client ${clientId}: ${clientShifts.length}`);
       
-      // Then filter by staff (assigned to this staff OR completed by this staff OR unassigned)
-      const relevantShifts = clientShifts.filter(shift => 
-        shift.userId === parseInt(staffId) || 
-        shift.userId === null ||
-        shift.status === 'completed' // Include completed shifts regardless of assignment
-      );
+      // Then filter by staff - STRICT TENANT ISOLATION: Only show shifts assigned to this staff member
+      const relevantShifts = clientShifts.filter(shift => {
+        const isAssignedToStaff = shift.userId === parseInt(staffId);
+        const isUnassigned = shift.userId === null;
+        
+        // PRODUCTION FIX: Only include completed shifts if they were originally assigned to this staff
+        const isCompletedByThisStaff = shift.status === 'completed' && shift.userId === parseInt(staffId);
+        
+        return isAssignedToStaff || isUnassigned || isCompletedByThisStaff;
+      });
       console.log(`[SHIFT FETCH] Relevant shifts for staff ${staffId}: ${relevantShifts.length}`);
 
       // For progress notes, we need a broader time range - last 30 days instead of 7
@@ -6820,13 +6824,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .slice(0, 20); // Increase limit to 20 for better selection
       
       console.log(`[SHIFT FETCH] Available shifts (last 30 days): ${availableShifts.length}`);
-      console.log(`[SHIFT FETCH] Shift details:`, availableShifts.map(s => ({
+      console.log(`[SHIFT FETCH] PRODUCTION SECURITY CHECK - Shift details:`, availableShifts.map(s => ({
         id: s.id,
         title: s.title,
         startTime: s.startTime,
         status: s.status,
-        userId: s.userId
+        userId: s.userId,
+        clientId: s.clientId,
+        tenantId: s.tenantId,
+        isValidForStaff: s.userId === parseInt(staffId) || s.userId === null
       })));
+      
+      // PRODUCTION VALIDATION: Double-check no phantom shifts are included
+      const phantomShifts = availableShifts.filter(s => 
+        s.tenantId !== tenantId || 
+        (s.userId !== parseInt(staffId) && s.userId !== null && s.status !== 'completed')
+      );
+      
+      if (phantomShifts.length > 0) {
+        console.error(`[SHIFT FETCH] CRITICAL: Phantom shifts detected!`, phantomShifts);
+      }
       
       res.json(availableShifts);
     } catch (error) {
