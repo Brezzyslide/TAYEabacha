@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 
 const TRIGGERS = [
   {
@@ -56,6 +58,11 @@ const TRIGGERS = [
     label: "Past trauma or distress triggers",
     description: "Exposure to reminders of past trauma (e.g. restraint, tone of voice, uniforms, confrontation).",
   },
+  {
+    id: "other",
+    label: "Other",
+    description: "A trigger not covered by the above categories.",
+  },
 ]
 
 interface TriggerData {
@@ -76,92 +83,199 @@ export function TriggerSelector({ value, onChange }: TriggerSelectorProps) {
   const [details, setDetails] = useState<Record<string, string>>(
     value.reduce((acc, t) => ({ ...acc, [t.id]: t.details }), {}) || {}
   )
-  const [showInputs, setShowInputs] = useState(value.length > 0)
+  const [showDialog, setShowDialog] = useState(false)
+  const [currentTrigger, setCurrentTrigger] = useState<string | null>(null)
+  const [tempDetails, setTempDetails] = useState("")
+  const [tempOtherLabel, setTempOtherLabel] = useState("")
 
   const toggleTrigger = (id: string) => {
-    const newSelected = selectedTriggers.includes(id) 
-      ? selectedTriggers.filter(t => t !== id) 
-      : [...selectedTriggers, id]
-    
-    setSelectedTriggers(newSelected)
-    
-    // If unchecking, remove from details
     if (selectedTriggers.includes(id)) {
+      // Unchecking - remove the trigger
+      const newSelected = selectedTriggers.filter(t => t !== id)
       const newDetails = { ...details }
       delete newDetails[id]
+      
+      setSelectedTriggers(newSelected)
       setDetails(newDetails)
+      updateParent(newSelected, newDetails)
+    } else {
+      // Checking - show popup for details
+      const trigger = TRIGGERS.find(t => t.id === id)
+      setCurrentTrigger(id)
+      setTempDetails(details[id] || "")
+      setTempOtherLabel(id === "other" ? (details[id]?.split(":")[0] || "") : "")
+      setShowDialog(true)
     }
   }
 
-  const handleAdd = () => {
-    if (selectedTriggers.length === 0) return
-    setShowInputs(true)
+  const handleDialogSave = () => {
+    if (!currentTrigger) return
+    
+    const trigger = TRIGGERS.find(t => t.id === currentTrigger)
+    if (!tempDetails.trim()) {
+      alert("Please provide details for this trigger.")
+      return
+    }
+    
+    if (currentTrigger === "other" && !tempOtherLabel.trim()) {
+      alert("Please specify what the 'Other' trigger is.")
+      return
+    }
+    
+    const newSelected = [...selectedTriggers, currentTrigger]
+    const newDetails = { 
+      ...details, 
+      [currentTrigger]: currentTrigger === "other" 
+        ? `${tempOtherLabel}: ${tempDetails}`
+        : tempDetails
+    }
+    
+    setSelectedTriggers(newSelected)
+    setDetails(newDetails)
+    setShowDialog(false)
+    setCurrentTrigger(null)
+    setTempDetails("")
+    setTempOtherLabel("")
+    
+    updateParent(newSelected, newDetails)
   }
 
-  const handleDetailsChange = (id: string, value: string) => {
-    const newDetails = { ...details, [id]: value }
-    setDetails(newDetails)
-    
-    // Update parent component
-    const triggerData = selectedTriggers.map(triggerId => {
+  const handleDialogCancel = () => {
+    setShowDialog(false)
+    setCurrentTrigger(null)
+    setTempDetails("")
+    setTempOtherLabel("")
+  }
+
+  const updateParent = (triggers: string[], triggerDetails: Record<string, string>) => {
+    const triggerData = triggers.map(triggerId => {
       const trigger = TRIGGERS.find(t => t.id === triggerId)
       return {
         id: triggerId,
-        label: trigger?.label || '',
-        details: newDetails[triggerId] || ''
+        label: triggerId === "other" 
+          ? triggerDetails[triggerId]?.split(":")[0] || "Other"
+          : trigger?.label || '',
+        details: triggerId === "other"
+          ? triggerDetails[triggerId]?.split(":").slice(1).join(":").trim() || ""
+          : triggerDetails[triggerId] || ''
       }
     })
     onChange(triggerData)
   }
 
   return (
-    <Card className="space-y-4 p-4">
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Select Incident Triggers</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Choose all triggers that may have contributed to this incident
-        </p>
-      </div>
-      
-      {TRIGGERS.map(trigger => (
-        <div key={trigger.id} className="space-y-1">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={selectedTriggers.includes(trigger.id)}
-              onCheckedChange={() => toggleTrigger(trigger.id)}
-              id={trigger.id}
-            />
-            <Label htmlFor={trigger.id} className="font-medium">
-              {trigger.label}
-            </Label>
-          </div>
-          <p className="text-sm text-muted-foreground ml-6">{trigger.description}</p>
+    <>
+      <Card className="space-y-4 p-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Select Incident Triggers</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Choose all triggers that may have contributed to this incident. You'll be prompted to provide details for each selection.
+          </p>
         </div>
-      ))}
-
-      {!showInputs && selectedTriggers.length > 0 && (
-        <Button onClick={handleAdd} className="mt-4">
-          Add Details for Selected Triggers
-        </Button>
-      )}
-
-      {showInputs && selectedTriggers.map(id => {
-        const trigger = TRIGGERS.find(t => t.id === id)
-        return (
-          <div key={id} className="mt-4 space-y-2">
-            <Label className="font-semibold text-sm">
-              {trigger?.label} - Details
-            </Label>
-            <Textarea
-              placeholder="Describe how this trigger contributed to the incident..."
-              value={details[id] || ""}
-              onChange={(e) => handleDetailsChange(id, e.target.value)}
-              className="min-h-[80px]"
-              rows={3}
-            />
+        
+        {TRIGGERS.map(trigger => (
+          <div key={trigger.id} className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={selectedTriggers.includes(trigger.id)}
+                onCheckedChange={() => toggleTrigger(trigger.id)}
+                id={trigger.id}
+              />
+              <Label htmlFor={trigger.id} className="font-medium">
+                {trigger.label}
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground ml-6">{trigger.description}</p>
           </div>
-        )
-      })}
-    </Card>
+        ))}
+
+        {selectedTriggers.length > 0 && (
+          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium mb-2">Selected Triggers:</h4>
+            <div className="space-y-2">
+              {selectedTriggers.map(id => {
+                const trigger = TRIGGERS.find(t => t.id === id)
+                const triggerLabel = id === "other" 
+                  ? details[id]?.split(":")[0] || "Other"
+                  : trigger?.label
+                const triggerDetails = id === "other"
+                  ? details[id]?.split(":").slice(1).join(":").trim()
+                  : details[id]
+                
+                return (
+                  <div key={id} className="text-sm">
+                    <span className="font-medium">{triggerLabel}:</span>{" "}
+                    <span className="text-muted-foreground">
+                      {triggerDetails || "Details pending..."}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {currentTrigger === "other" ? "Specify Other Trigger" : "Trigger Details Required"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {currentTrigger && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium">
+                  {TRIGGERS.find(t => t.id === currentTrigger)?.label}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {TRIGGERS.find(t => t.id === currentTrigger)?.description}
+                </p>
+              </div>
+            )}
+            
+            {currentTrigger === "other" && (
+              <div>
+                <Label htmlFor="other-label" className="text-sm font-medium">
+                  What is the specific trigger? *
+                </Label>
+                <Input
+                  id="other-label"
+                  value={tempOtherLabel}
+                  onChange={(e) => setTempOtherLabel(e.target.value)}
+                  placeholder="e.g., Medication side effects, Peer conflict, etc."
+                  className="mt-1"
+                />
+              </div>
+            )}
+            
+            <div>
+              <Label htmlFor="trigger-details" className="text-sm font-medium">
+                Please explain how this trigger contributed to the incident *
+              </Label>
+              <Textarea
+                id="trigger-details"
+                value={tempDetails}
+                onChange={(e) => setTempDetails(e.target.value)}
+                placeholder="Provide specific details about how this trigger led to or contributed to the incident..."
+                className="mt-1 min-h-[100px]"
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDialogCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleDialogSave}>
+              Save Details
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
