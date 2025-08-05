@@ -362,21 +362,50 @@ export default function CreateCaseNoteModal({
         
         // Auto-populate initial content template with client name
         const clientName = selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : "[Client Name]";
-        const initialContent = `Shift Details:
-Date: ${shiftDate}
-Time: ${shiftTime} - ${endTime}
-Client: ${clientName}
-Shift: ${suggestedShift.title}
+        const initialContent = `📋 SHIFT SUMMARY
+═══════════════════════════════════════════════════════════
+📅 Date: ${shiftDate}
+⏰ Time: ${shiftTime} - ${endTime}
+👤 Client: ${clientName}
+🏷️ Shift: ${suggestedShift.title}
 
-Progress Notes:
-- Client presentation and mood:
-- Activities completed during shift:
-- Goals worked on:
-- Challenges or concerns noted:
-- Support provided:
-- Recommendations for future shifts:
+🌟 PROGRESS NOTES
+═══════════════════════════════════════════════════════════
 
-Additional Notes:
+💭 CLIENT PRESENTATION & MOOD:
+• Current emotional state and demeanor:
+• Notable behavioral observations:
+• Communication patterns observed:
+
+🎯 ACTIVITIES COMPLETED DURING SHIFT:
+• Scheduled activities accomplished:
+• Spontaneous activities engaged in:
+• Client participation level:
+
+📈 GOALS WORKED ON:
+• NDIS goals addressed:
+• Progress made toward objectives:
+• Skills developed or practiced:
+
+⚠️ CHALLENGES OR CONCERNS NOTED:
+• Difficulties encountered:
+• Areas requiring additional support:
+• Safety considerations:
+
+🤝 SUPPORT PROVIDED:
+• Assistance given throughout shift:
+• Teaching or coaching moments:
+• Adaptive strategies used:
+
+💡 RECOMMENDATIONS FOR FUTURE SHIFTS:
+• Strategies to continue:
+• Areas to focus on next time:
+• Adjustments needed:
+
+📝 ADDITIONAL NOTES:
+• Any other relevant observations:
+• Important communications with family/carers:
+• Follow-up actions required:
 `;
         
         if (!form.getValues("content")) {
