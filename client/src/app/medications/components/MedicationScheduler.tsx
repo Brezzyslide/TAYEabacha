@@ -94,7 +94,16 @@ export default function MedicationScheduler() {
   // Fetch scheduled medications for the week
   const { data: scheduledMedications = [], isLoading: scheduledLoading } = useQuery({
     queryKey: ["/api/medication-schedules", format(selectedDate, 'yyyy-MM-dd')],
-    queryFn: () => apiRequest("GET", `/api/medication-schedules?date=${format(selectedDate, 'yyyy-MM-dd')}`),
+    queryFn: async () => {
+      try {
+        const result = await apiRequest("GET", `/api/medication-schedules?date=${format(selectedDate, 'yyyy-MM-dd')}`);
+        // Ensure we always return an array
+        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.error("Error fetching medication schedules:", error);
+        return [];
+      }
+    },
   });
 
   // Create medication schedule mutation
@@ -170,7 +179,9 @@ export default function MedicationScheduler() {
   // Get scheduled slots for a specific time and date
   const getScheduledSlots = (timeSlot: string, date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return scheduledMedications.filter((slot: any) => 
+    // Ensure scheduledMedications is an array before filtering
+    const medications = Array.isArray(scheduledMedications) ? scheduledMedications : [];
+    return medications.filter((slot: any) => 
       slot.timeSlot === timeSlot && slot.scheduledDate === dateStr
     );
   };
