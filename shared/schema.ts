@@ -759,6 +759,24 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
+// Billing configuration table
+export const billingConfiguration = pgTable("billing_configuration", {
+  id: serial("id").primaryKey(),
+  rates: jsonb("rates").notNull().default({}), // Role-based pricing rates
+  cycleDays: integer("cycle_days").notNull().default(28),
+  nextBillingDate: timestamp("next_billing_date"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BillingConfiguration = typeof billingConfiguration.$inferSelect;
+export const insertBillingConfigurationSchema = createInsertSchema(billingConfiguration).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,

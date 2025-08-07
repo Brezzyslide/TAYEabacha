@@ -3,7 +3,7 @@ import {
   medicationPlans, medicationRecords, medicationSchedules, incidentReports, incidentClosures, staffMessages, hourAllocations,
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
   shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries, leaveBalances, taxBrackets,
-  downloadableForms, completedMedicationAuthorityForms, evacuationDrills,
+  downloadableForms, completedMedicationAuthorityForms, evacuationDrills, billingConfiguration,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -47,6 +47,12 @@ export interface IStorage {
   getTenant(id: number): Promise<Tenant | undefined>;
   createTenant(tenant: InsertTenant): Promise<Tenant>;
   getTenants(): Promise<Tenant[]>;
+
+  // Billing Configuration
+  getBillingConfiguration(): Promise<any>;
+  updateBillingConfiguration(config: any): Promise<any>;
+  getAllStaffTypes(): Promise<string[]>;
+  getStaffStatistics(): Promise<any[]>;
 
   // Clients
   getClients(tenantId: number): Promise<Client[]>;
@@ -2744,6 +2750,74 @@ export class DatabaseStorage implements IStorage {
       eq(medicationPlans.tenantId, tenantId),
       inArray(medicationPlans.clientId, assignedClientIds)
     ));
+  }
+
+  // Billing Configuration Methods
+  async getBillingConfiguration(): Promise<any> {
+    const [config] = await db.select().from(billingConfiguration).limit(1);
+    
+    if (!config) {
+      // Create default configuration if none exists
+      const defaultConfig = {
+        rates: {
+          'SupportWorker': 45.00,
+          'TeamLeader': 65.00,
+          'Coordinator': 85.00,
+          'Admin': 95.00,
+          'ConsoleManager': 150.00,
+          'Unknown': 45.00
+        },
+        cycleDays: 28,
+        nextBillingDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
+        isActive: true
+      };
+      
+      const [created] = await db.insert(billingConfiguration).values(defaultConfig).returning();
+      return created;
+    }
+    
+    return config;
+  }
+
+  async updateBillingConfiguration(configData: any): Promise<any> {
+    const existingConfig = await this.getBillingConfiguration();
+    
+    const updateData = {
+      ...configData,
+      updatedAt: new Date()
+    };
+    
+    const [updated] = await db
+      .update(billingConfiguration)
+      .set(updateData)
+      .where(eq(billingConfiguration.id, existingConfig.id))
+      .returning();
+    
+    return updated;
+  }
+
+  async getAllStaffTypes(): Promise<string[]> {
+    const result = await db
+      .selectDistinct({ role: users.role })
+      .from(users)
+      .where(eq(users.isActive, true));
+    
+    return result.map(r => r.role).filter(Boolean);
+  }
+
+  async getStaffStatistics(): Promise<any[]> {
+    const result = await db
+      .select({
+        tenantId: users.tenantId,
+        role: users.role,
+        count: count(users.id)
+      })
+      .from(users)
+      .where(eq(users.isActive, true))
+      .groupBy(users.tenantId, users.role)
+      .orderBy(users.tenantId, users.role);
+    
+    return result;
   }
 }
 

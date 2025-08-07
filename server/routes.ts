@@ -12144,5 +12144,61 @@ Maximum 400 words.`;
     }
   });
 
+  // Get billing configuration
+  app.get("/api/billing/configuration", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const config = await storage.getBillingConfiguration();
+      res.json(config);
+    } catch (error: any) {
+      console.error("Billing configuration error:", error);
+      res.status(500).json({ message: "Failed to retrieve billing configuration" });
+    }
+  });
+
+  // Update billing configuration
+  app.post("/api/billing/configuration", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const configData = req.body;
+      const updatedConfig = await storage.updateBillingConfiguration(configData);
+      res.json(updatedConfig);
+    } catch (error: any) {
+      console.error("Billing configuration update error:", error);
+      res.status(500).json({ message: "Failed to update billing configuration" });
+    }
+  });
+
+  // Get billing rates
+  app.get("/api/billing/rates", requireAuth, async (req: any, res) => {
+    try {
+      const config = await storage.getBillingConfiguration();
+      res.json(config.rates || {});
+    } catch (error: any) {
+      console.error("Billing rates error:", error);
+      res.status(500).json({ message: "Failed to retrieve billing rates" });
+    }
+  });
+
+  // Get staff types for billing
+  app.get("/api/billing/staff-types", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const staffTypes = await storage.getAllStaffTypes();
+      res.json(staffTypes);
+    } catch (error: any) {
+      console.error("Staff types error:", error);
+      res.status(500).json({ message: "Failed to retrieve staff types" });
+    }
+  });
+
+  // Get staff statistics
+  app.get("/api/billing/staff-statistics", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const stats = await storage.getStaffStatistics();
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Staff statistics error:", error);
+      res.status(500).json({ message: "Failed to retrieve staff statistics" });
+    }
+  });
+
   return server;
 }

@@ -4,9 +4,10 @@
  * Handles company subscriptions, usage tracking, and billing calculations
  */
 
-import { db } from './db';
-import { companies, tenants, users } from '../shared/schema';
+import { db } from './lib/dbClient';
+import { companies, tenants, users, billingConfiguration } from '../shared/schema';
 import { eq, and, gte, lte, count } from 'drizzle-orm';
+import { storage } from './storage';
 
 // Dynamic billing rates and cycles - will be fetched from database
 export interface BillingConfiguration {
@@ -16,20 +17,41 @@ export interface BillingConfiguration {
   isActive: boolean;
 }
 
-// Default billing configuration
-const billingConfig: BillingConfiguration = {
-  rates: {
-    'SupportWorker': 45.00,
-    'TeamLeader': 65.00,
-    'Coordinator': 85.00,
-    'Admin': 95.00,
-    'ConsoleManager': 150.00,
-    'Unknown': 45.00
-  },
-  cycleDays: 28,
-  nextBillingDate: new Date(),
-  isActive: true
-};
+// Get dynamic billing configuration from database
+async function getBillingConfig(): Promise<BillingConfiguration> {
+  try {
+    const config = await storage.getBillingConfiguration();
+    return {
+      rates: config.rates || {
+        'SupportWorker': 45.00,
+        'TeamLeader': 65.00,
+        'Coordinator': 85.00,
+        'Admin': 95.00,
+        'ConsoleManager': 150.00,
+        'Unknown': 45.00
+      },
+      cycleDays: config.cycleDays || 28,
+      nextBillingDate: config.nextBillingDate || new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
+      isActive: config.isActive !== false
+    };
+  } catch (error) {
+    console.error('[BILLING] Failed to get configuration, using defaults:', error);
+    // Fallback to defaults if database read fails
+    return {
+      rates: {
+        'SupportWorker': 45.00,
+        'TeamLeader': 65.00,
+        'Coordinator': 85.00,
+        'Admin': 95.00,
+        'ConsoleManager': 150.00,
+        'Unknown': 45.00
+      },
+      cycleDays: 28,
+      nextBillingDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
+      isActive: true
+    };
+  }
+}
 
 export interface CompanyBilling {
   companyId: string;
@@ -56,9 +78,10 @@ export interface UsageAnalytics {
 }
 
 /**
- * Calculate current billing for all companies
+ * Calculate current billing for all companies using dynamic rates
  */
 export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {
+  const billingConfig = await getBillingConfig();
   // Get all companies with their staff counts by role
   const companyData = await db
     .select({
