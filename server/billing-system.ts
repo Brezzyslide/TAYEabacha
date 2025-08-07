@@ -108,38 +108,58 @@ export async function calculateTenantBilling(tenantId: number): Promise<UsageAna
   // Process into company billing structure (single company for tenant)
   const companyMap = new Map<string, CompanyBilling>();
   
+  // First, aggregate by normalized role to consolidate mixed-case entries
+  const roleAggregationMap = new Map<string, Map<string, number>>(); // companyId -> normalizedRole -> count
+  
   for (const row of companyData) {
-    if (!companyMap.has(row.companyId)) {
-      const now = new Date();
-      const currentCycleStart = getCurrentCycleStart(now);
-      const nextBillingDate = new Date(currentCycleStart);
-      nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
-
-      companyMap.set(row.companyId, {
-        companyId: row.companyId,
-        companyName: row.companyName,
-        tenantId: row.tenantId,
-        activeStaff: [],
-        totalMonthlyRevenue: 0,
-        currentCycleStart,
-        nextBillingDate,
-        status: 'active'
-      });
+    if (!roleAggregationMap.has(row.companyId)) {
+      roleAggregationMap.set(row.companyId, new Map());
     }
-
-    const company = companyMap.get(row.companyId)!;
+    
     const normalizedRole = normalizeRole(row.role) || 'Unknown';
-    const monthlyRate = billingConfig.rates[normalizedRole] || 0;
-    const totalMonthly = monthlyRate * row.userCount;
+    const companyRoles = roleAggregationMap.get(row.companyId)!;
+    
+    if (!companyRoles.has(normalizedRole)) {
+      companyRoles.set(normalizedRole, 0);
+    }
+    companyRoles.set(normalizedRole, companyRoles.get(normalizedRole)! + row.userCount);
+  }
+  
+  // Now build the company billing structure with aggregated role counts
+  for (const [companyId, roleMap] of roleAggregationMap.entries()) {
+    const companyInfo = companyData.find(row => row.companyId === companyId)!;
+    
+    const now = new Date();
+    const currentCycleStart = getCurrentCycleStart(now);
+    const nextBillingDate = new Date(currentCycleStart);
+    nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
 
-    company.activeStaff.push({
-      role: normalizedRole,
-      count: row.userCount,
-      monthlyRate,
-      totalMonthly
-    });
+    const company: CompanyBilling = {
+      companyId,
+      companyName: companyInfo.companyName,
+      tenantId: companyInfo.tenantId,
+      activeStaff: [],
+      totalMonthlyRevenue: 0,
+      currentCycleStart,
+      nextBillingDate,
+      status: 'active'
+    };
 
-    company.totalMonthlyRevenue += totalMonthly;
+    for (const [normalizedRole, count] of roleMap.entries()) {
+      const monthlyRate = billingConfig.rates[normalizedRole] || 0;
+      const totalMonthly = monthlyRate * count;
+
+      company.activeStaff.push({
+        role: normalizedRole,
+        count,
+        monthlyRate,
+        totalMonthly
+      });
+
+      company.totalMonthlyRevenue += totalMonthly;
+    }
+    
+    companyMap.set(companyId, company);
   }
 
   const companyBreakdown = Array.from(companyMap.values());
@@ -151,14 +171,15 @@ export async function calculateTenantBilling(tenantId: number): Promise<UsageAna
   const totalMonthlyRevenue = companyBreakdown.reduce((sum, company) => 
     sum + company.totalMonthlyRevenue, 0);
 
-  // Role distribution for this tenant only
+  // Role distribution for this tenant only - aggregate by normalized role
   const roleMap = new Map<string, { count: number; revenue: number }>();
   for (const company of companyBreakdown) {
     for (const staff of company.activeStaff) {
-      if (!roleMap.has(staff.role)) {
-        roleMap.set(staff.role, { count: 0, revenue: 0 });
+      const normalizedRole = staff.role; // Already normalized in the processing above
+      if (!roleMap.has(normalizedRole)) {
+        roleMap.set(normalizedRole, { count: 0, revenue: 0 });
       }
-      const existing = roleMap.get(staff.role)!;
+      const existing = roleMap.get(normalizedRole)!;
       existing.count += staff.count;
       existing.revenue += staff.totalMonthly;
     }
@@ -207,38 +228,58 @@ export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {
   // Process into company billing structure
   const companyMap = new Map<string, CompanyBilling>();
   
+  // First, aggregate by normalized role to consolidate mixed-case entries
+  const roleAggregationMap = new Map<string, Map<string, number>>(); // companyId -> normalizedRole -> count
+  
   for (const row of companyData) {
-    if (!companyMap.has(row.companyId)) {
-      const now = new Date();
-      const currentCycleStart = getCurrentCycleStart(now);
-      const nextBillingDate = new Date(currentCycleStart);
-      nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
-
-      companyMap.set(row.companyId, {
-        companyId: row.companyId,
-        companyName: row.companyName,
-        tenantId: row.tenantId,
-        activeStaff: [],
-        totalMonthlyRevenue: 0,
-        currentCycleStart,
-        nextBillingDate,
-        status: 'active'
-      });
+    if (!roleAggregationMap.has(row.companyId)) {
+      roleAggregationMap.set(row.companyId, new Map());
     }
-
-    const company = companyMap.get(row.companyId)!;
+    
     const normalizedRole = normalizeRole(row.role) || 'Unknown';
-    const monthlyRate = billingConfig.rates[normalizedRole] || 0;
-    const totalMonthly = monthlyRate * row.userCount;
+    const companyRoles = roleAggregationMap.get(row.companyId)!;
+    
+    if (!companyRoles.has(normalizedRole)) {
+      companyRoles.set(normalizedRole, 0);
+    }
+    companyRoles.set(normalizedRole, companyRoles.get(normalizedRole)! + row.userCount);
+  }
+  
+  // Now build the company billing structure with aggregated role counts
+  for (const [companyId, roleMap] of roleAggregationMap.entries()) {
+    const companyInfo = companyData.find(row => row.companyId === companyId)!;
+    
+    const now = new Date();
+    const currentCycleStart = getCurrentCycleStart(now);
+    const nextBillingDate = new Date(currentCycleStart);
+    nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
 
-    company.activeStaff.push({
-      role: normalizedRole,
-      count: row.userCount,
-      monthlyRate,
-      totalMonthly
-    });
+    const company: CompanyBilling = {
+      companyId,
+      companyName: companyInfo.companyName,
+      tenantId: companyInfo.tenantId,
+      activeStaff: [],
+      totalMonthlyRevenue: 0,
+      currentCycleStart,
+      nextBillingDate,
+      status: 'active'
+    };
 
-    company.totalMonthlyRevenue += totalMonthly;
+    for (const [normalizedRole, count] of roleMap.entries()) {
+      const monthlyRate = billingConfig.rates[normalizedRole] || 0;
+      const totalMonthly = monthlyRate * count;
+
+      company.activeStaff.push({
+        role: normalizedRole,
+        count,
+        monthlyRate,
+        totalMonthly
+      });
+
+      company.totalMonthlyRevenue += totalMonthly;
+    }
+    
+    companyMap.set(companyId, company);
   }
 
   const companyBreakdown = Array.from(companyMap.values());
@@ -250,14 +291,15 @@ export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {
   const totalMonthlyRevenue = companyBreakdown.reduce((sum, company) => 
     sum + company.totalMonthlyRevenue, 0);
 
-  // Role distribution across all companies
+  // Role distribution across all companies - aggregate by normalized role
   const roleMap = new Map<string, { count: number; revenue: number }>();
   for (const company of companyBreakdown) {
     for (const staff of company.activeStaff) {
-      if (!roleMap.has(staff.role)) {
-        roleMap.set(staff.role, { count: 0, revenue: 0 });
+      const normalizedRole = staff.role; // Already normalized in the processing above
+      if (!roleMap.has(normalizedRole)) {
+        roleMap.set(normalizedRole, { count: 0, revenue: 0 });
       }
-      const existing = roleMap.get(staff.role)!;
+      const existing = roleMap.get(normalizedRole)!;
       existing.count += staff.count;
       existing.revenue += staff.totalMonthly;
     }
