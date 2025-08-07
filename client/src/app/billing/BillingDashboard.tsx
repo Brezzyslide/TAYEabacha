@@ -336,14 +336,14 @@ export default function BillingDashboard() {
             <TabsTrigger value="rates" className="px-6 py-3 rounded-lg font-medium">
               Billing Rates
             </TabsTrigger>
-            {hasRole(user?.role, 'Admin') && (
+            {(hasRole(user?.role, 'Admin') || hasRole(user?.role, 'ConsoleManager')) && (
               <>
                 <TabsTrigger value="payments" className="px-6 py-3 rounded-lg font-medium">
                   <CreditCard className="w-4 h-4 mr-2" />
                   Payments
                 </TabsTrigger>
                 <TabsTrigger value="invoices" className="px-6 py-3 rounded-lg font-medium">
-                  Invoice
+                  {hasRole(user?.role, 'ConsoleManager') ? 'Universal Invoices' : 'Invoices'}
                 </TabsTrigger>
               </>
             )}
