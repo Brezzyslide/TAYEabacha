@@ -1,17 +1,22 @@
 #!/bin/bash
 
 # Production Build Script for AWS Deployment
-# Fixes Vite runtime error plugin issues in production
+# Uses integrated production-ready main codebase
 
-echo "Building NeedsCareAI+ for production deployment..."
+echo "Building CareConnect for production deployment..."
 
-# Set environment variables to disable Replit plugins
+# Set environment variables to enable production mode
 export NODE_ENV=production
 export VITE_NODE_ENV=production 
 export REPL_ID=""
 
+echo "✅ Production environment configured:"
+echo "   NODE_ENV: $NODE_ENV"
+echo "   VITE_NODE_ENV: $VITE_NODE_ENV" 
+echo "   REPL_ID: '$REPL_ID'"
+
 # Step 1: Build the client with production environment
-echo "Step 1: Building client (disabling Replit plugins)..."
+echo "Step 1: Building client with production optimizations..."
 NODE_ENV=production REPL_ID="" npm run build
 
 # Step 2: Copy SQL files to dist directory

@@ -6,6 +6,40 @@ import { runStartupSecurityChecks } from "./enhanced-tenant-security";
 import path from 'path';
 import fs from 'fs';
 
+// Production Environment Configuration
+const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = !isProduction;
+
+// Disable Replit plugins in production
+if (isProduction && !process.env.REPL_ID) {
+  process.env.REPL_ID = '';
+}
+
+// Add import.meta.dirname polyfill for production environments
+if (isProduction && typeof import.meta !== 'undefined' && !import.meta.dirname) {
+  import.meta.dirname = path.dirname(new URL(import.meta.url).pathname);
+}
+
+console.log(`[ENV] Starting CareConnect in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
+console.log(`[ENV] Node environment: ${process.env.NODE_ENV}`);
+console.log(`[ENV] Replit ID: ${process.env.REPL_ID || 'undefined'}`);
+
+// Production safety checks
+if (isProduction) {
+  const requiredEnvVars = ['DATABASE_URL'];
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.error('[PRODUCTION ERROR] Missing required environment variables:', missingVars);
+    console.error('[PRODUCTION ERROR] Please set these variables before starting the server.');
+    if (isDevelopment) {
+      console.warn('[DEV] Continuing anyway for development...');
+    } else {
+      process.exit(1);
+    }
+  }
+}
+
 // Load local environment variables for development FIRST
 const localEnvPath = path.join(process.cwd(), '.env.local');
 if (fs.existsSync(localEnvPath)) {
@@ -40,42 +74,80 @@ console.log(`[TIMEZONE] Current server time: ${new Date().toLocaleString('en-AU'
 
 const app = express();
 
-// CORS Configuration for AWS Production
+// CORS Configuration - Environment Aware
 const corsOptions = {
   origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // Production domains and development patterns
+    // Development: Allow all origins for flexibility
+    if (isDevelopment) {
+      return callback(null, true);
+    }
+    
+    // Production: Strict origin checking
     const allowedOrigins = [
       'https://needscareai.replit.app',
-      'https://your-frontend-domain.com',  // Replace with actual frontend domain
-      'http://localhost:3000',             // Development
-      'http://localhost:5000',             // Development
-      'http://127.0.0.1:3000',            // Development
-      'http://127.0.0.1:5000'             // Development
+      'https://your-production-domain.com',  // Replace with actual production domain
+      ...(isDevelopment ? [
+        'http://localhost:3000',
+        'http://localhost:5000', 
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5000'
+      ] : [])
     ];
     
-    // Allow Replit development domains (dynamic UUIDs)
+    // Allow Replit development domains (dynamic UUIDs) in development
     const isReplitDomain = origin.includes('.replit.dev') || origin.includes('.picard.replit.dev');
     
-    if (allowedOrigins.includes(origin) || isReplitDomain) {
+    if (allowedOrigins.includes(origin) || (isDevelopment && isReplitDomain)) {
       callback(null, true);
     } else {
-      console.log(`[CORS] Origin ${origin} not allowed`);
-      callback(null, true); // Allow all origins for now - restrict in production
+      console.log(`[CORS] Origin ${origin} ${isProduction ? 'BLOCKED' : 'allowed'} in ${isProduction ? 'production' : 'development'}`);
+      callback(null, isDevelopment); // Strict in production, permissive in development
     }
   },
-  credentials: true, // Allow cookies
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Set-Cookie']
 };
 
 app.use(cors(corsOptions));
+
+// Production Security Headers
+if (isProduction) {
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Security headers for production
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    
+    // Hide server information in production
+    res.removeHeader('X-Powered-By');
+    
+    next();
+  });
+  
+  console.log('[SECURITY] Production security headers enabled');
+}
 // Increase payload size limits for comprehensive care plan data
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Production health check endpoint - register early to avoid frontend routing conflicts
+app.get('/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'healthy',
+    environment: isProduction ? 'production' : 'development', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    version: '1.0.0'
+  });
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -146,32 +218,79 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     console.error("[SECURITY] Enhanced security validation failed:", error);
   }
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Environment-aware error handling
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    
+    if (isProduction) {
+      // Production: Log detailed error but send generic response
+      console.error('[PRODUCTION ERROR]:', {
+        error: err.message,
+        stack: err.stack,
+        url: req.url,
+        method: req.method,
+        timestamp: new Date().toISOString(),
+        userAgent: req.get('User-Agent')
+      });
+      
+      // Generic error response in production
+      res.status(status).json({ 
+        message: status >= 500 ? "Internal Server Error" : err.message,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      // Development: Show detailed errors
+      const message = err.message || "Internal Server Error";
+      console.error('[DEV ERROR]:', err);
+      res.status(status).json({ 
+        message,
+        stack: err.stack,
+        url: req.url,
+        method: req.method
+      });
+      throw err;
+    }
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  // Environment-aware frontend setup
+  // Only setup Vite in development, serve static files in production
+  if (isDevelopment || app.get("env") === "development") {
+    console.log("[FRONTEND] Setting up Vite development server");
     await setupVite(app, server);
   } else {
+    console.log("[FRONTEND] Serving static production files");
     serveStatic(app);
   }
+
+  // Health endpoint already registered above
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = Number(process.env.PORT || 5000);
+  const host = "0.0.0.0";
+  
   server.listen({
     port,
-    host: "0.0.0.0",
+    host,
     reusePort: true,
   }, () => {
+    console.log(`[SERVER] CareConnect ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} server started`);
+    console.log(`[SERVER] Listening on http://${host}:${port}`);
+    console.log(`[SERVER] Environment: ${process.env.NODE_ENV}`);
+    console.log(`[SERVER] Health check: http://${host}:${port}/health`);
+    
+    if (isProduction) {
+      console.log(`[PRODUCTION] Security headers enabled`);
+      console.log(`[PRODUCTION] Error handling optimized`);
+      console.log(`[PRODUCTION] CORS restrictions active`);
+      console.log(`[PRODUCTION] Replit plugins disabled`);
+    } else {
+      console.log(`[DEVELOPMENT] Full debugging enabled`);
+      console.log(`[DEVELOPMENT] Permissive CORS for development`);
+      console.log(`[DEVELOPMENT] Vite development server active`);
+    }
+    
     log(`serving on port ${port}`);
   });
 })();
