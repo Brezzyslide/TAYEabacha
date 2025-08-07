@@ -18,7 +18,8 @@ import {
   Shield,
   PauseCircle,
   PlayCircle,
-  Calendar
+  Calendar,
+  CreditCard
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +28,7 @@ import { format } from "date-fns";
 import CreateBillingButton from "@/components/billing/CreateBillingButton";
 import BillingConfigurationDialog from "@/components/billing/BillingConfigurationDialog";
 import TenantStaffOverview from "@/components/billing/TenantStaffOverview";
+import { PaymentManager } from "./components/PaymentManager";
 import { canViewBilling, hasRole } from "@/lib/role-utils";
 
 interface BillingAnalytics {
@@ -332,6 +334,12 @@ export default function BillingDashboard() {
             <TabsTrigger value="rates" className="px-6 py-3 rounded-lg font-medium">
               Billing Rates
             </TabsTrigger>
+            {hasRole(user?.role, 'Admin') && (
+              <TabsTrigger value="payments" className="px-6 py-3 rounded-lg font-medium">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Payments
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {user.role === 'ConsoleManager' && (
@@ -471,6 +479,12 @@ export default function BillingDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {hasRole(user?.role, 'Admin') && (
+            <TabsContent value="payments" className="space-y-6">
+              <PaymentManager />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

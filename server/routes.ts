@@ -16,6 +16,7 @@ import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
 import { sendCompanyWelcomeEmail, sendUserWelcomeEmail, sendPasswordResetEmail, sendIncidentReportNotification, sendShiftAssignmentNotification, sendClientCreationNotification } from "./lib/email-service";
 import { calculateAllCompanyBilling, calculateTenantBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary } from "./billing-system";
+import { createPaymentIntent, createSubscription, getCompanyPaymentInfo, updatePaymentStatus, stripe } from "./stripe-service";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -12211,6 +12212,133 @@ Maximum 400 words.`;
     } catch (error: any) {
       console.error("Staff statistics error:", error);
       res.status(500).json({ message: "Failed to retrieve staff statistics" });
+    }
+  });
+
+  // =============================================================================
+  // STRIPE PAYMENT PROCESSING ROUTES
+  // =============================================================================
+
+  // Create one-time payment intent for company bill
+  app.post("/api/payments/create-payment-intent", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const { companyId } = req.body;
+      
+      // Use tenant's company if not provided
+      const targetCompanyId = companyId || req.user.companyId;
+      
+      if (!targetCompanyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+      
+      // Verify user can access this company (Admin can only access their own company)
+      if (req.user.role !== 'ConsoleManager' && targetCompanyId !== req.user.companyId) {
+        return res.status(403).json({ message: "Access denied to this company" });
+      }
+      
+      const result = await createPaymentIntent(targetCompanyId, req.user.tenantId);
+      
+      console.log(`[STRIPE API] Payment intent created for company ${targetCompanyId}: ${result.paymentIntentId}`);
+      res.json(result);
+    } catch (error: any) {
+      console.error("[STRIPE API] Error creating payment intent:", error);
+      res.status(500).json({ message: error.message || "Failed to create payment intent" });
+    }
+  });
+
+  // Create recurring subscription for company
+  app.post("/api/payments/create-subscription", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const { companyId } = req.body;
+      
+      // Use tenant's company if not provided
+      const targetCompanyId = companyId || req.user.companyId;
+      
+      if (!targetCompanyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+      
+      // Verify user can access this company (Admin can only access their own company)
+      if (req.user.role !== 'ConsoleManager' && targetCompanyId !== req.user.companyId) {
+        return res.status(403).json({ message: "Access denied to this company" });
+      }
+      
+      const result = await createSubscription(targetCompanyId, req.user.tenantId);
+      
+      console.log(`[STRIPE API] Subscription created for company ${targetCompanyId}: ${result.subscriptionId}`);
+      res.json(result);
+    } catch (error: any) {
+      console.error("[STRIPE API] Error creating subscription:", error);
+      res.status(500).json({ message: error.message || "Failed to create subscription" });
+    }
+  });
+
+  // Get company payment information and history
+  app.get("/api/payments/company/:companyId?", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      const companyId = req.params.companyId || req.user.companyId;
+      
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+      
+      // Verify user can access this company (Admin can only access their own company)
+      if (req.user.role !== 'ConsoleManager' && companyId !== req.user.companyId) {
+        return res.status(403).json({ message: "Access denied to this company" });
+      }
+      
+      const result = await getCompanyPaymentInfo(companyId);
+      
+      console.log(`[STRIPE API] Retrieved payment info for company ${companyId}`);
+      res.json(result);
+    } catch (error: any) {
+      console.error("[STRIPE API] Error getting payment info:", error);
+      res.status(500).json({ message: error.message || "Failed to get payment information" });
+    }
+  });
+
+  // Webhook endpoint for Stripe events
+  app.post("/webhook/stripe", async (req, res) => {
+    const sig = req.headers['stripe-signature'] as string;
+    let event;
+    
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    } catch (err: any) {
+      console.error(`[STRIPE WEBHOOK] Error: ${err.message}`);
+      return res.status(400).send(`Webhook signature verification failed.`);
+    }
+    
+    try {
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object as any;
+          await updatePaymentStatus(paymentIntent.id, 'succeeded', new Date());
+          console.log(`[STRIPE WEBHOOK] Payment succeeded: ${paymentIntent.id}`);
+          break;
+          
+        case 'payment_intent.payment_failed':
+          const failedPayment = event.data.object as any;
+          await updatePaymentStatus(failedPayment.id, 'failed', new Date());
+          console.log(`[STRIPE WEBHOOK] Payment failed: ${failedPayment.id}`);
+          break;
+          
+        case 'invoice.payment_succeeded':
+          const invoice = event.data.object as any;
+          if (invoice.payment_intent) {
+            await updatePaymentStatus(invoice.payment_intent, 'succeeded', new Date());
+            console.log(`[STRIPE WEBHOOK] Invoice payment succeeded: ${invoice.payment_intent}`);
+          }
+          break;
+          
+        default:
+          console.log(`[STRIPE WEBHOOK] Unhandled event type: ${event.type}`);
+      }
+      
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error(`[STRIPE WEBHOOK] Error processing event:`, error);
+      res.status(500).json({ error: error.message });
     }
   });
 

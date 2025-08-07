@@ -770,11 +770,57 @@ export const billingConfiguration = pgTable("billing_configuration", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Company Payment Information
+export const companyPaymentInfo = pgTable("company_payment_info", {
+  id: serial("id").primaryKey(),
+  companyId: text("company_id").references(() => companies.id).notNull(),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  paymentStatus: text("payment_status").default("pending"), // pending, active, past_due, canceled
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  nextPaymentDate: timestamp("next_payment_date"),
+  lastPaymentAmount: decimal("last_payment_amount", { precision: 10, scale: 2 }),
+  lastPaymentDate: timestamp("last_payment_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Payment History
+export const paymentHistory = pgTable("payment_history", {
+  id: serial("id").primaryKey(),
+  companyId: text("company_id").references(() => companies.id).notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+  stripeInvoiceId: text("stripe_invoice_id"),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("aud").notNull(),
+  status: text("status").notNull(), // succeeded, failed, pending, canceled
+  billingPeriodStart: timestamp("billing_period_start").notNull(),
+  billingPeriodEnd: timestamp("billing_period_end").notNull(),
+  staffSnapshot: jsonb("staff_snapshot"), // Snapshot of staff counts at time of billing
+  paymentDate: timestamp("payment_date"),
+  failureReason: text("failure_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type BillingConfiguration = typeof billingConfiguration.$inferSelect;
+export type CompanyPaymentInfo = typeof companyPaymentInfo.$inferSelect;
+export type PaymentHistory = typeof paymentHistory.$inferSelect;
 export const insertBillingConfigurationSchema = createInsertSchema(billingConfiguration).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertCompanyPaymentInfoSchema = createInsertSchema(companyPaymentInfo).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentHistorySchema = createInsertSchema(paymentHistory).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Insert schemas
