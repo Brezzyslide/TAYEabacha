@@ -117,8 +117,13 @@ export async function generateInvoice(
     const lineItems: InvoiceLineItem[] = [];
     let subtotal = 0;
 
-    for (const [roleName, count] of Object.entries(billingData.roleDistribution)) {
+    // Process role distribution array properly
+    for (const roleData of billingData.roleDistribution) {
+      const roleName = roleData.role;
+      const count = roleData.count;
+      
       console.log(`[INVOICE DEBUG] Processing role ${roleName}: ${count} staff`);
+      
       if (count > 0 && roleName !== 'ConsoleManager') { // Exclude free roles
         const unitPrice = rolePricing[roleName] || 0;
         const total = count * unitPrice;
