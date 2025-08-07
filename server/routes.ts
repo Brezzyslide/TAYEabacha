@@ -253,22 +253,23 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 function requireRole(roles: string[]) {
-  return (req: any, res: any, next: any) => {
+  return async (req: any, res: any, next: any) => {
+    const { hasAnyRole, hasRole } = await import('./role-utils.js');
     console.log(`[ROLE CHECK] User role: ${req.user.role}, Required roles: ${roles.join(', ')}`);
     
-    const userRole = req.user.role.toLowerCase();
-    const allowedRoles = roles.map(role => role.toLowerCase());
-    
-    // ConsoleManager has universal access - Admin should be tenant restricted
-    if (userRole === 'consolemanager') {
+    // ConsoleManager has universal access
+    if (hasRole(req.user.role, 'ConsoleManager')) {
       console.log(`[ROLE CHECK] PASSED - ConsoleManager has universal access`);
       return next();
     }
     
-    if (!allowedRoles.includes(userRole)) {
+    // Convert string roles to proper UserRole types for checking
+    const allowedRoles = roles as any[];
+    if (!hasAnyRole(req.user.role, allowedRoles)) {
       console.log(`[ROLE CHECK] FAILED - User ${req.user.id} with role '${req.user.role}' denied access`);
       return res.status(403).json({ message: "Insufficient permissions" });
     }
+    
     console.log(`[ROLE CHECK] PASSED - User ${req.user.id} has sufficient permissions`);
     next();
   };
@@ -12077,7 +12078,9 @@ Maximum 400 words.`;
       console.log(`[BILLING API] Analytics requested by user ${req.user.id} (role: ${req.user.role})`);
       
       let analytics;
-      if (req.user.role === 'ConsoleManager') {
+      const { hasRole } = await import('./role-utils.js');
+      
+      if (hasRole(req.user.role, 'ConsoleManager')) {
         // ConsoleManager sees global analytics across all companies
         analytics = await calculateAllCompanyBilling();
         console.log(`[BILLING API] Returning global analytics for ConsoleManager`);

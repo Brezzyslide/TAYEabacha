@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { canManageCompanies } from "@/lib/auth";
+import { canViewBilling, isAdminLevel } from "@/lib/role-utils";
 import { 
   Building, 
   ChevronDown, 
@@ -77,10 +78,9 @@ export default function Sidebar() {
 
   if (!user) return null;
 
-  const userRole = user.role?.toLowerCase();
-  const isAdmin = userRole === "admin" || userRole === "consolemanager";
+  const isAdmin = isAdminLevel(user);
   const canManageCompaniesAccess = canManageCompanies(user);
-  const canViewBilling = ['admin', 'consolemanager', 'coordinator', 'teamleader'].includes(userRole);
+  const canViewBillingAccess = canViewBilling(user);
 
   const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (
     <div className="mb-6">
@@ -153,7 +153,7 @@ export default function Sidebar() {
         )}
 
         {/* Billing Section - Admin, TeamLeader, Coordinator */}
-        {canViewBilling && !canManageCompaniesAccess && renderNavigationSection(
+        {canViewBillingAccess && !canManageCompaniesAccess && renderNavigationSection(
           "BILLING", 
           billingNavigation, 
           "bg-blue-50/80 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"

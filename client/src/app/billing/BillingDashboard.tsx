@@ -27,6 +27,7 @@ import { format } from "date-fns";
 import CreateBillingButton from "@/components/billing/CreateBillingButton";
 import BillingConfigurationDialog from "@/components/billing/BillingConfigurationDialog";
 import TenantStaffOverview from "@/components/billing/TenantStaffOverview";
+import { canViewBilling, hasRole } from "@/lib/role-utils";
 
 interface BillingAnalytics {
   totalCompanies: number;
@@ -65,7 +66,7 @@ export default function BillingDashboard() {
   // Get billing analytics - ConsoleManager sees global, others see tenant-specific
   const { data: analytics, isLoading } = useQuery<BillingAnalytics>({
     queryKey: ['/api/billing/analytics'],
-    enabled: !!user && ['ConsoleManager', 'Admin', 'admin', 'Coordinator', 'coordinator', 'TeamLeader', 'teamleader'].includes(user.role)
+    enabled: !!user && canViewBilling(user)
   });
 
   // Get billing rates
@@ -172,7 +173,7 @@ export default function BillingDashboard() {
     );
   };
 
-  if (!user || !['ConsoleManager', 'Admin', 'admin', 'Coordinator', 'coordinator', 'TeamLeader', 'teamleader'].includes(user.role)) {
+  if (!user || !canViewBilling(user)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
         <div className="max-w-7xl mx-auto">
@@ -209,26 +210,26 @@ export default function BillingDashboard() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">
-              {user.role === 'ConsoleManager' ? 'Billing Management' : 'Billing Analytics'}
+              {hasRole(user?.role, 'ConsoleManager') ? 'Billing Management' : 'Billing Analytics'}
             </h1>
             <p className="text-slate-600 mt-1">
-              {user.role === 'ConsoleManager' 
+              {hasRole(user?.role, 'ConsoleManager') 
                 ? 'Platform-wide billing analytics and company management' 
                 : 'Your organization\'s billing analytics and staff costs'}
             </p>
-            {user.role === 'ConsoleManager' && (
+            {hasRole(user?.role, 'ConsoleManager') && (
               <Badge variant="outline" className="mt-2">
                 Global View - All Companies
               </Badge>
             )}
-            {user.role !== 'ConsoleManager' && (
+            {!hasRole(user?.role, 'ConsoleManager') && (
               <Badge variant="outline" className="mt-2">
                 Tenant View - Your Organization Only
               </Badge>
             )}
           </div>
           <div className="flex gap-2">
-            {user.role === 'ConsoleManager' && (
+            {hasRole(user?.role, 'ConsoleManager') && (
               <>
                 <Button
                   onClick={() => downloadSummaryMutation.mutate()}
@@ -253,7 +254,7 @@ export default function BillingDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600">
-                    {user.role === 'ConsoleManager' ? 'Total Companies' : 'Your Organization'}
+                    {hasRole(user?.role, 'ConsoleManager') ? 'Total Companies' : 'Your Organization'}
                   </p>
                   <p className="text-2xl font-bold text-blue-700 mt-1">
                     {analytics?.totalCompanies || 0}
@@ -283,7 +284,7 @@ export default function BillingDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-amber-600">
-                    {user.role === 'ConsoleManager' ? 'Monthly Revenue' : 'Monthly Platform Cost'}
+                    {hasRole(user?.role, 'ConsoleManager') ? 'Monthly Revenue' : 'Monthly Platform Cost'}
                   </p>
                   <p className="text-2xl font-bold text-amber-700 mt-1">
                     {analytics ? formatCurrency(analytics.totalMonthlyRevenue) : '$0.00'}
@@ -299,11 +300,11 @@ export default function BillingDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-purple-600">
-                    {user.role === 'ConsoleManager' ? 'Avg per Company' : 'Cost per Staff'}
+                    {hasRole(user?.role, 'ConsoleManager') ? 'Avg per Company' : 'Cost per Staff'}
                   </p>
                   <p className="text-2xl font-bold text-purple-700 mt-1">
                     {analytics && analytics.totalCompanies > 0 
-                      ? user.role === 'ConsoleManager' 
+                      ? hasRole(user?.role, 'ConsoleManager') 
                         ? formatCurrency(analytics.totalMonthlyRevenue / analytics.totalCompanies)
                         : analytics.totalActiveStaff > 0 
                           ? formatCurrency(analytics.totalMonthlyRevenue / analytics.totalActiveStaff)
@@ -318,9 +319,9 @@ export default function BillingDashboard() {
           </Card>
         </div>
 
-        <Tabs defaultValue={user.role === 'ConsoleManager' ? "companies" : "analytics"} className="space-y-6">
+        <Tabs defaultValue={hasRole(user?.role, 'ConsoleManager') ? "companies" : "analytics"} className="space-y-6">
           <TabsList className="bg-white border-2 border-slate-200 p-1 rounded-xl shadow-sm">
-            {user.role === 'ConsoleManager' && (
+            {hasRole(user?.role, 'ConsoleManager') && (
               <TabsTrigger value="companies" className="px-6 py-3 rounded-lg font-medium">
                 Company Management
               </TabsTrigger>
