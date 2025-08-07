@@ -9,6 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { hasRole } from '@/lib/role-utils';
 import { CreditCard, FileText, History, RefreshCw, DollarSign, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -206,15 +208,24 @@ const PaymentHistory: React.FC<{ payments: PaymentInfo['recentPayments'] }> = ({
 
 // Main Payment Manager Component
 export const PaymentManager: React.FC = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [clientSecret, setClientSecret] = useState<string>('');
   const [paymentType, setPaymentType] = useState<'one-time' | 'subscription'>('one-time');
 
+  // Get company data first
+  const { data: company } = useQuery({
+    queryKey: ['/api/company'],
+    queryFn: () => apiRequest('GET', '/api/company').then(res => res.json()),
+    enabled: !!user
+  });
+
   // Fetch payment information
   const { data: paymentInfo, isLoading: paymentInfoLoading } = useQuery<PaymentInfo>({
-    queryKey: ['/api/payments/company'],
-    queryFn: () => apiRequest('GET', '/api/payments/company').then(res => res.json()),
+    queryKey: ['/api/payments/company', company?.id],
+    queryFn: () => apiRequest('GET', `/api/payments/company?companyId=${company?.id}`).then(res => res.json()),
+    enabled: !!company?.id
   });
 
   // Fetch billing data
@@ -226,10 +237,14 @@ export const PaymentManager: React.FC = () => {
   // Create payment intent mutation
   const createPaymentMutation = useMutation({
     mutationFn: (type: 'one-time' | 'subscription') => {
+      if (!company?.id) throw new Error('Company ID required');
       const endpoint = type === 'subscription' 
         ? '/api/payments/create-subscription'
         : '/api/payments/create-payment-intent';
-      return apiRequest('POST', endpoint, {}).then(res => res.json());
+      return apiRequest('POST', endpoint, {
+        companyId: company.id,
+        amount: billingData?.totalMonthlyRevenue || 0
+      }).then(res => res.json());
     },
     onSuccess: (data) => {
       setClientSecret(data.clientSecret);
@@ -249,7 +264,7 @@ export const PaymentManager: React.FC = () => {
 
   const handlePaymentSuccess = () => {
     setClientSecret('');
-    queryClient.invalidateQueries({ queryKey: ['/api/payments/company'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/payments/company', company?.id] });
     queryClient.invalidateQueries({ queryKey: ['/api/billing/analytics'] });
   };
 
