@@ -15,6 +15,7 @@ import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
 import { sendCompanyWelcomeEmail, sendUserWelcomeEmail, sendPasswordResetEmail, sendIncidentReportNotification, sendShiftAssignmentNotification, sendClientCreationNotification } from "./lib/email-service";
+import { calculateAllCompanyBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary } from "./billing-system";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -12069,5 +12070,79 @@ Maximum 400 words.`;
   app.use('/uploads', expressStatic.default.static(pathModule.join(process.cwd(), 'uploads')));
 
   // Close the registerRoutes function
+  // Billing Management API Routes
+  // Get billing analytics for all companies (Console Manager only)
+  app.get("/api/billing/analytics", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      console.log(`[BILLING API] Analytics requested by user ${req.user.id}`);
+      const analytics = await calculateAllCompanyBilling();
+      res.json(analytics);
+    } catch (error: any) {
+      console.error("Billing analytics error:", error);
+      res.status(500).json({ message: "Failed to retrieve billing analytics" });
+    }
+  });
+
+  // Get billing data for specific company
+  app.get("/api/billing/company/:companyId", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const { companyId } = req.params;
+      console.log(`[BILLING API] Company billing requested for ${companyId} by user ${req.user.id}`);
+      
+      const companyBilling = await calculateCompanyBilling(companyId);
+      if (!companyBilling) {
+        return res.status(404).json({ message: "Company not found or no billing data available" });
+      }
+      
+      res.json(companyBilling);
+    } catch (error: any) {
+      console.error("Company billing error:", error);
+      res.status(500).json({ message: "Failed to retrieve company billing data" });
+    }
+  });
+
+  // Suspend company access (billing action)
+  app.post("/api/billing/company/:companyId/suspend", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const { companyId } = req.params;
+      console.log(`[BILLING API] Suspending company ${companyId} by user ${req.user.id}`);
+      
+      await suspendCompanyAccess(companyId);
+      res.json({ message: "Company access suspended successfully" });
+    } catch (error: any) {
+      console.error("Company suspension error:", error);
+      res.status(500).json({ message: "Failed to suspend company access" });
+    }
+  });
+
+  // Restore company access (billing action)
+  app.post("/api/billing/company/:companyId/restore", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const { companyId } = req.params;
+      console.log(`[BILLING API] Restoring company ${companyId} by user ${req.user.id}`);
+      
+      await restoreCompanyAccess(companyId);
+      res.json({ message: "Company access restored successfully" });
+    } catch (error: any) {
+      console.error("Company restoration error:", error);
+      res.status(500).json({ message: "Failed to restore company access" });
+    }
+  });
+
+  // Generate billing summary report
+  app.get("/api/billing/summary", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      console.log(`[BILLING API] Billing summary requested by user ${req.user.id}`);
+      const summary = await generateBillingSummary();
+      
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="billing-summary-${new Date().toISOString().split('T')[0]}.txt"`);
+      res.send(summary);
+    } catch (error: any) {
+      console.error("Billing summary error:", error);
+      res.status(500).json({ message: "Failed to generate billing summary" });
+    }
+  });
+
   return server;
 }

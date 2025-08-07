@@ -16,6 +16,21 @@ export interface BillingConfiguration {
   isActive: boolean;
 }
 
+// Default billing configuration
+const billingConfig: BillingConfiguration = {
+  rates: {
+    'SupportWorker': 45.00,
+    'TeamLeader': 65.00,
+    'Coordinator': 85.00,
+    'Admin': 95.00,
+    'ConsoleManager': 150.00,
+    'Unknown': 45.00
+  },
+  cycleDays: 28,
+  nextBillingDate: new Date(),
+  isActive: true
+};
+
 export interface CompanyBilling {
   companyId: string;
   companyName: string;
