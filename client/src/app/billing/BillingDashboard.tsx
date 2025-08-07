@@ -703,6 +703,33 @@ export default function BillingDashboard() {
                                         </AlertDialogFooter>
                                       </AlertDialogContent>
                                     </AlertDialog>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="sm" variant="outline">
+                                          <PlayCircle className="h-4 w-4 mr-1" />
+                                          Reactivate
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Reactivate {company.companyName}?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will restore access for {company.companyName} after payment has been received.
+                                            
+                                            All previously suspended staff members will be reactivated.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction 
+                                            onClick={() => restoreCompanyMutation.mutate(company.companyId)}
+                                            className="bg-green-600 hover:bg-green-700"
+                                          >
+                                            Reactivate Company
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
                                   </div>
                                 </TableCell>
                               </TableRow>

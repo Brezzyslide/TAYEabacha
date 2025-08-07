@@ -7,6 +7,15 @@ CareConnect is a comprehensive, multi-tenant healthcare facility management plat
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-08-07**: ✅ **COMPREHENSIVE OVERDUE COMPANIES MANAGEMENT SYSTEM COMPLETE** - Full auto-suspension & manual reactivation:
+- **AUTO-SUSPENSION SYSTEM**: 60-day grace period after invoice due date before suspension (not 60 days due to non-payment)
+- **MANUAL REACTIVATION**: Console Managers can restore suspended companies through UI with "Reactivate" buttons
+- **COMPREHENSIVE UI**: Overdue Companies tab shows suspension/reactivation controls, overdue amounts, and days overdue
+- **DUAL SUSPENSION METHODS**: Bulk auto-suspension for all overdue companies OR individual company suspension
+- **FULL AUDIT TRAIL**: Complete logging of suspensions and reactivations with safety limits (max 90 days overdue)
+- **BACKEND INTEGRATION**: Uses existing payment infrastructure with restoreCompanyAccess() function for reactivations
+- **ROLE-BASED ACCESS**: Only Console Managers can suspend/reactivate companies with proper authentication
+
 **2025-08-07**: ✅ **CONSOLE MANAGER UNIVERSAL INVOICE ACCESS & DUE DATE CONSISTENCY IMPLEMENTED** - Complete billing system fixes:
 - **UNIVERSAL ACCESS**: Console managers can now access "Universal Invoices" tab showing all tenant invoices (27 invoices across 25 companies)
 - **DUE DATE CONSISTENCY**: Fixed "Next Billing" dates in Company Billing Overview to show correct due dates (billing period start + 14 days) instead of next cycle start + 28 days

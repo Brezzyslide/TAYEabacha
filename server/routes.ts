@@ -12183,6 +12183,28 @@ Maximum 400 words.`;
     }
   });
 
+  // Suspend individual company endpoint (Console Manager only)  
+  app.post("/api/billing/suspend-company/:companyId", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      const { companyId } = req.params;
+      console.log(`[BILLING API] Individual company suspension requested for ${companyId} by user ${req.user.id}`);
+      
+      await suspendCompanyAccess(companyId);
+      console.log(`[BILLING API] Company ${companyId} suspended successfully`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Company suspended successfully' 
+      });
+    } catch (error: any) {
+      console.error(`[BILLING API] Individual company suspension failed for ${req.params.companyId}:`, error);
+      res.status(500).json({ 
+        message: 'Failed to suspend company',
+        error: error.message 
+      });
+    }
+  });
+
   // Generate billing summary report
   app.get("/api/billing/summary", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
     try {
