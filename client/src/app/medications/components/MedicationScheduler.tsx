@@ -176,14 +176,66 @@ export default function MedicationScheduler() {
     createScheduleMutation.mutate(scheduleData);
   };
 
-  // Get scheduled slots for a specific time and date
+  // Get scheduled slots for a specific time and date from medication plans
   const getScheduledSlots = (timeSlot: string, date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    // Ensure scheduledMedications is an array before filtering
+    const currentDate = new Date();
+    
+    // Filter medication plans that should appear on this day and time
+    const planSlots = medicationPlans.filter((plan: MedicationPlan) => {
+      if (!plan || plan.status !== 'active') return false;
+      
+      const startDate = new Date(plan.startDate);
+      const endDate = plan.endDate ? new Date(plan.endDate) : null;
+      
+      // Check if the date is within the medication plan period
+      if (date < startDate || (endDate && date > endDate)) return false;
+      
+      // Map frequency and timeOfDay to time slots
+      const timeMapping: Record<string, string[]> = {
+        'morning': ['morning'],
+        'afternoon': ['afternoon'],
+        'evening': ['evening'],
+        'night': ['night'],
+        'midday': ['midday'],
+        'twice daily': ['morning', 'evening'],
+        'three times daily': ['morning', 'afternoon', 'evening'],
+        'four times daily': ['morning', 'midday', 'afternoon', 'evening'],
+        'daily': [plan.timeOfDay?.toLowerCase() || 'morning'],
+        'as needed': [timeSlot], // Show in all slots if as needed
+      };
+      
+      const applicableSlots = timeMapping[plan.frequency?.toLowerCase()] || 
+                             timeMapping[plan.timeOfDay?.toLowerCase()] || 
+                             ['morning'];
+      
+      return applicableSlots.includes(timeSlot);
+    });
+    
+    // Also include any manually scheduled medications
     const medications = Array.isArray(scheduledMedications) ? scheduledMedications : [];
-    return medications.filter((slot: any) => 
+    const scheduledSlots = medications.filter((slot: any) => 
       slot.timeSlot === timeSlot && slot.scheduledDate === dateStr
     );
+    
+    // Convert medication plans to slot format
+    const planBasedSlots = planSlots.map((plan: MedicationPlan) => ({
+      id: `plan-${plan.id}-${dateStr}-${timeSlot}`,
+      planId: plan.id,
+      clientId: plan.clientId,
+      timeSlot: timeSlot,
+      scheduledDate: dateStr,
+      medicationName: plan.medicationName,
+      dosage: plan.dosage,
+      route: plan.route,
+      status: 'scheduled',
+      clientName: plan.client?.fullName || 'Unknown Client',
+      frequency: plan.frequency,
+      instructions: plan.instructions,
+      isFromPlan: true
+    }));
+    
+    return [...planBasedSlots, ...scheduledSlots];
   };
 
   // Handle status update
@@ -405,52 +457,76 @@ export default function MedicationScheduler() {
                                     {scheduledSlots.map((slot: any) => (
                                       <div
                                         key={slot.id}
-                                        className={`p-2 rounded border text-xs ${getStatusColor(slot.status)}`}
+                                        className={`p-2 rounded border-l-2 text-xs mb-1 ${
+                                          slot.isFromPlan 
+                                            ? 'bg-green-50 dark:bg-green-900/20 border-green-500' 
+                                            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+                                        }`}
                                       >
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-1">
-                                            {getStatusIcon(slot.status)}
-                                            <span className="font-medium">
-                                              {slot.medicationName}
-                                            </span>
+                                        <div className={`font-medium ${
+                                          slot.isFromPlan 
+                                            ? 'text-green-900 dark:text-green-100' 
+                                            : 'text-blue-900 dark:text-blue-100'
+                                        }`}>
+                                          {slot.medicationName}
+                                        </div>
+                                        <div className={`${
+                                          slot.isFromPlan 
+                                            ? 'text-green-700 dark:text-green-300' 
+                                            : 'text-blue-700 dark:text-blue-300'
+                                        }`}>
+                                          {slot.dosage} - {slot.route}
+                                        </div>
+                                        <div className={`text-xs ${
+                                          slot.isFromPlan 
+                                            ? 'text-green-600 dark:text-green-400' 
+                                            : 'text-blue-600 dark:text-blue-400'
+                                        }`}>
+                                          {slot.clientName}
+                                        </div>
+                                        {slot.frequency && (
+                                          <div className={`text-xs ${
+                                            slot.isFromPlan 
+                                              ? 'text-green-500 dark:text-green-500' 
+                                              : 'text-blue-500 dark:text-blue-500'
+                                          }`}>
+                                            {slot.frequency}
                                           </div>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-4 w-4 p-0 hover:bg-red-100"
-                                            onClick={() => handleRemoveSchedule(slot.id)}
+                                        )}
+                                        <div className="flex justify-between items-center mt-1">
+                                          <Badge 
+                                            variant={
+                                              slot.status === 'administered' ? 'default' :
+                                              slot.status === 'missed' ? 'destructive' :
+                                              slot.status === 'refused' ? 'secondary' : 
+                                              slot.isFromPlan ? 'outline' : 'outline'
+                                            }
+                                            className="text-xs"
                                           >
-                                            <X className="h-3 w-3" />
-                                          </Button>
-                                        </div>
-                                        <div className="text-xs opacity-75">
-                                          {slot.clientName} • {slot.dosage}
-                                        </div>
-                                        <div className="flex gap-1 mt-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-5 text-xs px-1"
-                                            onClick={() => handleStatusUpdate(slot.id, 'administered')}
-                                          >
-                                            ✓
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-5 text-xs px-1"
-                                            onClick={() => handleStatusUpdate(slot.id, 'missed')}
-                                          >
-                                            ✗
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-5 text-xs px-1"
-                                            onClick={() => handleStatusUpdate(slot.id, 'refused')}
-                                          >
-                                            !
-                                          </Button>
+                                            {slot.isFromPlan ? 'Planned' : slot.status}
+                                          </Badge>
+                                          <div className="flex gap-1">
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-6 w-6 p-0"
+                                              onClick={() => handleStatusUpdate(slot.id, 
+                                                slot.status === 'administered' ? 'scheduled' : 'administered'
+                                              )}
+                                            >
+                                              <CheckCircle className="h-3 w-3" />
+                                            </Button>
+                                            {!slot.isFromPlan && (
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0 text-red-500"
+                                                onClick={() => handleRemoveSchedule(slot.id)}
+                                              >
+                                                <X className="h-3 w-3" />
+                                              </Button>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                     ))}
