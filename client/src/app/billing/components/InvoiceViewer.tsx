@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { FileText, Download, Calendar, DollarSign, Building } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateInvoicePDF } from '@/lib/invoice-pdf-generator';
 
 interface InvoiceLineItem {
   description: string;
@@ -104,10 +105,29 @@ const InvoiceViewer: React.FC<InvoiceViewerProps> = ({ companyId }) => {
   };
 
   const handleDownloadInvoice = () => {
-    toast({
-      title: "Coming Soon",
-      description: "PDF invoice download will be available soon.",
-    });
+    if (!currentInvoice) {
+      toast({
+        title: "Error",
+        description: "No invoice data available to download.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      generateInvoicePDF(currentInvoice);
+      toast({
+        title: "Success",
+        description: "Invoice PDF downloaded successfully.",
+      });
+    } catch (error: any) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
