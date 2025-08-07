@@ -116,10 +116,22 @@ const PaymentForm: React.FC<{
             <span>Monthly Amount:</span>
             <span className="font-semibold">${billingData.totalMonthlyRevenue.toFixed(2)} AUD</span>
           </div>
-          {paymentType === 'subscription' && (
+          {paymentType === 'subscription' && billingData.nextBillingDate && (
             <div className="flex justify-between">
               <span>Next Billing:</span>
-              <span>{format(new Date(billingData.nextBillingDate), 'MMM d, yyyy')}</span>
+              <span>
+                {(() => {
+                  try {
+                    const date = new Date(billingData.nextBillingDate);
+                    if (isNaN(date.getTime())) {
+                      return 'TBD';
+                    }
+                    return format(date, 'MMM d, yyyy');
+                  } catch (error) {
+                    return 'TBD';
+                  }
+                })()}
+              </span>
             </div>
           )}
         </div>
