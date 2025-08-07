@@ -12483,10 +12483,11 @@ Maximum 400 words.`;
   // Console Manager Universal Invoice Access - Get invoices for all tenants
   app.get("/api/console/invoices/all", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
     try {
-      console.log(`[CONSOLE API] Universal invoice access requested by console manager ${req.user.id}`);
+      console.log(`[CONSOLE API] Universal invoice access requested by console manager ${req.user.id} (role: ${req.user.role})`);
       
       // Get all companies
       const allCompanies = await db.select().from(companies);
+      console.log(`[CONSOLE API] Found ${allCompanies.length} companies to process`);
       const allInvoices = [];
 
       // Get current and historical invoices for all companies

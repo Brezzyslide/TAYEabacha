@@ -68,13 +68,21 @@ const UniversalInvoiceViewer: React.FC = () => {
   } = useQuery<UniversalInvoiceData>({
     queryKey: ['universal-invoices'],
     queryFn: async () => {
-      const response = await fetch('/api/console/invoices/all');
+      console.log('[UNIVERSAL INVOICES] Fetching universal invoices...');
+      const response = await fetch('/api/console/invoices/all', {
+        credentials: 'include' // Ensure cookies are sent
+      });
+      
+      console.log('[UNIVERSAL INVOICES] Response status:', response.status);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch universal invoices');
+        const errorText = await response.text();
+        console.error('[UNIVERSAL INVOICES] Error response:', errorText);
+        throw new Error(`Failed to fetch universal invoices: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('[UNIVERSAL INVOICES] Retrieved data:', data);
       
       // Convert date strings to Date objects
       return {

@@ -1,5 +1,5 @@
 import { db } from './lib/dbClient';
-import { companies, staff, companyPaymentInfo, paymentHistory } from '../shared/schema';
+import { companies, companyPaymentInfo, paymentHistory } from '../shared/schema';
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { calculateTenantBilling } from './billing-system';
 
@@ -230,8 +230,7 @@ export async function markInvoicePaid(
       status: 'succeeded',
       billingPeriodStart: billingPeriod.start,
       billingPeriodEnd: billingPeriod.end,
-      invoiceNumber: invoiceNumber,
-      paidAt: now,
+      paymentDate: now,
     });
 
     console.log(`[INVOICE] Marked invoice ${invoiceNumber} as paid: $${paidAmount} AUD`);
@@ -266,7 +265,6 @@ export async function getInvoiceHistory(companyId: string): Promise<Invoice[]> {
           );
           
           // Override with actual payment data
-          invoice.invoiceNumber = payment.invoiceNumber || invoice.invoiceNumber;
           invoice.status = payment.status === 'succeeded' ? 'paid' : 'pending';
           invoice.totalAmount = parseFloat(payment.amount);
           

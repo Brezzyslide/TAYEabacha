@@ -487,7 +487,7 @@ export default function BillingDashboard() {
             </Card>
           </TabsContent>
 
-          {hasRole(user?.role, 'Admin') && (
+          {(hasRole(user?.role, 'Admin') || hasRole(user?.role, 'ConsoleManager')) && (
             <>
               <TabsContent value="payments" className="space-y-6">
                 <PaymentManager />
