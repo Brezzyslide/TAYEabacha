@@ -15,7 +15,7 @@ import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
 import { sendCompanyWelcomeEmail, sendUserWelcomeEmail, sendPasswordResetEmail, sendIncidentReportNotification, sendShiftAssignmentNotification, sendClientCreationNotification } from "./lib/email-service";
-import { calculateAllCompanyBilling, calculateTenantBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary } from "./billing-system";
+import { calculateAllCompanyBilling, calculateTenantBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary, getCompaniesForAutoSuspension, processAutoSuspensions } from "./billing-system";
 import { createPaymentIntent, createSubscription, getCompanyPaymentInfo, updatePaymentStatus, stripe } from "./stripe-service";
 import { getCurrentInvoice, getInvoiceHistory, markInvoicePaid } from "./invoice-service";
 
@@ -12142,6 +12142,44 @@ Maximum 400 words.`;
     } catch (error: any) {
       console.error("Company restoration error:", error);
       res.status(500).json({ message: "Failed to restore company access" });
+    }
+  });
+
+  // Get companies eligible for auto-suspension due to overdue payments
+  app.get("/api/billing/overdue-companies", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      console.log(`[BILLING API] Overdue companies check requested by user ${req.user.id}`);
+      const overdueCompanies = await getCompaniesForAutoSuspension();
+      
+      res.json({
+        totalOverdue: overdueCompanies.length,
+        companies: overdueCompanies,
+        gracePeriodDays: 60,
+        maxOverdueDays: 90,
+        autoSuspendEnabled: true,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Overdue companies fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch overdue companies" });
+    }
+  });
+
+  // Process automatic suspensions for all overdue companies
+  app.post("/api/billing/process-auto-suspensions", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      console.log(`[BILLING API] Auto-suspension process triggered by user ${req.user.id}`);
+      const result = await processAutoSuspensions();
+      
+      res.json({
+        message: `Auto-suspension complete: ${result.suspended} companies suspended`,
+        suspended: result.suspended,
+        errors: result.errors,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Auto-suspension process error:", error);
+      res.status(500).json({ message: "Failed to process auto-suspensions" });
     }
   });
 

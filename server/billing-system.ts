@@ -439,6 +439,141 @@ export async function restoreCompanyAccess(companyId: string): Promise<void> {
 }
 
 /**
+ * Configuration for automatic suspension policies
+ */
+export const defaultSuspensionConfig = {
+  gracePeriodDays: 60,       // Days after due date before suspension (60 days)
+  warningDays: [30, 14, 7],  // Send warnings at 30, 14, and 7 days before suspension  
+  autoSuspendEnabled: true,   // Toggle automatic suspension
+  maxOverdueDays: 90,        // Maximum days overdue before suspension (safety limit)
+};
+
+/**
+ * Get all companies with overdue invoices that should be suspended
+ */
+export async function getCompaniesForAutoSuspension(): Promise<{
+  companyId: string;
+  companyName: string;
+  daysOverdue: number;
+  overdueAmount: number;
+  invoiceCount: number;
+}[]> {
+  const now = new Date();
+  const cutoffDate = new Date(now);
+  cutoffDate.setDate(cutoffDate.getDate() - defaultSuspensionConfig.gracePeriodDays);
+
+  console.log(`[AUTO SUSPENSION] Checking for companies with invoices overdue since ${cutoffDate.toISOString()}`);
+
+  // Get all invoices that are overdue beyond grace period
+  const overdueInvoices = await db
+    .select({
+      companyId: invoices.companyId,
+      companyName: companies.name,
+      dueDate: invoices.dueDate,
+      totalAmount: invoices.totalAmount,
+      status: invoices.status,
+      isActive: users.isActive
+    })
+    .from(invoices)
+    .innerJoin(companies, eq(invoices.companyId, companies.id))
+    .innerJoin(tenants, eq(companies.id, tenants.companyId))
+    .innerJoin(users, eq(users.tenantId, tenants.id))
+    .where(and(
+      eq(invoices.status, 'pending'),
+      lt(invoices.dueDate, cutoffDate),
+      eq(users.isActive, true) // Only check active companies
+    ))
+    .groupBy(companies.id, companies.name, invoices.companyId, invoices.dueDate, invoices.totalAmount, invoices.status, users.isActive);
+
+  // Group by company and calculate totals
+  const companyMap = new Map<string, {
+    companyName: string;
+    totalOverdue: number;
+    invoiceCount: number;
+    oldestDueDate: Date;
+  }>();
+
+  for (const invoice of overdueInvoices) {
+    const key = invoice.companyId;
+    const existing = companyMap.get(key);
+    
+    if (existing) {
+      existing.totalOverdue += parseFloat(invoice.totalAmount.toString());
+      existing.invoiceCount += 1;
+      if (invoice.dueDate < existing.oldestDueDate) {
+        existing.oldestDueDate = invoice.dueDate;
+      }
+    } else {
+      companyMap.set(key, {
+        companyName: invoice.companyName,
+        totalOverdue: parseFloat(invoice.totalAmount.toString()),
+        invoiceCount: 1,
+        oldestDueDate: invoice.dueDate
+      });
+    }
+  }
+
+  // Convert to result format with days overdue calculation
+  const result = Array.from(companyMap.entries()).map(([companyId, data]) => {
+    const daysOverdue = Math.floor((now.getTime() - data.oldestDueDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      companyId,
+      companyName: data.companyName,
+      daysOverdue,
+      overdueAmount: data.totalOverdue,
+      invoiceCount: data.invoiceCount
+    };
+  }).filter(company => company.daysOverdue >= defaultSuspensionConfig.gracePeriodDays);
+
+  console.log(`[AUTO SUSPENSION] Found ${result.length} companies eligible for suspension`);
+  if (result.length > 0) {
+    console.log(`[AUTO SUSPENSION] Companies for suspension:`, result);
+  }
+
+  return result;
+}
+
+/**
+ * Automatically suspend all companies that are past due beyond grace period
+ */
+export async function processAutoSuspensions(): Promise<{
+  suspended: number;
+  errors: string[];
+}> {
+  if (!defaultSuspensionConfig.autoSuspendEnabled) {
+    console.log(`[AUTO SUSPENSION] Auto suspension is disabled`);
+    return { suspended: 0, errors: [] };
+  }
+
+  const companiesToSuspend = await getCompaniesForAutoSuspension();
+  let suspended = 0;
+  const errors: string[] = [];
+
+  for (const company of companiesToSuspend) {
+    try {
+      // Only suspend if within reasonable overdue limits (prevent accidental mass suspension)
+      if (company.daysOverdue <= defaultSuspensionConfig.maxOverdueDays) {
+        await suspendCompanyAccess(company.companyId);
+        suspended++;
+        console.log(`[AUTO SUSPENSION] Successfully suspended ${company.companyName} (${company.daysOverdue} days overdue, $${company.overdueAmount})`);
+      } else {
+        const errorMsg = `Company ${company.companyName} is ${company.daysOverdue} days overdue (exceeds max ${defaultSuspensionConfig.maxOverdueDays} days) - manual review required`;
+        errors.push(errorMsg);
+        console.log(`[AUTO SUSPENSION SKIP] ${errorMsg}`);
+      }
+    } catch (error) {
+      const errorMsg = `Failed to suspend ${company.companyName}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      errors.push(errorMsg);
+      console.error(`[AUTO SUSPENSION ERROR] ${errorMsg}`);
+    }
+  }
+
+  console.log(`[AUTO SUSPENSION COMPLETE] Suspended: ${suspended}, Errors: ${errors.length}`);
+  return { suspended, errors };
+}
+
+/**
  * Generate billing summary report
  */
 export async function generateBillingSummary(): Promise<string> {
