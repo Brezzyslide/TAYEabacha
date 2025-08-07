@@ -8,6 +8,7 @@ import { db } from './lib/dbClient';
 import { companies, tenants, users, billingConfiguration } from '../shared/schema';
 import { eq, and, gte, lte, count } from 'drizzle-orm';
 import { storage } from './storage';
+import { normalizeRole } from './role-utils';
 
 // Dynamic billing rates and cycles - will be fetched from database
 export interface BillingConfiguration {
@@ -127,11 +128,12 @@ export async function calculateTenantBilling(tenantId: number): Promise<UsageAna
     }
 
     const company = companyMap.get(row.companyId)!;
-    const monthlyRate = billingConfig.rates[row.role || 'Unknown'] || 0;
+    const normalizedRole = normalizeRole(row.role) || 'Unknown';
+    const monthlyRate = billingConfig.rates[normalizedRole] || 0;
     const totalMonthly = monthlyRate * row.userCount;
 
     company.activeStaff.push({
-      role: row.role,
+      role: normalizedRole,
       count: row.userCount,
       monthlyRate,
       totalMonthly
@@ -225,11 +227,12 @@ export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {
     }
 
     const company = companyMap.get(row.companyId)!;
-    const monthlyRate = billingConfig.rates[row.role || 'Unknown'] || 0;
+    const normalizedRole = normalizeRole(row.role) || 'Unknown';
+    const monthlyRate = billingConfig.rates[normalizedRole] || 0;
     const totalMonthly = monthlyRate * row.userCount;
 
     company.activeStaff.push({
-      role: row.role,
+      role: normalizedRole,
       count: row.userCount,
       monthlyRate,
       totalMonthly
