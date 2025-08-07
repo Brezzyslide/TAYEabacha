@@ -61,10 +61,14 @@ const complianceNavigation = [
   { name: "Compliance Centre", href: "/compliance", icon: FileCheck },
 ];
 
+const billingNavigation = [
+  { name: "Billing Analytics", href: "/billing", icon: CreditCard },
+];
+
 const companyManagementNavigation = [
   { name: "Company List", href: "/admin/companies", icon: Building },
   { name: "Create Company", href: "/admin/create-company", icon: Plus },
-  { name: "Billing Management", href: "/billing-management", icon: CreditCard },
+  { name: "Billing Management", href: "/billing", icon: CreditCard },
 ];
 
 export default function Sidebar() {
@@ -76,6 +80,7 @@ export default function Sidebar() {
   const userRole = user.role?.toLowerCase();
   const isAdmin = userRole === "admin" || userRole === "consolemanager";
   const canManageCompaniesAccess = canManageCompanies(user);
+  const canViewBilling = ['admin', 'consolemanager', 'coordinator', 'teamleader'].includes(userRole);
 
   const renderNavigationSection = (title: string, items: { name: string; href: string; icon: any }[], headerColor: string) => (
     <div className="mb-6">
@@ -145,6 +150,13 @@ export default function Sidebar() {
           "COMPLIANCE", 
           complianceNavigation, 
           "bg-emerald-50/80 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+        )}
+
+        {/* Billing Section - Admin, TeamLeader, Coordinator */}
+        {canViewBilling && !canManageCompaniesAccess && renderNavigationSection(
+          "BILLING", 
+          billingNavigation, 
+          "bg-blue-50/80 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
         )}
 
         {/* Company Management Section - ConsoleManager Only */}
