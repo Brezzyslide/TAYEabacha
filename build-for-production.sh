@@ -1,13 +1,18 @@
 #!/bin/bash
 
 # Production Build Script for AWS Deployment
-# Handles path resolution issues for ES modules
+# Fixes Vite runtime error plugin issues in production
 
 echo "Building NeedsCareAI+ for production deployment..."
 
-# Step 1: Build the client
-echo "Step 1: Building client..."
-npm run build
+# Set environment variables to disable Replit plugins
+export NODE_ENV=production
+export VITE_NODE_ENV=production 
+export REPL_ID=""
+
+# Step 1: Build the client with production environment
+echo "Step 1: Building client (disabling Replit plugins)..."
+NODE_ENV=production REPL_ID="" npm run build
 
 # Step 2: Copy SQL files to dist directory
 echo "Step 2: Copying SQL files..."
