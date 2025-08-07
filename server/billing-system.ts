@@ -78,6 +78,106 @@ export interface UsageAnalytics {
 }
 
 /**
+ * Calculate current billing for a specific tenant using dynamic rates
+ */
+export async function calculateTenantBilling(tenantId: number): Promise<UsageAnalytics> {
+  const billingConfig = await getBillingConfig();
+  
+  // Get the specific tenant's staff counts by role
+  const companyData = await db
+    .select({
+      companyId: companies.id,
+      companyName: companies.name,
+      tenantId: tenants.id,
+      role: users.role,
+      userCount: count(users.id)
+    })
+    .from(companies)
+    .innerJoin(tenants, eq(tenants.companyId, companies.id))
+    .innerJoin(users, and(
+      eq(users.tenantId, tenants.id),
+      eq(users.isActive, true)
+    ))
+    .where(and(
+      eq(users.isActive, true),
+      eq(tenants.id, tenantId)
+    ))
+    .groupBy(companies.id, companies.name, tenants.id, users.role);
+
+  // Process into company billing structure (single company for tenant)
+  const companyMap = new Map<string, CompanyBilling>();
+  
+  for (const row of companyData) {
+    if (!companyMap.has(row.companyId)) {
+      const now = new Date();
+      const currentCycleStart = getCurrentCycleStart(now);
+      const nextBillingDate = new Date(currentCycleStart);
+      nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
+
+      companyMap.set(row.companyId, {
+        companyId: row.companyId,
+        companyName: row.companyName,
+        tenantId: row.tenantId,
+        activeStaff: [],
+        totalMonthlyRevenue: 0,
+        currentCycleStart,
+        nextBillingDate,
+        status: 'active'
+      });
+    }
+
+    const company = companyMap.get(row.companyId)!;
+    const monthlyRate = billingConfig.rates[row.role || 'Unknown'] || 0;
+    const totalMonthly = monthlyRate * row.userCount;
+
+    company.activeStaff.push({
+      role: row.role,
+      count: row.userCount,
+      monthlyRate,
+      totalMonthly
+    });
+
+    company.totalMonthlyRevenue += totalMonthly;
+  }
+
+  const companyBreakdown = Array.from(companyMap.values());
+
+  // Calculate analytics for this tenant only
+  const totalActiveStaff = companyBreakdown.reduce((sum, company) => 
+    sum + company.activeStaff.reduce((roleSum, role) => roleSum + role.count, 0), 0);
+  
+  const totalMonthlyRevenue = companyBreakdown.reduce((sum, company) => 
+    sum + company.totalMonthlyRevenue, 0);
+
+  // Role distribution for this tenant only
+  const roleMap = new Map<string, { count: number; revenue: number }>();
+  for (const company of companyBreakdown) {
+    for (const staff of company.activeStaff) {
+      if (!roleMap.has(staff.role)) {
+        roleMap.set(staff.role, { count: 0, revenue: 0 });
+      }
+      const existing = roleMap.get(staff.role)!;
+      existing.count += staff.count;
+      existing.revenue += staff.totalMonthly;
+    }
+  }
+
+  const roleDistribution = Array.from(roleMap.entries()).map(([role, data]) => ({
+    role,
+    count: data.count,
+    revenue: data.revenue
+  }));
+
+  return {
+    totalCompanies: companyBreakdown.length,
+    totalActiveStaff,
+    totalMonthlyRevenue,
+    roleDistribution,
+    companyBreakdown
+  };
+}
+
+/**
  * Calculate current billing for all companies using dynamic rates
  */
 export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {

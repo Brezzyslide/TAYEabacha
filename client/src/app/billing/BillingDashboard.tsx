@@ -62,10 +62,10 @@ export default function BillingDashboard() {
   const queryClient = useQueryClient();
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
 
-  // Get billing analytics
+  // Get billing analytics - ConsoleManager sees global, others see tenant-specific
   const { data: analytics, isLoading } = useQuery<BillingAnalytics>({
     queryKey: ['/api/billing/analytics'],
-    enabled: !!user && user.role === 'ConsoleManager'
+    enabled: !!user && ['ConsoleManager', 'Admin', 'Coordinator', 'TeamLeader'].includes(user.role)
   });
 
   // Get billing rates
@@ -172,7 +172,7 @@ export default function BillingDashboard() {
     );
   };
 
-  if (!user || user.role !== 'ConsoleManager') {
+  if (!user || !['ConsoleManager', 'Admin', 'Coordinator', 'TeamLeader'].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
         <div className="max-w-7xl mx-auto">
@@ -180,7 +180,7 @@ export default function BillingDashboard() {
             <CardContent className="p-8 text-center">
               <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">Access Denied</h3>
-              <p className="text-slate-600">Only Console Managers can access billing management.</p>
+              <p className="text-slate-600">Only Admin, Coordinator, TeamLeader, and Console Manager roles can access billing analytics.</p>
             </CardContent>
           </Card>
         </div>
@@ -208,21 +208,41 @@ export default function BillingDashboard() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Billing Management</h1>
-            <p className="text-slate-600 mt-1">Platform-wide billing analytics and company management</p>
+            <h1 className="text-3xl font-bold text-slate-900">
+              {user.role === 'ConsoleManager' ? 'Billing Management' : 'Billing Analytics'}
+            </h1>
+            <p className="text-slate-600 mt-1">
+              {user.role === 'ConsoleManager' 
+                ? 'Platform-wide billing analytics and company management' 
+                : 'Your organization\'s billing analytics and staff costs'}
+            </p>
+            {user.role === 'ConsoleManager' && (
+              <Badge variant="outline" className="mt-2">
+                Global View - All Companies
+              </Badge>
+            )}
+            {user.role !== 'ConsoleManager' && (
+              <Badge variant="outline" className="mt-2">
+                Tenant View - Your Organization Only
+              </Badge>
+            )}
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={() => downloadSummaryMutation.mutate()}
-              disabled={downloadSummaryMutation.isPending}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              {downloadSummaryMutation.isPending ? 'Generating...' : 'Download Report'}
-            </Button>
-            <BillingConfigurationDialog />
-            <CreateBillingButton />
+            {user.role === 'ConsoleManager' && (
+              <>
+                <Button
+                  onClick={() => downloadSummaryMutation.mutate()}
+                  disabled={downloadSummaryMutation.isPending}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {downloadSummaryMutation.isPending ? 'Generating...' : 'Download Report'}
+                </Button>
+                <BillingConfigurationDialog />
+                <CreateBillingButton />
+              </>
+            )}
           </div>
         </div>
 
@@ -288,11 +308,13 @@ export default function BillingDashboard() {
           </Card>
         </div>
 
-        <Tabs defaultValue="companies" className="space-y-6">
+        <Tabs defaultValue={user.role === 'ConsoleManager' ? "companies" : "analytics"} className="space-y-6">
           <TabsList className="bg-white border-2 border-slate-200 p-1 rounded-xl shadow-sm">
-            <TabsTrigger value="companies" className="px-6 py-3 rounded-lg font-medium">
-              Company Management
-            </TabsTrigger>
+            {user.role === 'ConsoleManager' && (
+              <TabsTrigger value="companies" className="px-6 py-3 rounded-lg font-medium">
+                Company Management
+              </TabsTrigger>
+            )}
             <TabsTrigger value="analytics" className="px-6 py-3 rounded-lg font-medium">
               Role Analytics
             </TabsTrigger>
@@ -301,12 +323,13 @@ export default function BillingDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="companies" className="space-y-6">
-            <Card className="border-2 border-slate-200 shadow-sm">
-              <CardHeader>
-                <CardTitle>Company Billing Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
+          {user.role === 'ConsoleManager' && (
+            <TabsContent value="companies" className="space-y-6">
+              <Card className="border-2 border-slate-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Company Billing Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -393,6 +416,7 @@ export default function BillingDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
           <TabsContent value="analytics" className="space-y-6">
             <Card className="border-2 border-slate-200 shadow-sm">

@@ -15,7 +15,7 @@ import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
 import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
 import { sendCompanyWelcomeEmail, sendUserWelcomeEmail, sendPasswordResetEmail, sendIncidentReportNotification, sendShiftAssignmentNotification, sendClientCreationNotification } from "./lib/email-service";
-import { calculateAllCompanyBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary } from "./billing-system";
+import { calculateAllCompanyBilling, calculateTenantBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary } from "./billing-system";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -12071,11 +12071,22 @@ Maximum 400 words.`;
 
   // Close the registerRoutes function
   // Billing Management API Routes
-  // Get billing analytics for all companies (Console Manager only)
-  app.get("/api/billing/analytics", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+  // Get billing analytics - global for ConsoleManager, tenant-specific for others
+  app.get("/api/billing/analytics", requireAuth, async (req: any, res) => {
     try {
-      console.log(`[BILLING API] Analytics requested by user ${req.user.id}`);
-      const analytics = await calculateAllCompanyBilling();
+      console.log(`[BILLING API] Analytics requested by user ${req.user.id} (role: ${req.user.role})`);
+      
+      let analytics;
+      if (req.user.role === 'ConsoleManager') {
+        // ConsoleManager sees global analytics across all companies
+        analytics = await calculateAllCompanyBilling();
+        console.log(`[BILLING API] Returning global analytics for ConsoleManager`);
+      } else {
+        // Other roles see only their tenant's analytics
+        analytics = await calculateTenantBilling(req.user.tenantId);
+        console.log(`[BILLING API] Returning tenant-specific analytics for tenant ${req.user.tenantId}`);
+      }
+      
       res.json(analytics);
     } catch (error: any) {
       console.error("Billing analytics error:", error);
