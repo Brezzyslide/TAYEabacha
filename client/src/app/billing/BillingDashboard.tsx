@@ -252,7 +252,9 @@ export default function BillingDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600">Total Companies</p>
+                  <p className="text-sm font-medium text-blue-600">
+                    {user.role === 'ConsoleManager' ? 'Total Companies' : 'Your Organization'}
+                  </p>
                   <p className="text-2xl font-bold text-blue-700 mt-1">
                     {analytics?.totalCompanies || 0}
                   </p>
@@ -280,7 +282,9 @@ export default function BillingDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-amber-600">Monthly Revenue</p>
+                  <p className="text-sm font-medium text-amber-600">
+                    {user.role === 'ConsoleManager' ? 'Monthly Revenue' : 'Monthly Platform Cost'}
+                  </p>
                   <p className="text-2xl font-bold text-amber-700 mt-1">
                     {analytics ? formatCurrency(analytics.totalMonthlyRevenue) : '$0.00'}
                   </p>
@@ -294,10 +298,16 @@ export default function BillingDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-600">Avg per Company</p>
+                  <p className="text-sm font-medium text-purple-600">
+                    {user.role === 'ConsoleManager' ? 'Avg per Company' : 'Cost per Staff'}
+                  </p>
                   <p className="text-2xl font-bold text-purple-700 mt-1">
                     {analytics && analytics.totalCompanies > 0 
-                      ? formatCurrency(analytics.totalMonthlyRevenue / analytics.totalCompanies)
+                      ? user.role === 'ConsoleManager' 
+                        ? formatCurrency(analytics.totalMonthlyRevenue / analytics.totalCompanies)
+                        : analytics.totalActiveStaff > 0 
+                          ? formatCurrency(analytics.totalMonthlyRevenue / analytics.totalActiveStaff)
+                          : '$0.00'
                       : '$0.00'
                     }
                   </p>
