@@ -241,17 +241,32 @@ export const PaymentManager: React.FC = () => {
       const endpoint = type === 'subscription' 
         ? '/api/payments/create-subscription'
         : '/api/payments/create-payment-intent';
+      
+      console.log(`[PAYMENT DEBUG] Creating ${type} payment for company:`, company.id);
+      
       return apiRequest('POST', endpoint, {
         companyId: company.id,
         amount: billingData?.totalMonthlyRevenue || 0
       }).then(res => res.json());
     },
     onSuccess: (data) => {
-      setClientSecret(data.clientSecret);
-      toast({
-        title: "Payment Initialized",
-        description: "Please complete your payment below.",
-      });
+      console.log('[PAYMENT DEBUG] Payment creation successful:', data);
+      console.log('[PAYMENT DEBUG] Client secret received:', data.clientSecret);
+      
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret);
+        toast({
+          title: "Payment Ready",
+          description: "Please complete your payment below.",
+        });
+      } else {
+        console.error('[PAYMENT DEBUG] No client secret in response:', data);
+        toast({
+          title: "Payment Setup Failed",
+          description: "No payment details received from server",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({

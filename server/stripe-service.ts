@@ -212,7 +212,7 @@ export async function createSubscription(companyId: string, tenantId: number): P
       payment_settings: {
         save_default_payment_method: 'on_subscription',
       },
-      expand: ['latest_invoice.payment_intent'],
+      expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
       metadata: {
         companyId: companyId,
         tenantId: tenantId.toString(),
@@ -254,10 +254,16 @@ export async function createSubscription(companyId: string, tenantId: number): P
 
     const invoice = subscription.latest_invoice as Stripe.Invoice;
     const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent;
+    const setupIntent = (subscription as any).pending_setup_intent as Stripe.SetupIntent;
+    
+    // For subscriptions with incomplete payment, we get either a payment intent or setup intent
+    const clientSecret = paymentIntent?.client_secret || setupIntent?.client_secret || '';
+    
+    console.log(`[STRIPE DEBUG] Subscription ${subscription.id} - PaymentIntent: ${paymentIntent?.id}, SetupIntent: ${setupIntent?.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
     
     return {
       subscriptionId: subscription.id,
-      clientSecret: paymentIntent?.client_secret || '',
+      clientSecret: clientSecret,
       customerId: customerId,
     };
   } catch (error: any) {
