@@ -30,6 +30,7 @@ import BillingConfigurationDialog from "@/components/billing/BillingConfiguratio
 import TenantStaffOverview from "@/components/billing/TenantStaffOverview";
 import { PaymentManager } from "./components/PaymentManager";
 import InvoiceViewer from "./components/InvoiceViewer";
+import UniversalInvoiceViewer from "./components/UniversalInvoiceViewer";
 import { canViewBilling, hasRole } from "@/lib/role-utils";
 
 interface BillingAnalytics {
@@ -493,7 +494,11 @@ export default function BillingDashboard() {
               </TabsContent>
               
               <TabsContent value="invoices" className="space-y-6">
-                <InvoiceViewer />
+                {hasRole(user?.role, 'ConsoleManager') ? (
+                  <UniversalInvoiceViewer />
+                ) : (
+                  <InvoiceViewer />
+                )}
               </TabsContent>
             </>
           )}

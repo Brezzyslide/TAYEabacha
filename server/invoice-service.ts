@@ -149,9 +149,14 @@ export async function generateInvoice(
     const gstAmount = subtotal * 0.10;
     const totalAmount = subtotal + gstAmount;
 
+    // Generate consistent invoice and due dates based on billing period
+    const invoiceDate = billingPeriod.start;
+    const dueDate = new Date(billingPeriod.start);
+    dueDate.setDate(dueDate.getDate() + 14); // 14 days from billing start for consistency
+
     // Generate invoice
     const invoice: Invoice = {
-      invoiceNumber: generateInvoiceNumber(companyId, new Date()),
+      invoiceNumber: generateInvoiceNumber(companyId, invoiceDate),
       companyId: companyId,
       company: {
         name: company.name,
@@ -159,8 +164,8 @@ export async function generateInvoice(
         primaryContactName: company.primaryContactName,
         primaryContactEmail: company.primaryContactEmail,
       },
-      invoiceDate: new Date(),
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from issue
+      invoiceDate: invoiceDate,
+      dueDate: dueDate,
       billingPeriod: billingPeriod,
       lineItems: lineItems,
       subtotal: subtotal,

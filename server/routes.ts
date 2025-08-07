@@ -12480,5 +12480,55 @@ Maximum 400 words.`;
     }
   });
 
+  // Console Manager Universal Invoice Access - Get invoices for all tenants
+  app.get("/api/console/invoices/all", requireAuth, requireRole(['ConsoleManager']), async (req: any, res) => {
+    try {
+      console.log(`[CONSOLE API] Universal invoice access requested by console manager ${req.user.id}`);
+      
+      // Get all companies
+      const allCompanies = await db.select().from(companies);
+      const allInvoices = [];
+
+      // Get current and historical invoices for all companies
+      for (const company of allCompanies) {
+        try {
+          // Get current invoice
+          const currentInvoice = await getCurrentInvoice(company.id, 0); // tenantId not needed for console access
+          allInvoices.push({
+            ...currentInvoice,
+            companyName: company.name,
+            type: 'current'
+          });
+
+          // Get historical invoices
+          const historicalInvoices = await getInvoiceHistory(company.id);
+          for (const historical of historicalInvoices) {
+            allInvoices.push({
+              ...historical,
+              companyName: company.name,
+              type: 'historical'
+            });
+          }
+        } catch (error) {
+          console.error(`[CONSOLE API] Error getting invoices for company ${company.id}:`, error);
+          // Continue with other companies even if one fails
+        }
+      }
+
+      // Sort by invoice date (most recent first)
+      allInvoices.sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime());
+
+      console.log(`[CONSOLE API] Retrieved ${allInvoices.length} total invoices across ${allCompanies.length} companies`);
+      res.json({
+        totalInvoices: allInvoices.length,
+        totalCompanies: allCompanies.length,
+        invoices: allInvoices
+      });
+    } catch (error: any) {
+      console.error("[CONSOLE API] Error getting universal invoices:", error);
+      res.status(500).json({ message: error.message || "Failed to get universal invoices" });
+    }
+  });
+
   return server;
 }
