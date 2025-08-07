@@ -17,6 +17,7 @@ import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./eme
 import { sendCompanyWelcomeEmail, sendUserWelcomeEmail, sendPasswordResetEmail, sendIncidentReportNotification, sendShiftAssignmentNotification, sendClientCreationNotification } from "./lib/email-service";
 import { calculateAllCompanyBilling, calculateTenantBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary } from "./billing-system";
 import { createPaymentIntent, createSubscription, getCompanyPaymentInfo, updatePaymentStatus, stripe } from "./stripe-service";
+import { getCurrentInvoice, getInvoiceHistory, markInvoicePaid } from "./invoice-service";
 
 // Helper function to determine shift type based on start time
 // Budget deduction processing function
@@ -12361,6 +12362,35 @@ Maximum 400 words.`;
           const invoice = event.data.object as any;
           if (invoice.payment_intent) {
             await updatePaymentStatus(invoice.payment_intent, 'succeeded', new Date());
+            
+            // Try to mark invoice as paid if we have the customer info
+            if (invoice.customer && invoice.amount_paid) {
+              try {
+                const customer = await stripe.customers.retrieve(invoice.customer);
+                if (customer && !customer.deleted) {
+                  const invoiceNumber = invoice.number || `STRIPE-${invoice.id}`;
+                  // Find company by customer email or metadata
+                  const companyQuery = await db
+                    .select()
+                    .from(companies)
+                    .where(eq(companies.primaryContactEmail, customer.email))
+                    .limit(1);
+                  
+                  if (companyQuery.length > 0) {
+                    await markInvoicePaid(
+                      invoiceNumber,
+                      companyQuery[0].id,
+                      invoice.payment_intent,
+                      invoice.amount_paid / 100 // Convert from cents
+                    );
+                    console.log(`[STRIPE WEBHOOK] Marked invoice ${invoiceNumber} as paid`);
+                  }
+                }
+              } catch (invoiceError: any) {
+                console.error(`[STRIPE WEBHOOK] Error marking invoice as paid:`, invoiceError);
+              }
+            }
+            
             console.log(`[STRIPE WEBHOOK] Invoice payment succeeded: ${invoice.payment_intent}`);
           }
           break;
@@ -12373,6 +12403,80 @@ Maximum 400 words.`;
     } catch (error: any) {
       console.error(`[STRIPE WEBHOOK] Error processing event:`, error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // INVOICE MANAGEMENT ROUTES
+  
+  // Get current invoice for a company
+  app.get("/api/invoices/current/:companyId?", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      // Get company ID from params or tenant lookup
+      let companyId = req.params.companyId;
+      
+      if (!companyId) {
+        // Look up company ID through tenant
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length > 0 && tenant[0].companyId) {
+          companyId = tenant[0].companyId;
+        }
+      }
+      
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+      
+      // Verify user can access this company (Admin can only access their own company)
+      if (req.user.role !== 'ConsoleManager') {
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length === 0 || tenant[0].companyId !== companyId) {
+          return res.status(403).json({ message: "Access denied to this company" });
+        }
+      }
+      
+      const invoice = await getCurrentInvoice(companyId, req.user.tenantId);
+      
+      console.log(`[INVOICE API] Retrieved current invoice for company ${companyId}: ${invoice.invoiceNumber}`);
+      res.json(invoice);
+    } catch (error: any) {
+      console.error("[INVOICE API] Error getting current invoice:", error);
+      res.status(500).json({ message: error.message || "Failed to get current invoice" });
+    }
+  });
+  
+  // Get invoice history for a company
+  app.get("/api/invoices/history/:companyId?", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
+    try {
+      // Get company ID from params or tenant lookup
+      let companyId = req.params.companyId;
+      
+      if (!companyId) {
+        // Look up company ID through tenant
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length > 0 && tenant[0].companyId) {
+          companyId = tenant[0].companyId;
+        }
+      }
+      
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+      
+      // Verify user can access this company (Admin can only access their own company)
+      if (req.user.role !== 'ConsoleManager') {
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length === 0 || tenant[0].companyId !== companyId) {
+          return res.status(403).json({ message: "Access denied to this company" });
+        }
+      }
+      
+      const invoices = await getInvoiceHistory(companyId);
+      
+      console.log(`[INVOICE API] Retrieved ${invoices.length} invoices for company ${companyId}`);
+      res.json(invoices);
+    } catch (error: any) {
+      console.error("[INVOICE API] Error getting invoice history:", error);
+      res.status(500).json({ message: error.message || "Failed to get invoice history" });
     }
   });
 

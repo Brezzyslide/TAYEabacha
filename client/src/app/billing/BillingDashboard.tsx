@@ -29,6 +29,7 @@ import CreateBillingButton from "@/components/billing/CreateBillingButton";
 import BillingConfigurationDialog from "@/components/billing/BillingConfigurationDialog";
 import TenantStaffOverview from "@/components/billing/TenantStaffOverview";
 import { PaymentManager } from "./components/PaymentManager";
+import InvoiceViewer from "./components/InvoiceViewer";
 import { canViewBilling, hasRole } from "@/lib/role-utils";
 
 interface BillingAnalytics {
@@ -335,10 +336,15 @@ export default function BillingDashboard() {
               Billing Rates
             </TabsTrigger>
             {hasRole(user?.role, 'Admin') && (
-              <TabsTrigger value="payments" className="px-6 py-3 rounded-lg font-medium">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Payments
-              </TabsTrigger>
+              <>
+                <TabsTrigger value="payments" className="px-6 py-3 rounded-lg font-medium">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Payments
+                </TabsTrigger>
+                <TabsTrigger value="invoices" className="px-6 py-3 rounded-lg font-medium">
+                  Invoice
+                </TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -481,9 +487,15 @@ export default function BillingDashboard() {
           </TabsContent>
 
           {hasRole(user?.role, 'Admin') && (
-            <TabsContent value="payments" className="space-y-6">
-              <PaymentManager />
-            </TabsContent>
+            <>
+              <TabsContent value="payments" className="space-y-6">
+                <PaymentManager />
+              </TabsContent>
+              
+              <TabsContent value="invoices" className="space-y-6">
+                <InvoiceViewer />
+              </TabsContent>
+            </>
           )}
         </Tabs>
       </div>
