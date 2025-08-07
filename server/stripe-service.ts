@@ -219,23 +219,33 @@ export async function createSubscription(companyId: string, tenantId: number): P
       },
     });
 
-    // Update payment info
+    // Update payment info with safe date handling
+    const currentPeriodStart = (subscription as any).current_period_start 
+      ? new Date((subscription as any).current_period_start * 1000) 
+      : new Date();
+    const currentPeriodEnd = (subscription as any).current_period_end 
+      ? new Date((subscription as any).current_period_end * 1000) 
+      : new Date(Date.now() + 28 * 24 * 60 * 60 * 1000); // 28 days from now as fallback
+    const nextPaymentDate = (subscription as any).current_period_end 
+      ? new Date((subscription as any).current_period_end * 1000) 
+      : new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
+
     await db.insert(companyPaymentInfo).values({
       companyId: companyId,
       stripeCustomerId: customerId,
       stripeSubscriptionId: subscription.id,
       paymentStatus: subscription.status,
-      currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-      currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-      nextPaymentDate: new Date((subscription as any).current_period_end * 1000),
+      currentPeriodStart: currentPeriodStart,
+      currentPeriodEnd: currentPeriodEnd,
+      nextPaymentDate: nextPaymentDate,
     }).onConflictDoUpdate({
       target: companyPaymentInfo.companyId,
       set: {
         stripeSubscriptionId: subscription.id,
         paymentStatus: subscription.status,
-        currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-        nextPaymentDate: new Date((subscription as any).current_period_end * 1000),
+        currentPeriodStart: currentPeriodStart,
+        currentPeriodEnd: currentPeriodEnd,
+        nextPaymentDate: nextPaymentDate,
         updatedAt: new Date(),
       }
     });
@@ -252,6 +262,13 @@ export async function createSubscription(companyId: string, tenantId: number): P
     };
   } catch (error: any) {
     console.error('[STRIPE] Error creating subscription:', error);
+    console.error('[STRIPE] Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      companyId,
+      tenantId
+    });
     throw new Error(`Failed to create subscription: ${error.message}`);
   }
 }
