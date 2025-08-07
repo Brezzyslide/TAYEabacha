@@ -12225,15 +12225,26 @@ Maximum 400 words.`;
       const { companyId } = req.body;
       
       // Use tenant's company if not provided
-      const targetCompanyId = companyId || req.user.companyId;
+      let targetCompanyId = companyId;
+      
+      if (!targetCompanyId) {
+        // Look up company ID through tenant
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length > 0 && tenant[0].companyId) {
+          targetCompanyId = tenant[0].companyId;
+        }
+      }
       
       if (!targetCompanyId) {
         return res.status(400).json({ message: "Company ID is required" });
       }
       
       // Verify user can access this company (Admin can only access their own company)
-      if (req.user.role !== 'ConsoleManager' && targetCompanyId !== req.user.companyId) {
-        return res.status(403).json({ message: "Access denied to this company" });
+      if (req.user.role !== 'ConsoleManager') {
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length === 0 || tenant[0].companyId !== targetCompanyId) {
+          return res.status(403).json({ message: "Access denied to this company" });
+        }
       }
       
       const result = await createPaymentIntent(targetCompanyId, req.user.tenantId);
@@ -12252,15 +12263,26 @@ Maximum 400 words.`;
       const { companyId } = req.body;
       
       // Use tenant's company if not provided
-      const targetCompanyId = companyId || req.user.companyId;
+      let targetCompanyId = companyId;
+      
+      if (!targetCompanyId) {
+        // Look up company ID through tenant
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length > 0 && tenant[0].companyId) {
+          targetCompanyId = tenant[0].companyId;
+        }
+      }
       
       if (!targetCompanyId) {
         return res.status(400).json({ message: "Company ID is required" });
       }
       
       // Verify user can access this company (Admin can only access their own company)
-      if (req.user.role !== 'ConsoleManager' && targetCompanyId !== req.user.companyId) {
-        return res.status(403).json({ message: "Access denied to this company" });
+      if (req.user.role !== 'ConsoleManager') {
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length === 0 || tenant[0].companyId !== targetCompanyId) {
+          return res.status(403).json({ message: "Access denied to this company" });
+        }
       }
       
       const result = await createSubscription(targetCompanyId, req.user.tenantId);
@@ -12276,15 +12298,27 @@ Maximum 400 words.`;
   // Get company payment information and history
   app.get("/api/payments/company/:companyId?", requireAuth, requireRole(['Admin', 'ConsoleManager']), async (req: any, res) => {
     try {
-      const companyId = req.params.companyId || req.user.companyId;
+      // Get company ID from params or tenant lookup
+      let companyId = req.params.companyId;
+      
+      if (!companyId) {
+        // Look up company ID through tenant
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length > 0 && tenant[0].companyId) {
+          companyId = tenant[0].companyId;
+        }
+      }
       
       if (!companyId) {
         return res.status(400).json({ message: "Company ID is required" });
       }
       
       // Verify user can access this company (Admin can only access their own company)
-      if (req.user.role !== 'ConsoleManager' && companyId !== req.user.companyId) {
-        return res.status(403).json({ message: "Access denied to this company" });
+      if (req.user.role !== 'ConsoleManager') {
+        const tenant = await db.select().from(tenants).where(eq(tenants.id, req.user.tenantId)).limit(1);
+        if (tenant.length === 0 || tenant[0].companyId !== companyId) {
+          return res.status(403).json({ message: "Access denied to this company" });
+        }
       }
       
       const result = await getCompanyPaymentInfo(companyId);

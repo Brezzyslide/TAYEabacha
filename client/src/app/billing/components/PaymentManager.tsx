@@ -224,7 +224,7 @@ export const PaymentManager: React.FC = () => {
   // Fetch payment information
   const { data: paymentInfo, isLoading: paymentInfoLoading } = useQuery<PaymentInfo>({
     queryKey: ['/api/payments/company', company?.id],
-    queryFn: () => apiRequest('GET', `/api/payments/company?companyId=${company?.id}`).then(res => res.json()),
+    queryFn: () => apiRequest('GET', `/api/payments/company/${company?.id}`).then(res => res.json()),
     enabled: !!company?.id
   });
 
