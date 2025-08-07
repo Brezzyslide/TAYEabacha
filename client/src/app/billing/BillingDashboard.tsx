@@ -19,7 +19,10 @@ import {
   PauseCircle,
   PlayCircle,
   Calendar,
-  CreditCard
+  CreditCard,
+  AlertTriangle,
+  Clock,
+  RefreshCw
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +60,23 @@ interface CompanyBilling {
   status: 'active' | 'suspended' | 'cancelled';
 }
 
+interface OverdueCompany {
+  companyId: string;
+  companyName: string;
+  daysOverdue: number;
+  overdueAmount: number;
+  invoiceCount: number;
+}
+
+interface OverdueCompaniesResponse {
+  totalOverdue: number;
+  companies: OverdueCompany[];
+  gracePeriodDays: number;
+  maxOverdueDays: number;
+  autoSuspendEnabled: boolean;
+  timestamp: string;
+}
+
 interface BillingRates {
   [key: string]: number;
 }
@@ -71,6 +91,13 @@ export default function BillingDashboard() {
   const { data: analytics, isLoading } = useQuery<BillingAnalytics>({
     queryKey: ['/api/billing/analytics'],
     enabled: !!user && canViewBilling(user)
+  });
+
+  // Get overdue companies for Console Managers
+  const { data: overdueData, isLoading: overdueLoading, refetch: refetchOverdue } = useQuery<OverdueCompaniesResponse>({
+    queryKey: ['/api/billing/overdue-companies'],
+    enabled: !!user && hasRole(user?.role, 'ConsoleManager'),
+    refetchInterval: 60000 // Refresh every minute
   });
 
   // Get billing rates
@@ -90,6 +117,7 @@ export default function BillingDashboard() {
         description: `Company access has been suspended for non-payment.`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/billing/analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/overdue-companies'] });
     },
     onError: (error) => {
       toast({
@@ -111,11 +139,34 @@ export default function BillingDashboard() {
         description: `Company access has been restored after payment.`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/billing/analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/overdue-companies'] });
     },
     onError: (error) => {
       toast({
         title: "Restoration Failed",
         description: "Failed to restore company access. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Process auto-suspensions mutation
+  const processAutoSuspensionsMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/billing/process-auto-suspensions');
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Auto-Suspension Complete",
+        description: `${data.suspended} companies suspended. ${data.errors?.length || 0} errors.`
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/overdue-companies'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Auto-Suspension Failed",
+        description: "Failed to process auto-suspensions. Please try again.",
         variant: "destructive"
       });
     }
@@ -330,6 +381,17 @@ export default function BillingDashboard() {
                 Company Management
               </TabsTrigger>
             )}
+            {hasRole(user?.role, 'ConsoleManager') && (
+              <TabsTrigger value="overdue" className="px-6 py-3 rounded-lg font-medium">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Overdue Companies
+                {overdueData && overdueData.totalOverdue > 0 && (
+                  <Badge variant="destructive" className="ml-2 text-xs">
+                    {overdueData.totalOverdue}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
             <TabsTrigger value="analytics" className="px-6 py-3 rounded-lg font-medium">
               Role Analytics
             </TabsTrigger>
@@ -486,6 +548,212 @@ export default function BillingDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {hasRole(user?.role, 'ConsoleManager') && (
+            <TabsContent value="overdue" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800">Overdue Companies Management</h2>
+                  <p className="text-slate-600 mt-1">
+                    Companies with invoices overdue beyond {overdueData?.gracePeriodDays || 60} days grace period
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={() => refetchOverdue()}
+                    variant="outline"
+                    disabled={overdueLoading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${overdueLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive"
+                        disabled={!overdueData || overdueData.totalOverdue === 0 || processAutoSuspensionsMutation.isPending}
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Suspend All Overdue
+                        {overdueData && overdueData.totalOverdue > 0 && (
+                          <Badge variant="secondary" className="ml-2">
+                            {overdueData.totalOverdue}
+                          </Badge>
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Bulk Auto-Suspension</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will suspend access for all {overdueData?.totalOverdue || 0} companies with invoices overdue beyond {overdueData?.gracePeriodDays || 60} days.
+                          
+                          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                            <div className="flex">
+                              <AlertTriangle className="h-5 w-5 text-red-400 mr-3 mt-0.5" />
+                              <div>
+                                <h4 className="text-sm font-medium text-red-800">Warning: This action will:</h4>
+                                <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+                                  <li>Deactivate all staff members in these companies</li>
+                                  <li>Prevent login access until payment is received</li>
+                                  <li>Generate suspension audit logs</li>
+                                  <li>Cannot be undone except by manual restoration</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => processAutoSuspensionsMutation.mutate()}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Suspend All Companies
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+
+              <Card className="border-2 border-red-100 bg-gradient-to-br from-red-50 to-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-red-500" />
+                    Overdue Payment Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {overdueLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin w-8 h-8 border-4 border-red-200 border-t-red-500 rounded-full mx-auto mb-4"></div>
+                      <p>Loading overdue companies...</p>
+                    </div>
+                  ) : overdueData && overdueData.totalOverdue > 0 ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="bg-white p-4 rounded-lg border border-red-200">
+                          <p className="text-sm font-medium text-red-600">Companies Overdue</p>
+                          <p className="text-2xl font-bold text-red-700">{overdueData.totalOverdue}</p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-red-200">
+                          <p className="text-sm font-medium text-red-600">Total Outstanding</p>
+                          <p className="text-2xl font-bold text-red-700">
+                            {formatCurrency(overdueData.companies.reduce((sum, c) => sum + c.overdueAmount, 0))}
+                          </p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-red-200">
+                          <p className="text-sm font-medium text-red-600">Grace Period</p>
+                          <p className="text-2xl font-bold text-red-700">{overdueData.gracePeriodDays} days</p>
+                        </div>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Company Name</TableHead>
+                              <TableHead>Days Overdue</TableHead>
+                              <TableHead>Outstanding Amount</TableHead>
+                              <TableHead>Invoice Count</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {overdueData.companies.map((company) => (
+                              <TableRow key={company.companyId}>
+                                <TableCell className="font-medium">{company.companyName}</TableCell>
+                                <TableCell>
+                                  <Badge variant={company.daysOverdue > 90 ? "destructive" : "secondary"}>
+                                    {company.daysOverdue} days
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="font-semibold text-red-600">
+                                  {formatCurrency(company.overdueAmount)}
+                                </TableCell>
+                                <TableCell>{company.invoiceCount}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="sm" variant="destructive">
+                                          <PauseCircle className="h-4 w-4 mr-1" />
+                                          Suspend
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Suspend {company.companyName}?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will suspend access for {company.companyName} due to {company.daysOverdue} days overdue payment of {formatCurrency(company.overdueAmount)}.
+                                            
+                                            All staff members will be deactivated until payment is received.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction 
+                                            onClick={() => suspendCompanyMutation.mutate(company.companyId)}
+                                            className="bg-red-600 hover:bg-red-700"
+                                          >
+                                            Suspend Company
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <UserCheck className="h-8 w-8 text-green-600" />
+                      </div>
+                      <h3 className="text-lg font-medium text-slate-800 mb-2">All Companies Current</h3>
+                      <p className="text-slate-600">
+                        No companies have invoices overdue beyond {overdueData?.gracePeriodDays || 60} days grace period.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {overdueData && (
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-slate-600">System Configuration</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium">Grace Period:</span>
+                        <span className="ml-2 text-slate-600">{overdueData.gracePeriodDays} days</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Max Overdue:</span>
+                        <span className="ml-2 text-slate-600">{overdueData.maxOverdueDays} days</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Auto-Suspend:</span>
+                        <span className="ml-2 text-slate-600">{overdueData.autoSuspendEnabled ? 'Enabled' : 'Disabled'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Last Updated:</span>
+                        <span className="ml-2 text-slate-600">{format(new Date(overdueData.timestamp), 'dd/MM/yyyy HH:mm')}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
           {(hasRole(user?.role, 'Admin') || hasRole(user?.role, 'ConsoleManager')) && (
             <>
