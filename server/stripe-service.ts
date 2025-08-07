@@ -204,7 +204,7 @@ export async function createSubscription(companyId: string, tenantId: number): P
       },
     });
 
-    // Create subscription with proper expansion
+    // Create subscription - this will create an incomplete subscription and invoice
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: price.id }],
@@ -219,12 +219,7 @@ export async function createSubscription(companyId: string, tenantId: number): P
       },
     });
 
-    console.log(`[STRIPE DEBUG] Raw subscription response:`, {
-      id: subscription.id,
-      status: subscription.status,
-      latest_invoice: subscription.latest_invoice ? 'exists' : 'missing',
-      pending_setup_intent: (subscription as any).pending_setup_intent ? 'exists' : 'missing'
-    });
+    console.log(`[STRIPE DEBUG] Created subscription ${subscription.id} with status: ${subscription.status}`);
 
     // Update payment info with safe date handling
     const currentPeriodStart = (subscription as any).current_period_start 
@@ -259,53 +254,60 @@ export async function createSubscription(companyId: string, tenantId: number): P
 
     console.log(`[STRIPE] Created subscription ${subscription.id} for company ${companyId}`);
 
-    // Handle client secret extraction
+    // For incomplete subscriptions, we need to manually get the latest invoice and its payment intent
     let clientSecret = '';
     
-    if (subscription.latest_invoice) {
-      const invoice = subscription.latest_invoice as Stripe.Invoice;
-      if (invoice.payment_intent) {
-        const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
-        clientSecret = paymentIntent.client_secret || '';
-        console.log(`[STRIPE DEBUG] Found PaymentIntent: ${paymentIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
-      }
-    }
-    
-    // If no payment intent, try to get the setup intent
-    if (!clientSecret && (subscription as any).pending_setup_intent) {
-      const setupIntent = (subscription as any).pending_setup_intent as Stripe.SetupIntent;
-      clientSecret = setupIntent.client_secret || '';
-      console.log(`[STRIPE DEBUG] Found SetupIntent: ${setupIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
-    }
-    
-    // If still no client secret, manually retrieve the subscription with proper expansion
-    if (!clientSecret) {
-      console.log(`[STRIPE DEBUG] No client secret found, retrieving subscription ${subscription.id} manually`);
+    if (subscription.status === 'incomplete' && subscription.latest_invoice) {
       try {
-        const retrievedSubscription = await stripe.subscriptions.retrieve(subscription.id, {
-          expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+        const invoiceId = typeof subscription.latest_invoice === 'string' 
+          ? subscription.latest_invoice 
+          : subscription.latest_invoice.id;
+          
+        console.log(`[STRIPE DEBUG] Retrieving invoice ${invoiceId} for subscription ${subscription.id}`);
+        
+        const invoice = await stripe.invoices.retrieve(invoiceId, {
+          expand: ['payment_intent'],
         });
         
-        if (retrievedSubscription.latest_invoice) {
-          const invoice = retrievedSubscription.latest_invoice as Stripe.Invoice;
-          if (invoice.payment_intent) {
-            const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
-            clientSecret = paymentIntent.client_secret || '';
-            console.log(`[STRIPE DEBUG] Retrieved PaymentIntent: ${paymentIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
-          }
-        }
-        
-        if (!clientSecret && (retrievedSubscription as any).pending_setup_intent) {
-          const setupIntent = (retrievedSubscription as any).pending_setup_intent as Stripe.SetupIntent;
-          clientSecret = setupIntent.client_secret || '';
-          console.log(`[STRIPE DEBUG] Retrieved SetupIntent: ${setupIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+        if (invoice.payment_intent) {
+          const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+          clientSecret = paymentIntent.client_secret || '';
+          console.log(`[STRIPE DEBUG] Retrieved PaymentIntent ${paymentIntent.id} with status ${paymentIntent.status}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+        } else {
+          console.log(`[STRIPE DEBUG] Invoice ${invoiceId} has no payment_intent`);
         }
       } catch (error) {
-        console.error(`[STRIPE DEBUG] Error retrieving subscription:`, error);
+        console.error(`[STRIPE DEBUG] Error retrieving invoice:`, error);
       }
     }
     
-    console.log(`[STRIPE DEBUG] Final subscription ${subscription.id} - ClientSecret: ${clientSecret ? 'exists' : 'MISSING'}`);
+    // If still no client secret, create a new setup intent for future payments
+    if (!clientSecret) {
+      try {
+        console.log(`[STRIPE DEBUG] Creating SetupIntent for subscription ${subscription.id}`);
+        const setupIntent = await stripe.setupIntents.create({
+          customer: customerId,
+          usage: 'off_session',
+          metadata: {
+            subscriptionId: subscription.id,
+            companyId: companyId,
+            tenantId: tenantId.toString(),
+          },
+        });
+        
+        clientSecret = setupIntent.client_secret || '';
+        console.log(`[STRIPE DEBUG] Created SetupIntent ${setupIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+      } catch (error) {
+        console.error(`[STRIPE DEBUG] Error creating setup intent:`, error);
+      }
+    }
+    
+    if (!clientSecret) {
+      console.error(`[STRIPE DEBUG] CRITICAL: No client secret available for subscription ${subscription.id}`);
+      throw new Error('Unable to create payment setup - no client secret available');
+    }
+    
+    console.log(`[STRIPE DEBUG] Final subscription ${subscription.id} - ClientSecret: EXISTS`);
     
     return {
       subscriptionId: subscription.id,
