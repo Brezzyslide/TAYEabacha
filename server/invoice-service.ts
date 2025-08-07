@@ -110,14 +110,20 @@ export async function generateInvoice(
     const billingData = await calculateTenantBilling(tenantId);
     const rolePricing = await getRolePricing();
 
+    console.log(`[INVOICE DEBUG] Billing data:`, JSON.stringify(billingData, null, 2));
+    console.log(`[INVOICE DEBUG] Role pricing:`, JSON.stringify(rolePricing, null, 2));
+
     // Create line items for each role
     const lineItems: InvoiceLineItem[] = [];
     let subtotal = 0;
 
     for (const [roleName, count] of Object.entries(billingData.roleDistribution)) {
+      console.log(`[INVOICE DEBUG] Processing role ${roleName}: ${count} staff`);
       if (count > 0 && roleName !== 'ConsoleManager') { // Exclude free roles
         const unitPrice = rolePricing[roleName] || 0;
         const total = count * unitPrice;
+        
+        console.log(`[INVOICE DEBUG] Adding line item: ${roleName} × ${count} @ $${unitPrice} = $${total}`);
         
         lineItems.push({
           description: `${roleName} Staff Subscription (28-day cycle)`,
@@ -130,6 +136,8 @@ export async function generateInvoice(
         subtotal += total;
       }
     }
+
+    console.log(`[INVOICE DEBUG] Total line items: ${lineItems.length}, Subtotal: $${subtotal}`)
 
     // Calculate GST (10% in Australia)
     const gstAmount = subtotal * 0.10;
