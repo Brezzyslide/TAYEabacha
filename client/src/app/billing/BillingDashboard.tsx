@@ -65,7 +65,7 @@ export default function BillingDashboard() {
   // Get billing analytics - ConsoleManager sees global, others see tenant-specific
   const { data: analytics, isLoading } = useQuery<BillingAnalytics>({
     queryKey: ['/api/billing/analytics'],
-    enabled: !!user && ['ConsoleManager', 'Admin', 'Coordinator', 'TeamLeader'].includes(user.role)
+    enabled: !!user && ['ConsoleManager', 'Admin', 'admin', 'Coordinator', 'coordinator', 'TeamLeader', 'teamleader'].includes(user.role)
   });
 
   // Get billing rates
@@ -172,7 +172,7 @@ export default function BillingDashboard() {
     );
   };
 
-  if (!user || !['ConsoleManager', 'Admin', 'Coordinator', 'TeamLeader'].includes(user.role)) {
+  if (!user || !['ConsoleManager', 'Admin', 'admin', 'Coordinator', 'coordinator', 'TeamLeader', 'teamleader'].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
         <div className="max-w-7xl mx-auto">

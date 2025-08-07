@@ -12084,7 +12084,7 @@ Maximum 400 words.`;
       } else {
         // Other roles see only their tenant's analytics
         analytics = await calculateTenantBilling(req.user.tenantId);
-        console.log(`[BILLING API] Returning tenant-specific analytics for tenant ${req.user.tenantId}`);
+        console.log(`[BILLING API] Returning tenant-specific analytics for tenant ${req.user.tenantId} (role: ${req.user.role})`);
       }
       
       res.json(analytics);
