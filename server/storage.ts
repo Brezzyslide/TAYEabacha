@@ -2787,6 +2787,11 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date()
     };
     
+    // Convert nextBillingDate string to Date object if it exists
+    if (updateData.nextBillingDate && typeof updateData.nextBillingDate === 'string') {
+      updateData.nextBillingDate = new Date(updateData.nextBillingDate);
+    }
+    
     const [updated] = await db
       .update(billingConfiguration)
       .set(updateData)
