@@ -204,7 +204,7 @@ export async function createSubscription(companyId: string, tenantId: number): P
       },
     });
 
-    // Create subscription
+    // Create subscription with proper expansion
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: price.id }],
@@ -217,6 +217,13 @@ export async function createSubscription(companyId: string, tenantId: number): P
         companyId: companyId,
         tenantId: tenantId.toString(),
       },
+    });
+
+    console.log(`[STRIPE DEBUG] Raw subscription response:`, {
+      id: subscription.id,
+      status: subscription.status,
+      latest_invoice: subscription.latest_invoice ? 'exists' : 'missing',
+      pending_setup_intent: (subscription as any).pending_setup_intent ? 'exists' : 'missing'
     });
 
     // Update payment info with safe date handling
@@ -252,14 +259,53 @@ export async function createSubscription(companyId: string, tenantId: number): P
 
     console.log(`[STRIPE] Created subscription ${subscription.id} for company ${companyId}`);
 
-    const invoice = subscription.latest_invoice as Stripe.Invoice;
-    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent;
-    const setupIntent = (subscription as any).pending_setup_intent as Stripe.SetupIntent;
+    // Handle client secret extraction
+    let clientSecret = '';
     
-    // For subscriptions with incomplete payment, we get either a payment intent or setup intent
-    const clientSecret = paymentIntent?.client_secret || setupIntent?.client_secret || '';
+    if (subscription.latest_invoice) {
+      const invoice = subscription.latest_invoice as Stripe.Invoice;
+      if (invoice.payment_intent) {
+        const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+        clientSecret = paymentIntent.client_secret || '';
+        console.log(`[STRIPE DEBUG] Found PaymentIntent: ${paymentIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+      }
+    }
     
-    console.log(`[STRIPE DEBUG] Subscription ${subscription.id} - PaymentIntent: ${paymentIntent?.id}, SetupIntent: ${setupIntent?.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+    // If no payment intent, try to get the setup intent
+    if (!clientSecret && (subscription as any).pending_setup_intent) {
+      const setupIntent = (subscription as any).pending_setup_intent as Stripe.SetupIntent;
+      clientSecret = setupIntent.client_secret || '';
+      console.log(`[STRIPE DEBUG] Found SetupIntent: ${setupIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+    }
+    
+    // If still no client secret, manually retrieve the subscription with proper expansion
+    if (!clientSecret) {
+      console.log(`[STRIPE DEBUG] No client secret found, retrieving subscription ${subscription.id} manually`);
+      try {
+        const retrievedSubscription = await stripe.subscriptions.retrieve(subscription.id, {
+          expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+        });
+        
+        if (retrievedSubscription.latest_invoice) {
+          const invoice = retrievedSubscription.latest_invoice as Stripe.Invoice;
+          if (invoice.payment_intent) {
+            const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+            clientSecret = paymentIntent.client_secret || '';
+            console.log(`[STRIPE DEBUG] Retrieved PaymentIntent: ${paymentIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+          }
+        }
+        
+        if (!clientSecret && (retrievedSubscription as any).pending_setup_intent) {
+          const setupIntent = (retrievedSubscription as any).pending_setup_intent as Stripe.SetupIntent;
+          clientSecret = setupIntent.client_secret || '';
+          console.log(`[STRIPE DEBUG] Retrieved SetupIntent: ${setupIntent.id}, ClientSecret: ${clientSecret ? 'exists' : 'missing'}`);
+        }
+      } catch (error) {
+        console.error(`[STRIPE DEBUG] Error retrieving subscription:`, error);
+      }
+    }
+    
+    console.log(`[STRIPE DEBUG] Final subscription ${subscription.id} - ClientSecret: ${clientSecret ? 'exists' : 'MISSING'}`);
     
     return {
       subscriptionId: subscription.id,
