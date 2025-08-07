@@ -131,8 +131,9 @@ export async function calculateTenantBilling(tenantId: number): Promise<UsageAna
     
     const now = new Date();
     const currentCycleStart = getCurrentCycleStart(now);
+    // Due date should be billing period start + 14 days (payment terms), not next cycle start
     const nextBillingDate = new Date(currentCycleStart);
-    nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
+    nextBillingDate.setDate(nextBillingDate.getDate() + 14); // Payment due 14 days after cycle start
 
     const company: CompanyBilling = {
       companyId,
@@ -251,8 +252,9 @@ export async function calculateAllCompanyBilling(): Promise<UsageAnalytics> {
     
     const now = new Date();
     const currentCycleStart = getCurrentCycleStart(now);
+    // Due date should be billing period start + 14 days (payment terms), not next cycle start
     const nextBillingDate = new Date(currentCycleStart);
-    nextBillingDate.setDate(nextBillingDate.getDate() + billingConfig.cycleDays);
+    nextBillingDate.setDate(nextBillingDate.getDate() + 14); // Payment due 14 days after cycle start
 
     const company: CompanyBilling = {
       companyId,

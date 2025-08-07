@@ -7,6 +7,13 @@ CareConnect is a comprehensive, multi-tenant healthcare facility management plat
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-08-07**: ✅ **CONSOLE MANAGER UNIVERSAL INVOICE ACCESS & DUE DATE CONSISTENCY IMPLEMENTED** - Complete billing system fixes:
+- **UNIVERSAL ACCESS**: Console managers can now access "Universal Invoices" tab showing all tenant invoices (27 invoices across 25 companies)
+- **DUE DATE CONSISTENCY**: Fixed "Next Billing" dates in Company Billing Overview to show correct due dates (billing period start + 14 days) instead of next cycle start + 28 days
+- **AUTHENTICATION FIXES**: Resolved 401 authentication issues with universal invoice endpoint for console managers
+- **TAB VISIBILITY**: Updated billing dashboard to show invoices and payments tabs for both Admin and ConsoleManager roles
+- **DATA ACCURACY**: All invoice views now consistently show due dates as billing period start + 14 days across tenant-specific and universal views
+
 **2025-08-07**: ✅ **ROLE STANDARDIZATION SYSTEM FULLY IMPLEMENTED** - Eliminated mixed-case role confusion:
 - Created unified role-utils.ts for both client and server with case-insensitive checking
 - Updated BillingDashboard to use standardized role functions (hasRole, canViewBilling)
