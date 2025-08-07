@@ -69,6 +69,7 @@ export default function BillingConfigurationDialog() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/billing/configuration"] });
       queryClient.invalidateQueries({ queryKey: ["/api/billing/analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/rates"] });
       queryClient.invalidateQueries({ queryKey: ["/api/staff/billing-overview"] });
       toast({
         title: "Success",
