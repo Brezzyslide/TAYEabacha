@@ -17,7 +17,17 @@ echo "   REPL_ID: '$REPL_ID'"
 
 # Step 1: Build the client with production environment
 echo "Step 1: Building client with production optimizations..."
-NODE_ENV=production REPL_ID="" npm run build
+echo "  - Disabling Replit runtime error plugin"
+echo "  - Setting REPL_ID to empty string"
+echo "  - Using production NODE_ENV"
+
+# Explicitly set all environment variables to disable Replit plugins
+export NODE_ENV=production
+export VITE_NODE_ENV=production
+export REPL_ID=""
+export VITE_REPL_ID=""
+
+NODE_ENV=production VITE_NODE_ENV=production REPL_ID="" VITE_REPL_ID="" npm run build
 
 # Step 2: Copy SQL files to dist directory
 echo "Step 2: Copying SQL files..."

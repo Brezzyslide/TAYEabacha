@@ -1,29 +1,36 @@
 # URGENT: AWS Vite Runtime Error Plugin Fix
 
 ## Error Description
-You're seeing this error on AWS deployment:
+You're seeing this exact error on AWS deployment:
 ```
 [plugin:runtime-error-plugin] Cannot read properties of undefined (reading 'match')
+Click outside, press Esc key, or fix the code to dismiss.
+You can also disable this overlay by setting server.hmr.overlay to false in vite.config.js.
 ```
 
 ## Root Cause
-The `@replit/vite-plugin-runtime-error-modal` plugin is only designed for Replit development environment and fails in AWS production because it expects Replit-specific environment variables.
+The `@replit/vite-plugin-runtime-error-modal` plugin is designed only for Replit development and fails in AWS production because:
+1. It tries to read properties that don't exist in production environments
+2. The plugin expects Replit-specific variables and context
+3. It attempts to access the `match` property on an undefined object
 
 ## IMMEDIATE FIX
 
 ### Solution 1: Environment Variables (Quickest Fix)
-Add these environment variables to your AWS deployment:
+Add these environment variables to your AWS deployment to disable the Replit plugins:
 ```bash
 NODE_ENV=production
 VITE_NODE_ENV=production
 REPL_ID=""
+VITE_REPL_ID=""
 ```
+**This tells the Vite config to exclude the runtime error plugin entirely.**
 
 ### Solution 2: Updated Build Process
-Use the updated build script:
+Use the enhanced build script that explicitly disables all Replit plugins:
 ```bash
-# Build with Replit plugins disabled
-NODE_ENV=production REPL_ID="" npm run build
+# Build with all Replit plugins disabled
+NODE_ENV=production VITE_NODE_ENV=production REPL_ID="" VITE_REPL_ID="" npm run build
 
 # Start server with production environment
 NODE_ENV=production REPL_ID="" node dist/index.js
