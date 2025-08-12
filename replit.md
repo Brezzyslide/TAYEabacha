@@ -27,7 +27,7 @@ CareConnect is built with a modern web stack:
 -   **Automated Timesheet System:** Australian payroll-compliant auto-timesheet system with ScHADS pay scales, employment type separation, and leave accrual tracking.
 -   **GPS Location Tracking:** For shift check-in/check-out with human-readable address display.
 -   **AI Integration:** Used for generating care plan content, with comprehensive client data integration and pronoun consistency.
--   **Development Focus:** Optimized for development workflow with simplified configuration, basic CORS setup, and streamlined server startup without production-ready deployment infrastructure.
+-   **Development Focus:** Fully reverted to pure development-only configuration. All production-ready hardening from Phases 1-7 has been completely removed including: secure cookies (now development-only), /healthz endpoints (simplified to basic /health), production CORS configuration (basic dev setup), production build scripts (simplified), static serving logic (removed), and all Docker/CI/deployment infrastructure. System now operates exclusively in development mode.
 
 ## External Dependencies
 -   **Database:** PostgreSQL (`@neondatabase/serverless` for serverless connections, `connect-pg-simple` for session store).

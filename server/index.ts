@@ -10,20 +10,9 @@ import path from 'path';
 import fs from 'fs';
 
 // Production Environment Configuration
-const isProduction = process.env.NODE_ENV === 'production';
-const isDevelopment = !isProduction;
+const isDevelopment = true; // Always development mode
 
-// Disable Replit plugins in production
-if (isProduction && !process.env.REPL_ID) {
-  process.env.REPL_ID = '';
-}
-
-// Add import.meta.dirname polyfill for production environments
-if (isProduction && typeof import.meta !== 'undefined' && !import.meta.dirname) {
-  import.meta.dirname = path.dirname(new URL(import.meta.url).pathname);
-}
-
-console.log(`[ENV] Starting CareConnect in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
+console.log('[ENV] Starting CareConnect in DEVELOPMENT mode');
 console.log(`[ENV] Node environment: ${process.env.NODE_ENV}`);
 console.log(`[ENV] Replit ID: ${process.env.REPL_ID || 'undefined'}`);
 
@@ -34,21 +23,8 @@ const cfg = {
   NODE_ENV: process.env.NODE_ENV || 'development'
 };
 
-// Production safety checks (existing)
-if (isProduction) {
-  const requiredEnvVars = ['DATABASE_URL'];
-  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  
-  if (missingVars.length > 0) {
-    console.error('[PRODUCTION ERROR] Missing required environment variables:', missingVars);
-    console.error('[PRODUCTION ERROR] Please set these variables before starting the server.');
-    if (isDevelopment) {
-      console.warn('[DEV] Continuing anyway for development...');
-    } else {
-      process.exit(1);
-    }
-  }
-}
+// Basic development checks
+console.log('[DEV] Continuing in development mode...');
 
 // Load local environment variables for development FIRST
 const localEnvPath = path.join(process.cwd(), '.env.local');
@@ -95,23 +71,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Health check endpoint (including /healthz alias for Kubernetes)
+// Basic health check for development
 app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    ok: true,
-    uptime: process.uptime(),
-    version: '1.0.0',
-    environment: isProduction ? 'production' : 'development',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.get('/healthz', (req: Request, res: Response) => {
-  res.json({
-    ok: true,
-    uptime: process.uptime(), 
-    version: '1.0.0'
-  });
+  res.json({ status: 'ok' });
 });
 
 app.use((req, res, next) => {
@@ -178,45 +140,20 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     
-    if (isProduction) {
-      // Production: Log detailed error but send generic response
-      console.error('[PRODUCTION ERROR]:', {
-        error: err.message,
-        stack: err.stack,
-        url: req.url,
-        method: req.method,
-        timestamp: new Date().toISOString(),
-        userAgent: req.get('User-Agent')
-      });
-      
-      // Generic error response in production
-      res.status(status).json({ 
-        message: status >= 500 ? "Internal Server Error" : err.message,
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      // Development: Show detailed errors
-      const message = err.message || "Internal Server Error";
-      console.error('[DEV ERROR]:', err);
-      res.status(status).json({ 
-        message,
-        stack: err.stack,
-        url: req.url,
-        method: req.method
-      });
-      throw err;
-    }
+    // Development: Show detailed errors
+    const message = err.message || "Internal Server Error";
+    console.error('[DEV ERROR]:', err);
+    res.status(status).json({ 
+      message,
+      stack: err.stack,
+      url: req.url,
+      method: req.method
+    });
   });
 
-  // Environment-aware frontend setup
-  // Only setup Vite in development, serve static files in production
-  if (isDevelopment || app.get("env") === "development") {
-    console.log("[FRONTEND] Setting up Vite development server");
-    await setupVite(app, server);
-  } else {
-    console.log("[FRONTEND] Serving static production files");
-    serveStatic(app);
-  }
+  // Development frontend setup
+  console.log("[FRONTEND] Setting up Vite development server");
+  await setupVite(app, server);
 
   // Health endpoint already registered above
 
@@ -231,21 +168,13 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     host,
     reusePort: true,
   }, () => {
-    console.log(`[SERVER] CareConnect ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} server started`);
+    console.log(`[SERVER] CareConnect DEVELOPMENT server started`);
     console.log(`[SERVER] Listening on http://${host}:${port}`);
-    console.log(`[SERVER] Environment: ${process.env.NODE_ENV}`);
+    console.log(`[SERVER] Environment: development`);
     console.log(`[SERVER] Health check: http://${host}:${port}/health`);
-    
-    if (isProduction) {
-      console.log(`[PRODUCTION] Security headers enabled`);
-      console.log(`[PRODUCTION] Error handling optimized`);
-      console.log(`[PRODUCTION] CORS restrictions active`);
-      console.log(`[PRODUCTION] Replit plugins disabled`);
-    } else {
-      console.log(`[DEVELOPMENT] Full debugging enabled`);
-      console.log(`[DEVELOPMENT] Permissive CORS for development`);
-      console.log(`[DEVELOPMENT] Vite development server active`);
-    }
+    console.log(`[DEVELOPMENT] Full debugging enabled`);
+    console.log(`[DEVELOPMENT] Permissive CORS for development`);
+    console.log(`[DEVELOPMENT] Vite development server active`);
     
     log(`serving on port ${port}`);
   });

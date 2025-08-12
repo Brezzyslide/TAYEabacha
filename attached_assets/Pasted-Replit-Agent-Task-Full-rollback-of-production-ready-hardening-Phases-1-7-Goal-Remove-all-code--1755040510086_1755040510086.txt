@@ -1,0 +1,96 @@
+Replit Agent Task – Full rollback of production-ready hardening (Phases 1–7)
+
+Goal: Remove all code, config, and scripts added for production-ready deployment on Linux, returning the repository to a pre-hardening development-only state.
+
+Steps (edit, delete, revert):
+
+Delete files entirely if they exist:
+
+.nvmrc
+
+.gitattributes
+
+backend/src/config.ts (typed zod config)
+
+backend/src/bootstrap.ts (timezone setting)
+
+Dockerfile at project root
+
+.dockerignore
+
+.github/workflows/ci.yml (Linux CI pipeline)
+
+Any utils/calc.ts file that was created purely for production decimal safety in exports
+
+Remove production-specific dependency changes in package.json:
+
+If bcryptjs was installed in place of bcrypt, restore bcrypt and remove bcryptjs (update imports accordingly).
+
+Remove "postinstall" scripts for puppeteer or playwright.
+
+Remove any dependencies solely added for Linux fonts or headless browsers:
+
+"fonts-liberation", "fonts-dejavu-core", "libx11-6", etc. from Docker instructions or docs.
+
+Simplify CORS back to dev defaults
+
+Remove any usage of cfg.CORS_ORIGINS or cfg.APP_BASE_URL in CORS setup.
+
+Change to:
+
+ts
+Copy
+Edit
+app.use(cors({ origin: true, credentials: true }));
+Relax cookie/session settings
+
+Change secure: isProduction to secure: false.
+
+Change sameSite: isProduction ? 'none' : 'lax' to sameSite: 'lax'.
+
+Apply the same changes to any logout cookie-clearing logic.
+
+Remove /healthz endpoint(s)
+
+Delete the entire route definition and any associated imports from server/index.ts, backend/src/server.ts, or similar.
+
+Revert build scripts in package.json to dev-only
+
+Remove "build:frontend", "build:backend", "build" scripts that combine FE/BE.
+
+Remove "start:prod" script.
+
+Restore original "start" script for development only.
+
+If static serving code for frontend was added to backend, remove it.
+
+Remove production-only database migration scripts
+
+Delete or comment out "db:migrate" and "db:generate" scripts if they were only for prod CI pipelines.
+
+Delete any CI/CD configs for Linux build
+
+Remove .github/workflows/ci.yml.
+
+Remove references to docker build/test jobs from any other workflow files.
+
+Final cleanup
+
+Search the codebase for process.env.TZ — remove any line setting it.
+
+Search for cfg. imports — remove if only used for prod config.
+
+Search for "secure:" in cookies — ensure no prod conditionals remain.
+
+Search for "sameSite:" — ensure only 'lax' appears.
+
+Acceptance Criteria:
+
+None of the production-ready files, scripts, or Docker configs exist.
+
+Code compiles and runs in dev environment without production flags or build steps.
+
+No advanced CORS, secure cookies, /healthz, Docker, CI, or typed config code remains.
+
+Commit message:
+chore: rollback all production-ready hardening to pre-update state

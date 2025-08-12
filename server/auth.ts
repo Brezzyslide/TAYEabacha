@@ -29,12 +29,7 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // AWS Production Session Configuration
-  const isProduction = process.env.NODE_ENV === 'production';
-  
-  console.log(`[AUTH CONFIG] Environment: ${process.env.NODE_ENV}`);
-  console.log(`[AUTH CONFIG] Session store type: ${storage.sessionStore.constructor.name}`);
-  console.log(`[AUTH CONFIG] Production mode: ${isProduction}`);
+  // Development session configuration
   
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'fallback-session-secret-for-dev',
@@ -42,25 +37,19 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore, // Using PostgreSQL session store
     cookie: {
-      secure: isProduction, // HTTPS only in production
+      secure: false, // Development only
       httpOnly: true, // Prevent XSS attacks
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin in production
+      sameSite: 'lax', // Development setting
       domain: undefined // Let browser determine domain
     },
     rolling: true, // Extends session on activity
-    name: 'needscareai.sid', // Custom session name
-    proxy: isProduction // Trust proxy headers in production (AWS ALB)
+    name: 'needscareai.sid' // Custom session name
   };
   
-  console.log(`[AUTH CONFIG] Cookie settings:`, {
-    secure: sessionSettings.cookie?.secure,
-    sameSite: sessionSettings.cookie?.sameSite,
-    httpOnly: sessionSettings.cookie?.httpOnly,
-    maxAge: sessionSettings.cookie?.maxAge
-  });
 
-  app.set("trust proxy", 1);
+
+
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
@@ -214,8 +203,8 @@ export function setupAuth(app: Express) {
         res.clearCookie('needscareai.sid', {
           path: '/',
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+          secure: false,
+          sameSite: 'lax'
         });
         
         res.sendStatus(200);

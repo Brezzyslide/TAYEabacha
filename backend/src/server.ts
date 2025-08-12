@@ -7,16 +7,10 @@ import { registerRoutes } from "../../server/routes";
 import path from 'path';
 import fs from 'fs';
 
-// Production Environment Configuration
-const isProduction = process.env.NODE_ENV === 'production';
-const isDevelopment = !isProduction;
+// Development-only configuration
+const isDevelopment = true;
 
-// Disable Replit plugins in production
-if (isProduction && !process.env.REPL_ID) {
-  process.env.REPL_ID = '';
-}
-
-console.log(`[ENV] Starting CareConnect in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
+console.log('[ENV] Starting CareConnect in DEVELOPMENT mode');
 console.log(`[ENV] Node environment: ${process.env.NODE_ENV}`);
 
 // Basic configuration - production validation removed
@@ -64,51 +58,15 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Health check endpoint (including /healthz alias for Kubernetes)
+// Basic health check for development
 app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    ok: true,
-    uptime: process.uptime(),
-    version: '1.0.0',
-    environment: isProduction ? 'production' : 'development',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.get('/healthz', (req: Request, res: Response) => {
-  res.json({
-    ok: true,
-    uptime: process.uptime(), 
-    version: '1.0.0'
-  });
+  res.json({ status: 'ok' });
 });
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Serve built frontend static files in production
-if (isProduction) {
-  const frontendPath = path.join(process.cwd(), 'dist', 'public');
-  console.log(`[STATIC] Serving frontend from: ${frontendPath}`);
-  app.use(express.static(frontendPath));
-  
-  // Catch-all handler for client-side routing
-  app.get('*', (req: Request, res: Response, next: NextFunction) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path === '/health' || req.path === '/healthz') {
-      return next();
-    }
-    
-    // Serve index.html for all other routes (SPA routing)
-    const indexPath = path.join(frontendPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      console.error('[STATIC] Frontend build not found at:', frontendPath);
-      res.status(404).json({ error: 'Frontend build not found. Run npm run build:frontend first.' });
-    }
-  });
-}
+// No static serving - development only
 
 (async () => {
   const server = await registerRoutes(app);
@@ -139,16 +97,10 @@ if (isProduction) {
   const port = parseInt(process.env.PORT || "5000", 10);
   
   server.listen(port, "0.0.0.0", () => {
-    console.log(`[SERVER] CareConnect ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} server started`);
+    console.log(`[SERVER] CareConnect DEVELOPMENT server started`);
     console.log(`[SERVER] Listening on http://0.0.0.0:${port}`);
-    console.log(`[SERVER] Environment: ${process.env.NODE_ENV}`);
+    console.log(`[SERVER] Environment: development`);
     console.log(`[SERVER] Health check: http://0.0.0.0:${port}/health`);
-    
-    if (isProduction) {
-      console.log('[PRODUCTION] Static frontend served from /dist/public');
-      console.log('[PRODUCTION] All routes fall back to index.html for SPA routing');
-    } else {
-      console.log('[DEVELOPMENT] Frontend development server should be running separately');
-    }
+    console.log('[DEVELOPMENT] Frontend development server should be running separately');
   });
 })();
