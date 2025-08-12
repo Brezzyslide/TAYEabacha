@@ -1,3 +1,6 @@
+// Bootstrap must be imported first to set timezone
+import "../backend/src/bootstrap";
+
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
@@ -24,7 +27,27 @@ console.log(`[ENV] Starting CareConnect in ${isProduction ? 'PRODUCTION' : 'DEVE
 console.log(`[ENV] Node environment: ${process.env.NODE_ENV}`);
 console.log(`[ENV] Replit ID: ${process.env.REPL_ID || 'undefined'}`);
 
-// Production safety checks
+// Strict environment validation for production readiness
+// This will crash loudly if required environment variables are missing
+let cfg: any = null;
+
+if (isProduction) {
+  try {
+    // Import and validate all required environment variables using config schema
+    const configModule = require("../backend/src/config");
+    cfg = configModule.cfg;
+    console.log('[CONFIG] Production environment validation passed ✓');
+  } catch (error) {
+    console.error('[CONFIG] Environment validation failed:', error);
+    console.error('[CONFIG] Please check your environment variables against .env.example');
+    console.error('[CONFIG] Server cannot start in production without valid environment');
+    process.exit(1);
+  }
+} else {
+  console.log('[CONFIG] Development mode: environment validation skipped');
+}
+
+// Production safety checks (existing)
 if (isProduction) {
   const requiredEnvVars = ['DATABASE_URL'];
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
