@@ -1,0 +1,317 @@
+What it does (quick)
+Per-tenant, per-client service agreements.
+
+Line items with: NDIS code, description, hours per week, unit price, number of weeks.
+
+Rate columns: Day, Evening, Active Night, Sleepover, Saturday, Sunday, Public Holiday.
+
+Auto-calculate amount per rate and grand total.
+
+Pull tenant business details and client details automatically.
+
+Free text for Plan Nominee + contact.
+
+Billing details section.
+
+Electronic signatures (org rep + client/nominee): name + date (and we’ll store signer role and timestamp).
+
+PDF export using your standard export header/footer.
+
+Lives at Compliance → Service Agreements.
+
+Data model (Postgres, multi-tenant)
+Tables (all rows carry companyId and enforce RLS):
+
+service_agreements
+
+id (uuid, pk)
+
+companyId (uuid) ← tenant scope
+
+clientId (uuid)
+
+agreementNumber (string, unique per tenant)
+
+startDate, endDate (date)
+
+planNomineeName (string, nullable)
+
+planNomineeContact (string, nullable)
+
+billingDetails (jsonb or text)
+
+baseTermsAccepted (bool)
+
+customTerms (text) ← tenant can append to platform base T&C
+
+status (enum: draft, active, expired, cancelled)
+
+createdBy, updatedBy (uuid)
+
+createdAt, updatedAt (timestamptz)
+
+service_agreement_items
+
+id (uuid, pk)
+
+agreementId (uuid, fk→service_agreements.id on delete cascade)
+
+ndisCode (string)
+
+supportDescription (text)
+
+weeks (int) ← number of weeks funded
+
+hoursDay (numeric(10,2)) — weekly hours
+
+hoursEvening (numeric(10,2))
+
+hoursActiveNight (numeric(10,2))
+
+hoursSleepover (numeric(10,2))
+
+hoursSaturday (numeric(10,2))
+
+hoursSunday (numeric(10,2))
+
+hoursPublicHoliday (numeric(10,2))
+
+unitDay (numeric(10,2)) — $/hr or $/unit
+
+unitEvening (numeric(10,2))
+
+unitActiveNight (numeric(10,2))
+
+unitSleepover (numeric(10,2))
+
+unitSaturday (numeric(10,2))
+
+unitSunday (numeric(10,2))
+
+unitPublicHoliday (numeric(10,2))
+
+notes (text, nullable)
+
+createdAt, updatedAt
+
+service_agreement_signatures
+
+id (uuid, pk)
+
+agreementId (uuid)
+
+signerRole (enum: organisation, client, nominee)
+
+signerName (string)
+
+signedAt (timestamptz)
+
+signedByUserId (uuid, nullable)
+
+ipAddress (string, nullable)
+
+userAgent (string, nullable)
+
+tenant_terms_templates (optional, for reusable T&C per tenant)
+
+id, companyId, title, body, isDefault
+
+Calculation per line, per rate: amount = hoursX * unitX * weeks.
+Grand total = sum of all rates across all items.
+
+API surface (backend)
+GET /api/service-agreements?companyId=&clientId=
+
+POST /api/service-agreements (create header + items)
+
+PUT /api/service-agreements/:id (edit)
+
+POST /api/service-agreements/:id/items (add lines)
+
+PUT /api/service-agreements/:id/items/:itemId
+
+DELETE /api/service-agreements/:id/items/:itemId
+
+POST /api/service-agreements/:id/sign
+body: { signerRole, signerName } → records signature
+
+GET /api/service-agreements/:id/pdf → returns PDF
+
+GET /api/service-agreements/:id/total (optional) → returns recalculated totals
+
+Guards
+
+Enforce companyId on every request (from auth claims).
+
+Roles: Admin/TeamLeader can create/modify; SupportWorker read-only; Client-portal (if you add it later) can sign.
+
+Validate that clientId belongs to companyId.
+
+Frontend (React + shadcn)
+Route: src/app/compliance/service-agreements/
+
+Screens:
+
+List (tenant + optional client filter), status badges, totals.
+
+Create/Edit wizard:
+
+Section A: Tenant + Client auto-filled (read-only).
+
+Section B: Agreement window (start/end).
+
+Section C: Items table (editable rows):
+
+Columns: NDIS Code, Description, Weeks, then 7 pairs of Hours/Unit (Day…PH).
+
+Computed columns show Amount per rate and Line total.
+
+Footer shows Subtotals per rate and Grand total.
+
+Section D: Billing Details (text or structured fields).
+
+Section E: Plan Nominee (free text).
+
+Section F: Terms & Conditions view:
+
+Base T&C (system)
+
+Tenant appended T&C (if configured)
+
+Checkbox “I acknowledge and accept…”
+
+Sign & Export:
+
+“Sign as Organisation Representative” → capture name and date
+
+“Sign as Client / Plan Nominee” → capture name and date
+
+“Export PDF” → uses your standard header/footer (company name, staff, timestamps)
+
+Calculations (front)
+Recompute on change.
+
+Use decimal arithmetic (e.g., decimal.js) to avoid float errors.
+
+Persist only the raw inputs (hours, unit, weeks); PDF and UI compute amounts live.
+
+Backend can also recalc on save for integrity.
+
+PDF export (use your standard)
+Header: Tenant name, staff name, created date/time.
+Footer: Export timestamp.
+Body: Agreement header, client details, items table with all rates, totals, T&C, signatures.
+
+Replit Agent plan (paste this)
+Replit Agent – Add NDIS Service Agreement module under Compliance
+
+Phase 1 — DB schema & RLS
+
+Create migrations for tables: service_agreements, service_agreement_items, service_agreement_signatures, tenant_terms_templates (optional).
+
+Add RLS for companyId on all tables.
+
+Add indexes: (companyId, clientId), (agreementId), (companyId, agreementNumber) unique.
+
+Phase 2 — Backend API
+
+Create folder backend/src/modules/service-agreements/ with:
+
+routes.ts, controller.ts, service.ts, validators.ts, pdf.ts
+
+Implement endpoints listed above.
+
+Reuse existing tenant guard middleware; reject any request missing companyId.
+
+In pdf.ts, use our existing PDF engine and standard export header/footer.
+
+Phase 3 — Frontend UI
+
+Create route src/app/compliance/service-agreements/ with:
+
+index.tsx (List + filters)
+
+create.tsx / edit/[id].tsx (Wizard with items table)
+
+Components: AgreementForm, ItemsGrid, TotalsBar, SignPanel, TermsViewer
+
+Items grid columns:
+
+ndisCode, supportDescription, weeks
+
+For each rate: hoursX, unitX, computed amountX
+
+Line total column
+
+Use decimal arithmetic for totals; update as the user types.
+
+Phase 4 — Autoload details
+
+On load, fetch tenant details (business name/address/contacts) from tenant profile.
+
+Fetch client record (name/address/contact) by clientId.
+
+Pre-fill the header; keep read-only fields.
+
+Phase 5 — Terms & Conditions
+
+Render base T&C from system config.
+
+Append tenant custom T&C if tenant_terms_templates.isDefault = true (or store in tenant settings).
+
+Add checkbox gate to proceed to signature.
+
+Phase 6 — Signatures
+
+Two buttons: “Sign as Organisation Representative” and “Sign as Client/Plan Nominee.”
+
+Modal captures signerName (and role); POST /sign.
+
+Store signedAt, userAgent, ip (server side).
+
+Phase 7 — Permissions
+
+Update roles map:
+
+Admin, TeamLeader: create/edit/sign org side/export.
+
+SupportWorker: read/export.
+
+Hide/disable UI actions accordingly.
+
+Phase 8 — PDF Export
+
+Add “Export PDF” on the detail page.
+
+PDF includes items table with amounts per rate and totals, T&C, and signature block.
+
+Phase 9 — Tests & Smoke
+
+Seed a demo tenant + client.
+
+Create one agreement with three items and verify totals.
+
+Sign both sides and export PDF.
+
+Ensure RLS blocks cross-tenant access.
+
+Report after each phase with changed files and screenshots. Do not include any real secrets. Stop if migrations fail, and ask for guidance.
+
+Quick pros, cons, and the middle path
+Why this plan works
+
+Keeps strict tenant boundaries (companyId everywhere).
+
+Totals are deterministic (decimal math, server recheck).
+
+PDF leverages your existing, consistent export system.
+
+What to watch
+
+Seven rate columns make for a wide table — needs a smart layout on smaller screens.
+
+Prices can change mid-agreement; we’re storing unit prices per item so totals don’t shift when a price guide updates.
+
+Balanced tweak
+
+If you want to future-proof, add an optional priceListId per item so you can trace back to a price guide, but still snapshot the unit prices in the item.
