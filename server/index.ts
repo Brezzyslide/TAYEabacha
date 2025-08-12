@@ -1,5 +1,4 @@
-// Bootstrap must be imported first to set timezone
-import "../backend/src/bootstrap";
+// Backend bootstrap removed - Phase 1 cleanup
 
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
@@ -28,30 +27,12 @@ console.log(`[ENV] Starting CareConnect in ${isProduction ? 'PRODUCTION' : 'DEVE
 console.log(`[ENV] Node environment: ${process.env.NODE_ENV}`);
 console.log(`[ENV] Replit ID: ${process.env.REPL_ID || 'undefined'}`);
 
-// Strict environment validation for production readiness
-// This will crash loudly if required environment variables are missing
-let cfg: any = null;
-
-try {
-  // Import and validate all required environment variables using config schema
-  const configModule = require("../backend/src/config");
-  cfg = configModule.cfg;
-  console.log('[CONFIG] Environment validation passed ✓');
-} catch (error) {
-  if (isProduction) {
-    console.error('[CONFIG] Environment validation failed:', error);
-    console.error('[CONFIG] Please check your environment variables against .env.example');
-    console.error('[CONFIG] Server cannot start in production without valid environment');
-    process.exit(1);
-  } else {
-    console.log('[CONFIG] Development mode: using fallback config');
-    cfg = {
-      APP_BASE_URL: process.env.APP_BASE_URL || 'http://localhost:5000',
-      CORS_ORIGINS: process.env.CORS_ORIGINS,
-      NODE_ENV: process.env.NODE_ENV || 'development'
-    };
-  }
-}
+// Basic configuration - Phase 1 validation removed
+const cfg = {
+  APP_BASE_URL: process.env.APP_BASE_URL || 'http://localhost:5000',
+  CORS_ORIGINS: process.env.CORS_ORIGINS,
+  NODE_ENV: process.env.NODE_ENV || 'development'
+};
 
 // Production safety checks (existing)
 if (isProduction) {
