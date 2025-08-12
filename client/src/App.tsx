@@ -46,6 +46,9 @@ import BillingDashboard from "@/app/billing/BillingDashboard";
 import LandingPage from "@/pages/LandingPage";
 import EmergencyCleanup from "@/app/emergency/EmergencyCleanup";
 import CompliancePage from "@/app/compliance/page";
+import ServiceAgreementsList from "@/app/compliance/service-agreements/index";
+import CreateServiceAgreement from "@/app/compliance/service-agreements/create";
+import EditServiceAgreement from "@/app/compliance/service-agreements/edit/[id]";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -80,6 +83,9 @@ function Router() {
       <ProtectedRoute path="/billing" component={BillingDashboard} />
       <ProtectedRoute path="/billing-management" component={BillingDashboard} />
       <ProtectedRoute path="/compliance" component={CompliancePage} />
+      <ProtectedRoute path="/compliance/service-agreements" component={ServiceAgreementsList} />
+      <ProtectedRoute path="/compliance/service-agreements/create" component={CreateServiceAgreement} />
+      <ProtectedRoute path="/compliance/service-agreements/edit/:id" component={EditServiceAgreement} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
