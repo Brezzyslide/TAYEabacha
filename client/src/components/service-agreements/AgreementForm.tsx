@@ -40,7 +40,7 @@ export default function AgreementForm({
   onAcceptedChange,
   mode,
 }: AgreementFormProps) {
-  const { data: clients } = useQuery({
+  const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
   });
 
@@ -59,7 +59,7 @@ export default function AgreementForm({
   // Fetch selected client details
   const { data: selectedClientDetails } = useQuery({
     queryKey: ["/api/clients", agreementData.clientId],
-    enabled: !!agreementData.clientId && mode === "create",
+    enabled: !!agreementData.clientId,
   });
 
   // Fetch default terms template for tenant
@@ -74,7 +74,7 @@ export default function AgreementForm({
       onAgreementChange({
         ...agreementData,
         [parent]: {
-          ...agreementData[parent as keyof ServiceAgreement],
+          ...(agreementData[parent as keyof ServiceAgreement] as any),
           [child]: value,
         },
       });
@@ -86,29 +86,23 @@ export default function AgreementForm({
     }
   };
 
-  const selectedClient = (clients || []).find((c: any) => c.id === agreementData.clientId);
+  const selectedClient = Array.isArray(clients) ? clients.find((c: any) => c.id === agreementData.clientId) : null;
 
   // Auto-populate agreement fields when client or tenant data changes
   useEffect(() => {
-    if (mode === "create" && selectedClientDetails && company && !agreementData.providerName) {
-      // Auto-populate tenant/provider information
+    if (mode === "create" && selectedClientDetails) {
+      // Auto-populate billing details with client NDIS information
+      const updatedBillingDetails = {
+        ...agreementData.billingDetails,
+        participantNumber: selectedClientDetails.ndisNumber || "",
+      };
+      
       onAgreementChange({
         ...agreementData,
-        providerName: company.name || "",
-        providerAddress: company.businessAddress || "",
-        providerContact: company.primaryContactName || "",
-        providerPhone: company.primaryContactPhone || "",
-        providerEmail: company.primaryContactEmail || "",
-        providerAbn: company.registrationNumber || "",
-        // Auto-populate client information
-        clientName: selectedClientDetails.fullName || `${selectedClientDetails.firstName} ${selectedClientDetails.lastName}`,
-        clientAddress: selectedClientDetails.address || "",
-        clientNdisNumber: selectedClientDetails.ndisNumber || "",
-        clientEmergencyContact: selectedClientDetails.emergencyContactName || "",
-        clientEmergencyPhone: selectedClientDetails.emergencyContactPhone || "",
+        billingDetails: updatedBillingDetails,
       });
     }
-  }, [selectedClientDetails, company, mode, agreementData.providerName]);
+  }, [selectedClientDetails, mode]);
 
   // Auto-load default terms template
   useEffect(() => {
@@ -118,7 +112,7 @@ export default function AgreementForm({
         customTerms: defaultTerms.content || "",
       });
     }
-  }, [defaultTerms, mode, agreementData.customTerms]);
+  }, [defaultTerms, mode]);
 
   return (
     <div className="space-y-6">
@@ -145,9 +139,9 @@ export default function AgreementForm({
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(clients || []).map((client: any) => (
+                  {Array.isArray(clients) && clients.map((client: any) => (
                     <SelectItem key={client.id} value={client.id.toString()}>
-                      {client.firstName} {client.lastName} - {client.ndisNumber}
+                      {client.fullName || `${client.firstName} ${client.lastName}`} - {client.ndisNumber}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -214,7 +208,7 @@ export default function AgreementForm({
               <Input
                 id="startDate"
                 type="date"
-                value={agreementData.startDate || ""}
+                value={agreementData.startDate ? new Date(agreementData.startDate).toISOString().split('T')[0] : ""}
                 onChange={(e) => handleFieldChange("startDate", e.target.value)}
                 placeholder="dd/mm/yyyy"
               />
@@ -227,7 +221,7 @@ export default function AgreementForm({
               <Input
                 id="endDate"
                 type="date"
-                value={agreementData.endDate || ""}
+                value={agreementData.endDate ? new Date(agreementData.endDate).toISOString().split('T')[0] : ""}
                 onChange={(e) => handleFieldChange("endDate", e.target.value)}
                 placeholder="dd/mm/yyyy"
               />
@@ -251,8 +245,8 @@ export default function AgreementForm({
               <Label htmlFor="planNomineeName">Plan Nominee Name</Label>
               <Input
                 id="planNomineeName"
-                value={agreementData.plan?.planNominee || ""}
-                onChange={(e) => handleFieldChange("plan.planNominee", e.target.value)}
+                value={agreementData.planNomineeName || ""}
+                onChange={(e) => handleFieldChange("planNomineeName", e.target.value)}
                 placeholder="Enter nominee name"
               />
             </div>
@@ -260,8 +254,8 @@ export default function AgreementForm({
               <Label htmlFor="planNomineeContact">Plan Nominee Contact</Label>
               <Input
                 id="planNomineeContact"
-                value={agreementData.plan?.planNomineeContact || ""}
-                onChange={(e) => handleFieldChange("plan.planNomineeContact", e.target.value)}
+                value={agreementData.planNomineeContact || ""}
+                onChange={(e) => handleFieldChange("planNomineeContact", e.target.value)}
                 placeholder="Email or phone"
               />
             </div>
@@ -284,8 +278,8 @@ export default function AgreementForm({
               <Label htmlFor="ndisParticipantNumber">NDIS Participant Number</Label>
               <Input
                 id="ndisParticipantNumber"
-                value={agreementData.clientNdisNumber || ""}
-                onChange={(e) => handleFieldChange("clientNdisNumber", e.target.value)}
+                value={(agreementData.billingDetails as any)?.participantNumber || ""}
+                onChange={(e) => handleFieldChange("billingDetails.participantNumber", e.target.value)}
                 placeholder="Enter participant number"
               />
             </div>
@@ -293,8 +287,8 @@ export default function AgreementForm({
               <Label htmlFor="planNumber">Plan Number</Label>
               <Input
                 id="planNumber"
-                value={agreementData.plan?.planNumber || ""}
-                onChange={(e) => handleFieldChange("plan.planNumber", e.target.value)}
+                value={(agreementData.billingDetails as any)?.planNumber || ""}
+                onChange={(e) => handleFieldChange("billingDetails.planNumber", e.target.value)}
                 placeholder="Enter plan number"
               />
             </div>
@@ -302,8 +296,8 @@ export default function AgreementForm({
               <Label htmlFor="planManager">Plan Manager</Label>
               <Input
                 id="planManager"
-                value={agreementData.plan?.planManager || ""}
-                onChange={(e) => handleFieldChange("plan.planManager", e.target.value)}
+                value={(agreementData.billingDetails as any)?.planManager || ""}
+                onChange={(e) => handleFieldChange("billingDetails.planManager", e.target.value)}
                 placeholder="Enter plan manager name"
               />
             </div>
@@ -311,8 +305,8 @@ export default function AgreementForm({
               <Label htmlFor="planManagerContact">Plan Manager Contact</Label>
               <Input
                 id="planManagerContact"
-                value={agreementData.plan?.planManagerContact || ""}
-                onChange={(e) => handleFieldChange("plan.planManagerContact", e.target.value)}
+                value={(agreementData.billingDetails as any)?.planManagerContact || ""}
+                onChange={(e) => handleFieldChange("billingDetails.planManagerContact", e.target.value)}
                 placeholder="Email or phone"
               />
             </div>
@@ -365,7 +359,12 @@ export default function AgreementForm({
           <CardDescription>Default terms that apply to all agreements</CardDescription>
         </CardHeader>
         <CardContent>
-          <TermsViewer />
+          <TermsViewer 
+            customTerms={agreementData.customTerms || ""}
+            onCustomTermsChange={(terms) => handleFieldChange("customTerms", terms)}
+            isAccepted={isAccepted}
+            onAcceptedChange={onAcceptedChange}
+          />
         </CardContent>
       </Card>
 
