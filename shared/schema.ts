@@ -1765,4 +1765,126 @@ export type InsertCompletedMedicationAuthorityForm = z.infer<typeof insertComple
 export type EvacuationDrill = typeof evacuationDrills.$inferSelect;
 export type InsertEvacuationDrill = z.infer<typeof insertEvacuationDrillSchema>;
 
+// NDIS Service Agreements table
+export const ndisServiceAgreements = pgTable("ndis_service_agreements", {
+  id: serial("id").primaryKey(),
+  agreementNumber: text("agreement_number").notNull().unique(), // Auto-generated unique ID
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  companyId: text("company_id").notNull(),
+  
+  // Service details
+  ndisCode: text("ndis_code").notNull(),
+  supportDescription: text("support_description").notNull(),
+  totalHours: decimal("total_hours", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  numberOfWeeks: integer("number_of_weeks").notNull(),
+  
+  // Rate columns for different time periods
+  daytimeRate: decimal("daytime_rate", { precision: 10, scale: 2 }).default("0"),
+  eveningRate: decimal("evening_rate", { precision: 10, scale: 2 }).default("0"),
+  activeNightRate: decimal("active_night_rate", { precision: 10, scale: 2 }).default("0"),
+  sleepoverRate: decimal("sleepover_rate", { precision: 10, scale: 2 }).default("0"),
+  sundayRate: decimal("sunday_rate", { precision: 10, scale: 2 }).default("0"),
+  saturdayRate: decimal("saturday_rate", { precision: 10, scale: 2 }).default("0"),
+  publicHolidayRate: decimal("public_holiday_rate", { precision: 10, scale: 2 }).default("0"),
+  
+  // Hours allocation per type
+  daytimeHours: decimal("daytime_hours", { precision: 10, scale: 2 }).default("0"),
+  eveningHours: decimal("evening_hours", { precision: 10, scale: 2 }).default("0"),
+  activeNightHours: decimal("active_night_hours", { precision: 10, scale: 2 }).default("0"),
+  sleepoverHours: decimal("sleepover_hours", { precision: 10, scale: 2 }).default("0"),
+  sundayHours: decimal("sunday_hours", { precision: 10, scale: 2 }).default("0"),
+  saturdayHours: decimal("saturday_hours", { precision: 10, scale: 2 }).default("0"),
+  publicHolidayHours: decimal("public_holiday_hours", { precision: 10, scale: 2 }).default("0"),
+  
+  // Calculated amounts (auto-calculated)
+  daytimeAmount: decimal("daytime_amount", { precision: 10, scale: 2 }).default("0"),
+  eveningAmount: decimal("evening_amount", { precision: 10, scale: 2 }).default("0"),
+  activeNightAmount: decimal("active_night_amount", { precision: 10, scale: 2 }).default("0"),
+  sleepoverAmount: decimal("sleepover_amount", { precision: 10, scale: 2 }).default("0"),
+  sundayAmount: decimal("sunday_amount", { precision: 10, scale: 2 }).default("0"),
+  saturdayAmount: decimal("saturday_amount", { precision: 10, scale: 2 }).default("0"),
+  publicHolidayAmount: decimal("public_holiday_amount", { precision: 10, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).default("0"),
+  
+  // Plan nominee details
+  planNomineeName: text("plan_nominee_name"),
+  planNomineeContact: text("plan_nominee_contact"),
+  planNomineeAddress: text("plan_nominee_address"),
+  
+  // Billing details
+  billingContact: text("billing_contact"),
+  billingAddress: text("billing_address"),
+  billingPhone: text("billing_phone"),
+  billingEmail: text("billing_email"),
+  
+  // Terms and conditions (customizable per tenant)
+  customTermsAndConditions: text("custom_terms_and_conditions"),
+  
+  // Electronic signatures
+  serviceProviderSignature: text("service_provider_signature"), // Name of signatory
+  serviceProviderSignatureDate: timestamp("service_provider_signature_date"),
+  clientSignature: text("client_signature"), // Name of signatory
+  clientSignatureDate: timestamp("client_signature_date"),
+  
+  // Agreement status and dates
+  status: text("status").notNull().default("draft"), // draft, active, expired, terminated
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Relations for NDIS Service Agreements
+export const ndisServiceAgreementsRelations = relations(ndisServiceAgreements, ({ one }) => ({
+  client: one(clients, {
+    fields: [ndisServiceAgreements.clientId],
+    references: [clients.id],
+  }),
+  tenant: one(tenants, {
+    fields: [ndisServiceAgreements.tenantId],
+    references: [tenants.id],
+  }),
+  company: one(companies, {
+    fields: [ndisServiceAgreements.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [ndisServiceAgreements.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Insert schema for NDIS Service Agreements
+export const insertNdisServiceAgreementSchema = createInsertSchema(ndisServiceAgreements).omit({
+  id: true,
+  agreementNumber: true, // Auto-generated
+  createdAt: true,
+  updatedAt: true,
+  // Auto-calculated fields
+  daytimeAmount: true,
+  eveningAmount: true,
+  activeNightAmount: true,
+  sleepoverAmount: true,
+  sundayAmount: true,
+  saturdayAmount: true,
+  publicHolidayAmount: true,
+  totalAmount: true,
+}).extend({
+  ndisCode: z.string().min(1, "NDIS code is required"),
+  supportDescription: z.string().min(1, "Support description is required"),
+  totalHours: z.number().positive("Total hours must be positive"),
+  unitPrice: z.number().positive("Unit price must be positive"),
+  numberOfWeeks: z.number().positive("Number of weeks must be positive"),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+});
+
+// Types
+export type NdisServiceAgreement = typeof ndisServiceAgreements.$inferSelect;
+export type InsertNdisServiceAgreement = z.infer<typeof insertNdisServiceAgreementSchema>;
+
 
