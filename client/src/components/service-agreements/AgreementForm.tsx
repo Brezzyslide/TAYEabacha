@@ -141,7 +141,10 @@ export default function AgreementForm({
                 <SelectContent>
                   {Array.isArray(clients) && clients.map((client: any) => (
                     <SelectItem key={client.id} value={client.id.toString()}>
-                      {client.fullName || `${client.firstName} ${client.lastName}`} - {client.ndisNumber}
+                      {client.fullName || 
+                       (client.firstName && client.lastName 
+                         ? `${client.firstName} ${client.lastName}` 
+                         : 'Unknown Client')} - {client.ndisNumber}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -164,7 +167,12 @@ export default function AgreementForm({
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-xs text-slate-500">Full Name</Label>
-                    <div className="text-sm font-medium">{selectedClientDetails.fullName || `${selectedClientDetails.firstName} ${selectedClientDetails.lastName}`}</div>
+                    <div className="text-sm font-medium">
+                      {selectedClientDetails.fullName || 
+                       (selectedClientDetails.firstName && selectedClientDetails.lastName 
+                         ? `${selectedClientDetails.firstName} ${selectedClientDetails.lastName}` 
+                         : 'Name not available')}
+                    </div>
                   </div>
                   <div>
                     <Label className="text-xs text-slate-500">NDIS Number</Label>
