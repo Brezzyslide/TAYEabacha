@@ -5,7 +5,7 @@ import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { runStartupSecurityChecks } from "./enhanced-tenant-security";
-import { logger, requestLoggingMiddleware } from "./logger";
+// Structured logging removed - Phase cleanup
 import path from 'path';
 import fs from 'fs';
 
@@ -76,47 +76,21 @@ console.log('[ENV] GMAIL_APP_PASSWORD_LENGTH:', process.env.GMAIL_APP_PASSWORD?.
 // Initialize email service AFTER environment is loaded
 import "./lib/email-service";
 
-// Set timezone to Australian Eastern Standard Time
-process.env.TZ = 'Australia/Sydney';
-
-console.log(`[TIMEZONE] Server timezone set to: ${process.env.TZ}`);
-console.log(`[TIMEZONE] Current server time: ${new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}`);
+// Timezone configuration removed - Phase cleanup
 
 const app = express();
 
-// Trust proxy for proper HTTPS detection in production
-app.set("trust proxy", 1);
+// Basic express setup - production proxy removed
 
-// CORS Configuration using validated config
-const origins = (cfg.CORS_ORIGINS ?? cfg.APP_BASE_URL).split(",").map((s: string) => s.trim());
-console.log('[CORS] Allowed origins:', origins);
-
+// Basic CORS Configuration - production config removed
 app.use(cors({ 
-  origin: origins, 
+  origin: true, 
   credentials: true 
 }));
 
-// Request logging middleware with structured JSON logging
-app.use(requestLoggingMiddleware);
+// Basic request logging - structured logging removed
 
-// Production Security Headers
-if (isProduction) {
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    // Security headers for production
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-    
-    // Hide server information in production
-    res.removeHeader('X-Powered-By');
-    
-    next();
-  });
-  
-  console.log('[SECURITY] Production security headers enabled');
-}
+// Production security headers removed - Phase cleanup
 // Increase payload size limits for comprehensive care plan data
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
@@ -189,16 +163,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   console.log("[ZERO PROVISIONING] All new tenants will have absolutely ZERO data");
   console.log("[ZERO PROVISIONING] Users must create everything manually");
 
-  // Apply composite foreign key constraints for database-level tenant isolation
-  console.log("[COMPOSITE FK] Applying database-level tenant isolation constraints");
-  try {
-    const { applyCompositeForeignKeys } = await import('./apply-composite-foreign-keys');
-    await applyCompositeForeignKeys();
-    console.log("[COMPOSITE FK] Database-level tenant isolation enabled successfully");
-  } catch (error) {
-    console.error("[COMPOSITE FK] Failed to apply composite foreign keys:", error);
-    // Don't fail startup - continue with application-level protection
-  }
+  // Composite foreign key functionality removed - Phase cleanup
 
   // Run enhanced security validation
   console.log("[SECURITY] Running enhanced tenant security checks");

@@ -27,7 +27,7 @@ CareConnect is built with a modern web stack:
 -   **Automated Timesheet System:** Australian payroll-compliant auto-timesheet system with ScHADS pay scales, employment type separation, and leave accrual tracking.
 -   **GPS Location Tracking:** For shift check-in/check-out with human-readable address display.
 -   **AI Integration:** Used for generating care plan content, with comprehensive client data integration and pronoun consistency.
--   **Production Readiness:** Designed for Linux environments with Node.js 20.x, comprehensive environment validation, fail-fast mechanisms, secure authentication cookies, production security headers, health endpoints, and structured JSON logging. Separated frontend/backend builds with static file serving and SPA routing support. Production-ready database migration system.
+-   **Development Focus:** Optimized for development workflow with simplified configuration, basic CORS setup, and streamlined server startup without production-ready deployment infrastructure.
 
 ## External Dependencies
 -   **Database:** PostgreSQL (`@neondatabase/serverless` for serverless connections, `connect-pg-simple` for session store).
