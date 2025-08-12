@@ -56,12 +56,6 @@ export default function AgreementForm({
     queryKey: ["/api/company"],
   });
 
-  // Fetch selected client details
-  const { data: selectedClientDetails } = useQuery({
-    queryKey: ["/api/clients", agreementData.clientId],
-    enabled: !!agreementData.clientId,
-  });
-
   // Fetch default terms template for tenant
   const { data: defaultTerms } = useQuery({
     queryKey: ["/api/compliance/terms-templates/default"],
@@ -90,11 +84,11 @@ export default function AgreementForm({
 
   // Auto-populate agreement fields when client or tenant data changes
   useEffect(() => {
-    if (mode === "create" && selectedClientDetails) {
+    if (mode === "create" && selectedClient) {
       // Auto-populate billing details with client NDIS information
       const updatedBillingDetails = {
         ...agreementData.billingDetails,
-        participantNumber: selectedClientDetails.ndisNumber || "",
+        participantNumber: selectedClient.ndisNumber || "",
       };
       
       onAgreementChange({
@@ -102,7 +96,7 @@ export default function AgreementForm({
         billingDetails: updatedBillingDetails,
       });
     }
-  }, [selectedClientDetails, mode]);
+  }, [selectedClient, mode]);
 
   // Auto-load default terms template
   useEffect(() => {
@@ -155,7 +149,7 @@ export default function AgreementForm({
             </div>
 
             {/* Auto-loaded Client Information */}
-            {mode === "create" && selectedClientDetails && (
+            {mode === "create" && selectedClient && (
               <div className="grid gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <User className="h-4 w-4 text-blue-600" />
@@ -168,31 +162,31 @@ export default function AgreementForm({
                   <div>
                     <Label className="text-xs text-slate-500">Full Name</Label>
                     <div className="text-sm font-medium">
-                      {selectedClientDetails.fullName || 
-                       (selectedClientDetails.firstName && selectedClientDetails.lastName 
-                         ? `${selectedClientDetails.firstName} ${selectedClientDetails.lastName}` 
+                      {selectedClient.fullName || 
+                       (selectedClient.firstName && selectedClient.lastName 
+                         ? `${selectedClient.firstName} ${selectedClient.lastName}` 
                          : 'Name not available')}
                     </div>
                   </div>
                   <div>
                     <Label className="text-xs text-slate-500">NDIS Number</Label>
-                    <div className="text-sm font-medium">{selectedClientDetails.ndisNumber}</div>
+                    <div className="text-sm font-medium">{selectedClient.ndisNumber}</div>
                   </div>
                   <div>
                     <Label className="text-xs text-slate-500">Address</Label>
-                    <div className="text-sm font-medium">{selectedClientDetails.address || "Not specified"}</div>
+                    <div className="text-sm font-medium">{selectedClient.address || "Not specified"}</div>
                   </div>
                   <div className="space-y-2">
-                    {selectedClientDetails.emergencyContactName && (
+                    {selectedClient.emergencyContactName && (
                       <div className="flex items-center gap-2">
                         <User className="h-3 w-3 text-slate-400" />
-                        <span className="text-sm font-medium">{selectedClientDetails.emergencyContactName}</span>
+                        <span className="text-sm font-medium">{selectedClient.emergencyContactName}</span>
                       </div>
                     )}
-                    {selectedClientDetails.emergencyContactPhone && (
+                    {selectedClient.emergencyContactPhone && (
                       <div className="flex items-center gap-2">
                         <Phone className="h-3 w-3 text-slate-400" />
-                        <span className="text-sm">{selectedClientDetails.emergencyContactPhone}</span>
+                        <span className="text-sm">{selectedClient.emergencyContactPhone}</span>
                       </div>
                     )}
                   </div>
