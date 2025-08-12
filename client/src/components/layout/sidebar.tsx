@@ -145,8 +145,11 @@ export default function Sidebar() {
           "bg-warning/10 text-warning border-warning/20"
         )}
 
-        {/* Compliance Section - Only for Admins */}
-        {(user?.role === "Admin" || user?.role === "Coordinator" || user?.role === "ConsoleManager") && renderNavigationSection(
+        {/* Compliance Section - Admin and Coordinator access */}
+        {(user?.role?.toLowerCase() === "admin" || 
+          user?.role?.toLowerCase() === "coordinator" || 
+          user?.role?.toLowerCase() === "consolemanager" ||
+          user?.role?.toLowerCase() === "programcoordinator") && renderNavigationSection(
           "COMPLIANCE", 
           complianceNavigation, 
           "bg-emerald-50/80 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"

@@ -88,21 +88,31 @@ export const PERMISSIONS = {
   ADMINISTER_MEDICATION: [ROLES.SUPPORT_WORKER, ROLES.TEAM_LEADER, ROLES.COORDINATOR, ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
   MANAGE_PRICING: [ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
   
-  // Compliance Module - Only Admin and Coordinator can access
-  ACCESS_COMPLIANCE: [ROLES.COORDINATOR, ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
-  CREATE_SERVICE_AGREEMENT: [ROLES.COORDINATOR, ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
-  VIEW_SERVICE_AGREEMENTS: [ROLES.COORDINATOR, ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
-  EDIT_SERVICE_AGREEMENTS: [ROLES.COORDINATOR, ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
+  // Compliance Module - Admin and Coordinator access
+  ACCESS_COMPLIANCE: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.CONSOLE_MANAGER],
+  CREATE_SERVICE_AGREEMENT: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.CONSOLE_MANAGER],
+  VIEW_SERVICE_AGREEMENTS: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.CONSOLE_MANAGER],
+  EDIT_SERVICE_AGREEMENTS: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.CONSOLE_MANAGER],
   DELETE_SERVICE_AGREEMENTS: [ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
-  EXPORT_SERVICE_AGREEMENTS: [ROLES.COORDINATOR, ROLES.ADMIN, ROLES.CONSOLE_MANAGER],
+  EXPORT_SERVICE_AGREEMENTS: [ROLES.ADMIN, ROLES.COORDINATOR, ROLES.CONSOLE_MANAGER],
 } as const;
 
 /**
- * Normalize role name to lowercase for consistent comparison
+ * Normalize role name to handle case variations
  */
 function normalizeRole(role?: string): string {
   if (!role) return '';
-  return role.toLowerCase().replace(/\s+/g, '');
+  // Convert to lowercase and handle common variations
+  const normalized = role.toLowerCase().replace(/\s+/g, '');
+  
+  // Handle common role variations
+  if (normalized === 'admin' || normalized === 'administrator') return 'admin';
+  if (normalized === 'coordinator' || normalized === 'programcoordinator') return 'coordinator';
+  if (normalized === 'teamleader' || normalized === 'team_leader') return 'teamleader';
+  if (normalized === 'supportworker' || normalized === 'support_worker') return 'supportworker';
+  if (normalized === 'consolemanager' || normalized === 'console_manager') return 'consolemanager';
+  
+  return normalized;
 }
 
 /**
@@ -115,14 +125,31 @@ export function hasPermission(user: User | null | undefined, permission: keyof t
   const normalizedUserRole = normalizeRole(user.role);
   const allowedRoles = PERMISSIONS[permission];
   
-  // Check direct permission
-  if ((allowedRoles as readonly string[]).includes(normalizedUserRole)) {
+  console.log(`[PERMISSION CHECK] User role: ${user.role} (normalized: ${normalizedUserRole}), Permission: ${permission}, Allowed roles:`, allowedRoles);
+  
+  // Check direct permission by comparing normalized roles
+  const hasDirectPermission = allowedRoles.some(allowedRole => 
+    normalizeRole(allowedRole) === normalizedUserRole
+  );
+  
+  if (hasDirectPermission) {
+    console.log(`[PERMISSION CHECK] ✅ GRANTED - Direct permission match`);
     return true;
   }
   
   // Check inherited permissions through hierarchy
   const userHierarchy = ROLE_HIERARCHY[normalizedUserRole] || [];
-  return allowedRoles.some(allowedRole => userHierarchy.includes(allowedRole));
+  const hasInheritedPermission = allowedRoles.some(allowedRole => 
+    userHierarchy.some(hierarchyRole => normalizeRole(hierarchyRole) === normalizeRole(allowedRole))
+  );
+  
+  if (hasInheritedPermission) {
+    console.log(`[PERMISSION CHECK] ✅ GRANTED - Inherited permission`);
+    return true;
+  }
+  
+  console.log(`[PERMISSION CHECK] ❌ DENIED - No matching permissions`);
+  return false;
 }
 
 /**
