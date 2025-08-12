@@ -1,0 +1,60 @@
+# Phase 7: Docker ignore file for efficient builds
+
+# Development files
+.git
+.gitignore
+README.md
+*.md
+.env*
+!.env.production.example
+
+# Dependencies and build artifacts that will be rebuilt
+node_modules
+dist
+backend/dist
+
+# Development tools
+.vscode
+.idea
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+coverage
+.nyc_output
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CI/CD files (keep workflows but ignore other CI artifacts)
+.github/workflows
+
+# Uploads and user data (should be mounted as volumes)
+uploads/*
+!uploads/.gitkeep
+
+# Development scripts (keep production scripts)
+emergency-*.js
+debug-*.js
+force-*.js
+clean_*.txt
+*_cookies.txt
+fresh_*.txt
+
+# Documentation and guides
+*_GUIDE.md
+*_REPORT.md
+*_CHECKLIST.md
+*_DEBUG_GUIDE.md
