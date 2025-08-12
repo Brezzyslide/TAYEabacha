@@ -4,6 +4,7 @@ import {
   customRoles, customPermissions, userRoleAssignments, taskBoardTasks, ndisPricing, ndisBudgets, budgetTransactions, careSupportPlans,
   shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries, leaveBalances, taxBrackets,
   downloadableForms, completedMedicationAuthorityForms, evacuationDrills, billingConfiguration,
+  serviceAgreements, serviceAgreementItems, serviceAgreementSignatures, tenantTermsTemplates,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -19,12 +20,15 @@ import {
   type ShiftCancellation, type InsertShiftCancellation, type CancellationRequest, type InsertCancellationRequest,
   type PayScale, type Notification, type InsertNotification, type TaxBracket,
   type DownloadableForm, type InsertDownloadableForm, type CompletedMedicationAuthorityForm, type InsertCompletedMedicationAuthorityForm,
-  type EvacuationDrill, type InsertEvacuationDrill
+  type EvacuationDrill, type InsertEvacuationDrill,
+  type ServiceAgreement, type InsertServiceAgreement, type ServiceAgreementItem, type InsertServiceAgreementItem,
+  type ServiceAgreementSignature, type InsertServiceAgreementSignature, type TenantTermsTemplate, type InsertTenantTermsTemplate
 } from "@shared/schema";
 import { db, pool } from "./lib/dbClient";
 import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray, exists } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import { randomUUID } from "crypto";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -258,6 +262,29 @@ export interface IStorage {
   createEvacuationDrill(drill: InsertEvacuationDrill): Promise<EvacuationDrill>;
   updateEvacuationDrill(id: number, drill: Partial<InsertEvacuationDrill>, tenantId: number): Promise<EvacuationDrill | undefined>;
   deleteEvacuationDrill(id: number, tenantId: number): Promise<boolean>;
+
+  // NDIS Service Agreements
+  getServiceAgreements(companyId: string, clientId?: number): Promise<ServiceAgreement[]>;
+  getServiceAgreement(id: string, companyId: string): Promise<ServiceAgreement | undefined>;
+  createServiceAgreement(agreement: InsertServiceAgreement): Promise<ServiceAgreement>;
+  updateServiceAgreement(id: string, agreement: Partial<InsertServiceAgreement>, companyId: string): Promise<ServiceAgreement | undefined>;
+  deleteServiceAgreement(id: string, companyId: string): Promise<boolean>;
+
+  // Service Agreement Items
+  getServiceAgreementItems(agreementId: string): Promise<ServiceAgreementItem[]>;
+  createServiceAgreementItem(item: InsertServiceAgreementItem): Promise<ServiceAgreementItem>;
+  updateServiceAgreementItem(id: string, item: Partial<InsertServiceAgreementItem>): Promise<ServiceAgreementItem | undefined>;
+  deleteServiceAgreementItem(id: string): Promise<boolean>;
+
+  // Service Agreement Signatures
+  getServiceAgreementSignatures(agreementId: string): Promise<ServiceAgreementSignature[]>;
+  createServiceAgreementSignature(signature: InsertServiceAgreementSignature): Promise<ServiceAgreementSignature>;
+
+  // Tenant Terms Templates
+  getTenantTermsTemplates(companyId: string): Promise<TenantTermsTemplate[]>;
+  getDefaultTermsTemplate(companyId: string): Promise<TenantTermsTemplate | undefined>;
+  createTenantTermsTemplate(template: InsertTenantTermsTemplate): Promise<TenantTermsTemplate>;
+  updateTenantTermsTemplate(id: string, template: Partial<InsertTenantTermsTemplate>, companyId: string): Promise<TenantTermsTemplate | undefined>;
 
   // Session store
   sessionStore: any;
@@ -2846,6 +2873,158 @@ export class DatabaseStorage implements IStorage {
       .orderBy(users.tenantId, users.role);
     
     return result;
+  }
+
+  // NDIS Service Agreements
+  async getServiceAgreements(companyId: string, clientId?: number): Promise<ServiceAgreement[]> {
+    const query = db.select().from(serviceAgreements)
+      .where(eq(serviceAgreements.companyId, companyId));
+
+    if (clientId) {
+      return await query.where(and(
+        eq(serviceAgreements.companyId, companyId),
+        eq(serviceAgreements.clientId, clientId)
+      )).orderBy(desc(serviceAgreements.createdAt));
+    }
+
+    return await query.orderBy(desc(serviceAgreements.createdAt));
+  }
+
+  async getServiceAgreement(id: string, companyId: string): Promise<ServiceAgreement | undefined> {
+    const [agreement] = await db.select().from(serviceAgreements)
+      .where(and(
+        eq(serviceAgreements.id, id),
+        eq(serviceAgreements.companyId, companyId)
+      ));
+    return agreement || undefined;
+  }
+
+  async createServiceAgreement(agreement: InsertServiceAgreement): Promise<ServiceAgreement> {
+    // Generate unique agreement number for this company
+    const agreementNumber = `SA-${Date.now().toString().slice(-8)}`;
+    
+    const [created] = await db
+      .insert(serviceAgreements)
+      .values({
+        ...agreement,
+        agreementNumber,
+        id: randomUUID()
+      })
+      .returning();
+    return created;
+  }
+
+  async updateServiceAgreement(id: string, agreement: Partial<InsertServiceAgreement>, companyId: string): Promise<ServiceAgreement | undefined> {
+    const [updated] = await db
+      .update(serviceAgreements)
+      .set({ ...agreement, updatedAt: new Date() })
+      .where(and(
+        eq(serviceAgreements.id, id),
+        eq(serviceAgreements.companyId, companyId)
+      ))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteServiceAgreement(id: string, companyId: string): Promise<boolean> {
+    const result = await db
+      .delete(serviceAgreements)
+      .where(and(
+        eq(serviceAgreements.id, id),
+        eq(serviceAgreements.companyId, companyId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Service Agreement Items
+  async getServiceAgreementItems(agreementId: string): Promise<ServiceAgreementItem[]> {
+    return await db.select().from(serviceAgreementItems)
+      .where(eq(serviceAgreementItems.agreementId, agreementId))
+      .orderBy(serviceAgreementItems.createdAt);
+  }
+
+  async createServiceAgreementItem(item: InsertServiceAgreementItem): Promise<ServiceAgreementItem> {
+    const [created] = await db
+      .insert(serviceAgreementItems)
+      .values({
+        ...item,
+        id: randomUUID()
+      })
+      .returning();
+    return created;
+  }
+
+  async updateServiceAgreementItem(id: string, item: Partial<InsertServiceAgreementItem>): Promise<ServiceAgreementItem | undefined> {
+    const [updated] = await db
+      .update(serviceAgreementItems)
+      .set({ ...item, updatedAt: new Date() })
+      .where(eq(serviceAgreementItems.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteServiceAgreementItem(id: string): Promise<boolean> {
+    const result = await db
+      .delete(serviceAgreementItems)
+      .where(eq(serviceAgreementItems.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Service Agreement Signatures
+  async getServiceAgreementSignatures(agreementId: string): Promise<ServiceAgreementSignature[]> {
+    return await db.select().from(serviceAgreementSignatures)
+      .where(eq(serviceAgreementSignatures.agreementId, agreementId))
+      .orderBy(serviceAgreementSignatures.signedAt);
+  }
+
+  async createServiceAgreementSignature(signature: InsertServiceAgreementSignature): Promise<ServiceAgreementSignature> {
+    const [created] = await db
+      .insert(serviceAgreementSignatures)
+      .values({
+        ...signature,
+        id: randomUUID()
+      })
+      .returning();
+    return created;
+  }
+
+  // Tenant Terms Templates
+  async getTenantTermsTemplates(companyId: string): Promise<TenantTermsTemplate[]> {
+    return await db.select().from(tenantTermsTemplates)
+      .where(eq(tenantTermsTemplates.companyId, companyId))
+      .orderBy(desc(tenantTermsTemplates.createdAt));
+  }
+
+  async getDefaultTermsTemplate(companyId: string): Promise<TenantTermsTemplate | undefined> {
+    const [template] = await db.select().from(tenantTermsTemplates)
+      .where(and(
+        eq(tenantTermsTemplates.companyId, companyId),
+        eq(tenantTermsTemplates.isDefault, true)
+      ));
+    return template || undefined;
+  }
+
+  async createTenantTermsTemplate(template: InsertTenantTermsTemplate): Promise<TenantTermsTemplate> {
+    const [created] = await db
+      .insert(tenantTermsTemplates)
+      .values({
+        ...template,
+        id: randomUUID()
+      })
+      .returning();
+    return created;
+  }
+
+  async updateTenantTermsTemplate(id: string, template: Partial<InsertTenantTermsTemplate>, companyId: string): Promise<TenantTermsTemplate | undefined> {
+    const [updated] = await db
+      .update(tenantTermsTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(and(
+        eq(tenantTermsTemplates.id, id),
+        eq(tenantTermsTemplates.companyId, companyId)
+      ))
+      .returning();
+    return updated || undefined;
   }
 }
 

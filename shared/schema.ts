@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal, index, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -1765,126 +1765,176 @@ export type InsertCompletedMedicationAuthorityForm = z.infer<typeof insertComple
 export type EvacuationDrill = typeof evacuationDrills.$inferSelect;
 export type InsertEvacuationDrill = z.infer<typeof insertEvacuationDrillSchema>;
 
-// NDIS Service Agreements table
-export const ndisServiceAgreements = pgTable("ndis_service_agreements", {
-  id: serial("id").primaryKey(),
-  agreementNumber: text("agreement_number").notNull().unique(), // Auto-generated unique ID
+// NDIS Service Agreements - Main Agreement Table
+export const serviceAgreements = pgTable("service_agreements", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text("company_id").notNull().references(() => companies.id),
   clientId: integer("client_id").notNull().references(() => clients.id),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
-  companyId: text("company_id").notNull(),
-  
-  // Service details
-  ndisCode: text("ndis_code").notNull(),
-  supportDescription: text("support_description").notNull(),
-  totalHours: decimal("total_hours", { precision: 10, scale: 2 }).notNull(),
-  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
-  numberOfWeeks: integer("number_of_weeks").notNull(),
-  
-  // Rate columns for different time periods
-  daytimeRate: decimal("daytime_rate", { precision: 10, scale: 2 }).default("0"),
-  eveningRate: decimal("evening_rate", { precision: 10, scale: 2 }).default("0"),
-  activeNightRate: decimal("active_night_rate", { precision: 10, scale: 2 }).default("0"),
-  sleepoverRate: decimal("sleepover_rate", { precision: 10, scale: 2 }).default("0"),
-  sundayRate: decimal("sunday_rate", { precision: 10, scale: 2 }).default("0"),
-  saturdayRate: decimal("saturday_rate", { precision: 10, scale: 2 }).default("0"),
-  publicHolidayRate: decimal("public_holiday_rate", { precision: 10, scale: 2 }).default("0"),
-  
-  // Hours allocation per type
-  daytimeHours: decimal("daytime_hours", { precision: 10, scale: 2 }).default("0"),
-  eveningHours: decimal("evening_hours", { precision: 10, scale: 2 }).default("0"),
-  activeNightHours: decimal("active_night_hours", { precision: 10, scale: 2 }).default("0"),
-  sleepoverHours: decimal("sleepover_hours", { precision: 10, scale: 2 }).default("0"),
-  sundayHours: decimal("sunday_hours", { precision: 10, scale: 2 }).default("0"),
-  saturdayHours: decimal("saturday_hours", { precision: 10, scale: 2 }).default("0"),
-  publicHolidayHours: decimal("public_holiday_hours", { precision: 10, scale: 2 }).default("0"),
-  
-  // Calculated amounts (auto-calculated)
-  daytimeAmount: decimal("daytime_amount", { precision: 10, scale: 2 }).default("0"),
-  eveningAmount: decimal("evening_amount", { precision: 10, scale: 2 }).default("0"),
-  activeNightAmount: decimal("active_night_amount", { precision: 10, scale: 2 }).default("0"),
-  sleepoverAmount: decimal("sleepover_amount", { precision: 10, scale: 2 }).default("0"),
-  sundayAmount: decimal("sunday_amount", { precision: 10, scale: 2 }).default("0"),
-  saturdayAmount: decimal("saturday_amount", { precision: 10, scale: 2 }).default("0"),
-  publicHolidayAmount: decimal("public_holiday_amount", { precision: 10, scale: 2 }).default("0"),
-  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).default("0"),
-  
-  // Plan nominee details
-  planNomineeName: text("plan_nominee_name"),
-  planNomineeContact: text("plan_nominee_contact"),
-  planNomineeAddress: text("plan_nominee_address"),
-  
-  // Billing details
-  billingContact: text("billing_contact"),
-  billingAddress: text("billing_address"),
-  billingPhone: text("billing_phone"),
-  billingEmail: text("billing_email"),
-  
-  // Terms and conditions (customizable per tenant)
-  customTermsAndConditions: text("custom_terms_and_conditions"),
-  
-  // Electronic signatures
-  serviceProviderSignature: text("service_provider_signature"), // Name of signatory
-  serviceProviderSignatureDate: timestamp("service_provider_signature_date"),
-  clientSignature: text("client_signature"), // Name of signatory
-  clientSignatureDate: timestamp("client_signature_date"),
-  
-  // Agreement status and dates
-  status: text("status").notNull().default("draft"), // draft, active, expired, terminated
+  agreementNumber: text("agreement_number").notNull(),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
-  
-  createdBy: integer("created_by").notNull().references(() => users.id),
+  planNomineeName: text("plan_nominee_name"),
+  planNomineeContact: text("plan_nominee_contact"),
+  billingDetails: jsonb("billing_details"), // Flexible JSON structure
+  baseTermsAccepted: boolean("base_terms_accepted").default(false),
+  customTerms: text("custom_terms"),
+  status: text("status").notNull().default("draft"), // draft, active, expired, cancelled
+  createdBy: text("created_by").notNull(),
+  updatedBy: text("updated_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Unique constraint per tenant
+  uniqueAgreementNumber: unique().on(table.companyId, table.agreementNumber),
+  // Performance indexes
+  companyClientIdx: index().on(table.companyId, table.clientId),
+}));
 
-// Relations for NDIS Service Agreements
-export const ndisServiceAgreementsRelations = relations(ndisServiceAgreements, ({ one }) => ({
-  client: one(clients, {
-    fields: [ndisServiceAgreements.clientId],
-    references: [clients.id],
-  }),
-  tenant: one(tenants, {
-    fields: [ndisServiceAgreements.tenantId],
-    references: [tenants.id],
-  }),
+// NDIS Service Agreement Items - Line Items Table
+export const serviceAgreementItems = pgTable("service_agreement_items", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  agreementId: text("agreement_id").notNull().references(() => serviceAgreements.id, { onDelete: "cascade" }),
+  ndisCode: text("ndis_code").notNull(),
+  supportDescription: text("support_description").notNull(),
+  weeks: integer("weeks").notNull(),
+  
+  // Optional price list reference for traceability
+  priceListId: text("price_list_id"),
+  
+  // Weekly hours by rate type
+  hoursDay: decimal("hours_day", { precision: 10, scale: 2 }).default("0"),
+  hoursEvening: decimal("hours_evening", { precision: 10, scale: 2 }).default("0"),
+  hoursActiveNight: decimal("hours_active_night", { precision: 10, scale: 2 }).default("0"),
+  hoursSleepover: decimal("hours_sleepover", { precision: 10, scale: 2 }).default("0"),
+  hoursSaturday: decimal("hours_saturday", { precision: 10, scale: 2 }).default("0"),
+  hoursSunday: decimal("hours_sunday", { precision: 10, scale: 2 }).default("0"),
+  hoursPublicHoliday: decimal("hours_public_holiday", { precision: 10, scale: 2 }).default("0"),
+  
+  // Snapshotted unit prices by rate type
+  unitDay: decimal("unit_day", { precision: 10, scale: 2 }).default("0"),
+  unitEvening: decimal("unit_evening", { precision: 10, scale: 2 }).default("0"),
+  unitActiveNight: decimal("unit_active_night", { precision: 10, scale: 2 }).default("0"),
+  unitSleepover: decimal("unit_sleepover", { precision: 10, scale: 2 }).default("0"),
+  unitSaturday: decimal("unit_saturday", { precision: 10, scale: 2 }).default("0"),
+  unitSunday: decimal("unit_sunday", { precision: 10, scale: 2 }).default("0"),
+  unitPublicHoliday: decimal("unit_public_holiday", { precision: 10, scale: 2 }).default("0"),
+  
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  agreementIdx: index().on(table.agreementId),
+}));
+
+// NDIS Service Agreement Signatures - Electronic Signatures Table
+export const serviceAgreementSignatures = pgTable("service_agreement_signatures", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  agreementId: text("agreement_id").notNull().references(() => serviceAgreements.id, { onDelete: "cascade" }),
+  signerRole: text("signer_role").notNull(), // organisation, client, nominee
+  signerName: text("signer_name").notNull(),
+  signedAt: timestamp("signed_at").defaultNow().notNull(),
+  signedByUserId: text("signed_by_user_id"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+}, (table) => ({
+  agreementIdx: index().on(table.agreementId),
+}));
+
+// Tenant Terms Templates - Reusable T&C per tenant
+export const tenantTermsTemplates = pgTable("tenant_terms_templates", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyId: text("company_id").notNull().references(() => companies.id),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  companyDefaultIdx: index().on(table.companyId, table.isDefault),
+}));
+
+// Relations for Service Agreements
+export const serviceAgreementsRelations = relations(serviceAgreements, ({ one, many }) => ({
   company: one(companies, {
-    fields: [ndisServiceAgreements.companyId],
+    fields: [serviceAgreements.companyId],
     references: [companies.id],
   }),
-  createdBy: one(users, {
-    fields: [ndisServiceAgreements.createdBy],
-    references: [users.id],
+  client: one(clients, {
+    fields: [serviceAgreements.clientId],
+    references: [clients.id],
+  }),
+  items: many(serviceAgreementItems),
+  signatures: many(serviceAgreementSignatures),
+}));
+
+export const serviceAgreementItemsRelations = relations(serviceAgreementItems, ({ one }) => ({
+  agreement: one(serviceAgreements, {
+    fields: [serviceAgreementItems.agreementId],
+    references: [serviceAgreements.id],
   }),
 }));
 
-// Insert schema for NDIS Service Agreements
-export const insertNdisServiceAgreementSchema = createInsertSchema(ndisServiceAgreements).omit({
+export const serviceAgreementSignaturesRelations = relations(serviceAgreementSignatures, ({ one }) => ({
+  agreement: one(serviceAgreements, {
+    fields: [serviceAgreementSignatures.agreementId],
+    references: [serviceAgreements.id],
+  }),
+}));
+
+export const tenantTermsTemplatesRelations = relations(tenantTermsTemplates, ({ one }) => ({
+  company: one(companies, {
+    fields: [tenantTermsTemplates.companyId],
+    references: [companies.id],
+  }),
+}));
+
+// Insert schemas
+export const insertServiceAgreementSchema = createInsertSchema(serviceAgreements).omit({
   id: true,
-  agreementNumber: true, // Auto-generated
   createdAt: true,
   updatedAt: true,
-  // Auto-calculated fields
-  daytimeAmount: true,
-  eveningAmount: true,
-  activeNightAmount: true,
-  sleepoverAmount: true,
-  sundayAmount: true,
-  saturdayAmount: true,
-  publicHolidayAmount: true,
-  totalAmount: true,
+}).extend({
+  agreementNumber: z.string().min(1, "Agreement number is required"),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  status: z.enum(["draft", "active", "expired", "cancelled"]).default("draft"),
+});
+
+export const insertServiceAgreementItemSchema = createInsertSchema(serviceAgreementItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 }).extend({
   ndisCode: z.string().min(1, "NDIS code is required"),
   supportDescription: z.string().min(1, "Support description is required"),
-  totalHours: z.number().positive("Total hours must be positive"),
-  unitPrice: z.number().positive("Unit price must be positive"),
-  numberOfWeeks: z.number().positive("Number of weeks must be positive"),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
+  weeks: z.number().positive("Number of weeks must be positive"),
+});
+
+export const insertServiceAgreementSignatureSchema = createInsertSchema(serviceAgreementSignatures).omit({
+  id: true,
+  signedAt: true,
+}).extend({
+  signerRole: z.enum(["organisation", "client", "nominee"]),
+  signerName: z.string().min(1, "Signer name is required"),
+});
+
+export const insertTenantTermsTemplateSchema = createInsertSchema(tenantTermsTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  title: z.string().min(1, "Title is required"),
+  body: z.string().min(1, "Terms body is required"),
 });
 
 // Types
-export type NdisServiceAgreement = typeof ndisServiceAgreements.$inferSelect;
-export type InsertNdisServiceAgreement = z.infer<typeof insertNdisServiceAgreementSchema>;
+export type ServiceAgreement = typeof serviceAgreements.$inferSelect;
+export type InsertServiceAgreement = z.infer<typeof insertServiceAgreementSchema>;
+export type ServiceAgreementItem = typeof serviceAgreementItems.$inferSelect;
+export type InsertServiceAgreementItem = z.infer<typeof insertServiceAgreementItemSchema>;
+export type ServiceAgreementSignature = typeof serviceAgreementSignatures.$inferSelect;
+export type InsertServiceAgreementSignature = z.infer<typeof insertServiceAgreementSignatureSchema>;
+export type TenantTermsTemplate = typeof tenantTermsTemplates.$inferSelect;
+export type InsertTenantTermsTemplate = z.infer<typeof insertTenantTermsTemplateSchema>;
 
 

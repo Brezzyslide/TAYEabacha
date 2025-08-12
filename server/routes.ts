@@ -12591,5 +12591,237 @@ Maximum 400 words.`;
     }
   });
 
+  // NDIS Service Agreements API
+  app.get("/api/service-agreements", requireAuth, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const clientId = req.query.clientId ? parseInt(req.query.clientId) : undefined;
+      
+      const agreements = await storage.getServiceAgreements(companyId, clientId);
+      res.json(agreements);
+    } catch (error: any) {
+      console.error("Get service agreements error:", error);
+      res.status(500).json({ message: "Failed to get service agreements" });
+    }
+  });
+
+  app.get("/api/service-agreements/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const companyId = req.user.companyId;
+      
+      const agreement = await storage.getServiceAgreement(id, companyId);
+      if (!agreement) {
+        return res.status(404).json({ message: "Service agreement not found" });
+      }
+      
+      res.json(agreement);
+    } catch (error: any) {
+      console.error("Get service agreement error:", error);
+      res.status(500).json({ message: "Failed to get service agreement" });
+    }
+  });
+
+  app.post("/api/service-agreements", requireAuth, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const agreementData = {
+        ...req.body,
+        companyId,
+        createdBy: req.user.username,
+        updatedBy: req.user.username
+      };
+      
+      const agreement = await storage.createServiceAgreement(agreementData);
+      res.status(201).json(agreement);
+    } catch (error: any) {
+      console.error("Create service agreement error:", error);
+      res.status(500).json({ message: "Failed to create service agreement" });
+    }
+  });
+
+  app.put("/api/service-agreements/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const companyId = req.user.companyId;
+      const updateData = {
+        ...req.body,
+        updatedBy: req.user.username
+      };
+      
+      const agreement = await storage.updateServiceAgreement(id, updateData, companyId);
+      if (!agreement) {
+        return res.status(404).json({ message: "Service agreement not found" });
+      }
+      
+      res.json(agreement);
+    } catch (error: any) {
+      console.error("Update service agreement error:", error);
+      res.status(500).json({ message: "Failed to update service agreement" });
+    }
+  });
+
+  app.delete("/api/service-agreements/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const companyId = req.user.companyId;
+      
+      const deleted = await storage.deleteServiceAgreement(id, companyId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Service agreement not found" });
+      }
+      
+      res.json({ message: "Service agreement deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete service agreement error:", error);
+      res.status(500).json({ message: "Failed to delete service agreement" });
+    }
+  });
+
+  // Service Agreement Items API
+  app.get("/api/service-agreements/:agreementId/items", requireAuth, async (req: any, res) => {
+    try {
+      const { agreementId } = req.params;
+      const items = await storage.getServiceAgreementItems(agreementId);
+      res.json(items);
+    } catch (error: any) {
+      console.error("Get service agreement items error:", error);
+      res.status(500).json({ message: "Failed to get service agreement items" });
+    }
+  });
+
+  app.post("/api/service-agreements/:agreementId/items", requireAuth, async (req: any, res) => {
+    try {
+      const { agreementId } = req.params;
+      const itemData = {
+        ...req.body,
+        agreementId
+      };
+      
+      const item = await storage.createServiceAgreementItem(itemData);
+      res.status(201).json(item);
+    } catch (error: any) {
+      console.error("Create service agreement item error:", error);
+      res.status(500).json({ message: "Failed to create service agreement item" });
+    }
+  });
+
+  app.put("/api/service-agreement-items/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const item = await storage.updateServiceAgreementItem(id, req.body);
+      if (!item) {
+        return res.status(404).json({ message: "Service agreement item not found" });
+      }
+      
+      res.json(item);
+    } catch (error: any) {
+      console.error("Update service agreement item error:", error);
+      res.status(500).json({ message: "Failed to update service agreement item" });
+    }
+  });
+
+  app.delete("/api/service-agreement-items/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteServiceAgreementItem(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Service agreement item not found" });
+      }
+      
+      res.json({ message: "Service agreement item deleted successfully" });
+    } catch (error: any) {
+      console.error("Delete service agreement item error:", error);
+      res.status(500).json({ message: "Failed to delete service agreement item" });
+    }
+  });
+
+  // Service Agreement Signatures API
+  app.get("/api/service-agreements/:agreementId/signatures", requireAuth, async (req: any, res) => {
+    try {
+      const { agreementId } = req.params;
+      const signatures = await storage.getServiceAgreementSignatures(agreementId);
+      res.json(signatures);
+    } catch (error: any) {
+      console.error("Get service agreement signatures error:", error);
+      res.status(500).json({ message: "Failed to get service agreement signatures" });
+    }
+  });
+
+  app.post("/api/service-agreements/:agreementId/signatures", requireAuth, async (req: any, res) => {
+    try {
+      const { agreementId } = req.params;
+      const signatureData = {
+        ...req.body,
+        agreementId,
+        signedByUserId: req.user.id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+      
+      const signature = await storage.createServiceAgreementSignature(signatureData);
+      res.status(201).json(signature);
+    } catch (error: any) {
+      console.error("Create service agreement signature error:", error);
+      res.status(500).json({ message: "Failed to create service agreement signature" });
+    }
+  });
+
+  // Tenant Terms Templates API
+  app.get("/api/terms-templates", requireAuth, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const templates = await storage.getTenantTermsTemplates(companyId);
+      res.json(templates);
+    } catch (error: any) {
+      console.error("Get terms templates error:", error);
+      res.status(500).json({ message: "Failed to get terms templates" });
+    }
+  });
+
+  app.get("/api/terms-templates/default", requireAuth, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const template = await storage.getDefaultTermsTemplate(companyId);
+      res.json(template);
+    } catch (error: any) {
+      console.error("Get default terms template error:", error);
+      res.status(500).json({ message: "Failed to get default terms template" });
+    }
+  });
+
+  app.post("/api/terms-templates", requireAuth, async (req: any, res) => {
+    try {
+      const companyId = req.user.companyId;
+      const templateData = {
+        ...req.body,
+        companyId
+      };
+      
+      const template = await storage.createTenantTermsTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error: any) {
+      console.error("Create terms template error:", error);
+      res.status(500).json({ message: "Failed to create terms template" });
+    }
+  });
+
+  app.put("/api/terms-templates/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const companyId = req.user.companyId;
+      
+      const template = await storage.updateTenantTermsTemplate(id, req.body, companyId);
+      if (!template) {
+        return res.status(404).json({ message: "Terms template not found" });
+      }
+      
+      res.json(template);
+    } catch (error: any) {
+      console.error("Update terms template error:", error);
+      res.status(500).json({ message: "Failed to update terms template" });
+    }
+  });
+
   return server;
 }

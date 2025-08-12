@@ -1,0 +1,98 @@
+Create migration files.
+
+Prisma (schema.prisma)
+
+prisma
+Copy
+Edit
+model ServiceAgreement {
+  id               String   @id @default(uuid())
+  companyId        String
+  clientId         String
+  agreementNumber  String
+  startDate        DateTime
+  endDate          DateTime
+  planNomineeName  String? 
+  planNomineeContact String?
+  billingDetails   Json?
+  baseTermsAccepted Boolean  @default(false)
+  customTerms      String?
+  status           AgreementStatus @default(DRAFT)
+  createdBy        String
+  updatedBy        String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  items            ServiceAgreementItem[]
+  signatures       ServiceAgreementSignature[]
+
+  @@unique([companyId, agreementNumber])
+  @@index([companyId, clientId])
+}
+
+model ServiceAgreementItem {
+  id          String   @id @default(uuid())
+  agreementId String
+  ndisCode    String
+  supportDescription String
+  weeks       Int
+
+  // optional price list reference for traceability
+  priceListId String?
+
+  // weekly hours by rate
+  hoursDay           Decimal @db.Decimal(10,2)
+  hoursEvening       Decimal @db.Decimal(10,2)
+  hoursActiveNight   Decimal @db.Decimal(10,2)
+  hoursSleepover     Decimal @db.Decimal(10,2)
+  hoursSaturday      Decimal @db.Decimal(10,2)
+  hoursSunday        Decimal @db.Decimal(10,2)
+  hoursPublicHoliday Decimal @db.Decimal(10,2)
+
+  // snapshotted unit prices by rate
+  unitDay           Decimal @db.Decimal(10,2)
+  unitEvening       Decimal @db.Decimal(10,2)
+  unitActiveNight   Decimal @db.Decimal(10,2)
+  unitSleepover     Decimal @db.Decimal(10,2)
+  unitSaturday      Decimal @db.Decimal(10,2)
+  unitSunday        Decimal @db.Decimal(10,2)
+  unitPublicHoliday Decimal @db.Decimal(10,2)
+
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agreement   ServiceAgreement @relation(fields: [agreementId], references: [id])
+
+  @@index([agreementId])
+}
+
+model ServiceAgreementSignature {
+  id          String   @id @default(uuid())
+  agreementId String
+  signerRole  SignerRole
+  signerName  String
+  signedAt    DateTime @default(now())
+  signedByUserId String?
+  ipAddress     String?
+  userAgent     String?
+
+  agreement   ServiceAgreement @relation(fields: [agreementId], references: [id])
+
+  @@index([agreementId])
+}
+
+model TenantTermsTemplate {
+  id        String  @id @default(uuid())
+  companyId String
+  title     String
+  body      String
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId, isDefault])
+}
+
+enum AgreementStatus { DRAFT ACTIVE EXPIRED CANCELLED }
+enum SignerRole { ORGANISATION CLIENT NOMINEE }
