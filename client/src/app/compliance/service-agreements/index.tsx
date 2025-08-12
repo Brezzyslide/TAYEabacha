@@ -74,27 +74,27 @@ export default function ServiceAgreementsList() {
     );
   }
 
-  const { data: agreements, isLoading } = useQuery({
+  const { data: agreements = [], isLoading } = useQuery({
     queryKey: ["/api/compliance/service-agreements"],
   });
 
-  const { data: clients } = useQuery({
+  const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
   });
 
-  const filteredAgreements = (agreements || []).filter((agreement: any) => {
-    const matchesClient = clientFilter === "all" || agreement.clientId.toString() === clientFilter;
+  const filteredAgreements = Array.isArray(agreements) ? agreements.filter((agreement: any) => {
+    const matchesClient = clientFilter === "all" || agreement.clientId?.toString() === clientFilter;
     const matchesStatus = statusFilter === "all" || getAgreementStatus(agreement) === statusFilter;
     const matchesSearch = !searchTerm || 
       agreement.agreementNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getClientName(agreement.clientId).toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesClient && matchesStatus && matchesSearch;
-  }) || [];
+  }) : [];
 
   const getClientName = (clientId: number) => {
-    const client = (clients || []).find((c: any) => c.id === clientId);
-    return client ? `${client.firstName} ${client.lastName}` : "Unknown Client";
+    const client = Array.isArray(clients) ? clients.find((c: any) => c.id === clientId) : null;
+    return client ? client.fullName || `${client.firstName} ${client.lastName}` : "Unknown Client";
   };
 
   const getAgreementStatus = (agreement: any) => {
@@ -188,9 +188,9 @@ export default function ServiceAgreementsList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All clients</SelectItem>
-                {(clients || []).map((client: any) => (
+                {Array.isArray(clients) && clients.map((client: any) => (
                   <SelectItem key={client.id} value={client.id.toString()}>
-                    {client.firstName} {client.lastName}
+                    {client.fullName || `${client.firstName} ${client.lastName}`}
                   </SelectItem>
                 ))}
               </SelectContent>

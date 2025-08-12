@@ -59,7 +59,7 @@ const staffManagementNavigation = [
 ];
 
 const complianceNavigation = [
-  { name: "Compliance Centre", href: "/compliance", icon: FileCheck },
+  { name: "Service Agreements", href: "/compliance/service-agreements", icon: FileCheck },
 ];
 
 const billingNavigation = [
