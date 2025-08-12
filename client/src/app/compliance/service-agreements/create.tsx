@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Lock, Shield } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { hasPermission } from "@/lib/permissions";
 import AgreementForm from "@/components/service-agreements/AgreementForm";
 import type { ServiceAgreement, ServiceAgreementItem } from "@shared/schema";
 
@@ -13,6 +15,34 @@ export default function CreateServiceAgreement() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Get current user data for permission checking
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/user"],
+  });
+
+  // Check if user has access to create service agreements
+  if (user && !hasPermission(user, "CREATE_SERVICE_AGREEMENT")) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="flex items-center gap-3 p-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <Lock className="h-8 w-8 text-red-600 dark:text-red-400" />
+          <div>
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">
+              Access Restricted
+            </h3>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              Only Admin and Program Coordinators can create service agreements.
+            </p>
+          </div>
+        </div>
+        <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
+          <Shield className="h-3 w-3 mr-1" />
+          Your role: {user?.role || "Unknown"}
+        </Badge>
+      </div>
+    );
+  }
   
   const [agreementData, setAgreementData] = useState<Partial<ServiceAgreement>>({
     clientId: 0,

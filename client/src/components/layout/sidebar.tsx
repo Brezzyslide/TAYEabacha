@@ -146,7 +146,7 @@ export default function Sidebar() {
         )}
 
         {/* Compliance Section - Only for Admins */}
-        {isAdmin && renderNavigationSection(
+        {(user?.role === "Admin" || user?.role === "Coordinator" || user?.role === "ConsoleManager") && renderNavigationSection(
           "COMPLIANCE", 
           complianceNavigation, 
           "bg-emerald-50/80 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"

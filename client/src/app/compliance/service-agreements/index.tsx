@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { hasPermission } from "@/lib/permissions";
 import {
   Table,
   TableBody,
@@ -32,7 +34,9 @@ import {
   Download, 
   Edit, 
   Search,
-  Filter
+  Filter,
+  Shield,
+  Lock
 } from "lucide-react";
 import { formatCurrency, itemToRateSet, getLineItemTotal } from "@shared/utils/calc";
 import Decimal from "decimal.js";
@@ -41,6 +45,34 @@ export default function ServiceAgreementsList() {
   const [clientFilter, setClientFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Get current user data for permission checking
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/user"],
+  });
+
+  // Check if user has access to compliance module
+  if (user && !hasPermission(user, "ACCESS_COMPLIANCE")) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="flex items-center gap-3 p-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <Lock className="h-8 w-8 text-red-600 dark:text-red-400" />
+          <div>
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">
+              Access Restricted
+            </h3>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              Only Admin and Program Coordinators can access the Compliance module.
+            </p>
+          </div>
+        </div>
+        <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
+          <Shield className="h-3 w-3 mr-1" />
+          Your role: {user?.role || "Unknown"}
+        </Badge>
+      </div>
+    );
+  }
 
   const { data: agreements, isLoading } = useQuery({
     queryKey: ["/api/compliance/service-agreements"],

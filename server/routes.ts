@@ -11147,8 +11147,8 @@ Maximum 400 words.`;
     }
   });
 
-  // Mount service agreement routes under compliance API path
-  app.use("/api/compliance/service-agreements", requireAuth, serviceAgreementRouter);
+  // Mount service agreement routes under compliance API path - Only Admin and Coordinators can access
+  app.use("/api/compliance/service-agreements", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), serviceAgreementRouter);
 
   // Emergency demo data cleanup endpoint (ConsoleManager only)
   app.post("/api/emergency-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {

@@ -23,6 +23,7 @@ CareConnect is built with a modern web stack:
 -   **Real-time Capabilities:** Supports live dashboards, activity monitoring, and analytics.
 -   **UI/UX:** TUSK-inspired design system featuring a professional color palette (Deep Navy, Warm Gold, Sage Green, Cream), modern aesthetics, responsive layouts, accessibility features, and consistent branding.
 -   **Comprehensive PDF Export:** Reusable utility with professional formatting, company branding, multi-page support, and structured content rendering for various reports.
+-   **Enhanced Security & Compliance:** Role-based access control restricts compliance module to Admin and Program Coordinator roles only, with both frontend route protection and backend API endpoint security. Digital signature system includes auto-fetching client names, comprehensive authenticity verification, and "sign on behalf" functionality with required name/role fields.
 -   **Automated Timesheet System:** Australian payroll-compliant auto-timesheet system with ScHADS pay scales, employment type separation, and leave accrual tracking.
 -   **GPS Location Tracking:** For shift check-in/check-out with human-readable address display.
 -   **AI Integration:** Used for generating care plan content, with comprehensive client data integration and pronoun consistency.
