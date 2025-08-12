@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Building2, User, Phone, Mail, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Building2, User, Phone, Mail, Calculator, FileText, PenTool } from "lucide-react";
 import ItemsGrid from "./ItemsGrid";
 import TotalsBar from "./TotalsBar";
 import SignPanel from "./SignPanel";
@@ -120,202 +121,209 @@ export default function AgreementForm({
   }, [defaultTerms, mode, agreementData.customTerms]);
 
   return (
-    <div className="space-y-8">
-      {/* Section A: Tenant + Client */}
+    <div className="space-y-6">
+      {/* Client Selection Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Service Provider & Participant Details
+            <User className="h-5 w-5" />
+            Participant Selection
           </CardTitle>
           <CardDescription>
-            Service provider information and participant details for this agreement
+            Select the NDIS participant for this service agreement
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Auto-loaded Tenant Information */}
-          {mode === "create" && company && (
-            <div className="grid gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Building2 className="h-4 w-4 text-slate-600" />
-                <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Service Provider (Auto-loaded)
-                </Label>
-                <Badge variant="secondary" className="text-xs">Read-only</Badge>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-slate-500">Business Name</Label>
-                  <div className="text-sm font-medium">{company.name}</div>
-                </div>
-                <div>
-                  <Label className="text-xs text-slate-500">ABN</Label>
-                  <div className="text-sm font-medium">{company.registrationNumber}</div>
-                </div>
-                <div>
-                  <Label className="text-xs text-slate-500">Business Address</Label>
-                  <div className="text-sm font-medium whitespace-pre-line">{company.businessAddress}</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <User className="h-3 w-3 text-slate-400" />
-                    <span className="text-sm font-medium">{company.primaryContactName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-3 w-3 text-slate-400" />
-                    <span className="text-sm">{company.primaryContactPhone}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-3 w-3 text-slate-400" />
-                    <span className="text-sm">{company.primaryContactEmail}</span>
-                  </div>
-                </div>
-              </div>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="clientId" className="text-red-600">Client *</Label>
+              <Select 
+                value={agreementData.clientId?.toString() || ""} 
+                onValueChange={(value) => handleFieldChange('clientId', parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(clients || []).map((client: any) => (
+                    <SelectItem key={client.id} value={client.id.toString()}>
+                      {client.firstName} {client.lastName} - {client.ndisNumber}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!agreementData.clientId && (
+                <p className="text-sm text-red-600 mt-1">Client is required</p>
+              )}
             </div>
-          )}
 
-          {/* Auto-loaded Client Information */}
-          {mode === "create" && selectedClientDetails && (
-            <div className="grid gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <User className="h-4 w-4 text-blue-600" />
-                <Label className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Participant Details (Auto-loaded)
-                </Label>
-                <Badge variant="secondary" className="text-xs">Read-only</Badge>
+            {/* Auto-loaded Client Information */}
+            {mode === "create" && selectedClientDetails && (
+              <div className="grid gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="h-4 w-4 text-blue-600" />
+                  <Label className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Participant Details (Auto-loaded)
+                  </Label>
+                  <Badge variant="secondary" className="text-xs">Read-only</Badge>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-slate-500">Full Name</Label>
+                    <div className="text-sm font-medium">{selectedClientDetails.fullName || `${selectedClientDetails.firstName} ${selectedClientDetails.lastName}`}</div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">NDIS Number</Label>
+                    <div className="text-sm font-medium">{selectedClientDetails.ndisNumber}</div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">Address</Label>
+                    <div className="text-sm font-medium">{selectedClientDetails.address || "Not specified"}</div>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedClientDetails.emergencyContactName && (
+                      <div className="flex items-center gap-2">
+                        <User className="h-3 w-3 text-slate-400" />
+                        <span className="text-sm font-medium">{selectedClientDetails.emergencyContactName}</span>
+                      </div>
+                    )}
+                    {selectedClientDetails.emergencyContactPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3 text-slate-400" />
+                        <span className="text-sm">{selectedClientDetails.emergencyContactPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-slate-500">Full Name</Label>
-                  <div className="text-sm font-medium">{selectedClientDetails.fullName || `${selectedClientDetails.firstName} ${selectedClientDetails.lastName}`}</div>
-                </div>
-                <div>
-                  <Label className="text-xs text-slate-500">NDIS Number</Label>
-                  <div className="text-sm font-medium">{selectedClientDetails.ndisNumber}</div>
-                </div>
-                <div>
-                  <Label className="text-xs text-slate-500">Address</Label>
-                  <div className="text-sm font-medium">{selectedClientDetails.address || "Not specified"}</div>
-                </div>
-                <div className="space-y-2">
-                  {selectedClientDetails.emergencyContactName && (
-                    <div className="flex items-center gap-2">
-                      <User className="h-3 w-3 text-slate-400" />
-                      <span className="text-sm font-medium">{selectedClientDetails.emergencyContactName}</span>
-                    </div>
-                  )}
-                  {selectedClientDetails.emergencyContactPhone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3 w-3 text-slate-400" />
-                      <span className="text-sm">{selectedClientDetails.emergencyContactPhone}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Client Selection */}
-          <div>
-            <Label htmlFor="clientId">Participant *</Label>
-            <Select 
-              value={agreementData.clientId?.toString() || ""} 
-              onValueChange={(value) => handleFieldChange('clientId', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a participant" />
-              </SelectTrigger>
-              <SelectContent>
-                {(clients || []).map((client: any) => (
-                  <SelectItem key={client.id} value={client.id.toString()}>
-                    {client.firstName} {client.lastName} - {client.ndisNumber}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Section B: Agreement Details */}
+      {/* Agreement Period */}
       <Card>
         <CardHeader>
-          <CardTitle>Agreement Details</CardTitle>
-          <CardDescription>Service period and agreement identification</CardDescription>
+          <CardTitle>Agreement Period</CardTitle>
+          <CardDescription>Service dates and duration</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="agreementNumber">Agreement Number</Label>
-              <Input
-                id="agreementNumber"
-                value={agreementData.agreementNumber || ""}
-                onChange={(e) => handleFieldChange("agreementNumber", e.target.value)}
-                placeholder="Auto-generated if empty"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date *</Label>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="startDate" className="text-red-600">Start Date *</Label>
               <Input
                 id="startDate"
                 type="date"
                 value={agreementData.startDate || ""}
                 onChange={(e) => handleFieldChange("startDate", e.target.value)}
+                placeholder="dd/mm/yyyy"
               />
+              {!agreementData.startDate && (
+                <p className="text-sm text-red-600 mt-1">Start date is required</p>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date *</Label>
+            <div>
+              <Label htmlFor="endDate" className="text-red-600">End Date *</Label>
               <Input
                 id="endDate"
                 type="date"
                 value={agreementData.endDate || ""}
                 onChange={(e) => handleFieldChange("endDate", e.target.value)}
+                placeholder="dd/mm/yyyy"
               />
+              {!agreementData.endDate && (
+                <p className="text-sm text-red-600 mt-1">End date is required</p>
+              )}
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <Separator />
-
-          {/* Plan Details */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-slate-900 dark:text-slate-100">Plan Information</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="planNumber">Plan Number</Label>
-                <Input
-                  id="planNumber"
-                  value={agreementData.plan?.planNumber || ""}
-                  onChange={(e) => handleFieldChange("plan.planNumber", e.target.value)}
-                  placeholder="Enter NDIS plan number"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="planManager">Plan Manager</Label>
-                <Input
-                  id="planManager"
-                  value={agreementData.plan?.planManager || ""}
-                  onChange={(e) => handleFieldChange("plan.planManager", e.target.value)}
-                  placeholder="Plan manager name"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="planManagerContact">Plan Manager Contact</Label>
+      {/* Plan Nominee Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Plan Nominee Information</CardTitle>
+          <CardDescription>Authorized representative details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="planNomineeName">Plan Nominee Name</Label>
               <Input
-                id="planManagerContact"
-                value={agreementData.plan?.planManagerContact || ""}
-                onChange={(e) => handleFieldChange("plan.planManagerContact", e.target.value)}
-                placeholder="Plan manager contact details"
+                id="planNomineeName"
+                value={agreementData.plan?.planNominee || ""}
+                onChange={(e) => handleFieldChange("plan.planNominee", e.target.value)}
+                placeholder="Enter nominee name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="planNomineeContact">Plan Nominee Contact</Label>
+              <Input
+                id="planNomineeContact"
+                value={agreementData.plan?.planNomineeContact || ""}
+                onChange={(e) => handleFieldChange("plan.planNomineeContact", e.target.value)}
+                placeholder="Email or phone"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Section C: Service Items */}
+      {/* Billing Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Service Items</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Calculator className="h-5 w-5" />
+            Billing Details
+          </CardTitle>
+          <CardDescription>NDIS plan and billing information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="ndisParticipantNumber">NDIS Participant Number</Label>
+              <Input
+                id="ndisParticipantNumber"
+                value={agreementData.clientNdisNumber || ""}
+                onChange={(e) => handleFieldChange("clientNdisNumber", e.target.value)}
+                placeholder="Enter participant number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="planNumber">Plan Number</Label>
+              <Input
+                id="planNumber"
+                value={agreementData.plan?.planNumber || ""}
+                onChange={(e) => handleFieldChange("plan.planNumber", e.target.value)}
+                placeholder="Enter plan number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="planManager">Plan Manager</Label>
+              <Input
+                id="planManager"
+                value={agreementData.plan?.planManager || ""}
+                onChange={(e) => handleFieldChange("plan.planManager", e.target.value)}
+                placeholder="Enter plan manager name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="planManagerContact">Plan Manager Contact</Label>
+              <Input
+                id="planManagerContact"
+                value={agreementData.plan?.planManagerContact || ""}
+                onChange={(e) => handleFieldChange("plan.planManagerContact", e.target.value)}
+                placeholder="Email or phone"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Service Items & Pricing */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Items & Pricing</CardTitle>
           <CardDescription>NDIS support categories and hourly rates</CardDescription>
         </CardHeader>
         <CardContent>
@@ -323,37 +331,67 @@ export default function AgreementForm({
         </CardContent>
       </Card>
 
-      {/* Section D: Totals */}
+      {/* Totals & Calculations */}
       <TotalsBar items={items} />
 
-      {/* Section E: Terms & Conditions */}
+      {/* Custom Terms & Conditions */}
       <Card>
         <CardHeader>
-          <CardTitle>Terms & Conditions</CardTitle>
-          <CardDescription>Standard and custom terms for this agreement</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Custom Terms & Conditions
+          </CardTitle>
+          <CardDescription>Additional terms specific to this agreement</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <TermsViewer />
-          
-          <div className="space-y-2">
-            <Label htmlFor="customTerms">Additional Terms</Label>
+          <div>
+            <Label htmlFor="customTerms">Enter any custom terms specific to this agreement...</Label>
             <Textarea
               id="customTerms"
-              rows={6}
+              rows={8}
               value={agreementData.customTerms || ""}
               onChange={(e) => handleFieldChange("customTerms", e.target.value)}
-              placeholder="Add any additional terms specific to this agreement..."
+              placeholder="Enter any custom terms specific to this agreement..."
+              className="mt-2"
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Section F: Digital Signatures */}
+      {/* Standard Terms & Conditions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Standard Terms & Conditions</CardTitle>
+          <CardDescription>Default terms that apply to all agreements</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TermsViewer />
+        </CardContent>
+      </Card>
+
+      {/* Digital Signatures */}
       <SignPanel 
         isAccepted={isAccepted}
         onAcceptedChange={onAcceptedChange}
         agreementData={agreementData}
       />
+
+      {/* Agreement Actions */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-4 justify-end">
+            <Button variant="outline">
+              Save as Draft
+            </Button>
+            <Button 
+              disabled={!agreementData.clientId || !agreementData.startDate || !agreementData.endDate}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Create Agreement
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -89,7 +89,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
             </div>
           </div>
           <Badge variant={isFullySigned ? "default" : "outline"}>
-            {agreement.status || "draft"}
+            {agreementData?.status || "draft"}
           </Badge>
         </div>
 
@@ -133,16 +133,14 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
                   <p className="text-sm text-slate-600 dark:text-slate-400">
                     Awaiting client signature
                   </p>
-                  {mode === "edit" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClientSign}
-                      className="mt-2"
-                    >
-                      Sign as Client
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClientSign}
+                    className="mt-2"
+                  >
+                    Sign as Client
+                  </Button>
                 </div>
               </div>
             )}
@@ -187,16 +185,14 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
                   <p className="text-sm text-slate-600 dark:text-slate-400">
                     Awaiting provider signature
                   </p>
-                  {mode === "edit" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleProviderSign}
-                      className="mt-2"
-                    >
-                      Sign as Provider
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleProviderSign}
+                    className="mt-2"
+                  >
+                    Sign as Provider
+                  </Button>
                 </div>
               </div>
             )}
