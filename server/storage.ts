@@ -22,7 +22,7 @@ import {
   type EvacuationDrill, type InsertEvacuationDrill
 } from "@shared/schema";
 import { db, pool } from "./lib/dbClient";
-import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray } from "drizzle-orm";
+import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray, exists } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
@@ -2575,11 +2575,34 @@ export class DatabaseStorage implements IStorage {
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
 
-      query.where(and(
+      return db.select({
+        id: medicationSchedules.id,
+        planId: medicationSchedules.planId,
+        clientId: medicationSchedules.clientId,
+        timeSlot: medicationSchedules.timeSlot,
+        scheduledDate: medicationSchedules.scheduledDate,
+        medicationName: medicationSchedules.medicationName,
+        dosage: medicationSchedules.dosage,
+        route: medicationSchedules.route,
+        status: medicationSchedules.status,
+        administeredBy: medicationSchedules.administeredBy,
+        administeredAt: medicationSchedules.administeredAt,
+        notes: medicationSchedules.notes,
+        tenantId: medicationSchedules.tenantId,
+        createdAt: medicationSchedules.createdAt,
+        updatedAt: medicationSchedules.updatedAt,
+        clientName: clients.fullName,
+        administeringStaff: users.fullName,
+      })
+      .from(medicationSchedules)
+      .leftJoin(clients, eq(medicationSchedules.clientId, clients.id))
+      .leftJoin(users, eq(medicationSchedules.administeredBy, users.id))
+      .where(and(
         eq(medicationSchedules.tenantId, tenantId),
         gte(medicationSchedules.scheduledDate, startOfWeek),
         lte(medicationSchedules.scheduledDate, endOfWeek)
-      ));
+      ))
+      .orderBy(medicationSchedules.scheduledDate, medicationSchedules.timeSlot);
     }
 
     return query.orderBy(medicationSchedules.scheduledDate, medicationSchedules.timeSlot);
@@ -2679,7 +2702,7 @@ export class DatabaseStorage implements IStorage {
       content: caseNotes.content,
       type: caseNotes.type,
       clientId: caseNotes.clientId,
-      shiftId: caseNotes.shiftId,
+      shiftId: caseNotes.linkedShiftId,
       userId: caseNotes.userId,
       createdAt: caseNotes.createdAt,
       clientName: clients.fullName,

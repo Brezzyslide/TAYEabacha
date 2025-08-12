@@ -2,8 +2,8 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Use AWS production database
-const databaseUrl = process.env.AWS_DATABASE_URL || "postgres://postgres:mypassword@54.80.195.220:5430/mydb";
+// Use the provisioned database URL from Replit
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error(
@@ -13,30 +13,18 @@ if (!databaseUrl) {
 
 console.log(`[DATABASE] Connecting to: ${databaseUrl.replace(/:[^:]*@/, ':***@')}`);
 
-// Create pool with Linux-compatible SSL configuration
+// Create pool with Replit database configuration
 export const pool = new Pool({ 
   connectionString: databaseUrl,
-  // Adaptive SSL configuration for Linux/Docker deployment
-  // First tries SSL, falls back to non-SSL if server doesn't support it
-  ssl: (() => {
-    if (process.env.DATABASE_SSL_DISABLED === 'true') return false;
-    if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) return false;
-    // For cloud providers that support SSL but may have self-signed certs
-    return { rejectUnauthorized: false };
-  })(),
+  // Replit databases don't use SSL by default
+  ssl: false,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
 });
 
-const sslConfig = (() => {
-  if (process.env.DATABASE_SSL_DISABLED === 'true') return 'disabled';
-  if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) return 'disabled (localhost)';
-  return 'enabled with self-signed cert support';
-})();
-
-console.log(`[DATABASE] SSL configuration: ${sslConfig}`);
-console.log('[DATABASE] Connection pool configured for Linux/Docker compatibility');
+console.log('[DATABASE] SSL configuration: disabled (Replit database)');
+console.log('[DATABASE] Connection pool configured for Replit environment');
 
 export const db = drizzle(pool, { schema });
 
