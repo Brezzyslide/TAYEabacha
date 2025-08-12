@@ -2,6 +2,7 @@ import { db } from '../../../../server/db';
 import { serviceAgreements, serviceAgreementItems, serviceAgreementSignatures, clients } from '../../../../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { convertToDecimalStrings, convertFromDecimalStrings } from './validators';
+import { lineTotals, grandTotal, getLineItemTotal, itemToRateSet } from '../../../../shared/utils/calc';
 
 export class ServiceAgreementService {
   
@@ -219,6 +220,34 @@ export class ServiceAgreementService {
   }
 
   /**
+   * Calculate total amount for a service agreement using precise decimal math
+   */
+  async calculateAgreementTotal(agreementId: string) {
+    try {
+      const items = await this.getAgreementItems(agreementId);
+      const itemRateSets = items.map(item => itemToRateSet(convertFromDecimalStrings(item)));
+      const lineBreakdowns = itemRateSets.map(rateSet => lineTotals(rateSet));
+      const total = grandTotal(lineBreakdowns);
+      
+      console.log(`[CALC] Agreement ${agreementId} total: $${total.toFixed(2)} from ${items.length} items`);
+      
+      return {
+        total: total.toFixed(2),
+        itemCount: items.length,
+        lineBreakdowns: lineBreakdowns.map((breakdown, index) => ({
+          itemId: items[index].id,
+          ...Object.fromEntries(
+            Object.entries(breakdown).map(([key, value]) => [key, value.toFixed(2)])
+          )
+        }))
+      };
+    } catch (error) {
+      console.error('[SERVICE AGREEMENT SERVICE] Error calculating agreement total:', error);
+      throw new Error('Failed to calculate agreement total');
+    }
+  }
+
+  /**
    * Create a service agreement item
    */
   async createAgreementItem(agreementId: string, data: any, companyId: string) {
@@ -234,6 +263,22 @@ export class ServiceAgreementService {
         serviceAgreementId: agreementId,
         createdAt: new Date(),
         updatedAt: new Date()
+      });
+
+      // Calculate totals using precise decimal math before saving
+      const rateSet = itemToRateSet(itemData);
+      const calculatedTotal = getLineItemTotal(rateSet);
+      const lineBreakdown = lineTotals(rateSet);
+      
+      console.log(`[CALC] Item total calculated: $${calculatedTotal.toFixed(2)} for agreement ${agreementId}`);
+      console.log(`[CALC] Line breakdown:`, {
+        day: lineBreakdown.day.toFixed(2),
+        evening: lineBreakdown.evening.toFixed(2),
+        activeNight: lineBreakdown.activeNight.toFixed(2),
+        sleepover: lineBreakdown.sleepover.toFixed(2),
+        saturday: lineBreakdown.saturday.toFixed(2),
+        sunday: lineBreakdown.sunday.toFixed(2),
+        publicHoliday: lineBreakdown.publicHoliday.toFixed(2)
       });
 
       const result = await db
@@ -262,6 +307,22 @@ export class ServiceAgreementService {
       const updateData = convertToDecimalStrings({
         ...data,
         updatedAt: new Date()
+      });
+
+      // Calculate totals using precise decimal math before saving
+      const rateSet = itemToRateSet(updateData);
+      const calculatedTotal = getLineItemTotal(rateSet);
+      const lineBreakdown = lineTotals(rateSet);
+      
+      console.log(`[CALC] Updated item total: $${calculatedTotal.toFixed(2)} for item ${itemId} in agreement ${agreementId}`);
+      console.log(`[CALC] Updated line breakdown:`, {
+        day: lineBreakdown.day.toFixed(2),
+        evening: lineBreakdown.evening.toFixed(2),
+        activeNight: lineBreakdown.activeNight.toFixed(2),
+        sleepover: lineBreakdown.sleepover.toFixed(2),
+        saturday: lineBreakdown.saturday.toFixed(2),
+        sunday: lineBreakdown.sunday.toFixed(2),
+        publicHoliday: lineBreakdown.publicHoliday.toFixed(2)
       });
 
       const result = await db

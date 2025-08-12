@@ -319,6 +319,27 @@ export class ServiceAgreementController {
       handleError(res, error, 'Failed to generate PDF');
     }
   }
+
+  /**
+   * GET /:id/calculate-total - Calculate agreement total with precise decimal math
+   */
+  async calculateAgreementTotal(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { companyId } = req.user!;
+      const { id } = req.params;
+      
+      // Verify agreement belongs to company first
+      const agreement = await serviceAgreementService.getAgreementById(id, companyId);
+      if (!agreement) {
+        return res.status(404).json({ message: 'Service agreement not found' });
+      }
+      
+      const calculation = await serviceAgreementService.calculateAgreementTotal(id);
+      res.json(calculation);
+    } catch (error) {
+      handleError(res, error, 'Failed to calculate agreement total');
+    }
+  }
 }
 
 export const serviceAgreementController = new ServiceAgreementController();

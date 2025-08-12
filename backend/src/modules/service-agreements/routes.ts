@@ -52,3 +52,8 @@ serviceAgreementRouter.post('/:id/sign', (req, res) => {
 serviceAgreementRouter.get('/:id/pdf', (req, res) => {
   serviceAgreementController.generatePDF(req as any, res);
 });
+
+// GET /:id/calculate-total - Calculate agreement total with precise decimal math
+serviceAgreementRouter.get('/:id/calculate-total', (req, res) => {
+  serviceAgreementController.calculateAgreementTotal(req as any, res);
+});
