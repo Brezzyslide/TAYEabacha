@@ -7,6 +7,14 @@ CareConnect is a comprehensive, multi-tenant healthcare facility management plat
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-08-12**: ✅ **PHASE 4 COMPLETE: BUILD ONCE, SERVE CORRECTLY** - Separate frontend/backend builds with production static file serving:
+- **SEPARATE BUILD SYSTEM**: Frontend builds to `dist/public/`, backend builds to `backend/dist/server.js`
+- **SINGLE COMMAND BUILD**: `./build.sh` builds both components independently with verification
+- **PRODUCTION STATIC SERVING**: Backend automatically serves frontend static files when `NODE_ENV=production`
+- **SPA ROUTING SUPPORT**: Catch-all handler serves `index.html` for client-side routing, API routes protected
+- **BUILD VERIFICATION**: 2.9MB frontend + 803KB backend = 3.7MB total production deployment
+- **PRODUCTION SCRIPTS**: `./start-prod.sh` or `NODE_ENV=production node backend/dist/server.js`
+
 **2025-08-12**: ✅ **PHASE 3 COMPLETE: CORS, COOKIES, SECURITY, HEALTH** - Production security and monitoring implemented:
 - **CONFIG-BASED CORS**: Using validated cfg.CORS_ORIGINS from environment with comma-separated origins support
 - **SECURE AUTHENTICATION COOKIES**: secure: true and sameSite: "none" in production for HTTPS cross-origin support
