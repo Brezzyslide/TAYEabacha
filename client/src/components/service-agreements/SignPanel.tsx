@@ -14,26 +14,27 @@ import {
 import type { ServiceAgreement } from "@shared/schema";
 
 interface SignPanelProps {
-  agreement: Partial<ServiceAgreement>;
-  mode: "create" | "edit";
+  isAccepted: boolean;
+  onAcceptedChange: (accepted: boolean) => void;
+  agreementData: Partial<ServiceAgreement>;
 }
 
-export default function SignPanel({ agreement, mode }: SignPanelProps) {
+export default function SignPanel({ isAccepted, onAcceptedChange, agreementData }: SignPanelProps) {
   const [isClientSigned, setIsClientSigned] = useState(false);
   const [isProviderSigned, setIsProviderSigned] = useState(false);
 
   // Mock signature data - in production, this would come from the agreement
   const signatures = {
     client: {
-      signed: agreement.status === "active" || isClientSigned,
+      signed: agreementData?.status === "active" || isClientSigned,
       signedBy: "Client Name", // Would come from client data
-      signedAt: agreement.status === "active" ? new Date().toISOString() : null,
+      signedAt: agreementData?.status === "active" ? new Date().toISOString() : null,
       ipAddress: "192.168.1.100",
     },
     provider: {
-      signed: agreement.status === "active" || isProviderSigned,
+      signed: agreementData?.status === "active" || isProviderSigned,
       signedBy: "Provider Representative", // Would come from current user
-      signedAt: agreement.status === "active" ? new Date().toISOString() : null,
+      signedAt: agreementData?.status === "active" ? new Date().toISOString() : null,
       ipAddress: "192.168.1.100",
     }
   };
