@@ -50,7 +50,7 @@ export default function ServiceAgreementsList() {
     queryKey: ["/api/clients"],
   });
 
-  const filteredAgreements = agreements?.filter((agreement: any) => {
+  const filteredAgreements = (agreements || []).filter((agreement: any) => {
     const matchesClient = clientFilter === "all" || agreement.clientId.toString() === clientFilter;
     const matchesStatus = statusFilter === "all" || getAgreementStatus(agreement) === statusFilter;
     const matchesSearch = !searchTerm || 
@@ -61,7 +61,7 @@ export default function ServiceAgreementsList() {
   }) || [];
 
   const getClientName = (clientId: number) => {
-    const client = clients?.find((c: any) => c.id === clientId);
+    const client = (clients || []).find((c: any) => c.id === clientId);
     return client ? `${client.firstName} ${client.lastName}` : "Unknown Client";
   };
 
@@ -156,7 +156,7 @@ export default function ServiceAgreementsList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All clients</SelectItem>
-                {clients?.map((client: any) => (
+                {(clients || []).map((client: any) => (
                   <SelectItem key={client.id} value={client.id.toString()}>
                     {client.firstName} {client.lastName}
                   </SelectItem>
