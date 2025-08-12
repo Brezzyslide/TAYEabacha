@@ -337,7 +337,7 @@ export async function runStartupSecurityChecks(): Promise<void> {
     // 4. Apply comprehensive tenant fixes including care plan system
     console.log("[SECURITY] Applying comprehensive tenant fixes...");
     
-    // Add timeout for Linux/Docker environments to prevent hanging
+    // Add timeout for production environments to prevent hanging
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Tenant fixes timeout after 30 seconds')), 30000);
     });
@@ -351,7 +351,7 @@ export async function runStartupSecurityChecks(): Promise<void> {
       await Promise.race([fixesPromise, timeoutPromise]);
     } catch (error: any) {
       if (error.message.includes('timeout')) {
-        console.warn("[SECURITY] Tenant fixes timed out - continuing startup for Linux/Docker compatibility");
+        console.warn("[SECURITY] Tenant fixes timed out - continuing startup for production compatibility");
         console.warn("[SECURITY] Tenant fixes will be skipped to prevent hanging");
       } else {
         throw error;
@@ -363,7 +363,7 @@ export async function runStartupSecurityChecks(): Promise<void> {
   } catch (error) {
     console.error("[SECURITY] CRITICAL: Security validation failed:", error);
     // Don't throw error to prevent startup hanging - log and continue
-    console.warn("[SECURITY] Continuing startup despite security check failures for Linux/Docker compatibility");
+    console.warn("[SECURITY] Continuing startup despite security check failures for production compatibility");
   }
 }
 

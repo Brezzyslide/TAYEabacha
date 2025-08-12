@@ -1,4 +1,4 @@
-// Phase 6: Supabase Configuration for Linux/Docker deployment
+// Phase 6: Supabase Configuration for production deployment
 
 // Note: This project uses Drizzle ORM with PostgreSQL, not Supabase client
 // If migrating to Supabase, use the DATABASE_URL from Supabase project settings

@@ -1,0 +1,44 @@
+Replit Agent Task — Purge all Docker leftovers (one-shot)
+
+Goal: Remove every lingering Docker-related file or reference from the repo so the codebase reflects a development-only setup. Do not touch node_modules.
+
+Scope rules:
+- READ/WRITE allowed across repo, but DO NOT modify node_modules or lockfiles unless explicitly required.
+- After changes, run a quick grep to verify nothing Docker-related remains (except within node_modules).
+
+Step 1 — Identify candidates (no deletes yet; list paths)
+Search the repo (excluding node_modules) for these patterns/filenames:
+- Files: Dockerfile, Dockerfile.*, .dockerignore, docker-compose.yml, docker-compose.yaml, docker-compose.*.yml, docker-compose.*.yaml
+- Shell/CI scripts: **/*docker*.sh, **/ci-test.sh, **/docker-*.sh
+- GitHub Actions using Docker/buildx: .github/workflows/** with actions like docker/build-push-action, docker/setup-buildx-action, docker/login-action
+- Any scripts in package.json containing “docker”, “buildx”, “compose”
+- Markdown/docs with Docker build/run commands (grep for: “docker build”, “docker run”, “docker compose”)
+
+Print a numbered list of all matches with path + a short reason (e.g., “GitHub Action uses docker/build-push-action”).
+
+Step 2 — Delete/strip safely
+For each item found:
+A) If it’s a dedicated Docker artifact (files below) → DELETE the file:
+   - Dockerfile*, .dockerignore, docker-compose*.yml/.yaml, **/*docker*.sh, **/ci-test.sh
+B) If it’s a GitHub Action workflow that exists only to build/push Docker → DELETE that workflow file.
+   - If a workflow does many things and Docker is just one job, then REMOVE ONLY the Docker job(s)/steps and keep the rest intact.
+C) If package.json contains “docker” scripts → REMOVE those script entries (leave all other scripts unchanged).
+D) If README/markdown contains clearly separated Docker sections (headings like “## Docker”, “### Build with Docker”) → REMOVE those sections only. If not clearly separated, leave docs untouched.
+
+Step 3 — Sanity checks
+- Ensure package.json remains valid JSON after script removals.
+- Ensure .github/workflows still parse if edited (YAML validity).
+- Do NOT delete any non-Docker CI or dev tooling.
+
+Step 4 — Verify purge (read-only grep)
+Run a case-insensitive search (excluding node_modules) for:
+- “docker ”, “ docker”, “buildx”, “docker-compose”, “FROM node:”, “docker/build-push-action”
+Report any remaining matches (show path + line). If all clear, say “No Docker references remain.”
+
+Step 5 — Output a clear summary
+- Files deleted (with paths)
+- Files edited (with paths + what changed)
+- Remaining references (if any), with suggested manual action
+
+Commit message:
+chore: remove all Docker infrastructure and references for dev-only posture

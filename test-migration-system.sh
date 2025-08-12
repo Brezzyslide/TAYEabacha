@@ -27,12 +27,12 @@ echo "SSL Config: Adaptive - tries SSL first, works without if needed"
 echo "Production: SSL with self-signed certificate support"  
 echo "Development: SSL with relaxed validation"
 
-# Test 4: Linux/Docker readiness
-echo "4️⃣ Verifying Linux/Docker readiness..."
-if [ -f "docker-migrate.sh" ] && [ -x "docker-migrate.sh" ]; then
-    echo "✅ Docker migration script ready"
+# Test 4: Migration system readiness
+echo "4️⃣ Verifying migration system readiness..."
+if [ -f "db-migrate.sh" ] && [ -x "db-migrate.sh" ]; then
+    echo "✅ Migration script ready"
 else
-    echo "❌ Docker migration script missing"
+    echo "❌ Migration script missing"
 fi
 
 # Test 5: Supabase compatibility 
@@ -47,8 +47,8 @@ echo ""
 echo "📋 Phase 6 Summary:"
 echo "✅ Database migration system implemented"
 echo "✅ SSL configuration optimized for Linux"
-echo "✅ Docker-safe scripts with readiness checks"
+echo "✅ Migration scripts with readiness checks"
 echo "✅ Supabase integration documentation"
 echo "✅ Production-ready connection pooling"
 echo ""
-echo "🎯 Phase 6 Complete: Ready for Linux container deployment"
+echo "🎯 Phase 6 Complete: Ready for database deployment"
