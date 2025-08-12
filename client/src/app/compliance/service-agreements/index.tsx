@@ -38,7 +38,7 @@ import { formatCurrency, itemToRateSet, getLineItemTotal } from "@shared/utils/c
 import Decimal from "decimal.js";
 
 export default function ServiceAgreementsList() {
-  const [clientFilter, setClientFilter] = useState("");
+  const [clientFilter, setClientFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -51,7 +51,7 @@ export default function ServiceAgreementsList() {
   });
 
   const filteredAgreements = agreements?.filter((agreement: any) => {
-    const matchesClient = !clientFilter || agreement.clientId.toString() === clientFilter;
+    const matchesClient = clientFilter === "all" || agreement.clientId.toString() === clientFilter;
     const matchesStatus = statusFilter === "all" || getAgreementStatus(agreement) === statusFilter;
     const matchesSearch = !searchTerm || 
       agreement.agreementNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -155,7 +155,7 @@ export default function ServiceAgreementsList() {
                 <SelectValue placeholder="Filter by client" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All clients</SelectItem>
+                <SelectItem value="all">All clients</SelectItem>
                 {clients?.map((client: any) => (
                   <SelectItem key={client.id} value={client.id.toString()}>
                     {client.firstName} {client.lastName}
