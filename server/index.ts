@@ -6,6 +6,7 @@ import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { runStartupSecurityChecks } from "./enhanced-tenant-security";
+import { logger, requestLoggingMiddleware } from "./logger";
 import path from 'path';
 import fs from 'fs';
 
@@ -31,20 +32,25 @@ console.log(`[ENV] Replit ID: ${process.env.REPL_ID || 'undefined'}`);
 // This will crash loudly if required environment variables are missing
 let cfg: any = null;
 
-if (isProduction) {
-  try {
-    // Import and validate all required environment variables using config schema
-    const configModule = require("../backend/src/config");
-    cfg = configModule.cfg;
-    console.log('[CONFIG] Production environment validation passed ✓');
-  } catch (error) {
+try {
+  // Import and validate all required environment variables using config schema
+  const configModule = require("../backend/src/config");
+  cfg = configModule.cfg;
+  console.log('[CONFIG] Environment validation passed ✓');
+} catch (error) {
+  if (isProduction) {
     console.error('[CONFIG] Environment validation failed:', error);
     console.error('[CONFIG] Please check your environment variables against .env.example');
     console.error('[CONFIG] Server cannot start in production without valid environment');
     process.exit(1);
+  } else {
+    console.log('[CONFIG] Development mode: using fallback config');
+    cfg = {
+      APP_BASE_URL: process.env.APP_BASE_URL || 'http://localhost:5000',
+      CORS_ORIGINS: process.env.CORS_ORIGINS,
+      NODE_ENV: process.env.NODE_ENV || 'development'
+    };
   }
-} else {
-  console.log('[CONFIG] Development mode: environment validation skipped');
 }
 
 // Production safety checks (existing)
@@ -97,46 +103,20 @@ console.log(`[TIMEZONE] Current server time: ${new Date().toLocaleString('en-AU'
 
 const app = express();
 
-// CORS Configuration - Environment Aware
-const corsOptions = {
-  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    // Development: Allow all origins for flexibility
-    if (isDevelopment) {
-      return callback(null, true);
-    }
-    
-    // Production: Strict origin checking
-    const allowedOrigins = [
-      'https://needscareai.replit.app',
-      'https://your-production-domain.com',  // Replace with actual production domain
-      ...(isDevelopment ? [
-        'http://localhost:3000',
-        'http://localhost:5000', 
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:5000'
-      ] : [])
-    ];
-    
-    // Allow Replit development domains (dynamic UUIDs) in development
-    const isReplitDomain = origin.includes('.replit.dev') || origin.includes('.picard.replit.dev');
-    
-    if (allowedOrigins.includes(origin) || (isDevelopment && isReplitDomain)) {
-      callback(null, true);
-    } else {
-      console.log(`[CORS] Origin ${origin} ${isProduction ? 'BLOCKED' : 'allowed'} in ${isProduction ? 'production' : 'development'}`);
-      callback(null, isDevelopment); // Strict in production, permissive in development
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Set-Cookie']
-};
+// Trust proxy for proper HTTPS detection in production
+app.set("trust proxy", 1);
 
-app.use(cors(corsOptions));
+// CORS Configuration using validated config
+const origins = (cfg.CORS_ORIGINS ?? cfg.APP_BASE_URL).split(",").map((s: string) => s.trim());
+console.log('[CORS] Allowed origins:', origins);
+
+app.use(cors({ 
+  origin: origins, 
+  credentials: true 
+}));
+
+// Request logging middleware with structured JSON logging
+app.use(requestLoggingMiddleware);
 
 // Production Security Headers
 if (isProduction) {
@@ -160,14 +140,21 @@ if (isProduction) {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Production health check endpoint - register early to avoid frontend routing conflicts
+// Health check endpoint (including /healthz alias for Kubernetes)
 app.get('/health', (req: Request, res: Response) => {
   res.json({
-    status: 'healthy',
-    environment: isProduction ? 'production' : 'development', 
-    timestamp: new Date().toISOString(),
+    ok: true,
     uptime: process.uptime(),
-    memory: process.memoryUsage(),
+    version: '1.0.0',
+    environment: isProduction ? 'production' : 'development',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/healthz', (req: Request, res: Response) => {
+  res.json({
+    ok: true,
+    uptime: process.uptime(), 
     version: '1.0.0'
   });
 });
