@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 CareConnect is built with a modern web stack:
 -   **Frontend:** React 18, TypeScript, Tailwind CSS with shadcn/ui for UI, TanStack Query for data, Wouter for routing, and Vite for building.
 -   **Backend:** Express.js server with TypeScript, Passport.js for authentication, and Drizzle ORM for PostgreSQL database interactions.
+-   **Modular Backend:** NDIS Service Agreement module with complete CRUD operations, PDF export, tenant isolation, and role-based access control at `/api/compliance/service-agreements`.
 
 **Key Architectural Decisions:**
 -   **Multi-Tenancy:** Company-based tenant separation at the PostgreSQL database level with composite foreign key constraints ensuring data privacy and isolation.

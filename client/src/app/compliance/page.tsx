@@ -114,34 +114,34 @@ export default function CompliancePage() {
   const [editingAgreement, setEditingAgreement] = useState<any>(null);
 
   // Query for downloadable forms (global library) - fallback to sample data if API fails
-  const { data: downloadableForms = [], isLoading: formsLoading, error: formsError } = useQuery({
+  const { data: downloadableForms = [], isLoading: formsLoading, error: formsError } = useQuery<any[]>({
     queryKey: ["/api/compliance/forms"],
     retry: false,
   });
 
   // Use sample data if API fails
-  const formsToDisplay = formsError ? SAMPLE_FORMS : downloadableForms;
+  const formsToDisplay: any[] = formsError ? SAMPLE_FORMS : downloadableForms;
 
   // Query for completed medication forms (tenant-specific)
-  const { data: medicationForms = [], isLoading: medicationLoading } = useQuery({
+  const { data: medicationForms = [], isLoading: medicationLoading } = useQuery<any[]>({
     queryKey: ["/api/compliance/medication-forms"],
     retry: false,
   });
 
   // Query for evacuation drills (tenant-specific)
-  const { data: evacuationDrills = [], isLoading: drillsLoading } = useQuery({
+  const { data: evacuationDrills = [], isLoading: drillsLoading } = useQuery<any[]>({
     queryKey: ["/api/compliance/evacuation-drills"],
     retry: false,
   });
 
   // Query for NDIS service agreements
-  const { data: serviceAgreements = [], isLoading: agreementsLoading } = useQuery({
+  const { data: serviceAgreements = [], isLoading: agreementsLoading } = useQuery<any[]>({
     queryKey: ["/api/compliance/service-agreements"],
     retry: false,
   });
 
   // Query for clients (for creating new agreements)
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
     retry: false,
   });
