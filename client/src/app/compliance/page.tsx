@@ -691,14 +691,13 @@ export default function CompliancePage() {
                 Manage service agreements with line items, pricing, and electronic signatures
               </p>
             </div>
-            {(user?.role === "Admin" || user?.role === "Coordinator") && (
-              <Dialog open={showAgreementDialog} onOpenChange={setShowAgreementDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Agreement
-                  </Button>
-                </DialogTrigger>
+            <Dialog open={showAgreementDialog} onOpenChange={setShowAgreementDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Service Agreement
+                </Button>
+              </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
@@ -906,7 +905,6 @@ export default function CompliancePage() {
                   </Form>
                 </DialogContent>
               </Dialog>
-            )}
           </div>
 
           {/* Service Agreements List */}
