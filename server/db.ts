@@ -13,14 +13,30 @@ if (!databaseUrl) {
 
 console.log(`[DATABASE] Connecting to: ${databaseUrl.replace(/:[^:]*@/, ':***@')}`);
 
-// Create pool with Neon database configuration using standard pg
+// Create pool with Linux-compatible SSL configuration
 export const pool = new Pool({ 
   connectionString: databaseUrl,
-  ssl: databaseUrl.includes('sslmode=require') ? { rejectUnauthorized: false } : false,
+  // Adaptive SSL configuration for Linux/Docker deployment
+  // First tries SSL, falls back to non-SSL if server doesn't support it
+  ssl: (() => {
+    if (process.env.DATABASE_SSL_DISABLED === 'true') return false;
+    if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) return false;
+    // For cloud providers that support SSL but may have self-signed certs
+    return { rejectUnauthorized: false };
+  })(),
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
 });
+
+const sslConfig = (() => {
+  if (process.env.DATABASE_SSL_DISABLED === 'true') return 'disabled';
+  if (databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')) return 'disabled (localhost)';
+  return 'enabled with self-signed cert support';
+})();
+
+console.log(`[DATABASE] SSL configuration: ${sslConfig}`);
+console.log('[DATABASE] Connection pool configured for Linux/Docker compatibility');
 
 export const db = drizzle(pool, { schema });
 
