@@ -136,7 +136,7 @@ export default function CompliancePage() {
 
   // Query for NDIS service agreements
   const { data: serviceAgreements = [], isLoading: agreementsLoading } = useQuery({
-    queryKey: ["/api/service-agreements"],
+    queryKey: ["/api/compliance/service-agreements"],
     retry: false,
   });
 
@@ -247,14 +247,14 @@ export default function CompliancePage() {
   // Service Agreement mutations
   const createAgreementMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/service-agreements', data);
+      return apiRequest('POST', '/api/compliance/service-agreements', data);
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Service agreement created successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/service-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
       setShowAgreementDialog(false);
       agreementForm.reset();
     },
@@ -269,14 +269,14 @@ export default function CompliancePage() {
 
   const updateAgreementMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return apiRequest('PUT', `/api/service-agreements/${id}`, data);
+      return apiRequest('PUT', `/api/compliance/service-agreements/${id}`, data);
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Service agreement updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/service-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
       setShowAgreementDialog(false);
       setEditingAgreement(null);
       agreementForm.reset();
@@ -292,14 +292,14 @@ export default function CompliancePage() {
 
   const deleteAgreementMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest('DELETE', `/api/service-agreements/${id}`);
+      return apiRequest('DELETE', `/api/compliance/service-agreements/${id}`);
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Service agreement deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/service-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
     },
     onError: (error: any) => {
       toast({
@@ -312,14 +312,14 @@ export default function CompliancePage() {
 
   const createItemMutation = useMutation({
     mutationFn: async ({ agreementId, data }: { agreementId: string; data: any }) => {
-      return apiRequest('POST', `/api/service-agreements/${agreementId}/items`, data);
+      return apiRequest('POST', `/api/compliance/service-agreements/${agreementId}/items`, data);
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Service item added successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/service-agreements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
       setShowItemDialog(false);
       itemForm.reset();
     },

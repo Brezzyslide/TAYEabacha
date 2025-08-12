@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import { serviceAgreementRouter } from "../backend/src/modules/service-agreements";
 // All demo data provisioning removed - tenants start completely clean
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
@@ -11145,6 +11146,9 @@ Maximum 400 words.`;
       res.status(500).json({ message: "Failed to delete evacuation drill" });
     }
   });
+
+  // Mount service agreement routes under compliance API path
+  app.use("/api/compliance/service-agreements", requireAuth, serviceAgreementRouter);
 
   // Emergency demo data cleanup endpoint (ConsoleManager only)
   app.post("/api/emergency-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
