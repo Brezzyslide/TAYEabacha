@@ -409,6 +409,43 @@ export default function CompliancePage() {
     return type ? type.label : formType.replace('_', ' ');
   };
 
+  const handleExportPDF = async (agreementId: string) => {
+    try {
+      const response = await fetch(`/api/compliance/service-agreements/${agreementId}/pdf`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/pdf',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `service-agreement-${agreementId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "PDF Export Successful",
+        description: "Service agreement PDF has been downloaded.",
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -936,6 +973,15 @@ export default function CompliancePage() {
                             onClick={() => openEditAgreement(agreement)}
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleExportPDF(agreement.id)}
+                            className="flex items-center gap-1"
+                          >
+                            <Download className="h-4 w-4" />
+                            PDF
                           </Button>
                           <Button 
                             size="sm" 

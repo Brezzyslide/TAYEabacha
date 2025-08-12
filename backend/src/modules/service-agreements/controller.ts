@@ -309,12 +309,16 @@ export class ServiceAgreementController {
         return res.status(404).json({ message: 'Service agreement not found' });
       }
       
-      // TODO: Implement PDF generation
-      // For now, return a stub response
-      res.status(501).json({ 
-        message: 'PDF generation not yet implemented',
-        agreementId: id 
-      });
+      // Generate PDF using our PDF service
+      const { serviceAgreementPDFService } = await import('./pdf');
+      const pdfBuffer = await serviceAgreementPDFService.renderAgreementPdf(id, companyId);
+      
+      // Set appropriate headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="service-agreement-${id}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length.toString());
+      
+      res.send(pdfBuffer);
     } catch (error) {
       handleError(res, error, 'Failed to generate PDF');
     }
