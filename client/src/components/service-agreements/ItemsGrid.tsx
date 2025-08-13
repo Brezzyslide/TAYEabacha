@@ -38,8 +38,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     weeks: 1,
     hoursDay: 0,
     unitDay: 0,
-    hoursEvening: 0,
-    unitEvening: 0,
+    hoursWeekdayEvening: 0,
+    unitWeekdayEvening: 0,
     hoursActiveNight: 0,
     unitActiveNight: 0,
     hoursSleepover: 0,
@@ -50,6 +50,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     unitSunday: 0,
     hoursPublicHoliday: 0,
     unitPublicHoliday: 0,
+    ratioOfSupport: "1:1",
     notes: "",
   });
 
@@ -60,8 +61,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
       weeks: 1,
       hoursDay: 0,
       unitDay: 0,
-      hoursEvening: 0,
-      unitEvening: 0,
+      hoursWeekdayEvening: 0,
+      unitWeekdayEvening: 0,
       hoursActiveNight: 0,
       unitActiveNight: 0,
       hoursSleepover: 0,
@@ -72,20 +73,24 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
       unitSunday: 0,
       hoursPublicHoliday: 0,
       unitPublicHoliday: 0,
+      ratioOfSupport: "1:1",
       notes: "",
     });
   };
 
   const calculateItemTotal = (item: Partial<ServiceAgreementItem>) => {
-    const dayAmount = (item.hoursDay || 0) * (item.unitDay || 0);
-    const eveningAmount = (item.hoursEvening || 0) * (item.unitEvening || 0);
-    const activeNightAmount = (item.hoursActiveNight || 0) * (item.unitActiveNight || 0);
-    const sleeperAmount = (item.hoursSleepover || 0) * (item.unitSleepover || 0);
-    const saturdayAmount = (item.hoursSaturday || 0) * (item.unitSaturday || 0);
-    const sundayAmount = (item.hoursSunday || 0) * (item.unitSunday || 0);
-    const holidayAmount = (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0);
+    // Parse ratio of support to get multiplier (e.g., "1:2" = 2, "1:3" = 3)
+    const ratioMultiplier = item.ratioOfSupport ? parseFloat(item.ratioOfSupport.split(':')[1] || '1') : 1;
     
-    const weeklyTotal = dayAmount + eveningAmount + activeNightAmount + sleeperAmount + 
+    const dayAmount = (item.hoursDay || 0) * (item.unitDay || 0) * ratioMultiplier;
+    const weekdayEveningAmount = (item.hoursWeekdayEvening || 0) * (item.unitWeekdayEvening || 0) * ratioMultiplier;
+    const activeNightAmount = (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) * ratioMultiplier;
+    const sleeperAmount = (item.hoursSleepover || 0) * (item.unitSleepover || 0) * ratioMultiplier;
+    const saturdayAmount = (item.hoursSaturday || 0) * (item.unitSaturday || 0) * ratioMultiplier;
+    const sundayAmount = (item.hoursSunday || 0) * (item.unitSunday || 0) * ratioMultiplier;
+    const holidayAmount = (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0) * ratioMultiplier;
+    
+    const weeklyTotal = dayAmount + weekdayEveningAmount + activeNightAmount + sleeperAmount + 
                       saturdayAmount + sundayAmount + holidayAmount;
     
     return weeklyTotal * (item.weeks || 1);
@@ -168,11 +173,30 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
         />
       </div>
 
+      {/* Ratio of Support */}
+      <div className="space-y-2">
+        <Label htmlFor="ratioOfSupport">Ratio of Support</Label>
+        <select
+          id="ratioOfSupport"
+          value={formData.ratioOfSupport || "1:1"}
+          onChange={(e) => handleFieldChange("ratioOfSupport", e.target.value)}
+          className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+        >
+          <option value="1:1">1:1 (Standard)</option>
+          <option value="1:2">1:2 (Two participants)</option>
+          <option value="1:3">1:3 (Three participants)</option>
+          <option value="1:4">1:4 (Four participants)</option>
+        </select>
+        <p className="text-xs text-slate-500">
+          Higher ratios multiply the hourly rate accordingly (e.g., 1:2 = double rate)
+        </p>
+      </div>
+
       {/* Hours and Rates Grid */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium flex items-center gap-2">
           <Calculator className="h-5 w-5" />
-          Hours & Rates
+          Hours & Rates (with Ratio Applied)
         </h3>
         
         <div className="grid gap-4">
@@ -206,18 +230,21 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
-                    {formatCurrency((formData.hoursDay || 0) * (formData.unitDay || 0))}
+                    {(() => {
+                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
+                      return formatCurrency((formData.hoursDay || 0) * (formData.unitDay || 0) * ratioMultiplier);
+                    })()}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Evening Rate */}
+          {/* Weekday Evening Rate */}
           <Card>
             <CardContent className="pt-4">
               <h4 className="font-medium text-sm text-slate-600 dark:text-slate-400 mb-3">
-                Evening Rate (Mon-Fri 8pm-10pm, Sat 6pm-10pm)
+                Weekday Evening Rate (Mon-Fri 8pm-10pm)
               </h4>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
@@ -226,8 +253,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursEvening || 0}
-                    onChange={(e) => handleFieldChange("hoursEvening", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursWeekdayEvening || 0}
+                    onChange={(e) => handleFieldChange("hoursWeekdayEvening", parseFloat(e.target.value) || 0)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -236,102 +263,223 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitEvening || 0}
-                    onChange={(e) => handleFieldChange("unitEvening", parseFloat(e.target.value) || 0)}
+                    value={formData.unitWeekdayEvening || 0}
+                    onChange={(e) => handleFieldChange("unitWeekdayEvening", parseFloat(e.target.value) || 0)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
-                    {formatCurrency((formData.hoursEvening || 0) * (formData.unitEvening || 0))}
+                    {(() => {
+                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
+                      return formatCurrency((formData.hoursWeekdayEvening || 0) * (formData.unitWeekdayEvening || 0) * ratioMultiplier);
+                    })()}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Additional rates in similar cards... */}
-          {/* Active Night, Sleepover, Saturday, Sunday, Public Holiday */}
-          
+          {/* Active Night Rate */}
           <Card>
             <CardContent className="pt-4">
               <h4 className="font-medium text-sm text-slate-600 dark:text-slate-400 mb-3">
-                Weekend & Holiday Rates
+                Active Night Rate (10pm-6am)
               </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Saturday Hours</Label>
-                      <Input
-                        type="number"
-                        step="0.25"
-                        min="0"
-                        value={formData.hoursSaturday || 0}
-                        onChange={(e) => handleFieldChange("hoursSaturday", parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Saturday Rate ($)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.unitSaturday || 0}
-                        onChange={(e) => handleFieldChange("unitSaturday", parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Sunday Hours</Label>
-                      <Input
-                        type="number"
-                        step="0.25"
-                        min="0"
-                        value={formData.hoursSunday || 0}
-                        onChange={(e) => handleFieldChange("hoursSunday", parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Sunday Rate ($)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.unitSunday || 0}
-                        onChange={(e) => handleFieldChange("unitSunday", parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Hours per Week</Label>
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={formData.hoursActiveNight || 0}
+                    onChange={(e) => handleFieldChange("hoursActiveNight", parseFloat(e.target.value) || 0)}
+                  />
                 </div>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Holiday Hours</Label>
-                      <Input
-                        type="number"
-                        step="0.25"
-                        min="0"
-                        value={formData.hoursPublicHoliday || 0}
-                        onChange={(e) => handleFieldChange("hoursPublicHoliday", parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Holiday Rate ($)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.unitPublicHoliday || 0}
-                        onChange={(e) => handleFieldChange("unitPublicHoliday", parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label>Unit Rate ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.unitActiveNight || 0}
+                    onChange={(e) => handleFieldChange("unitActiveNight", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Weekly Amount</Label>
+                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
+                    {(() => {
+                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
+                      return formatCurrency((formData.hoursActiveNight || 0) * (formData.unitActiveNight || 0) * ratioMultiplier);
+                    })()}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Sleepover Rate */}
+          <Card>
+            <CardContent className="pt-4">
+              <h4 className="font-medium text-sm text-slate-600 dark:text-slate-400 mb-3">
+                Sleepover Rate (Overnight support)
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Hours per Week</Label>
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={formData.hoursSleepover || 0}
+                    onChange={(e) => handleFieldChange("hoursSleepover", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit Rate ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.unitSleepover || 0}
+                    onChange={(e) => handleFieldChange("unitSleepover", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Weekly Amount</Label>
+                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
+                    {(() => {
+                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
+                      return formatCurrency((formData.hoursSleepover || 0) * (formData.unitSleepover || 0) * ratioMultiplier);
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Standard Saturday Rate */}
+          <Card>
+            <CardContent className="pt-4">
+              <h4 className="font-medium text-sm text-slate-600 dark:text-slate-400 mb-3">
+                Standard Saturday Rate (Standard pricing, not evening)
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Hours per Week</Label>
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={formData.hoursSaturday || 0}
+                    onChange={(e) => handleFieldChange("hoursSaturday", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit Rate ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.unitSaturday || 0}
+                    onChange={(e) => handleFieldChange("unitSaturday", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Weekly Amount</Label>
+                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
+                    {(() => {
+                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
+                      return formatCurrency((formData.hoursSaturday || 0) * (formData.unitSaturday || 0) * ratioMultiplier);
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Standard Sunday Rate */}
+          <Card>
+            <CardContent className="pt-4">
+              <h4 className="font-medium text-sm text-slate-600 dark:text-slate-400 mb-3">
+                Standard Sunday Rate
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Hours per Week</Label>
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={formData.hoursSunday || 0}
+                    onChange={(e) => handleFieldChange("hoursSunday", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit Rate ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.unitSunday || 0}
+                    onChange={(e) => handleFieldChange("unitSunday", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Weekly Amount</Label>
+                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
+                    {(() => {
+                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
+                      return formatCurrency((formData.hoursSunday || 0) * (formData.unitSunday || 0) * ratioMultiplier);
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Standard Public Holiday Rate */}
+          <Card>
+            <CardContent className="pt-4">
+              <h4 className="font-medium text-sm text-slate-600 dark:text-slate-400 mb-3">
+                Standard Public Holiday Rate
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Hours per Week</Label>
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={formData.hoursPublicHoliday || 0}
+                    onChange={(e) => handleFieldChange("hoursPublicHoliday", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit Rate ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.unitPublicHoliday || 0}
+                    onChange={(e) => handleFieldChange("unitPublicHoliday", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Weekly Amount</Label>
+                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
+                    {(() => {
+                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
+                      return formatCurrency((formData.hoursPublicHoliday || 0) * (formData.unitPublicHoliday || 0) * ratioMultiplier);
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
         </div>
 
         {/* Live Total */}
@@ -403,7 +551,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
             </TableHeader>
             <TableBody>
               {items.map((item) => {
-                const totalHours = (item.hoursDay || 0) + (item.hoursEvening || 0) + 
+                const totalHours = (item.hoursDay || 0) + (item.hoursWeekdayEvening || 0) + 
                                  (item.hoursActiveNight || 0) + (item.hoursSleepover || 0) + 
                                  (item.hoursSaturday || 0) + (item.hoursSunday || 0) + 
                                  (item.hoursPublicHoliday || 0);

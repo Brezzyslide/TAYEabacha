@@ -23,14 +23,15 @@ export default function TotalsBar({ items }: TotalsBarProps) {
 
     items.forEach(item => {
       const weeks = item.weeks || 1;
+      const ratioMultiplier = item.ratioOfSupport ? parseFloat(item.ratioOfSupport.split(':')[1] || '1') : 1;
       
-      totals.dayTotal += (item.hoursDay || 0) * (item.unitDay || 0) * weeks;
-      totals.eveningTotal += (item.hoursEvening || 0) * (item.unitEvening || 0) * weeks;
-      totals.activeNightTotal += (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) * weeks;
-      totals.sleeperTotal += (item.hoursSleepover || 0) * (item.unitSleepover || 0) * weeks;
-      totals.saturdayTotal += (item.hoursSaturday || 0) * (item.unitSaturday || 0) * weeks;
-      totals.sundayTotal += (item.hoursSunday || 0) * (item.unitSunday || 0) * weeks;
-      totals.holidayTotal += (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0) * weeks;
+      totals.dayTotal += (item.hoursDay || 0) * (item.unitDay || 0) * ratioMultiplier * weeks;
+      totals.eveningTotal += (item.hoursWeekdayEvening || 0) * (item.unitWeekdayEvening || 0) * ratioMultiplier * weeks;
+      totals.activeNightTotal += (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) * ratioMultiplier * weeks;
+      totals.sleeperTotal += (item.hoursSleepover || 0) * (item.unitSleepover || 0) * ratioMultiplier * weeks;
+      totals.saturdayTotal += (item.hoursSaturday || 0) * (item.unitSaturday || 0) * ratioMultiplier * weeks;
+      totals.sundayTotal += (item.hoursSunday || 0) * (item.unitSunday || 0) * ratioMultiplier * weeks;
+      totals.holidayTotal += (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0) * ratioMultiplier * weeks;
     });
 
     return totals;
@@ -39,14 +40,15 @@ export default function TotalsBar({ items }: TotalsBarProps) {
   const calculateGrandTotal = () => {
     return items.reduce((total, item) => {
       const weeks = item.weeks || 1;
+      const ratioMultiplier = item.ratioOfSupport ? parseFloat(item.ratioOfSupport.split(':')[1] || '1') : 1;
       const itemTotal = 
-        (item.hoursDay || 0) * (item.unitDay || 0) +
-        (item.hoursEvening || 0) * (item.unitEvening || 0) +
-        (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) +
-        (item.hoursSleepover || 0) * (item.unitSleepover || 0) +
-        (item.hoursSaturday || 0) * (item.unitSaturday || 0) +
-        (item.hoursSunday || 0) * (item.unitSunday || 0) +
-        (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0);
+        (item.hoursDay || 0) * (item.unitDay || 0) * ratioMultiplier +
+        (item.hoursWeekdayEvening || 0) * (item.unitWeekdayEvening || 0) * ratioMultiplier +
+        (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) * ratioMultiplier +
+        (item.hoursSleepover || 0) * (item.unitSleepover || 0) * ratioMultiplier +
+        (item.hoursSaturday || 0) * (item.unitSaturday || 0) * ratioMultiplier +
+        (item.hoursSunday || 0) * (item.unitSunday || 0) * ratioMultiplier +
+        (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0) * ratioMultiplier;
       
       return total + (itemTotal * weeks);
     }, 0);
@@ -57,7 +59,7 @@ export default function TotalsBar({ items }: TotalsBarProps) {
       const weeks = item.weeks || 1;
       const itemHours = 
         (item.hoursDay || 0) +
-        (item.hoursEvening || 0) +
+        (item.hoursWeekdayEvening || 0) +
         (item.hoursActiveNight || 0) +
         (item.hoursSleepover || 0) +
         (item.hoursSaturday || 0) +
@@ -78,7 +80,7 @@ export default function TotalsBar({ items }: TotalsBarProps) {
 
   const rateBreakdown = [
     { label: "Standard Day", amount: totals.dayTotal, show: totals.dayTotal > 0 },
-    { label: "Evening", amount: totals.eveningTotal, show: totals.eveningTotal > 0 },
+    { label: "Weekday Evening", amount: totals.eveningTotal, show: totals.eveningTotal > 0 },
     { label: "Active Night", amount: totals.activeNightTotal, show: totals.activeNightTotal > 0 },
     { label: "Sleepover", amount: totals.sleeperTotal, show: totals.sleeperTotal > 0 },
     { label: "Saturday", amount: totals.saturdayTotal, show: totals.saturdayTotal > 0 },

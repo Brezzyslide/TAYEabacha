@@ -1803,7 +1803,7 @@ export const serviceAgreementItems = pgTable("service_agreement_items", {
   
   // Weekly hours by rate type
   hoursDay: decimal("hours_day", { precision: 10, scale: 2 }).default("0"),
-  hoursEvening: decimal("hours_evening", { precision: 10, scale: 2 }).default("0"),
+  hoursWeekdayEvening: decimal("hours_weekday_evening", { precision: 10, scale: 2 }).default("0"),
   hoursActiveNight: decimal("hours_active_night", { precision: 10, scale: 2 }).default("0"),
   hoursSleepover: decimal("hours_sleepover", { precision: 10, scale: 2 }).default("0"),
   hoursSaturday: decimal("hours_saturday", { precision: 10, scale: 2 }).default("0"),
@@ -1812,12 +1812,15 @@ export const serviceAgreementItems = pgTable("service_agreement_items", {
   
   // Snapshotted unit prices by rate type
   unitDay: decimal("unit_day", { precision: 10, scale: 2 }).default("0"),
-  unitEvening: decimal("unit_evening", { precision: 10, scale: 2 }).default("0"),
+  unitWeekdayEvening: decimal("unit_weekday_evening", { precision: 10, scale: 2 }).default("0"),
   unitActiveNight: decimal("unit_active_night", { precision: 10, scale: 2 }).default("0"),
   unitSleepover: decimal("unit_sleepover", { precision: 10, scale: 2 }).default("0"),
   unitSaturday: decimal("unit_saturday", { precision: 10, scale: 2 }).default("0"),
   unitSunday: decimal("unit_sunday", { precision: 10, scale: 2 }).default("0"),
   unitPublicHoliday: decimal("unit_public_holiday", { precision: 10, scale: 2 }).default("0"),
+  
+  // Ratio of support (1:1, 1:2, 1:3, etc.)
+  ratioOfSupport: text("ratio_of_support").default("1:1"),
   
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
