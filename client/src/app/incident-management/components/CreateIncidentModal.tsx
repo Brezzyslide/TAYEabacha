@@ -140,6 +140,8 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
     console.log("[INCIDENT FORM DEBUG] Preserved description:", preservedDescription);
     console.log("[INCIDENT FORM DEBUG] Triggers count:", data.triggers?.length || 0);
     console.log("[INCIDENT FORM DEBUG] Staff Responses count:", data.staffResponses?.length || 0);
+    console.log("[INCIDENT FORM DEBUG] Triggers details:", data.triggers?.map(t => ({ id: t.id, label: t.label, details: t.details })));
+    console.log("[INCIDENT FORM DEBUG] Staff responses details:", data.staffResponses?.map(r => ({ id: r.id, label: r.label, details: r.details })));
     
     // Auto-populate timestamp with current time for immediate reporting
     const submissionData = {

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -87,6 +87,16 @@ export function TriggerSelector({ value, onChange }: TriggerSelectorProps) {
   const [currentTrigger, setCurrentTrigger] = useState<string | null>(null)
   const [tempDetails, setTempDetails] = useState("")
   const [tempOtherLabel, setTempOtherLabel] = useState("")
+
+  // Sync with parent form state when value prop changes
+  useEffect(() => {
+    console.log("[TRIGGER SYNC] Parent value changed:", value);
+    const newSelectedTriggers = value.map(t => t.id) || []
+    const newDetails = value.reduce((acc, t) => ({ ...acc, [t.id]: t.details }), {}) || {}
+    
+    setSelectedTriggers(newSelectedTriggers)
+    setDetails(newDetails)
+  }, [value])
 
   const toggleTrigger = (id: string) => {
     if (selectedTriggers.includes(id)) {

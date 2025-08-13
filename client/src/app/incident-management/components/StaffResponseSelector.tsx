@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -111,6 +111,16 @@ export function StaffResponseSelector({ value, onChange }: StaffResponseSelector
   const [showDialog, setShowDialog] = useState(false)
   const [currentResponse, setCurrentResponse] = useState<string | null>(null)
   const [tempDetails, setTempDetails] = useState("")
+
+  // Sync with parent form state when value prop changes
+  useEffect(() => {
+    console.log("[STAFF RESPONSE SYNC] Parent value changed:", value);
+    const newSelectedResponses = value.map(r => r.id) || []
+    const newDetails = value.reduce((acc, r) => ({ ...acc, [r.id]: r.details }), {}) || {}
+    
+    setSelectedResponses(newSelectedResponses)
+    setDetails(newDetails)
+  }, [value])
 
 
   const toggleResponse = (id: string) => {
