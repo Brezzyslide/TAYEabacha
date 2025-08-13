@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@shared/utils/calc";
+import { calculateRatioMultiplier } from "@shared/utils/ratioCalculator";
 import { Calculator, DollarSign } from "lucide-react";
 import type { ServiceAgreementItem } from "@shared/schema";
 
@@ -21,34 +22,44 @@ export default function TotalsBar({ items }: TotalsBarProps) {
       holidayTotal: 0,
     };
 
+    const toNumber = (value: string | number | undefined) => {
+      if (typeof value === 'string') return parseFloat(value) || 0;
+      return value || 0;
+    };
+
     items.forEach(item => {
       const weeks = item.weeks || 1;
-      const ratioMultiplier = item.ratioOfSupport ? parseFloat(item.ratioOfSupport.split(':')[1] || '1') : 1;
+      const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
       
-      totals.dayTotal += (item.hoursDay || 0) * (item.unitDay || 0) * ratioMultiplier * weeks;
-      totals.eveningTotal += (item.hoursWeekdayEvening || 0) * (item.unitWeekdayEvening || 0) * ratioMultiplier * weeks;
-      totals.activeNightTotal += (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) * ratioMultiplier * weeks;
-      totals.sleeperTotal += (item.hoursSleepover || 0) * (item.unitSleepover || 0) * ratioMultiplier * weeks;
-      totals.saturdayTotal += (item.hoursSaturday || 0) * (item.unitSaturday || 0) * ratioMultiplier * weeks;
-      totals.sundayTotal += (item.hoursSunday || 0) * (item.unitSunday || 0) * ratioMultiplier * weeks;
-      totals.holidayTotal += (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0) * ratioMultiplier * weeks;
+      totals.dayTotal += toNumber(item.hoursDay) * toNumber(item.unitDay) * ratioMultiplier * weeks;
+      totals.eveningTotal += toNumber(item.hoursWeekdayEvening) * toNumber(item.unitWeekdayEvening) * ratioMultiplier * weeks;
+      totals.activeNightTotal += toNumber(item.hoursActiveNight) * toNumber(item.unitActiveNight) * ratioMultiplier * weeks;
+      totals.sleeperTotal += toNumber(item.hoursSleepover) * toNumber(item.unitSleepover) * ratioMultiplier * weeks;
+      totals.saturdayTotal += toNumber(item.hoursSaturday) * toNumber(item.unitSaturday) * ratioMultiplier * weeks;
+      totals.sundayTotal += toNumber(item.hoursSunday) * toNumber(item.unitSunday) * ratioMultiplier * weeks;
+      totals.holidayTotal += toNumber(item.hoursPublicHoliday) * toNumber(item.unitPublicHoliday) * ratioMultiplier * weeks;
     });
 
     return totals;
   };
 
   const calculateGrandTotal = () => {
+    const toNumber = (value: string | number | undefined) => {
+      if (typeof value === 'string') return parseFloat(value) || 0;
+      return value || 0;
+    };
+
     return items.reduce((total, item) => {
       const weeks = item.weeks || 1;
-      const ratioMultiplier = item.ratioOfSupport ? parseFloat(item.ratioOfSupport.split(':')[1] || '1') : 1;
+      const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
       const itemTotal = 
-        (item.hoursDay || 0) * (item.unitDay || 0) * ratioMultiplier +
-        (item.hoursWeekdayEvening || 0) * (item.unitWeekdayEvening || 0) * ratioMultiplier +
-        (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) * ratioMultiplier +
-        (item.hoursSleepover || 0) * (item.unitSleepover || 0) * ratioMultiplier +
-        (item.hoursSaturday || 0) * (item.unitSaturday || 0) * ratioMultiplier +
-        (item.hoursSunday || 0) * (item.unitSunday || 0) * ratioMultiplier +
-        (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0) * ratioMultiplier;
+        toNumber(item.hoursDay) * toNumber(item.unitDay) * ratioMultiplier +
+        toNumber(item.hoursWeekdayEvening) * toNumber(item.unitWeekdayEvening) * ratioMultiplier +
+        toNumber(item.hoursActiveNight) * toNumber(item.unitActiveNight) * ratioMultiplier +
+        toNumber(item.hoursSleepover) * toNumber(item.unitSleepover) * ratioMultiplier +
+        toNumber(item.hoursSaturday) * toNumber(item.unitSaturday) * ratioMultiplier +
+        toNumber(item.hoursSunday) * toNumber(item.unitSunday) * ratioMultiplier +
+        toNumber(item.hoursPublicHoliday) * toNumber(item.unitPublicHoliday) * ratioMultiplier;
       
       return total + (itemTotal * weeks);
     }, 0);

@@ -1911,6 +1911,21 @@ export const insertServiceAgreementItemSchema = createInsertSchema(serviceAgreem
   ndisCode: z.string().min(1, "NDIS code is required"),
   supportDescription: z.string().min(1, "Support description is required"),
   weeks: z.number().positive("Number of weeks must be positive"),
+  hoursDay: z.number().min(0).optional(),
+  hoursWeekdayEvening: z.number().min(0).optional(),
+  hoursActiveNight: z.number().min(0).optional(),
+  hoursSleepover: z.number().min(0).optional(),
+  hoursSaturday: z.number().min(0).optional(),
+  hoursSunday: z.number().min(0).optional(),
+  hoursPublicHoliday: z.number().min(0).optional(),
+  unitDay: z.number().min(0).optional(),
+  unitWeekdayEvening: z.number().min(0).optional(),
+  unitActiveNight: z.number().min(0).optional(),
+  unitSleepover: z.number().min(0).optional(),
+  unitSaturday: z.number().min(0).optional(),
+  unitSunday: z.number().min(0).optional(),
+  unitPublicHoliday: z.number().min(0).optional(),
+  ratioOfSupport: z.string().optional(),
 });
 
 export const insertServiceAgreementSignatureSchema = createInsertSchema(serviceAgreementSignatures).omit({

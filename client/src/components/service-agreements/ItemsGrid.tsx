@@ -22,6 +22,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Edit, Trash2, Calculator } from "lucide-react";
 import { formatCurrency } from "@shared/utils/calc";
+import { calculateRatioMultiplier } from "@shared/utils/ratioCalculator";
 import type { ServiceAgreementItem } from "@shared/schema";
 
 interface ItemsGridProps {
@@ -36,20 +37,20 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     ndisCode: "",
     supportDescription: "",
     weeks: 1,
-    hoursDay: 0,
-    unitDay: 0,
-    hoursWeekdayEvening: 0,
-    unitWeekdayEvening: 0,
-    hoursActiveNight: 0,
-    unitActiveNight: 0,
-    hoursSleepover: 0,
-    unitSleepover: 0,
-    hoursSaturday: 0,
-    unitSaturday: 0,
-    hoursSunday: 0,
-    unitSunday: 0,
-    hoursPublicHoliday: 0,
-    unitPublicHoliday: 0,
+    hoursDay: "0",
+    unitDay: "0",
+    hoursWeekdayEvening: "0",
+    unitWeekdayEvening: "0",
+    hoursActiveNight: "0",
+    unitActiveNight: "0",
+    hoursSleepover: "0",
+    unitSleepover: "0",
+    hoursSaturday: "0",
+    unitSaturday: "0",
+    hoursSunday: "0",
+    unitSunday: "0",
+    hoursPublicHoliday: "0",
+    unitPublicHoliday: "0",
     ratioOfSupport: "1:1",
     notes: "",
   });
@@ -59,36 +60,42 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
       ndisCode: "",
       supportDescription: "",
       weeks: 1,
-      hoursDay: 0,
-      unitDay: 0,
-      hoursWeekdayEvening: 0,
-      unitWeekdayEvening: 0,
-      hoursActiveNight: 0,
-      unitActiveNight: 0,
-      hoursSleepover: 0,
-      unitSleepover: 0,
-      hoursSaturday: 0,
-      unitSaturday: 0,
-      hoursSunday: 0,
-      unitSunday: 0,
-      hoursPublicHoliday: 0,
-      unitPublicHoliday: 0,
+      hoursDay: "0",
+      unitDay: "0",
+      hoursWeekdayEvening: "0",
+      unitWeekdayEvening: "0",
+      hoursActiveNight: "0",
+      unitActiveNight: "0",
+      hoursSleepover: "0",
+      unitSleepover: "0",
+      hoursSaturday: "0",
+      unitSaturday: "0",
+      hoursSunday: "0",
+      unitSunday: "0",
+      hoursPublicHoliday: "0",
+      unitPublicHoliday: "0",
       ratioOfSupport: "1:1",
       notes: "",
     });
   };
 
   const calculateItemTotal = (item: Partial<ServiceAgreementItem>) => {
-    // Parse ratio of support to get multiplier (e.g., "1:2" = 2, "1:3" = 3)
-    const ratioMultiplier = item.ratioOfSupport ? parseFloat(item.ratioOfSupport.split(':')[1] || '1') : 1;
+    // Use the ratio calculator utility for consistent calculation
+    const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
     
-    const dayAmount = (item.hoursDay || 0) * (item.unitDay || 0) * ratioMultiplier;
-    const weekdayEveningAmount = (item.hoursWeekdayEvening || 0) * (item.unitWeekdayEvening || 0) * ratioMultiplier;
-    const activeNightAmount = (item.hoursActiveNight || 0) * (item.unitActiveNight || 0) * ratioMultiplier;
-    const sleeperAmount = (item.hoursSleepover || 0) * (item.unitSleepover || 0) * ratioMultiplier;
-    const saturdayAmount = (item.hoursSaturday || 0) * (item.unitSaturday || 0) * ratioMultiplier;
-    const sundayAmount = (item.hoursSunday || 0) * (item.unitSunday || 0) * ratioMultiplier;
-    const holidayAmount = (item.hoursPublicHoliday || 0) * (item.unitPublicHoliday || 0) * ratioMultiplier;
+    // Convert string values to numbers for calculations
+    const toNumber = (value: string | number | undefined) => {
+      if (typeof value === 'string') return parseFloat(value) || 0;
+      return value || 0;
+    };
+    
+    const dayAmount = toNumber(item.hoursDay) * toNumber(item.unitDay) * ratioMultiplier;
+    const weekdayEveningAmount = toNumber(item.hoursWeekdayEvening) * toNumber(item.unitWeekdayEvening) * ratioMultiplier;
+    const activeNightAmount = toNumber(item.hoursActiveNight) * toNumber(item.unitActiveNight) * ratioMultiplier;
+    const sleeperAmount = toNumber(item.hoursSleepover) * toNumber(item.unitSleepover) * ratioMultiplier;
+    const saturdayAmount = toNumber(item.hoursSaturday) * toNumber(item.unitSaturday) * ratioMultiplier;
+    const sundayAmount = toNumber(item.hoursSunday) * toNumber(item.unitSunday) * ratioMultiplier;
+    const holidayAmount = toNumber(item.hoursPublicHoliday) * toNumber(item.unitPublicHoliday) * ratioMultiplier;
     
     const weeklyTotal = dayAmount + weekdayEveningAmount + activeNightAmount + sleeperAmount + 
                       saturdayAmount + sundayAmount + holidayAmount;
@@ -97,9 +104,28 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
   };
 
   const handleAddItem = () => {
+    // Convert string values to numbers for storage
+    const processedFormData = {
+      ...formData,
+      hoursDay: toNumber(formData.hoursDay),
+      unitDay: toNumber(formData.unitDay),
+      hoursWeekdayEvening: toNumber(formData.hoursWeekdayEvening),
+      unitWeekdayEvening: toNumber(formData.unitWeekdayEvening),
+      hoursActiveNight: toNumber(formData.hoursActiveNight),
+      unitActiveNight: toNumber(formData.unitActiveNight),
+      hoursSleepover: toNumber(formData.hoursSleepover),
+      unitSleepover: toNumber(formData.unitSleepover),
+      hoursSaturday: toNumber(formData.hoursSaturday),
+      unitSaturday: toNumber(formData.unitSaturday),
+      hoursSunday: toNumber(formData.hoursSunday),
+      unitSunday: toNumber(formData.unitSunday),
+      hoursPublicHoliday: toNumber(formData.hoursPublicHoliday),
+      unitPublicHoliday: toNumber(formData.unitPublicHoliday),
+    };
+
     const newItem: ServiceAgreementItem = {
       id: Date.now(), // Temporary ID for new items
-      ...formData as ServiceAgreementItem,
+      ...processedFormData as ServiceAgreementItem,
     };
     
     onItemsChange([...items, newItem]);
@@ -182,13 +208,14 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
           onChange={(e) => handleFieldChange("ratioOfSupport", e.target.value)}
           className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
         >
-          <option value="1:1">1:1 (Standard)</option>
-          <option value="1:2">1:2 (Two participants)</option>
-          <option value="1:3">1:3 (Three participants)</option>
-          <option value="1:4">1:4 (Four participants)</option>
+          <option value="1:1">1:1 (Standard - full price)</option>
+          <option value="1:2">1:2 (Half price - two participants)</option>
+          <option value="1:3">1:3 (One third price - three participants)</option>
+          <option value="1:4">1:4 (One quarter price - four participants)</option>
+          <option value="2:1">2:1 (Double price - two workers per participant)</option>
         </select>
         <p className="text-xs text-slate-500">
-          Higher ratios multiply the hourly rate accordingly (e.g., 1:2 = double rate)
+          Ratio determines price: 1:1 = full price, 1:2 = half price, 2:1 = double price
         </p>
       </div>
 
@@ -213,8 +240,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursDay || 0}
-                    onChange={(e) => handleFieldChange("hoursDay", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursDay || "0"}
+                    onChange={(e) => handleFieldChange("hoursDay", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -223,16 +250,16 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitDay || 0}
-                    onChange={(e) => handleFieldChange("unitDay", parseFloat(e.target.value) || 0)}
+                    value={formData.unitDay || "0"}
+                    onChange={(e) => handleFieldChange("unitDay", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
-                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
-                      return formatCurrency((formData.hoursDay || 0) * (formData.unitDay || 0) * ratioMultiplier);
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
+                      return formatCurrency(toNumber(formData.hoursDay) * toNumber(formData.unitDay) * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -253,8 +280,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursWeekdayEvening || 0}
-                    onChange={(e) => handleFieldChange("hoursWeekdayEvening", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursWeekdayEvening || "0"}
+                    onChange={(e) => handleFieldChange("hoursWeekdayEvening", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -263,16 +290,16 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitWeekdayEvening || 0}
-                    onChange={(e) => handleFieldChange("unitWeekdayEvening", parseFloat(e.target.value) || 0)}
+                    value={formData.unitWeekdayEvening || "0"}
+                    onChange={(e) => handleFieldChange("unitWeekdayEvening", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
-                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
-                      return formatCurrency((formData.hoursWeekdayEvening || 0) * (formData.unitWeekdayEvening || 0) * ratioMultiplier);
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
+                      return formatCurrency(toNumber(formData.hoursWeekdayEvening) * toNumber(formData.unitWeekdayEvening) * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -293,8 +320,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursActiveNight || 0}
-                    onChange={(e) => handleFieldChange("hoursActiveNight", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursActiveNight || "0"}
+                    onChange={(e) => handleFieldChange("hoursActiveNight", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -303,16 +330,16 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitActiveNight || 0}
-                    onChange={(e) => handleFieldChange("unitActiveNight", parseFloat(e.target.value) || 0)}
+                    value={formData.unitActiveNight || "0"}
+                    onChange={(e) => handleFieldChange("unitActiveNight", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
-                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
-                      return formatCurrency((formData.hoursActiveNight || 0) * (formData.unitActiveNight || 0) * ratioMultiplier);
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
+                      return formatCurrency(toNumber(formData.hoursActiveNight) * toNumber(formData.unitActiveNight) * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -333,8 +360,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursSleepover || 0}
-                    onChange={(e) => handleFieldChange("hoursSleepover", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursSleepover || "0"}
+                    onChange={(e) => handleFieldChange("hoursSleepover", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -343,16 +370,16 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitSleepover || 0}
-                    onChange={(e) => handleFieldChange("unitSleepover", parseFloat(e.target.value) || 0)}
+                    value={formData.unitSleepover || "0"}
+                    onChange={(e) => handleFieldChange("unitSleepover", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
-                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
-                      return formatCurrency((formData.hoursSleepover || 0) * (formData.unitSleepover || 0) * ratioMultiplier);
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
+                      return formatCurrency(toNumber(formData.hoursSleepover) * toNumber(formData.unitSleepover) * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -373,8 +400,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursSaturday || 0}
-                    onChange={(e) => handleFieldChange("hoursSaturday", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursSaturday || "0"}
+                    onChange={(e) => handleFieldChange("hoursSaturday", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -383,16 +410,16 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitSaturday || 0}
-                    onChange={(e) => handleFieldChange("unitSaturday", parseFloat(e.target.value) || 0)}
+                    value={formData.unitSaturday || "0"}
+                    onChange={(e) => handleFieldChange("unitSaturday", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
-                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
-                      return formatCurrency((formData.hoursSaturday || 0) * (formData.unitSaturday || 0) * ratioMultiplier);
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
+                      return formatCurrency(toNumber(formData.hoursSaturday) * toNumber(formData.unitSaturday) * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -413,8 +440,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursSunday || 0}
-                    onChange={(e) => handleFieldChange("hoursSunday", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursSunday || "0"}
+                    onChange={(e) => handleFieldChange("hoursSunday", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -423,16 +450,16 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitSunday || 0}
-                    onChange={(e) => handleFieldChange("unitSunday", parseFloat(e.target.value) || 0)}
+                    value={formData.unitSunday || "0"}
+                    onChange={(e) => handleFieldChange("unitSunday", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
-                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
-                      return formatCurrency((formData.hoursSunday || 0) * (formData.unitSunday || 0) * ratioMultiplier);
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
+                      return formatCurrency(toNumber(formData.hoursSunday) * toNumber(formData.unitSunday) * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -453,8 +480,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.25"
                     min="0"
-                    value={formData.hoursPublicHoliday || 0}
-                    onChange={(e) => handleFieldChange("hoursPublicHoliday", parseFloat(e.target.value) || 0)}
+                    value={formData.hoursPublicHoliday || "0"}
+                    onChange={(e) => handleFieldChange("hoursPublicHoliday", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -463,16 +490,16 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.unitPublicHoliday || 0}
-                    onChange={(e) => handleFieldChange("unitPublicHoliday", parseFloat(e.target.value) || 0)}
+                    value={formData.unitPublicHoliday || "0"}
+                    onChange={(e) => handleFieldChange("unitPublicHoliday", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Weekly Amount</Label>
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
-                      const ratioMultiplier = formData.ratioOfSupport ? parseFloat(formData.ratioOfSupport.split(':')[1] || '1') : 1;
-                      return formatCurrency((formData.hoursPublicHoliday || 0) * (formData.unitPublicHoliday || 0) * ratioMultiplier);
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
+                      return formatCurrency(toNumber(formData.hoursPublicHoliday) * toNumber(formData.unitPublicHoliday) * ratioMultiplier);
                     })()}
                   </div>
                 </div>
