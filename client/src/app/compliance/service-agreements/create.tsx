@@ -38,7 +38,7 @@ export default function CreateServiceAgreement() {
         </div>
         <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
           <Shield className="h-3 w-3 mr-1" />
-          Your role: {user?.role || "Unknown"}
+          Your role: {user.role || "Unknown"}
         </Badge>
       </div>
     );
@@ -46,8 +46,8 @@ export default function CreateServiceAgreement() {
   
   const [agreementData, setAgreementData] = useState<Partial<ServiceAgreement>>({
     clientId: 0,
-    startDate: "",
-    endDate: "",
+    startDate: new Date(),
+    endDate: new Date(),
     planNomineeName: "",
     planNomineeContact: "",
     billingDetails: {
@@ -66,7 +66,8 @@ export default function CreateServiceAgreement() {
   const createMutation = useMutation({
     mutationFn: async (data: { agreement: Partial<ServiceAgreement>; items: ServiceAgreementItem[] }) => {
       // First create the agreement
-      const agreement = await apiRequest('POST', '/api/compliance/service-agreements', data.agreement);
+      const response = await apiRequest('POST', '/api/compliance/service-agreements', data.agreement);
+      const agreement = response as ServiceAgreement;
       
       // Then add items if any
       if (data.items.length > 0) {
@@ -85,7 +86,7 @@ export default function CreateServiceAgreement() {
         description: "Service agreement has been successfully created.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
-      setLocation(`/compliance/service-agreements/edit/${agreement.id}`);
+      setLocation(`/compliance/service-agreements`);
     },
     onError: (error: any) => {
       toast({

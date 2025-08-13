@@ -36,7 +36,8 @@ import {
   Search,
   Filter,
   Shield,
-  Lock
+  Lock,
+  Eye
 } from "lucide-react";
 import { formatCurrency, itemToRateSet, getLineItemTotal } from "@shared/utils/calc";
 import Decimal from "decimal.js";
@@ -261,8 +262,13 @@ export default function ServiceAgreementsList() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Link href={`/compliance/service-agreements/view/${agreement.id}`}>
+                          <Button size="sm" variant="outline" title="View Agreement">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Link href={`/compliance/service-agreements/edit/${agreement.id}`}>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" title="Edit Agreement">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
@@ -270,6 +276,7 @@ export default function ServiceAgreementsList() {
                           size="sm" 
                           variant="outline"
                           onClick={() => handleExportPDF(agreement.id)}
+                          title="Export PDF"
                         >
                           <Download className="h-4 w-4" />
                         </Button>

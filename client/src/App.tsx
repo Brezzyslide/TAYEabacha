@@ -49,6 +49,7 @@ import CompliancePage from "@/app/compliance/page";
 import ServiceAgreementsList from "@/app/compliance/service-agreements/index";
 import CreateServiceAgreement from "@/app/compliance/service-agreements/create";
 import EditServiceAgreement from "@/app/compliance/service-agreements/edit/[id]";
+import ViewServiceAgreement from "@/app/compliance/service-agreements/view/[id]";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -85,6 +86,7 @@ function Router() {
       <ProtectedRoute path="/compliance" component={CompliancePage} />
       <ProtectedRoute path="/compliance/service-agreements" component={ServiceAgreementsList} />
       <ProtectedRoute path="/compliance/service-agreements/create" component={CreateServiceAgreement} />
+      <ProtectedRoute path="/compliance/service-agreements/view/:id" component={ViewServiceAgreement} />
       <ProtectedRoute path="/compliance/service-agreements/edit/:id" component={EditServiceAgreement} />
 
       <ProtectedRoute path="/forms" component={Forms} />

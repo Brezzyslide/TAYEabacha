@@ -22,10 +22,10 @@ import {
 import { ZodError } from 'zod';
 
 /**
- * Check if user has write permissions (Admin or TeamLeader)
+ * Check if user has write permissions (Admin, TeamLeader, or Coordinator)
  */
 const hasWritePermission = (role: string): boolean => {
-  return ['Admin', 'TeamLeader'].includes(role);
+  return ['Admin', 'TeamLeader', 'Coordinator'].includes(role);
 };
 
 /**
@@ -313,11 +313,12 @@ export class ServiceAgreementController {
       const { serviceAgreementPDFService } = await import('./pdf');
       const pdfBuffer = await serviceAgreementPDFService.renderAgreementPdf(id, companyId);
       
-      // Set appropriate headers for PDF download
+      // Set appropriate headers for PDF response
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="service-agreement-${id}.pdf"`);
-      res.setHeader('Content-Length', pdfBuffer.length.toString());
+      res.setHeader('Content-Length', pdfBuffer.length);
       
+      // Send the PDF buffer
       res.send(pdfBuffer);
     } catch (error) {
       handleError(res, error, 'Failed to generate PDF');
