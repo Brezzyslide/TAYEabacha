@@ -7523,7 +7523,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get cancelled shifts for admin view
   app.get("/api/shifts/cancelled", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      console.log(`[CANCELLED SHIFTS] Starting request for tenant ${req.user.tenantId}`);
+      console.log(`[CANCELLED SHIFTS AWS DEBUG] Starting request for tenant ${req.user.tenantId}`);
+      console.log(`[CANCELLED SHIFTS AWS DEBUG] User: ${req.user.username} (ID: ${req.user.id})`);
+      console.log(`[CANCELLED SHIFTS AWS DEBUG] User Role: ${req.user.role}`);
       
       if (!pool) {
         console.error("[CANCELLED SHIFTS] Database pool not available");
@@ -7532,7 +7534,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Test basic connection first
       await pool.query('SELECT 1');
-      console.log(`[CANCELLED SHIFTS] Database connection verified`);
+      console.log(`[CANCELLED SHIFTS AWS DEBUG] Database connection verified`);
+      
+      // First, check if any cancellations exist for this tenant
+      const countResult = await pool.query(
+        'SELECT COUNT(*) as count FROM shift_cancellations WHERE tenant_id = $1',
+        [req.user.tenantId]
+      );
+      console.log(`[CANCELLED SHIFTS AWS DEBUG] Total cancellations for tenant ${req.user.tenantId}: ${countResult.rows[0].count}`);
       
       // Direct pool query for reliability
       const result = await pool.query(
@@ -7551,10 +7560,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [req.user.tenantId]
       );
       
-      console.log(`[CANCELLED SHIFTS] Query successful - found ${result.rows.length} cancellations`);
+      console.log(`[CANCELLED SHIFTS AWS DEBUG] Query successful - found ${result.rows.length} cancellations`);
+      
+      if (result.rows.length > 0) {
+        console.log(`[CANCELLED SHIFTS AWS DEBUG] Sample cancellation:`, JSON.stringify(result.rows[0], null, 2));
+      } else {
+        console.log(`[CANCELLED SHIFTS AWS DEBUG] No cancellations found despite database count showing ${countResult.rows[0].count}`);
+        
+        // Fallback: try with Drizzle ORM
+        console.log(`[CANCELLED SHIFTS AWS DEBUG] Attempting fallback with Drizzle ORM...`);
+        try {
+          const fallbackResult = await storage.getShiftCancellations(req.user.tenantId);
+          console.log(`[CANCELLED SHIFTS AWS DEBUG] Drizzle fallback returned ${fallbackResult.length} cancellations`);
+          if (fallbackResult.length > 0) {
+            return res.json(fallbackResult);
+          }
+        } catch (fallbackError) {
+          console.error(`[CANCELLED SHIFTS AWS DEBUG] Drizzle fallback failed:`, fallbackError);
+        }
+      }
+      
       res.json(result.rows);
     } catch (error: any) {
-      console.error("[CANCELLED SHIFTS] Detailed error:", {
+      console.error("[CANCELLED SHIFTS AWS DEBUG] Detailed error:", {
         name: error.name,
         message: error.message,
         code: error.code,
