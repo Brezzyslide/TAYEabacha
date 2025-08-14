@@ -109,9 +109,16 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
 
   const startShiftMutation = useMutation({
     mutationFn: async () => {
+      console.log(`[AWS DEBUG - CLIENT] 🚀 Starting shift ${shift.id} for user ${user?.username}`);
+      console.log(`[AWS DEBUG - CLIENT] Location data:`, location);
+      console.log(`[AWS DEBUG - CLIENT] Handover notes:`, handoverNotes);
+      console.log(`[AWS DEBUG - CLIENT] Handover from staff:`, handoverFromStaffId);
+
       // Validate mandatory handover notes
       if (!handoverNotes.trim()) {
-        throw new Error("Handover notes are required to start your shift");
+        const error = new Error("Handover notes are required to start your shift");
+        console.error(`[AWS DEBUG - CLIENT] ❌ Validation failed:`, error.message);
+        throw error;
       }
 
       const updateData = {
@@ -122,10 +129,25 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
         handoverNotesIn: handoverNotes.trim()
       };
 
-      // Fixed parameter order: method, url, data
-      return apiRequest("PATCH", `/api/shifts/${shift.id}`, updateData);
+      console.log(`[AWS DEBUG - CLIENT] 📤 Sending update data:`, JSON.stringify(updateData, null, 2));
+      console.log(`[AWS DEBUG - CLIENT] 🔗 API endpoint: PATCH /api/shifts/${shift.id}`);
+
+      try {
+        const result = await apiRequest("PATCH", `/api/shifts/${shift.id}`, updateData);
+        console.log(`[AWS DEBUG - CLIENT] ✅ API response:`, JSON.stringify(result, null, 2));
+        return result;
+      } catch (error) {
+        console.error(`[AWS DEBUG - CLIENT] ❌ API request failed:`, error);
+        console.error(`[AWS DEBUG - CLIENT] ❌ Error details:`, {
+          message: error.message,
+          status: error.status,
+          statusText: error.statusText
+        });
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log(`[AWS DEBUG - CLIENT] 🎉 Shift start successful:`, data);
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       toast({
         title: "Shift Started",
@@ -135,9 +157,23 @@ export default function StartShiftModal({ shift, isOpen, onClose }: StartShiftMo
       resetForm();
     },
     onError: (error: any) => {
+      console.error(`[AWS DEBUG - CLIENT] ❌ Shift start failed:`, error);
+      console.error(`[AWS DEBUG - CLIENT] ❌ Error details:`, {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        stack: error.stack
+      });
+      
+      // Enhanced error message for debugging
+      let errorMessage = error.message || "Failed to start shift. Please try again.";
+      if (error.status) {
+        errorMessage += ` (Status: ${error.status})`;
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to start shift. Please try again.",
+        title: "Error Starting Shift",
+        description: errorMessage,
         variant: "destructive",
       });
     },

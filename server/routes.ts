@@ -1579,18 +1579,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update shift (for requesting shifts)
   app.patch("/api/shifts/:id", requireAuth, async (req: any, res) => {
+    console.log(`[AWS DEBUG - SHIFT PATCH] 🚀 SHIFT START/UPDATE REQUEST RECEIVED`);
+    console.log(`[AWS DEBUG - SHIFT PATCH] Shift ID: ${req.params.id}`);
+    console.log(`[AWS DEBUG - SHIFT PATCH] User: ${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId})`);
+    console.log(`[AWS DEBUG - SHIFT PATCH] Request body:`, JSON.stringify(req.body, null, 2));
+    console.log(`[AWS DEBUG - SHIFT PATCH] Headers:`, JSON.stringify(req.headers, null, 2));
+    
     try {
       const shiftId = parseInt(req.params.id);
       const updateData = req.body;
+      
+      console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Parsed shift ID: ${shiftId}`);
+      console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Starting timestamp conversion process`);
       
       // Convert timestamp strings to Date objects for database compatibility
       const processedUpdateData = { ...updateData };
       if (processedUpdateData.startTimestamp && typeof processedUpdateData.startTimestamp === 'string') {
         processedUpdateData.startTimestamp = new Date(processedUpdateData.startTimestamp);
+        console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Converted startTimestamp: ${processedUpdateData.startTimestamp}`);
       }
       if (processedUpdateData.endTimestamp && typeof processedUpdateData.endTimestamp === 'string') {
         processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
+        console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Converted endTimestamp: ${processedUpdateData.endTimestamp}`);
       }
+      
+      console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Processed update data:`, JSON.stringify(processedUpdateData, null, 2));
       
       // Enhanced validation for shift request operation
       if (processedUpdateData.userId && processedUpdateData.status === "requested") {
@@ -1617,10 +1630,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[SHIFT REQUEST] Valid request - assigning userId ${processedUpdateData.userId} to shift ${shiftId}`);
       }
       
+      console.log(`[AWS DEBUG - SHIFT PATCH] 🔄 Calling storage.updateShift...`);
+      console.log(`[AWS DEBUG - SHIFT PATCH] Parameters: shiftId=${shiftId}, tenantId=${req.user.tenantId}`);
+      
       const shift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
       
+      console.log(`[AWS DEBUG - SHIFT PATCH] 📊 Storage response:`, shift ? 'SUCCESS' : 'NULL');
+      if (shift) {
+        console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Updated shift data:`, JSON.stringify(shift, null, 2));
+      }
+      
       if (!shift) {
-        console.log(`[SHIFT UPDATE] ERROR: Failed to update shift ${shiftId}`);
+        console.log(`[AWS DEBUG - SHIFT PATCH] ❌ ERROR: Failed to update shift ${shiftId}`);
+        console.log(`[AWS DEBUG - SHIFT PATCH] ❌ TenantId used: ${req.user.tenantId}`);
+        console.log(`[AWS DEBUG - SHIFT PATCH] ❌ ProcessedUpdateData:`, JSON.stringify(processedUpdateData, null, 2));
         return res.status(404).json({ message: "Shift not found" });
       }
       
@@ -1695,12 +1718,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[SHIFT COMPLETION] All completion processing finished for shift ${shift.id}`);
       }
       
+      console.log(`[AWS DEBUG - SHIFT PATCH] 🎉 SUCCESS: Returning shift data to client`);
+      console.log(`[AWS DEBUG - SHIFT PATCH] 📊 Response payload:`, JSON.stringify(shift, null, 2));
+      
       res.json(shift);
     } catch (error) {
-      console.error("Error updating shift:", error);
-      console.error("Update data:", req.body);
-      console.error("User:", req.user.username, "ID:", req.user.id);
-      res.status(500).json({ message: "Failed to update shift", error: error instanceof Error ? error.message : 'Unknown error' });
+      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ CRITICAL ERROR in PATCH endpoint:`, error);
+      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Error stack:`, error.stack);
+      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Update data:`, JSON.stringify(req.body, null, 2));
+      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ User details:`, {
+        username: req.user.username,
+        id: req.user.id,
+        tenantId: req.user.tenantId,
+        role: req.user.role
+      });
+      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Request headers:`, JSON.stringify(req.headers, null, 2));
+      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Request params:`, JSON.stringify(req.params, null, 2));
+      
+      res.status(500).json({ 
+        message: "Failed to update shift", 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   });
 
