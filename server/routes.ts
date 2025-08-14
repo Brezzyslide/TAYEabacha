@@ -5556,6 +5556,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientId = req.query.clientId ? parseInt(req.query.clientId as string) : undefined;
       const userRole = req.user.role?.toLowerCase().replace(/\s+/g, '');
       
+      // CRITICAL AWS DEBUGGING: Log complete user context
+      console.log(`[INCIDENT REPORTS DEBUG] AWS Environment Debug:`);
+      console.log(`  User ID: ${req.user.id}`);
+      console.log(`  Username: ${req.user.username}`);
+      console.log(`  Tenant ID: ${tenantId}`);
+      console.log(`  Raw Role: "${req.user.role}"`);
+      console.log(`  Normalized Role: "${userRole}"`);
+      console.log(`  Client ID Filter: ${clientId || 'none'}`);
+      
       let reports;
       
       if (userRole === "supportworker") {
@@ -5564,13 +5573,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} accessing ${reports.length} incident reports for assigned clients only`);
       } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
         // Management roles can see all incidents
+        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing incident reports`);
+        
         if (clientId) {
           reports = await storage.getIncidentReportsWithClosures(tenantId);
+          console.log(`[AWS DEBUG] Before client filter: ${reports.length} total reports`);
           reports = reports.filter((report: any) => report.clientId === clientId);
+          console.log(`[AWS DEBUG] After client filter: ${reports.length} reports for client ${clientId}`);
         } else {
           reports = await storage.getIncidentReportsWithClosures(tenantId);
+          console.log(`[AWS DEBUG] Retrieved ${reports.length} total reports for tenant ${tenantId}`);
         }
-        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing incident reports`);
+        
+        // Additional debugging for AWS environment
+        if (reports && reports.length > 0) {
+          console.log(`[AWS DEBUG] Sample report structure:`, JSON.stringify(reports[0], null, 2));
+        } else {
+          console.log(`[AWS DEBUG] No reports found - checking database directly...`);
+          // Fallback to basic incident reports if with-closures fails
+          const basicReports = await storage.getIncidentReports(tenantId);
+          console.log(`[AWS DEBUG] Basic incident reports count: ${basicReports.length}`);
+          if (basicReports.length > 0) {
+            console.log(`[AWS DEBUG] Basic reports exist, issue with getIncidentReportsWithClosures method`);
+            reports = basicReports;
+          }
+        }
       } else {
         console.log(`🚨 [SECURITY ALERT] Unknown role "${req.user.role}" attempting incident access - denying`);
         return res.status(403).json({ message: "Access denied: Invalid role" });
@@ -5579,9 +5606,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ensure reports is always an array
       reports = reports || [];
       
+      console.log(`[INCIDENT REPORTS DEBUG] Final response: ${reports.length} reports`);
       res.json(reports);
     } catch (error) {
       console.error("Error fetching incident reports:", error);
+      console.error("Error stack:", error.stack);
       // Return empty array instead of error when no clients exist
       res.json([]);
     }

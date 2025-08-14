@@ -25,7 +25,7 @@ import {
   type ServiceAgreementSignature, type InsertServiceAgreementSignature, type TenantTermsTemplate, type InsertTenantTermsTemplate
 } from "@shared/schema";
 import { db, pool } from "./lib/dbClient";
-import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray, exists } from "drizzle-orm";
+import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray, exists, like, ilike } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { randomUUID } from "crypto";
@@ -1117,6 +1117,15 @@ export class DatabaseStorage implements IStorage {
 
   async getIncidentReportsWithClosures(tenantId: number): Promise<any[]> {
     try {
+      console.log(`[AWS STORAGE DEBUG] Fetching incident reports with closures for tenant ${tenantId}`);
+      
+      // First, check if we have basic incident reports
+      const basicCheck = await db.select({ count: sql`count(*)` })
+        .from(incidentReports)
+        .where(eq(incidentReports.tenantId, tenantId));
+      
+      console.log(`[AWS STORAGE DEBUG] Basic incident count for tenant ${tenantId}: ${basicCheck[0].count}`);
+      
       const reports = await db.select({
         id: incidentReports.id,
         incidentId: incidentReports.incidentId,
@@ -1164,9 +1173,11 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(incidentClosures, eq(incidentReports.incidentId, incidentClosures.incidentId))
       .where(eq(incidentReports.tenantId, tenantId))
       .orderBy(desc(incidentReports.createdAt));
+      
+      console.log(`[AWS STORAGE DEBUG] Query executed successfully, got ${reports.length} reports`);
 
       // Transform the data to match the expected frontend structure
-      return reports.map(report => ({
+      const transformedReports = reports.map(report => ({
         ...report,
         closure: report.closureId ? {
           id: report.closureId,
@@ -1196,9 +1207,24 @@ export class DatabaseStorage implements IStorage {
         closureStatus: undefined,
         closureCreatedAt: undefined
       }));
+      
+      console.log(`[AWS STORAGE DEBUG] Successfully transformed ${transformedReports.length} reports`);
+      return transformedReports;
     } catch (error) {
       console.error("Error fetching incident reports with closures:", error);
-      return [];
+      console.error("Error details:", error.message);
+      console.error("Error stack:", error.stack);
+      
+      // Fallback: return basic incident reports if the complex join fails
+      console.log(`[AWS STORAGE DEBUG] Falling back to basic incident reports for tenant ${tenantId}`);
+      try {
+        const basicReports = await this.getIncidentReports(tenantId);
+        console.log(`[AWS STORAGE DEBUG] Fallback successful: ${basicReports.length} basic reports`);
+        return basicReports;
+      } catch (fallbackError) {
+        console.error("Fallback also failed:", fallbackError);
+        return [];
+      }
     }
   }
 
