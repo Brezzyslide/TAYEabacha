@@ -86,7 +86,7 @@ export default function IncidentDashboard() {
   // Auto-refresh for real-time updates with production-optimized intervals
   const { manualRefresh } = useAutoRefresh({
     queryKeys: ["/api/incident-reports", "/api/notifications"],
-    interval: 45000, // 45 seconds for production stability
+    interval: 30000, // 30 seconds for faster updates in production
     enabled: true
   });
 
@@ -110,13 +110,42 @@ export default function IncidentDashboard() {
     return userRole === "admin" || userRole === "coordinator" || userRole === "teamleader" || userRole === "consolemanager";
   };
 
-  const { data: incidents = [], isLoading, error } = useQuery({
+  const { data: incidents = [], isLoading, error, refetch } = useQuery({
     queryKey: ["/api/incident-reports"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/incident-reports");
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      console.log("[INCIDENT DASHBOARD] Fetching incident reports...");
+      try {
+        const response = await apiRequest("GET", "/api/incident-reports");
+        console.log("[INCIDENT DASHBOARD] Response status:", response.status);
+        console.log("[INCIDENT DASHBOARD] Response headers:", Object.fromEntries(response.headers.entries()));
+        
+        if (!response.ok) {
+          console.error("[INCIDENT DASHBOARD] Response not OK:", response.statusText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("[INCIDENT DASHBOARD] Raw response data:", data);
+        console.log("[INCIDENT DASHBOARD] Data type:", typeof data);
+        console.log("[INCIDENT DASHBOARD] Is array:", Array.isArray(data));
+        console.log("[INCIDENT DASHBOARD] Data length:", data?.length || 0);
+        
+        if (Array.isArray(data)) {
+          console.log("[INCIDENT DASHBOARD] Returning", data.length, "incidents");
+          return data;
+        } else {
+          console.warn("[INCIDENT DASHBOARD] Data is not an array, returning empty array");
+          return [];
+        }
+      } catch (error) {
+        console.error("[INCIDENT DASHBOARD] Fetch error:", error);
+        throw error;
+      }
     },
+    staleTime: 0, // Always fetch fresh data in production
+    gcTime: 1000 * 60 * 5, // 5 minutes garbage collection time
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always refetch on component mount
   });
 
   const deleteIncidentMutation = useMutation({
@@ -340,6 +369,32 @@ export default function IncidentDashboard() {
     );
   }
 
+  if (error) {
+    console.error("[INCIDENT DASHBOARD] Query error:", error);
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-800">Error Loading Incidents</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-red-700">Failed to load incident reports. This could be an environment-specific issue.</p>
+            <p className="text-sm text-red-600 font-mono">{String(error)}</p>
+            <div className="flex gap-2">
+              <Button onClick={() => refetch()} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Reload Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <RefreshHandler />
@@ -372,6 +427,36 @@ export default function IncidentDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Debug Information for Production Issues */}
+      {incidents.length === 0 && !isLoading && !error && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="text-yellow-800">Debug Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-yellow-700">No incidents found. This could indicate:</p>
+            <ul className="text-sm text-yellow-600 list-disc list-inside space-y-1">
+              <li>No incidents have been created yet</li>
+              <li>Data fetch successful but returned empty array</li>
+              <li>Environment-specific filtering issue (AWS vs Replit)</li>
+              <li>Database connectivity or tenant isolation issue</li>
+              <li>Cache invalidation problem in production</li>
+            </ul>
+            <div className="text-xs text-yellow-600 mt-2 p-2 bg-yellow-100 rounded">
+              <strong>Environment:</strong> {window.location.hostname.includes('replit') ? 'Replit Development' : 'AWS Production'}
+              <br />
+              <strong>User Agent:</strong> {navigator.userAgent.slice(0, 50)}...
+            </div>
+            <div className="mt-4">
+              <Button onClick={() => refetch()} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Force Refresh
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -475,6 +560,9 @@ export default function IncidentDashboard() {
                       ? "Try adjusting your filters or search terms"
                       : "Get started by creating your first incident report"}
                   </p>
+                  <small className="text-xs text-muted-foreground mt-2 block">
+                    Total incidents: {incidents.length} | Filtered: {filteredIncidents.length}
+                  </small>
                 </div>
               </CardContent>
             </Card>

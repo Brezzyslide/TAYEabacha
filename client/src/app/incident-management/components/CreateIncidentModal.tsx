@@ -152,7 +152,14 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
     
     console.log("[INCIDENT FORM DEBUG] Final submission data with preserved description:", submissionData);
     
-    createIncidentMutation.mutate(submissionData);
+    createIncidentMutation.mutate(submissionData, {
+      onSuccess: () => {
+        console.log("[INCIDENT CREATION] Success - invalidating cache and refreshing data");
+        // Force immediate cache invalidation for production environment
+        queryClient.invalidateQueries({ queryKey: ["/api/incident-reports"] });
+        queryClient.refetchQueries({ queryKey: ["/api/incident-reports"] });
+      }
+    });
   };
 
 
