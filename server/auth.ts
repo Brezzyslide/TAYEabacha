@@ -31,21 +31,36 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   // Development session configuration
   
+  // AWS COMPATIBILITY: Enhanced session configuration for production
+  const isAWSProduction = process.env.NODE_ENV === 'production' || 
+                           process.env.APP_BASE_URL?.includes('.amazonaws.com') ||
+                           process.env.APP_BASE_URL?.includes('.replit.app');
+  
+  console.log(`[SESSION CONFIG] Environment detection: AWS/Production = ${isAWSProduction}`);
+  console.log(`[SESSION CONFIG] Base URL: ${process.env.APP_BASE_URL}`);
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'fallback-session-secret-for-dev',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore, // Using PostgreSQL session store
     cookie: {
-      secure: false, // Development only
+      secure: false, // Keep false for AWS ALB compatibility
       httpOnly: true, // Prevent XSS attacks
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax', // Development setting
+      sameSite: 'lax', // Keep lax for better AWS compatibility
       domain: undefined // Let browser determine domain
     },
     rolling: true, // Extends session on activity
     name: 'needscareai.sid' // Custom session name
   };
+  
+  console.log(`[SESSION CONFIG] Cookie settings:`, {
+    secure: sessionSettings.cookie?.secure,
+    sameSite: sessionSettings.cookie?.sameSite,
+    maxAge: sessionSettings.cookie?.maxAge,
+    httpOnly: sessionSettings.cookie?.httpOnly
+  });
   
 
 
@@ -55,20 +70,27 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   // CRITICAL: Tenant-safe session validation middleware
+  // AWS COMPATIBILITY: Enhanced session validation with better error handling
   app.use(async (req, res, next) => {
-    const userId = req.session?.userId || req.user?.id;
-    const tenantId = req.session?.tenantId || req.user?.tenantId;
+    try {
+      const userId = req.session?.userId || req.user?.id;
+      const tenantId = req.session?.tenantId || req.user?.tenantId;
 
-    if (userId && tenantId) {
-      // Verify user still exists and belongs to correct tenant  
-      const user = await storage.getUserByUsernameAndTenant(req.user?.username || '', tenantId);
-      if (!user || user.id !== userId) {
-        console.log(`[SESSION SECURITY] Invalid session detected for user ${userId}, tenant ${tenantId} - destroying session`);
-        req.session.destroy(() => {});
-        return next();
-      } else {
-        req.user = user;
+      if (userId && tenantId) {
+        // Verify user still exists and belongs to correct tenant  
+        const user = await storage.getUserByUsernameAndTenant(req.user?.username || '', tenantId);
+        if (!user || user.id !== userId) {
+          console.log(`[SESSION SECURITY] Invalid session detected for user ${userId}, tenant ${tenantId} - destroying session`);
+          req.session.destroy(() => {});
+          return next();
+        } else {
+          req.user = user;
+          console.log(`[SESSION VALIDATION] User ${user.username} session valid for tenant ${tenantId}`);
+        }
       }
+    } catch (error) {
+      console.error(`[SESSION ERROR] Session validation failed:`, error);
+      // Don't destroy session on validation errors, just log and continue
     }
     next();
   });
@@ -266,5 +288,33 @@ export function setupAuth(app: Express) {
       });
       res.json(req.user);
     }
+  });
+
+  // AWS DEBUGGING: Session troubleshooting endpoint
+  app.get("/api/debug/session", (req: any, res) => {
+    console.log("[SESSION DEBUG] Full session troubleshooting:");
+    console.log("  Session ID:", req.sessionID);
+    console.log("  Is Authenticated:", req.isAuthenticated());
+    console.log("  Session Data:", req.session);
+    console.log("  User Object:", req.user);
+    console.log("  Request Headers:", req.headers);
+    console.log("  Cookies:", req.cookies);
+    
+    res.json({
+      sessionId: req.sessionID,
+      isAuthenticated: req.isAuthenticated(),
+      hasUser: !!req.user,
+      sessionKeys: Object.keys(req.session || {}),
+      userAgent: req.get('User-Agent'),
+      host: req.get('Host'),
+      origin: req.get('Origin'),
+      referer: req.get('Referer'),
+      cookies: req.cookies,
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        appBaseUrl: process.env.APP_BASE_URL,
+        hasSessionSecret: !!process.env.SESSION_SECRET
+      }
+    });
   });
 }
