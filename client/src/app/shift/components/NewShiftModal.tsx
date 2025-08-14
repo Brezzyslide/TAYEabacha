@@ -44,6 +44,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
+import { useTimeClashCheck } from "@/hooks/use-time-clash";
+import TimeClashWarning from "@/components/ui/time-clash-warning";
 
 const shiftFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -77,6 +79,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const [isRecurring, setIsRecurring] = useState(false);
   const [endConditionType, setEndConditionType] = useState<"occurrences" | "endDate">("occurrences");
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
+  const [showClashWarning, setShowClashWarning] = useState(false);
   
   // Preserve form data across modal sessions
   const [preservedFormData, setPreservedFormData] = useState<Partial<ShiftFormData>>({});
@@ -84,6 +87,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
 
   const form = useForm<ShiftFormData>({
     resolver: zodResolver(shiftFormSchema),
@@ -202,6 +206,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       setIsRecurring(false);
       setSelectedWeekdays([]);
       setEndConditionType("occurrences");
+      setShowClashWarning(false);
+      clearClashResult();
     },
     onError: (error: Error) => {
       console.error("[SHIFT CREATE ERROR] Full error:", error);
@@ -388,8 +394,72 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     return shifts;
   };
 
-  const onSubmit = (data: ShiftFormData) => {
+  const checkForTimeClashes = async (data: ShiftFormData) => {
+    if (!data.userId) return false; // No user assigned, no clash to check
+    
+    let startTime: Date, endTime: Date;
+    
+    if (data.isRecurring) {
+      if (!data.shiftStartDate || !data.shiftStartTime || !data.shiftEndTime) return false;
+      
+      const startDate = new Date(data.shiftStartDate);
+      const [startHours, startMinutes] = data.shiftStartTime.split(':').map(Number);
+      const [endHours, endMinutes] = data.shiftEndTime.split(':').map(Number);
+      
+      startTime = new Date(startDate);
+      startTime.setHours(startHours, startMinutes, 0, 0);
+      
+      endTime = new Date(startDate);
+      if (endHours < startHours || (endHours === startHours && endMinutes <= startMinutes)) {
+        endTime.setDate(endTime.getDate() + 1); // Next day
+      }
+      endTime.setHours(endHours, endMinutes, 0, 0);
+    } else {
+      if (!data.startDateTime || !data.endDateTime) return false;
+      startTime = data.startDateTime;
+      endTime = data.endDateTime;
+    }
+    
+    checkTimeClash({
+      userId: data.userId,
+      startTime,
+      endTime
+    });
+  };
+
+  const onSubmit = async (data: ShiftFormData) => {
+    // Check for time clashes first if user is assigned and we haven't shown warning yet
+    if (data.userId && !showClashWarning) {
+      await checkForTimeClashes(data);
+      
+      // Check the result after a short delay to allow the mutation to complete
+      setTimeout(() => {
+        if (clashResult?.hasClash) {
+          setShowClashWarning(true);
+          return;
+        } else {
+          // No clash, proceed with creation
+          createShiftMutation.mutate(data);
+        }
+      }, 500);
+      return;
+    }
+    
+    // Either no user assigned, warning already shown, or user chose to proceed
     createShiftMutation.mutate(data);
+    setShowClashWarning(false); // Reset warning state
+  };
+
+  const handleProceedWithClash = () => {
+    const formData = form.getValues();
+    createShiftMutation.mutate(formData);
+    setShowClashWarning(false);
+    clearClashResult();
+  };
+
+  const handleCancelDueToClash = () => {
+    setShowClashWarning(false);
+    clearClashResult();
   };
 
   return (
@@ -1073,6 +1143,17 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
               )}
             </div>
 
+            {/* Time Clash Warning */}
+            {showClashWarning && clashResult?.hasClash && (
+              <TimeClashWarning
+                clashes={clashResult.clashes || []}
+                userName={users?.find((u: any) => u.id === form.getValues('userId'))?.username}
+                onProceed={handleProceedWithClash}
+                onCancel={handleCancelDueToClash}
+                showActions={true}
+              />
+            )}
+
             {/* Form Actions */}
             <div className="flex justify-end space-x-2">
               <Button
@@ -1082,12 +1163,22 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createShiftMutation.isPending}>
+              <Button 
+                type="submit" 
+                disabled={createShiftMutation.isPending || isChecking}
+              >
                 {createShiftMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating...
                   </>
+                ) : isChecking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Checking for conflicts...
+                  </>
+                ) : showClashWarning ? (
+                  'Choose Action Above'
                 ) : (
                   `Create ${isRecurring ? 'Recurring ' : ''}Shift${isRecurring ? 's' : ''}`
                 )}

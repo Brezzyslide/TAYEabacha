@@ -7520,6 +7520,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check for time clashes when assigning users to shifts
+  app.post("/api/shifts/check-clash", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const { userId, startTime, endTime, excludeShiftId } = req.body;
+      
+      console.log(`[TIME CLASH CHECK] Checking for clashes - User: ${userId}, Time: ${startTime} to ${endTime}`);
+      
+      if (!userId || !startTime || !endTime) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+      
+      // Convert string dates to Date objects
+      const shiftStart = new Date(startTime);
+      const shiftEnd = new Date(endTime);
+      
+      // Get all shifts for the user in the same tenant
+      const userShifts = await storage.getShiftsByUser(userId, req.user.tenantId);
+      
+      // Filter for overlapping shifts (excluding the current shift being edited)
+      const overlappingShifts = userShifts.filter(shift => {
+        if (excludeShiftId && shift.id === excludeShiftId) return false;
+        if (!shift.startTime || !shift.endTime) return false;
+        if (shift.status === 'cancelled' || shift.status === 'completed') return false;
+        
+        const existingStart = new Date(shift.startTime);
+        const existingEnd = new Date(shift.endTime);
+        
+        // Check for any overlap
+        return (shiftStart < existingEnd && shiftEnd > existingStart);
+      });
+      
+      console.log(`[TIME CLASH CHECK] Found ${overlappingShifts.length} overlapping shifts`);
+      
+      if (overlappingShifts.length > 0) {
+        const clashDetails = overlappingShifts.map(shift => ({
+          id: shift.id,
+          title: shift.title,
+          startTime: shift.startTime,
+          endTime: shift.endTime,
+          status: shift.status
+        }));
+        
+        console.log(`[TIME CLASH CHECK] Clash details:`, clashDetails);
+        
+        return res.json({
+          hasClash: true,
+          message: `User has ${overlappingShifts.length} overlapping shift${overlappingShifts.length > 1 ? 's' : ''}`,
+          clashes: clashDetails
+        });
+      }
+      
+      res.json({ hasClash: false, message: "No time clashes found" });
+    } catch (error: any) {
+      console.error("[TIME CLASH CHECK] Error:", error);
+      res.status(500).json({ message: "Failed to check for time clashes", error: error.message });
+    }
+  });
+
   // Get cancelled shifts for admin view
   app.get("/api/shifts/cancelled", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {

@@ -42,6 +42,8 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { useTimeClashCheck } from "@/hooks/use-time-clash";
+import TimeClashWarning from "@/components/ui/time-clash-warning";
 import { cn } from "@/lib/utils";
 import type { Shift, Client, User } from "@shared/schema";
 
@@ -73,10 +75,12 @@ interface EditRecurringShiftModalProps {
 export default function EditRecurringShiftModal({ isOpen, onClose, shift, editType }: EditRecurringShiftModalProps) {
   const [endConditionType, setEndConditionType] = useState<"occurrences" | "endDate">("occurrences");
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
+  const [showClashWarning, setShowClashWarning] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
 
   const form = useForm<RecurringShiftFormData>({
     resolver: zodResolver(recurringShiftFormSchema),

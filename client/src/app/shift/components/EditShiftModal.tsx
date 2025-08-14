@@ -22,6 +22,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useTimeClashCheck } from "@/hooks/use-time-clash";
+import TimeClashWarning from "@/components/ui/time-clash-warning";
 import type { Shift, Client, User } from "@shared/schema";
 
 interface EditShiftModalProps {
@@ -41,9 +43,11 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
     shift.endTime ? format(new Date(shift.endTime), "HH:mm") : format(new Date(shift.startTime), "HH:mm")
   );
   const [description, setDescription] = useState(shift.description || "");
+  const [showClashWarning, setShowClashWarning] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
 
   // Fetch clients
   const { data: clients = [] } = useQuery<Client[]>({
@@ -110,6 +114,8 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
           ? `Successfully updated ${updatedCount} shifts in the series.`
           : "The shift has been successfully updated.",
       });
+      setShowClashWarning(false);
+      clearClashResult();
       onClose();
     },
     onError: (error: any) => {
@@ -149,7 +155,27 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const checkForTimeClashes = async () => {
+    if (userId === "unassigned") return false;
+    
+    const [startHours, startMinutes] = startTime.split(':');
+    const [endHours, endMinutes] = endTime.split(':');
+    
+    const startDateTime = new Date(selectedDate);
+    startDateTime.setHours(parseInt(startHours), parseInt(startMinutes));
+    
+    const endDateTime = new Date(selectedDate);
+    endDateTime.setHours(parseInt(endHours), parseInt(endMinutes));
+    
+    checkTimeClash({
+      userId: parseInt(userId),
+      startTime: startDateTime,
+      endTime: endDateTime,
+      excludeShiftId: shift.id // Exclude current shift from clash check
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !clientId) {
       toast({
@@ -159,7 +185,38 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
       });
       return;
     }
+    
+    // Check for time clashes first if user is assigned and we haven't shown warning yet
+    if (userId !== "unassigned" && !showClashWarning) {
+      await checkForTimeClashes();
+      
+      // Check the result after a short delay to allow the mutation to complete
+      setTimeout(() => {
+        if (clashResult?.hasClash) {
+          setShowClashWarning(true);
+          return;
+        } else {
+          // No clash, proceed with update
+          updateShiftMutation.mutate();
+        }
+      }, 500);
+      return;
+    }
+    
+    // Either no user assigned, warning already shown, or user chose to proceed
     updateShiftMutation.mutate();
+    setShowClashWarning(false); // Reset warning state
+  };
+
+  const handleProceedWithClash = () => {
+    updateShiftMutation.mutate();
+    setShowClashWarning(false);
+    clearClashResult();
+  };
+
+  const handleCancelDueToClash = () => {
+    setShowClashWarning(false);
+    clearClashResult();
   };
 
   const handleDelete = () => {
@@ -289,14 +346,25 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
             />
           </div>
 
+          {/* Time Clash Warning */}
+          {showClashWarning && clashResult?.hasClash && (
+            <TimeClashWarning
+              clashes={clashResult.clashes || []}
+              userName={users.find((u: any) => u.id.toString() === userId)?.fullName || users.find((u: any) => u.id.toString() === userId)?.username}
+              onProceed={handleProceedWithClash}
+              onCancel={handleCancelDueToClash}
+              showActions={true}
+            />
+          )}
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               type="submit"
               className="flex-1"
-              disabled={updateShiftMutation.isPending}
+              disabled={updateShiftMutation.isPending || isChecking}
             >
-              {updateShiftMutation.isPending ? "Updating..." : "Update Shift"}
+              {updateShiftMutation.isPending ? "Updating..." : isChecking ? "Checking for conflicts..." : showClashWarning ? "Choose Action Above" : "Update Shift"}
             </Button>
             
             <Button
