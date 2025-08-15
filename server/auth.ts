@@ -30,37 +30,20 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   // Development session configuration
-  
-  // AWS COMPATIBILITY: Enhanced session configuration for production
-  const isAWSProduction = process.env.NODE_ENV === 'production' || 
-                           process.env.APP_BASE_URL?.includes('.amazonaws.com') ||
-                           process.env.APP_BASE_URL?.includes('.replit.app');
-  
-  console.log(`[SESSION CONFIG] Environment detection: AWS/Production = ${isAWSProduction}`);
-  console.log(`[SESSION CONFIG] Base URL: ${process.env.APP_BASE_URL}`);
-  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'fallback-session-secret-for-dev',
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore, // Using PostgreSQL session store
+    store: storage.sessionStore,
     cookie: {
-      secure: false, // Keep false for AWS ALB compatibility
-      httpOnly: true, // Prevent XSS attacks
+      secure: false,
+      httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax', // Keep lax for better AWS compatibility
-      domain: undefined // Let browser determine domain
+      sameSite: 'lax'
     },
-    rolling: true, // Extends session on activity
-    name: 'needscareai.sid' // Custom session name
+    rolling: true,
+    name: 'needscareai.sid'
   };
-  
-  console.log(`[SESSION CONFIG] Cookie settings:`, {
-    secure: sessionSettings.cookie?.secure,
-    sameSite: sessionSettings.cookie?.sameSite,
-    maxAge: sessionSettings.cookie?.maxAge,
-    httpOnly: sessionSettings.cookie?.httpOnly
-  });
   
 
 
@@ -70,7 +53,6 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   // CRITICAL: Tenant-safe session validation middleware
-  // AWS COMPATIBILITY: Enhanced session validation with better error handling
   app.use(async (req, res, next) => {
     try {
       const userId = req.session?.userId || req.user?.id;

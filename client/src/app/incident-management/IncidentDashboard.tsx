@@ -83,10 +83,10 @@ export default function IncidentDashboard() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Auto-refresh for real-time updates with production-optimized intervals
+  // Auto-refresh for real-time updates
   const { manualRefresh } = useAutoRefresh({
     queryKeys: ["/api/incident-reports", "/api/notifications"],
-    interval: 30000, // 30 seconds for faster updates in production
+    interval: 30000, // 30 seconds for faster updates
     enabled: true
   });
 

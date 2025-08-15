@@ -155,7 +155,7 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
     createIncidentMutation.mutate(submissionData, {
       onSuccess: () => {
         console.log("[INCIDENT CREATION] Success - invalidating cache and refreshing data");
-        // Force immediate cache invalidation for production environment
+        // Force immediate cache invalidation
         queryClient.invalidateQueries({ queryKey: ["/api/incident-reports"] });
         queryClient.refetchQueries({ queryKey: ["/api/incident-reports"] });
       }

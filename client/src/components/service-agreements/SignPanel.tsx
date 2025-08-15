@@ -48,7 +48,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
     queryKey: ["/api/auth/user"],
   });
 
-  // Mock signature metadata - in production, this would come from actual signature service
+  // Mock signature metadata for development
   const getSignatureData = () => {
     const now = new Date();
     const clientName = clientDetails ? `${clientDetails.firstName} ${clientDetails.lastName}` : "Client Name";

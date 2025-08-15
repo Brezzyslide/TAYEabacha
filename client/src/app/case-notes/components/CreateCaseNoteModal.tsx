@@ -303,7 +303,7 @@ export default function CreateCaseNoteModal({
     
     // PRODUCTION FIX: Remove fallback logic that shows non-existent or irrelevant shifts
     // Only show shifts that meet strict criteria - no "closest proximity" fallbacks
-    // This prevents phantom shift dates from appearing in production
+    // This prevents phantom shift dates from appearing
     
     console.log(`[CASE NOTE] Filtered ${filtered.length} shifts from ${availableShifts.length} total for ${selectedCategory}`);
     

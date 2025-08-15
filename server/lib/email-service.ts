@@ -140,7 +140,7 @@ export function getCompanyWelcomeEmail(companyName: string, adminEmail: string):
           </ul>
           
           <div style="text-align: center;">
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://your-platform.replit.app'}" class="cta-button">
+            <a href="${process.env.APP_BASE_URL || 'https://localhost:5000'}" class="cta-button">
               Access Your Platform
             </a>
           </div>
@@ -222,7 +222,7 @@ export function getUserWelcomeEmail(
           </ul>
           
           <div style="text-align: center;">
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://your-platform.replit.app'}" class="cta-button">
+            <a href="${process.env.APP_BASE_URL || 'https://localhost:5000'}" class="cta-button">
               Login to Your Account
             </a>
           </div>
@@ -323,7 +323,7 @@ export function getPasswordResetEmail(
           </div>
           
           <div style="text-align: center;">
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://your-platform.replit.app'}" class="cta-button">
+            <a href="${process.env.APP_BASE_URL || 'https://localhost:5000'}" class="cta-button">
               Login to Your Account
             </a>
           </div>
@@ -436,7 +436,7 @@ export function getIncidentReportEmail(
           </ul>
           
           <div style="text-align: center;">
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://your-platform.replit.app'}/incident-management" class="cta-button">
+            <a href="${process.env.APP_BASE_URL || 'https://localhost:5000'}/incident-management" class="cta-button">
               View Incident Report
             </a>
           </div>
@@ -558,7 +558,7 @@ export function getShiftAssignmentEmail(
           </ul>
           
           <div style="text-align: center;">
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://your-platform.replit.app'}/shift-management" class="cta-button">
+            <a href="${process.env.APP_BASE_URL || 'https://localhost:5000'}/shift-management" class="cta-button">
               View My Shifts
             </a>
           </div>
@@ -658,7 +658,7 @@ export function getClientCreationEmail(
           </ul>
           
           <div style="text-align: center;">
-            <a href="${process.env.REPLIT_DOMAINS?.split(',')[0] || 'https://your-platform.replit.app'}/support-work/clients" class="cta-button">
+            <a href="${process.env.APP_BASE_URL || 'https://localhost:5000'}/support-work/clients" class="cta-button">
               View Client Directory
             </a>
           </div>

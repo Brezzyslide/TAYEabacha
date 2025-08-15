@@ -586,12 +586,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateShift(id: number, updateShift: Partial<InsertShift>, tenantId: number): Promise<Shift | undefined> {
-    console.log(`[AWS DEBUG - STORAGE] 🔧 updateShift method called`);
-    console.log(`[AWS DEBUG - STORAGE] Parameters: id=${id}, tenantId=${tenantId}`);
-    console.log(`[AWS DEBUG - STORAGE] Update data:`, JSON.stringify(updateShift, null, 2));
     
     try {
-      console.log(`[AWS DEBUG - STORAGE] 🔄 Executing database update query...`);
       
       // Check if shift exists before updating
       const existingShift = await db
@@ -600,13 +596,10 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)))
         .limit(1);
       
-      console.log(`[AWS DEBUG - STORAGE] 📊 Existing shift check:`, existingShift.length > 0 ? 'FOUND' : 'NOT FOUND');
       if (existingShift.length === 0) {
-        console.log(`[AWS DEBUG - STORAGE] ❌ Shift ${id} not found for tenant ${tenantId}`);
         return undefined;
       }
       
-      console.log(`[AWS DEBUG - STORAGE] ✅ Shift ${id} exists, current data:`, JSON.stringify(existingShift[0], null, 2));
       
       const [shift] = await db
         .update(shifts)
@@ -614,19 +607,12 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(shifts.id, id), eq(shifts.tenantId, tenantId)))
         .returning();
       
-      console.log(`[AWS DEBUG - STORAGE] 📊 Database update result:`, shift ? 'SUCCESS' : 'NO_ROWS_AFFECTED');
       if (shift) {
-        console.log(`[AWS DEBUG - STORAGE] ✅ Updated shift data:`, JSON.stringify(shift, null, 2));
       } else {
-        console.log(`[AWS DEBUG - STORAGE] ❌ No rows were affected by the update operation`);
       }
       
       return shift || undefined;
     } catch (error) {
-      console.error(`[AWS DEBUG - STORAGE] ❌ CRITICAL ERROR in updateShift:`, error);
-      console.error(`[AWS DEBUG - STORAGE] ❌ Error stack:`, error.stack);
-      console.error(`[AWS DEBUG - STORAGE] ❌ Parameters:`, { id, tenantId });
-      console.error(`[AWS DEBUG - STORAGE] ❌ Update data:`, JSON.stringify(updateShift, null, 2));
       
       // Re-throw to maintain error handling chain
       throw error;

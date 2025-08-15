@@ -14,7 +14,7 @@ import { createTimesheetEntryFromShift, getCurrentTimesheet, getTimesheetHistory
 import { createSmartTimesheetEntry } from "./smart-timesheet-service";
 import { recalculateTimesheetEntriesForUser } from "./timesheet-service";
 import { updateTimesheetTotals } from "./comprehensive-tenant-fixes";
-import { executeProductionDemoDataCleanup, verifyProductionCleanup } from "./emergency-production-cleanup";
+
 import { sendCompanyWelcomeEmail, sendUserWelcomeEmail, sendPasswordResetEmail, sendIncidentReportNotification, sendShiftAssignmentNotification, sendClientCreationNotification } from "./lib/email-service";
 import { calculateAllCompanyBilling, calculateTenantBilling, calculateCompanyBilling, suspendCompanyAccess, restoreCompanyAccess, generateBillingSummary, getCompaniesForAutoSuspension, processAutoSuspensions } from "./billing-system";
 import { createPaymentIntent, createSubscription, getCompanyPaymentInfo, updatePaymentStatus, stripe } from "./stripe-service";
@@ -1579,31 +1579,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update shift (for requesting shifts)
   app.patch("/api/shifts/:id", requireAuth, async (req: any, res) => {
-    console.log(`[AWS DEBUG - SHIFT PATCH] 🚀 SHIFT START/UPDATE REQUEST RECEIVED`);
-    console.log(`[AWS DEBUG - SHIFT PATCH] Shift ID: ${req.params.id}`);
-    console.log(`[AWS DEBUG - SHIFT PATCH] User: ${req.user.username} (ID: ${req.user.id}, Tenant: ${req.user.tenantId})`);
-    console.log(`[AWS DEBUG - SHIFT PATCH] Request body:`, JSON.stringify(req.body, null, 2));
-    console.log(`[AWS DEBUG - SHIFT PATCH] Headers:`, JSON.stringify(req.headers, null, 2));
     
     try {
       const shiftId = parseInt(req.params.id);
       const updateData = req.body;
       
-      console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Parsed shift ID: ${shiftId}`);
-      console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Starting timestamp conversion process`);
+
       
       // Convert timestamp strings to Date objects for database compatibility
       const processedUpdateData = { ...updateData };
       if (processedUpdateData.startTimestamp && typeof processedUpdateData.startTimestamp === 'string') {
         processedUpdateData.startTimestamp = new Date(processedUpdateData.startTimestamp);
-        console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Converted startTimestamp: ${processedUpdateData.startTimestamp}`);
+
       }
       if (processedUpdateData.endTimestamp && typeof processedUpdateData.endTimestamp === 'string') {
         processedUpdateData.endTimestamp = new Date(processedUpdateData.endTimestamp);
-        console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Converted endTimestamp: ${processedUpdateData.endTimestamp}`);
+
       }
       
-      console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Processed update data:`, JSON.stringify(processedUpdateData, null, 2));
       
       // Enhanced validation for shift request operation
       if (processedUpdateData.userId && processedUpdateData.status === "requested") {
@@ -1630,20 +1623,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[SHIFT REQUEST] Valid request - assigning userId ${processedUpdateData.userId} to shift ${shiftId}`);
       }
       
-      console.log(`[AWS DEBUG - SHIFT PATCH] 🔄 Calling storage.updateShift...`);
-      console.log(`[AWS DEBUG - SHIFT PATCH] Parameters: shiftId=${shiftId}, tenantId=${req.user.tenantId}`);
       
       const shift = await storage.updateShift(shiftId, processedUpdateData, req.user.tenantId);
       
-      console.log(`[AWS DEBUG - SHIFT PATCH] 📊 Storage response:`, shift ? 'SUCCESS' : 'NULL');
       if (shift) {
-        console.log(`[AWS DEBUG - SHIFT PATCH] ✅ Updated shift data:`, JSON.stringify(shift, null, 2));
       }
       
       if (!shift) {
-        console.log(`[AWS DEBUG - SHIFT PATCH] ❌ ERROR: Failed to update shift ${shiftId}`);
-        console.log(`[AWS DEBUG - SHIFT PATCH] ❌ TenantId used: ${req.user.tenantId}`);
-        console.log(`[AWS DEBUG - SHIFT PATCH] ❌ ProcessedUpdateData:`, JSON.stringify(processedUpdateData, null, 2));
         return res.status(404).json({ message: "Shift not found" });
       }
       
@@ -1718,27 +1704,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[SHIFT COMPLETION] All completion processing finished for shift ${shift.id}`);
       }
       
-      console.log(`[AWS DEBUG - SHIFT PATCH] 🎉 SUCCESS: Returning shift data to client`);
-      console.log(`[AWS DEBUG - SHIFT PATCH] 📊 Response payload:`, JSON.stringify(shift, null, 2));
       
       res.json(shift);
     } catch (error) {
-      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ CRITICAL ERROR in PATCH endpoint:`, error);
-      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Error stack:`, error.stack);
-      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Update data:`, JSON.stringify(req.body, null, 2));
-      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ User details:`, {
-        username: req.user.username,
-        id: req.user.id,
-        tenantId: req.user.tenantId,
-        role: req.user.role
-      });
-      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Request headers:`, JSON.stringify(req.headers, null, 2));
-      console.error(`[AWS DEBUG - SHIFT PATCH] ❌ Request params:`, JSON.stringify(req.params, null, 2));
-      
+      console.error("Failed to update shift:", error);
       res.status(500).json({ 
         message: "Failed to update shift", 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
@@ -5616,24 +5588,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (clientId) {
           reports = await storage.getIncidentReportsWithClosures(tenantId);
-          console.log(`[AWS DEBUG] Before client filter: ${reports.length} total reports`);
           reports = reports.filter((report: any) => report.clientId === clientId);
-          console.log(`[AWS DEBUG] After client filter: ${reports.length} reports for client ${clientId}`);
         } else {
           reports = await storage.getIncidentReportsWithClosures(tenantId);
-          console.log(`[AWS DEBUG] Retrieved ${reports.length} total reports for tenant ${tenantId}`);
         }
         
         // Additional debugging for AWS environment
         if (reports && reports.length > 0) {
-          console.log(`[AWS DEBUG] Sample report structure:`, JSON.stringify(reports[0], null, 2));
         } else {
-          console.log(`[AWS DEBUG] No reports found - checking database directly...`);
           // Fallback to basic incident reports if with-closures fails
           const basicReports = await storage.getIncidentReports(tenantId);
-          console.log(`[AWS DEBUG] Basic incident reports count: ${basicReports.length}`);
           if (basicReports.length > 0) {
-            console.log(`[AWS DEBUG] Basic reports exist, issue with getIncidentReportsWithClosures method`);
             reports = basicReports;
           }
         }
@@ -10972,51 +10937,7 @@ Maximum 400 words.`;
     }
   });
 
-  // EMERGENCY PRODUCTION DEMO DATA CLEANUP ENDPOINTS
-  // ⚠️ SECURITY: Only ConsoleManager can access these endpoints
-  app.post("/api/emergency/cleanup-demo-data", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
-    try {
-      console.log(`🚨 EMERGENCY DEMO DATA CLEANUP initiated by user ${req.user.id} (${req.user.username})`);
-      
-      const result = await executeProductionDemoDataCleanup();
-      
-      console.log(`✅ EMERGENCY CLEANUP COMPLETED:`, result);
-      res.json({
-        success: true,
-        message: "Production demo data cleanup completed successfully",
-        result
-      });
-    } catch (error: any) {
-      console.error(`❌ EMERGENCY CLEANUP FAILED:`, error);
-      res.status(500).json({ 
-        success: false,
-        message: "Demo data cleanup failed", 
-        error: error.message 
-      });
-    }
-  });
 
-  app.get("/api/emergency/verify-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
-    try {
-      const verification = await verifyProductionCleanup();
-      
-      res.json({
-        success: true,
-        isClean: verification.isClean,
-        remainingDemo: verification.remainingDemo,
-        message: verification.isClean 
-          ? "Production database is clean - no demo data found" 
-          : `Found ${verification.remainingDemo.length} remaining demo records`
-      });
-    } catch (error: any) {
-      console.error(`❌ CLEANUP VERIFICATION FAILED:`, error);
-      res.status(500).json({ 
-        success: false,
-        message: "Verification failed", 
-        error: error.message 
-      });
-    }
-  });
 
   // ========================================
   // COMPLIANCE CENTRE ROUTES
