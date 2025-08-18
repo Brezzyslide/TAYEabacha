@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -62,7 +62,7 @@ export default function AgreementForm({
     enabled: mode === "create",
   });
 
-  const handleFieldChange = (field: string, value: any) => {
+  const handleFieldChange = useCallback((field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
       onAgreementChange({
@@ -78,35 +78,41 @@ export default function AgreementForm({
         [field]: value,
       });
     }
-  };
+  }, [agreementData, onAgreementChange]);
 
-  const selectedClient = Array.isArray(clients) ? clients.find((c: any) => c.id === agreementData.clientId) : null;
+  const selectedClient = useMemo(() => 
+    Array.isArray(clients) ? clients.find((c: any) => c.id === agreementData.clientId) : null,
+    [clients, agreementData.clientId]
+  );
 
   // Auto-populate agreement fields when client or tenant data changes
   useEffect(() => {
-    if (mode === "create" && selectedClient) {
-      // Auto-populate billing details with client NDIS information
-      const updatedBillingDetails = {
-        ...agreementData.billingDetails,
-        participantNumber: selectedClient.ndisNumber || "",
-      };
-      
-      onAgreementChange({
-        ...agreementData,
-        billingDetails: updatedBillingDetails,
-      });
+    if (mode === "create" && selectedClient && selectedClient.ndisNumber) {
+      const currentBillingDetails = agreementData.billingDetails || {};
+      // Only update if the participant number is different to avoid re-renders
+      if (currentBillingDetails.participantNumber !== selectedClient.ndisNumber) {
+        const updatedBillingDetails = {
+          ...currentBillingDetails,
+          participantNumber: selectedClient.ndisNumber || "",
+        };
+        
+        onAgreementChange({
+          ...agreementData,
+          billingDetails: updatedBillingDetails,
+        });
+      }
     }
-  }, [selectedClient, mode]);
+  }, [selectedClient?.ndisNumber, mode]);
 
   // Auto-load default terms template
   useEffect(() => {
-    if (mode === "create" && defaultTerms && !agreementData.customTerms) {
+    if (mode === "create" && defaultTerms && defaultTerms.content && !agreementData.customTerms) {
       onAgreementChange({
         ...agreementData,
-        customTerms: defaultTerms.content || "",
+        customTerms: defaultTerms.content,
       });
     }
-  }, [defaultTerms, mode]);
+  }, [defaultTerms?.content, mode]);
 
   return (
     <div className="space-y-6">

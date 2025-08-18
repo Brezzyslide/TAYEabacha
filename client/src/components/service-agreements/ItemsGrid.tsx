@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -162,12 +162,12 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     onItemsChange(items.filter(item => item.id !== itemId));
   };
 
-  const handleFieldChange = (field: keyof ServiceAgreementItem, value: any) => {
+  const handleFieldChange = useCallback((field: keyof ServiceAgreementItem, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
 
   const ItemForm = () => (
     <div className="space-y-6">
