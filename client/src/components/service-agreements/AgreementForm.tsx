@@ -107,6 +107,7 @@ export default function AgreementForm({
         const updatedBillingDetails = {
           ...currentBillingDetails,
           participantNumber: selectedClient.ndisNumber || "",
+          planNumber: (currentBillingDetails as any)?.planNumber || "", // Ensure planNumber exists
         };
         
         onAgreementChange({
@@ -296,22 +297,30 @@ export default function AgreementForm({
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="ndisParticipantNumber">NDIS Participant Number</Label>
+              <Label htmlFor="ndisParticipantNumber" className="text-red-600">NDIS Participant Number *</Label>
               <Input
                 id="ndisParticipantNumber"
                 value={(agreementData.billingDetails as any)?.participantNumber || ""}
                 onChange={(e) => handleFieldChange("billingDetails.participantNumber", e.target.value)}
                 placeholder="Enter participant number"
+                className={!(agreementData.billingDetails as any)?.participantNumber ? "border-red-300" : ""}
               />
+              {!(agreementData.billingDetails as any)?.participantNumber && (
+                <p className="text-sm text-red-600 mt-1">Participant number is required</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="planNumber">Plan Number</Label>
+              <Label htmlFor="planNumber" className="text-red-600">Plan Number *</Label>
               <Input
                 id="planNumber"
                 value={(agreementData.billingDetails as any)?.planNumber || ""}
                 onChange={(e) => handleFieldChange("billingDetails.planNumber", e.target.value)}
                 placeholder="Enter plan number"
+                className={!(agreementData.billingDetails as any)?.planNumber ? "border-red-300" : ""}
               />
+              {!(agreementData.billingDetails as any)?.planNumber && (
+                <p className="text-sm text-red-600 mt-1">Plan number is required</p>
+              )}
             </div>
             <div>
               <Label htmlFor="planManager">Plan Manager</Label>
