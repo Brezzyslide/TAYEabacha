@@ -120,6 +120,9 @@ export class ServiceAgreementService {
         companyId,
         createdBy,
         status: 'draft' as const,
+        // Convert date strings to Date objects
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -151,6 +154,9 @@ export class ServiceAgreementService {
 
       const updateData = {
         ...data,
+        // Convert date strings to Date objects if they exist
+        ...(data.startDate && { startDate: new Date(data.startDate) }),
+        ...(data.endDate && { endDate: new Date(data.endDate) }),
         updatedAt: new Date()
       };
 
