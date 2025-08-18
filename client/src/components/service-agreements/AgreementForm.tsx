@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, User, Phone, Mail, Calculator, FileText, PenTool } from "lucide-react";
 import ItemsGrid from "./ItemsGridFixed";
 import TotalsBar from "./TotalsBar";
-import SignPanel from "./SignPanel";
+import SignPanel from "./SignPanelFixed";
 import TermsViewer from "./TermsViewer";
 import type { ServiceAgreement, ServiceAgreementItem } from "@shared/schema";
 
@@ -85,12 +85,25 @@ export default function AgreementForm({
     [clients, agreementData.clientId]
   );
 
+  const getClientDisplayName = useCallback(() => {
+    if (!selectedClient) return null;
+    return selectedClient.fullName || 
+           (selectedClient.firstName && selectedClient.lastName 
+             ? `${selectedClient.firstName} ${selectedClient.lastName}` 
+             : 'Unknown Client');
+  }, [selectedClient]);
+
+  const handleSignature = useCallback((type: 'client' | 'provider', signature: any) => {
+    const signatureField = type === 'client' ? 'clientSignature' : 'providerSignature';
+    handleFieldChange(signatureField, signature);
+  }, [handleFieldChange]);
+
   // Auto-populate agreement fields when client or tenant data changes
   useEffect(() => {
     if (mode === "create" && selectedClient && selectedClient.ndisNumber) {
       const currentBillingDetails = agreementData.billingDetails || {};
       // Only update if the participant number is different to avoid re-renders
-      if (currentBillingDetails.participantNumber !== selectedClient.ndisNumber) {
+      if ((currentBillingDetails as any)?.participantNumber !== selectedClient.ndisNumber) {
         const updatedBillingDetails = {
           ...currentBillingDetails,
           participantNumber: selectedClient.ndisNumber || "",
@@ -106,13 +119,13 @@ export default function AgreementForm({
 
   // Auto-load default terms template
   useEffect(() => {
-    if (mode === "create" && defaultTerms && defaultTerms.content && !agreementData.customTerms) {
+    if (mode === "create" && defaultTerms && (defaultTerms as any)?.content && !agreementData.customTerms) {
       onAgreementChange({
         ...agreementData,
-        customTerms: defaultTerms.content,
+        customTerms: (defaultTerms as any).content,
       });
     }
-  }, [defaultTerms?.content, mode]);
+  }, [(defaultTerms as any)?.content, mode]);
 
   return (
     <div className="space-y-6">
@@ -377,10 +390,13 @@ export default function AgreementForm({
       </Card>
 
       {/* Digital Signatures */}
-      <SignPanel 
-        isAccepted={isAccepted}
-        onAcceptedChange={onAcceptedChange}
-        agreementData={agreementData}
+      <SignPanel
+        clientName={getClientDisplayName()}
+        onSignature={handleSignature}
+        signatures={{
+          clientSignature: agreementData.clientSignature || undefined,
+          providerSignature: agreementData.providerSignature || undefined,
+        }}
       />
 
 

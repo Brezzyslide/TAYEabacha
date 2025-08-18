@@ -119,9 +119,9 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     setFormData(DEFAULT_FORM_DATA);
   }, []);
 
-  const calculateItemTotal = useCallback((item: Partial<FormData>) => {
+  const calculateItemTotal = useCallback((item: Partial<FormData | ServiceAgreementItem>) => {
     const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
-    const toNumber = (value: string | number | undefined): number => {
+    const toNumber = (value: string | number | null | undefined): number => {
       if (typeof value === 'string') return parseFloat(value) || 0;
       return Number(value) || 0;
     };
@@ -273,7 +273,51 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport);
-                      return formatCurrency(parseFloat(formData.hoursDay) * parseFloat(formData.unitDay) * ratioMultiplier);
+                      const hours = parseFloat(formData.hoursDay) || 0;
+                      const rate = parseFloat(formData.unitDay) || 0;
+                      return formatCurrency(hours * rate * ratioMultiplier);
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Weekday Evening Rate */}
+          <Card>
+            <CardContent className="pt-4">
+              <h4 className="font-medium text-sm text-slate-600 dark:text-slate-400 mb-3">
+                Weekday Evening Rate (Mon-Fri 8pm-10pm)
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Hours per Week</Label>
+                  <Input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={formData.hoursWeekdayEvening}
+                    onChange={handlers.hoursWeekdayEvening}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit Rate ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.unitWeekdayEvening}
+                    onChange={handlers.unitWeekdayEvening}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Weekly Amount</Label>
+                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
+                    {(() => {
+                      const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport);
+                      const hours = parseFloat(formData.hoursWeekdayEvening) || 0;
+                      const rate = parseFloat(formData.unitWeekdayEvening) || 0;
+                      return formatCurrency(hours * rate * ratioMultiplier);
                     })()}
                   </div>
                 </div>
