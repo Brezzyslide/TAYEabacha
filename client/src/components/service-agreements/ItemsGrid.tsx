@@ -25,6 +25,12 @@ import { formatCurrency } from "@shared/utils/calc";
 import { calculateRatioMultiplier } from "@shared/utils/ratioCalculator";
 import type { ServiceAgreementItem } from "@shared/schema";
 
+// Helper function to safely convert values to numbers
+const toNumber = (value: string | number | undefined): number => {
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  return value || 0;
+};
+
 interface ItemsGridProps {
   items: ServiceAgreementItem[];
   onItemsChange: (items: ServiceAgreementItem[]) => void;
@@ -259,7 +265,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
-                      return formatCurrency(toNumber(formData.hoursDay) * toNumber(formData.unitDay) * ratioMultiplier);
+                      return formatCurrency(parseFloat(formData.hoursDay || "0") * parseFloat(formData.unitDay || "0") * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -299,7 +305,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
-                      return formatCurrency(toNumber(formData.hoursWeekdayEvening) * toNumber(formData.unitWeekdayEvening) * ratioMultiplier);
+                      return formatCurrency(parseFloat(formData.hoursWeekdayEvening || "0") * parseFloat(formData.unitWeekdayEvening || "0") * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -339,7 +345,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
-                      return formatCurrency(toNumber(formData.hoursActiveNight) * toNumber(formData.unitActiveNight) * ratioMultiplier);
+                      return formatCurrency(parseFloat(formData.hoursActiveNight || "0") * parseFloat(formData.unitActiveNight || "0") * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -379,7 +385,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
-                      return formatCurrency(toNumber(formData.hoursSleepover) * toNumber(formData.unitSleepover) * ratioMultiplier);
+                      return formatCurrency(parseFloat(formData.hoursSleepover || "0") * parseFloat(formData.unitSleepover || "0") * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -419,7 +425,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
-                      return formatCurrency(toNumber(formData.hoursSaturday) * toNumber(formData.unitSaturday) * ratioMultiplier);
+                      return formatCurrency(parseFloat(formData.hoursSaturday || "0") * parseFloat(formData.unitSaturday || "0") * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -459,7 +465,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
-                      return formatCurrency(toNumber(formData.hoursSunday) * toNumber(formData.unitSunday) * ratioMultiplier);
+                      return formatCurrency(parseFloat(formData.hoursSunday || "0") * parseFloat(formData.unitSunday || "0") * ratioMultiplier);
                     })()}
                   </div>
                 </div>
@@ -499,7 +505,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-md text-sm font-medium">
                     {(() => {
                       const ratioMultiplier = calculateRatioMultiplier(formData.ratioOfSupport || "1:1");
-                      return formatCurrency(toNumber(formData.hoursPublicHoliday) * toNumber(formData.unitPublicHoliday) * ratioMultiplier);
+                      return formatCurrency(parseFloat(formData.hoursPublicHoliday || "0") * parseFloat(formData.unitPublicHoliday || "0") * ratioMultiplier);
                     })()}
                   </div>
                 </div>
