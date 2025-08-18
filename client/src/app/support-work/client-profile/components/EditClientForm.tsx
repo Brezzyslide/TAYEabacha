@@ -67,18 +67,18 @@ export default function EditClientForm() {
   useEffect(() => {
     if (clientData) {
       form.reset({
-        firstName: clientData.firstName ?? "",
-        lastName: clientData.lastName ?? "",
-        ndisNumber: clientData.ndisNumber ?? "",
+        firstName: clientData.firstName || "",
+        lastName: clientData.lastName || "",
+        ndisNumber: clientData.ndisNumber || "",
         dateOfBirth: clientData.dateOfBirth ? new Date(clientData.dateOfBirth) : new Date(),
-        address: clientData.address ?? "",
-        emergencyContactName: clientData.emergencyContactName ?? "",
-        emergencyContactPhone: clientData.emergencyContactPhone ?? "",
-        ndisGoals: clientData.ndisGoals ?? "",
-        likesPreferences: clientData.likesPreferences ?? "",
-        dislikesAversions: clientData.dislikesAversions ?? "",
-        allergiesMedicalAlerts: clientData.allergiesMedicalAlerts ?? "",
-        primaryDiagnosis: clientData.primaryDiagnosis ?? "",
+        address: clientData.address || "",
+        emergencyContactName: clientData.emergencyContactName || "",
+        emergencyContactPhone: clientData.emergencyContactPhone || "",
+        ndisGoals: clientData.ndisGoals || "",
+        likesPreferences: clientData.likesPreferences || "",
+        dislikesAversions: clientData.dislikesAversions || "",
+        allergiesMedicalAlerts: clientData.allergiesMedicalAlerts || "",
+        primaryDiagnosis: clientData.primaryDiagnosis || "",
         isActive: clientData.isActive !== false
       });
     }
@@ -110,9 +110,13 @@ export default function EditClientForm() {
   });
 
   const onSubmit = async (data: InsertClient) => {
+    console.log("Form submission started with data:", data);
     setIsSubmitting(true);
+    
     try {
-      await updateClientMutation.mutateAsync(data);
+      console.log("Calling update mutation for client:", clientId);
+      const result = await updateClientMutation.mutateAsync(data);
+      console.log("Update successful:", result);
     } catch (error) {
       console.error("Error updating client:", error);
     } finally {
@@ -468,6 +472,11 @@ export default function EditClientForm() {
               type="submit"
               disabled={isSubmitting || updateClientMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
+              onClick={(e) => {
+                console.log("Update Client button clicked");
+                console.log("Form valid:", form.formState.isValid);
+                console.log("Form errors:", form.formState.errors);
+              }}
             >
               {(isSubmitting || updateClientMutation.isPending) ? (
                 <>

@@ -958,10 +958,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/clients/:id", requireAuth, async (req: any, res) => {
     try {
+      console.log(`[CLIENT UPDATE] User ${req.user.username} (${req.user.id}) updating client ${req.params.id}`);
+      console.log(`[CLIENT UPDATE] Update data:`, JSON.stringify(req.body, null, 2));
+      
       const updateData = insertClientSchema.partial().parse(req.body);
+      console.log(`[CLIENT UPDATE] Validated data:`, JSON.stringify(updateData, null, 2));
+      
       const client = await storage.updateClient(parseInt(req.params.id), updateData, req.user.tenantId);
       
       if (!client) {
+        console.log(`[CLIENT UPDATE] Client ${req.params.id} not found for tenant ${req.user.tenantId}`);
         return res.status(404).json({ message: "Client not found" });
       }
       
@@ -975,12 +981,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       });
       
+      console.log(`[CLIENT UPDATE] Successfully updated client ${client.id}: ${client.fullName}`);
       res.json(client);
     } catch (error) {
+      console.error(`[CLIENT UPDATE] Error updating client ${req.params.id}:`, error);
       if (error instanceof z.ZodError) {
+        console.error(`[CLIENT UPDATE] Validation errors:`, error.errors);
         return res.status(400).json({ message: "Invalid client data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to update client" });
+      res.status(500).json({ message: "Failed to update client", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
