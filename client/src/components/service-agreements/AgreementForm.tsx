@@ -377,22 +377,7 @@ export default function AgreementForm({
         agreementData={agreementData}
       />
 
-      {/* Agreement Actions */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4 justify-end">
-            <Button variant="outline">
-              Save as Draft
-            </Button>
-            <Button 
-              disabled={!agreementData.clientId || !agreementData.startDate || !agreementData.endDate}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Create Agreement
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   );
 }

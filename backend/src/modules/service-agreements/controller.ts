@@ -8,6 +8,25 @@ interface AuthenticatedRequest extends Request {
     role: string;
     tenantId: number;
     companyId: string;
+    password?: string;
+    email?: string | null;
+    fullName?: string;
+    phone?: string | null;
+    address?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+    lastLogin?: Date | null;
+    isActive?: boolean;
+    accountExpiryDate?: Date | null;
+    passwordExpiryDate?: Date | null;
+    jobTitle?: string | null;
+    startDate?: Date | null;
+    emergencyContact?: string | null;
+    emergencyPhone?: string | null;
+    profilePicture?: string | null;
+    clockNumber?: string | null;
+    hourlyRate?: string | null;
+    lastBillingSync?: Date | null;
   };
 }
 import { serviceAgreementService } from './service';
@@ -25,7 +44,8 @@ import { ZodError } from 'zod';
  * Check if user has write permissions (Admin, TeamLeader, or Coordinator)
  */
 const hasWritePermission = (role: string): boolean => {
-  return ['Admin', 'TeamLeader', 'Coordinator'].includes(role);
+  const normalizedRole = role.toLowerCase().replace(/\s+/g, '');
+  return ['admin', 'teamleader', 'coordinator', 'consolemanager'].includes(normalizedRole);
 };
 
 /**
