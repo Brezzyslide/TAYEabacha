@@ -11,6 +11,8 @@ export class ServiceAgreementService {
    */
   async validateClientAccess(clientId: number, companyId: string): Promise<boolean> {
     try {
+      console.log('[SERVICE AGREEMENT SERVICE] Validating client access:', { clientId, clientIdType: typeof clientId, companyId });
+      
       const client = await db
         .select({ id: clients.id })
         .from(clients)
@@ -20,6 +22,7 @@ export class ServiceAgreementService {
         ))
         .limit(1);
       
+      console.log('[SERVICE AGREEMENT SERVICE] Client lookup result:', client);
       return client.length > 0;
     } catch (error) {
       console.error('[SERVICE AGREEMENT SERVICE] Error validating client access:', error);
