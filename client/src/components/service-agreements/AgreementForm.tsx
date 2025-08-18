@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, User, Phone, Mail, Calculator, FileText, PenTool } from "lucide-react";
-import ItemsGrid from "./ItemsGrid";
+import ItemsGrid from "./ItemsGridFixed";
 import TotalsBar from "./TotalsBar";
 import SignPanel from "./SignPanel";
 import TermsViewer from "./TermsViewer";
