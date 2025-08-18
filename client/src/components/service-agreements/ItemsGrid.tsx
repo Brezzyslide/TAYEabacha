@@ -192,6 +192,64 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     }));
   }, []);
 
+  // Create individual memoized handlers to prevent cursor jumping
+  const handleNdisCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("ndisCode", e.target.value), [handleFieldChange]);
+  
+  const handleWeeksChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("weeks", parseInt(e.target.value) || 1), [handleFieldChange]);
+  
+  const handleSupportDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => 
+    handleFieldChange("supportDescription", e.target.value), [handleFieldChange]);
+  
+  const handleRatioChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => 
+    handleFieldChange("ratioOfSupport", e.target.value), [handleFieldChange]);
+  
+  const handleHoursDayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("hoursDay", e.target.value), [handleFieldChange]);
+  
+  const handleUnitDayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("unitDay", e.target.value), [handleFieldChange]);
+  
+  const handleHoursWeekdayEveningChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("hoursWeekdayEvening", e.target.value), [handleFieldChange]);
+  
+  const handleUnitWeekdayEveningChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("unitWeekdayEvening", e.target.value), [handleFieldChange]);
+  
+  const handleHoursActiveNightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("hoursActiveNight", e.target.value), [handleFieldChange]);
+  
+  const handleUnitActiveNightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("unitActiveNight", e.target.value), [handleFieldChange]);
+  
+  const handleHoursSleepoverChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("hoursSleepover", e.target.value), [handleFieldChange]);
+  
+  const handleUnitSleepoverChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("unitSleepover", e.target.value), [handleFieldChange]);
+  
+  const handleHoursSaturdayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("hoursSaturday", e.target.value), [handleFieldChange]);
+  
+  const handleUnitSaturdayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("unitSaturday", e.target.value), [handleFieldChange]);
+  
+  const handleHoursSundayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("hoursSunday", e.target.value), [handleFieldChange]);
+  
+  const handleUnitSundayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("unitSunday", e.target.value), [handleFieldChange]);
+  
+  const handleHoursPublicHolidayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("hoursPublicHoliday", e.target.value), [handleFieldChange]);
+  
+  const handleUnitPublicHolidayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => 
+    handleFieldChange("unitPublicHoliday", e.target.value), [handleFieldChange]);
+  
+  const handleNotesChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => 
+    handleFieldChange("notes", e.target.value), [handleFieldChange]);
+
   const ItemForm = () => (
     <div className="space-y-6">
       {/* Basic Details */}
@@ -201,7 +259,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
           <Input
             id="ndisCode"
             value={formData.ndisCode || ""}
-            onChange={(e) => handleFieldChange("ndisCode", e.target.value)}
+            onChange={handleNdisCodeChange}
             placeholder="e.g., 01_001_0103_1_1"
           />
         </div>
@@ -212,7 +270,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
             type="number"
             min="1"
             value={formData.weeks || 1}
-            onChange={(e) => handleFieldChange("weeks", parseInt(e.target.value) || 1)}
+            onChange={handleWeeksChange}
           />
         </div>
       </div>
@@ -222,7 +280,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
         <Textarea
           id="supportDescription"
           value={formData.supportDescription || ""}
-          onChange={(e) => handleFieldChange("supportDescription", e.target.value)}
+          onChange={handleSupportDescriptionChange}
           placeholder="Describe the support being provided..."
           className="min-h-[80px]"
         />
@@ -234,7 +292,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
         <select
           id="ratioOfSupport"
           value={formData.ratioOfSupport || "1:1"}
-          onChange={(e) => handleFieldChange("ratioOfSupport", e.target.value)}
+          onChange={handleRatioChange}
           className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
         >
           <option value="1:1">1:1 (Standard - full price)</option>
@@ -270,7 +328,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.25"
                     min="0"
                     value={formData.hoursDay || "0"}
-                    onChange={(e) => handleFieldChange("hoursDay", e.target.value)}
+                    onChange={handleHoursDayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -280,7 +338,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.01"
                     min="0"
                     value={formData.unitDay || "0"}
-                    onChange={(e) => handleFieldChange("unitDay", e.target.value)}
+                    onChange={handleUnitDayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -310,7 +368,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.25"
                     min="0"
                     value={formData.hoursWeekdayEvening || "0"}
-                    onChange={(e) => handleFieldChange("hoursWeekdayEvening", e.target.value)}
+                    onChange={handleHoursWeekdayEveningChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -320,7 +378,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.01"
                     min="0"
                     value={formData.unitWeekdayEvening || "0"}
-                    onChange={(e) => handleFieldChange("unitWeekdayEvening", e.target.value)}
+                    onChange={handleUnitWeekdayEveningChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -350,7 +408,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.25"
                     min="0"
                     value={formData.hoursActiveNight || "0"}
-                    onChange={(e) => handleFieldChange("hoursActiveNight", e.target.value)}
+                    onChange={handleHoursActiveNightChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -360,7 +418,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.01"
                     min="0"
                     value={formData.unitActiveNight || "0"}
-                    onChange={(e) => handleFieldChange("unitActiveNight", e.target.value)}
+                    onChange={handleUnitActiveNightChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -390,7 +448,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.25"
                     min="0"
                     value={formData.hoursSleepover || "0"}
-                    onChange={(e) => handleFieldChange("hoursSleepover", e.target.value)}
+                    onChange={handleHoursSleepoverChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -400,7 +458,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.01"
                     min="0"
                     value={formData.unitSleepover || "0"}
-                    onChange={(e) => handleFieldChange("unitSleepover", e.target.value)}
+                    onChange={handleUnitSleepoverChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -430,7 +488,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.25"
                     min="0"
                     value={formData.hoursSaturday || "0"}
-                    onChange={(e) => handleFieldChange("hoursSaturday", e.target.value)}
+                    onChange={handleHoursSaturdayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -440,7 +498,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.01"
                     min="0"
                     value={formData.unitSaturday || "0"}
-                    onChange={(e) => handleFieldChange("unitSaturday", e.target.value)}
+                    onChange={handleUnitSaturdayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -470,7 +528,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.25"
                     min="0"
                     value={formData.hoursSunday || "0"}
-                    onChange={(e) => handleFieldChange("hoursSunday", e.target.value)}
+                    onChange={handleHoursSundayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -480,7 +538,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.01"
                     min="0"
                     value={formData.unitSunday || "0"}
-                    onChange={(e) => handleFieldChange("unitSunday", e.target.value)}
+                    onChange={handleUnitSundayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -510,7 +568,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.25"
                     min="0"
                     value={formData.hoursPublicHoliday || "0"}
-                    onChange={(e) => handleFieldChange("hoursPublicHoliday", e.target.value)}
+                    onChange={handleHoursPublicHolidayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -520,7 +578,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
                     step="0.01"
                     min="0"
                     value={formData.unitPublicHoliday || "0"}
-                    onChange={(e) => handleFieldChange("unitPublicHoliday", e.target.value)}
+                    onChange={handleUnitPublicHolidayChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -554,7 +612,7 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
         <Textarea
           id="notes"
           value={formData.notes || ""}
-          onChange={(e) => handleFieldChange("notes", e.target.value)}
+          onChange={handleNotesChange}
           placeholder="Any additional notes about this service item..."
         />
       </div>
