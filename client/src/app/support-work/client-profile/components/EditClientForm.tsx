@@ -44,8 +44,15 @@ export default function EditClientForm() {
     enabled: !!clientId,
   });
 
-  const form = useForm<InsertClient>({
-    resolver: zodResolver(insertClientSchema),
+  // Create a schema for update that makes the required fields optional
+  const updateClientSchema = insertClientSchema.partial({
+    tenantId: true,
+    companyId: true,  
+    createdBy: true
+  });
+
+  const form = useForm({
+    resolver: zodResolver(updateClientSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -109,13 +116,30 @@ export default function EditClientForm() {
     },
   });
 
-  const onSubmit = async (data: InsertClient) => {
+  const onSubmit = async (data: any) => {
     console.log("Form submission started with data:", data);
     setIsSubmitting(true);
     
     try {
-      console.log("Calling update mutation for client:", clientId);
-      const result = await updateClientMutation.mutateAsync(data);
+      // Only send the fields that can be updated
+      const submitData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        ndisNumber: data.ndisNumber,
+        dateOfBirth: data.dateOfBirth,
+        address: data.address,
+        emergencyContactName: data.emergencyContactName,
+        emergencyContactPhone: data.emergencyContactPhone,
+        ndisGoals: data.ndisGoals,
+        likesPreferences: data.likesPreferences,
+        dislikesAversions: data.dislikesAversions,
+        allergiesMedicalAlerts: data.allergiesMedicalAlerts,
+        primaryDiagnosis: data.primaryDiagnosis,
+        isActive: data.isActive
+      };
+      
+      console.log("Calling update mutation for client:", clientId, "with data:", submitData);
+      const result = await updateClientMutation.mutateAsync(submitData);
       console.log("Update successful:", result);
     } catch (error) {
       console.error("Error updating client:", error);
