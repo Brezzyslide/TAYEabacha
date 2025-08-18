@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
@@ -66,6 +68,7 @@ export default function EditClientForm() {
       dislikesAversions: "",
       allergiesMedicalAlerts: "",
       primaryDiagnosis: "",
+      careLevel: "",
       isActive: true
     },
   });
@@ -86,6 +89,7 @@ export default function EditClientForm() {
         dislikesAversions: clientData.dislikesAversions || "",
         allergiesMedicalAlerts: clientData.allergiesMedicalAlerts || "",
         primaryDiagnosis: clientData.primaryDiagnosis || "",
+        careLevel: clientData.careLevel || "",
         isActive: clientData.isActive !== false
       });
     }
@@ -135,6 +139,7 @@ export default function EditClientForm() {
         dislikesAversions: data.dislikesAversions,
         allergiesMedicalAlerts: data.allergiesMedicalAlerts,
         primaryDiagnosis: data.primaryDiagnosis,
+        careLevel: data.careLevel,
         isActive: data.isActive
       };
       
@@ -409,6 +414,44 @@ export default function EditClientForm() {
                         className="min-h-[80px]"
                         {...field}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="careLevel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-blue-500" />
+                      Care Level
+                    </FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-1 gap-3 mt-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Low to Moderate" id="edit-care-low" />
+                          <Label htmlFor="edit-care-low" className="cursor-pointer">Low to Moderate</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Complex" id="edit-care-complex" />
+                          <Label htmlFor="edit-care-complex" className="cursor-pointer">Complex</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Multiple and Complex Need" id="edit-care-multiple" />
+                          <Label htmlFor="edit-care-multiple" className="cursor-pointer">Multiple and Complex Need</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Forensic Disability" id="edit-care-forensic" />
+                          <Label htmlFor="edit-care-forensic" className="cursor-pointer">Forensic Disability</Label>
+                        </div>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -71,6 +71,7 @@ export const clients = pgTable("clients", {
   dislikesAversions: text("dislikes_aversions"),
   allergiesMedicalAlerts: text("allergies_medical_alerts"),
   primaryDiagnosis: text("primary_diagnosis"),
+  careLevel: text("care_level"), // "Low to Moderate", "Complex", "Multiple and Complex Need", "Forensic Disability"
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   companyId: text("company_id").notNull(), // For tenant isolation
   createdBy: integer("created_by").notNull().references(() => users.id),

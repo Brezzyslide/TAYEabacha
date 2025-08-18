@@ -32,12 +32,14 @@ export function ClientProfileCard({ client, onQuickView, onEdit, onArchive }: Cl
 
   const getCareLevel = (level: string | null) => {
     switch (level) {
-      case "independent":
-        return <Badge variant="secondary">Independent</Badge>;
-      case "assisted":
-        return <Badge variant="default">Assisted</Badge>;
-      case "memory_care":
-        return <Badge variant="destructive">Memory Care</Badge>;
+      case "Low to Moderate":
+        return <Badge variant="secondary">Low to Moderate</Badge>;
+      case "Complex":
+        return <Badge variant="default">Complex</Badge>;
+      case "Multiple and Complex Need":
+        return <Badge variant="destructive">Multiple and Complex Need</Badge>;
+      case "Forensic Disability":
+        return <Badge variant="destructive">Forensic Disability</Badge>;
       default:
         return <Badge variant="outline">Not Set</Badge>;
     }

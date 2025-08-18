@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
@@ -46,6 +48,7 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
       dislikesAversions: "",
       allergiesMedicalAlerts: "",
       primaryDiagnosis: "",
+      careLevel: "",
       isActive: true
     },
   });
@@ -359,6 +362,44 @@ export default function CreateClientForm({ onSuccess, onCancel }: CreateClientFo
                         className="min-h-[80px] border-red-200 focus:border-red-300"
                         {...field}
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="careLevel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-blue-500" />
+                      Care Level
+                    </FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-1 gap-3 mt-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Low to Moderate" id="care-low" />
+                          <Label htmlFor="care-low" className="cursor-pointer">Low to Moderate</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Complex" id="care-complex" />
+                          <Label htmlFor="care-complex" className="cursor-pointer">Complex</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Multiple and Complex Need" id="care-multiple" />
+                          <Label htmlFor="care-multiple" className="cursor-pointer">Multiple and Complex Need</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Forensic Disability" id="care-forensic" />
+                          <Label htmlFor="care-forensic" className="cursor-pointer">Forensic Disability</Label>
+                        </div>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
