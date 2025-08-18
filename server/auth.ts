@@ -29,21 +29,31 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Development session configuration
+  // Session configuration optimized for AWS hosted environments
+  const isAWSHosted = process.env.REPL_ID && process.env.REPLIT_URL;
+  
+  console.log('[AUTH] Setting up session configuration...');
+  console.log('[AUTH] AWS hosted environment detected:', !!isAWSHosted);
+  
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'fallback-session-secret-for-dev',
-    resave: false,
+    secret: process.env.SESSION_SECRET || 'careconnect-session-secret-dev-2025',
+    resave: true, // Force session save on each request for AWS compatibility
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false,
+      secure: false, // Always false for development - AWS uses HTTP internally
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax'
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for better persistence
+      sameSite: 'lax', // More permissive for AWS hosting
+      domain: undefined // Let browser determine domain automatically
     },
-    rolling: true,
-    name: 'needscareai.sid'
+    rolling: true, // Reset expiration on each request
+    name: 'careconnect.sid',
+    proxy: !!isAWSHosted // Trust proxy when hosted on AWS
   };
+  
+  console.log('[AUTH] Session cookie settings:', sessionSettings.cookie);
+  console.log('[AUTH] Session proxy trust:', sessionSettings.proxy);
   
 
 
@@ -77,10 +87,13 @@ export function setupAuth(app: Express) {
     next();
   });
 
-  // Add enhanced session logging
+  // Add enhanced session logging with AWS debugging
   app.use((req, res, next) => {
     if (req.isAuthenticated() && req.user) {
-      console.log(`[SESSION] User ${req.user.email} logged in under tenant ${req.user.tenantId}`);
+      console.log(`[SESSION] User ${req.user.email || req.user.username} logged in under tenant ${req.user.tenantId}`);
+      console.log(`[SESSION DEBUG] Session ID: ${req.sessionID}, Cookie: ${JSON.stringify(req.session.cookie)}`);
+    } else if (req.session && req.sessionID) {
+      console.log(`[SESSION DEBUG] Unauthenticated request with session ID: ${req.sessionID}`);
     }
     next();
   });
