@@ -1,4 +1,7 @@
 import { Request, Response } from 'express';
+import { db } from '../../../../server/db';
+import { companies, tenants } from '../../../../shared/schema';
+import { eq } from 'drizzle-orm';
 
 // Extended Request interface with auth details
 interface AuthenticatedRequest extends Request {
@@ -101,7 +104,29 @@ export class ServiceAgreementController {
    */
   async createAgreement(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId, role, id: userId } = req.user!;
+      const { role, id: userId, tenantId } = req.user!;
+      
+      // Get company info for this tenant (same pattern as other routes)
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
+      
+      console.log('[SERVICE AGREEMENT CONTROLLER] Creating agreement with:', { 
+        companyId, 
+        companyIdType: typeof companyId, 
+        userId, 
+        role,
+        tenantId
+      });
       
       // Check permissions
       if (!hasWritePermission(role)) {
@@ -113,6 +138,8 @@ export class ServiceAgreementController {
       if (!validation.success) {
         return handleError(res, validation.error, 'Invalid request data');
       }
+      
+      console.log('[SERVICE AGREEMENT CONTROLLER] Validated data:', validation.data);
       
       const agreement = await serviceAgreementService.createAgreement(
         validation.data, 
