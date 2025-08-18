@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,23 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
   const [clientBehalfRole, setClientBehalfRole] = useState("");
   const [providerBehalfName, setProviderBehalfName] = useState("");
   const [providerBehalfRole, setProviderBehalfRole] = useState("");
+
+  // Optimized change handlers to prevent cursor jumping
+  const handleClientBehalfNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setClientBehalfName(e.target.value);
+  }, []);
+
+  const handleClientBehalfRoleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setClientBehalfRole(e.target.value);
+  }, []);
+
+  const handleProviderBehalfNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setProviderBehalfName(e.target.value);
+  }, []);
+
+  const handleProviderBehalfRoleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setProviderBehalfRole(e.target.value);
+  }, []);
 
   // Fetch client details for signature
   const { data: clientDetails } = useQuery({
@@ -217,7 +234,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
                       <Input
                         placeholder="Enter your full name"
                         value={behalfName}
-                        onChange={(e) => setBehalfName(e.target.value)}
+                        onChange={type === "client" ? handleClientBehalfNameChange : handleProviderBehalfNameChange}
                         className="text-sm"
                       />
                     </div>
@@ -226,7 +243,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
                       <Input
                         placeholder="e.g., Legal Guardian, Authorized Representative"
                         value={behalfRole}
-                        onChange={(e) => setBehalfRole(e.target.value)}
+                        onChange={type === "client" ? handleClientBehalfRoleChange : handleProviderBehalfRoleChange}
                         className="text-sm"
                       />
                     </div>

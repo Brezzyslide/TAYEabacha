@@ -26,7 +26,7 @@ import { calculateRatioMultiplier } from "@shared/utils/ratioCalculator";
 import type { ServiceAgreementItem } from "@shared/schema";
 
 // Helper function to safely convert values to numbers
-const toNumber = (value: string | number | undefined): number => {
+const toNumber = (value: string | number | undefined | null): number => {
   if (typeof value === 'string') return parseFloat(value) || 0;
   return value || 0;
 };
@@ -130,9 +130,32 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     };
 
     const newItem: ServiceAgreementItem = {
-      id: Date.now(), // Temporary ID for new items
-      ...processedFormData as ServiceAgreementItem,
-    };
+      ...processedFormData,
+      id: Date.now().toString(), // Temporary ID for new items
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      agreementId: "",
+      priceListId: null,
+      hoursDay: processedFormData.hoursDay?.toString() || "0",
+      unitDay: processedFormData.unitDay?.toString() || "0",
+      hoursWeekdayEvening: processedFormData.hoursWeekdayEvening?.toString() || "0",
+      unitWeekdayEvening: processedFormData.unitWeekdayEvening?.toString() || "0",
+      hoursActiveNight: processedFormData.hoursActiveNight?.toString() || "0",
+      unitActiveNight: processedFormData.unitActiveNight?.toString() || "0",
+      hoursSleepover: processedFormData.hoursSleepover?.toString() || "0",
+      unitSleepover: processedFormData.unitSleepover?.toString() || "0",
+      hoursSaturday: processedFormData.hoursSaturday?.toString() || "0",
+      unitSaturday: processedFormData.unitSaturday?.toString() || "0",
+      hoursSunday: processedFormData.hoursSunday?.toString() || "0",
+      unitSunday: processedFormData.unitSunday?.toString() || "0",
+      hoursPublicHoliday: processedFormData.hoursPublicHoliday?.toString() || "0",
+      unitPublicHoliday: processedFormData.unitPublicHoliday?.toString() || "0",
+      ndisCode: processedFormData.ndisCode || "",
+      supportDescription: processedFormData.supportDescription || "",
+      weeks: processedFormData.weeks || 1,
+      ratioOfSupport: processedFormData.ratioOfSupport || "1:1",
+      notes: processedFormData.notes || null,
+    } as ServiceAgreementItem;
     
     onItemsChange([...items, newItem]);
     resetForm();
@@ -158,8 +181,8 @@ export default function ItemsGrid({ items, onItemsChange }: ItemsGridProps) {
     resetForm();
   };
 
-  const handleDeleteItem = (itemId: number) => {
-    onItemsChange(items.filter(item => item.id !== itemId));
+  const handleDeleteItem = (itemId: string | number) => {
+    onItemsChange(items.filter(item => item.id !== itemId.toString()));
   };
 
   const handleFieldChange = useCallback((field: keyof ServiceAgreementItem, value: any) => {
