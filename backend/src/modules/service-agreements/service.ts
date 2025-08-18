@@ -1,6 +1,6 @@
 import { db } from '../../../../server/db';
 import { serviceAgreements, serviceAgreementItems, serviceAgreementSignatures, clients } from '../../../../shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { convertToDecimalStrings, convertFromDecimalStrings } from './validators';
 import { lineTotals, grandTotal, getLineItemTotal, itemToRateSet } from '../../../../shared/utils/calc';
 
@@ -105,6 +105,51 @@ export class ServiceAgreementService {
   }
 
   /**
+   * Generate a unique agreement number for the company
+   */
+  async generateAgreementNumber(companyId: string): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    let attemptCount = 0;
+    const maxAttempts = 100;
+
+    while (attemptCount < maxAttempts) {
+      // Get count of existing agreements for this company this year
+      const existingCount = await db
+        .select()
+        .from(serviceAgreements)
+        .where(
+          and(
+            eq(serviceAgreements.companyId, companyId),
+            sql`EXTRACT(YEAR FROM ${serviceAgreements.createdAt}) = ${currentYear}`
+          )
+        );
+
+      const nextNumber = existingCount.length + 1 + attemptCount;
+      const agreementNumber = `SA-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
+
+      // Check if this number already exists
+      const existing = await db
+        .select()
+        .from(serviceAgreements)
+        .where(
+          and(
+            eq(serviceAgreements.companyId, companyId),
+            eq(serviceAgreements.agreementNumber, agreementNumber)
+          )
+        )
+        .limit(1);
+
+      if (existing.length === 0) {
+        return agreementNumber;
+      }
+
+      attemptCount++;
+    }
+
+    throw new Error('Unable to generate unique agreement number after multiple attempts');
+  }
+
+  /**
    * Create a new service agreement
    */
   async createAgreement(data: any, companyId: string, createdBy: number) {
@@ -115,10 +160,15 @@ export class ServiceAgreementService {
         throw new Error('Client not found or access denied');
       }
 
+      // Generate unique agreement number
+      const agreementNumber = await this.generateAgreementNumber(companyId);
+
       const agreementData = {
         ...data,
         companyId,
         createdBy,
+        updatedBy: createdBy.toString(), // Convert to string as required by schema
+        agreementNumber, // Add the generated agreement number
         status: 'draft' as const,
         // Convert date strings to Date objects
         startDate: new Date(data.startDate),
@@ -188,9 +238,9 @@ export class ServiceAgreementService {
       // Delete related items and signatures first
       await Promise.all([
         db.delete(serviceAgreementItems)
-          .where(eq(serviceAgreementItems.serviceAgreementId, agreementId)),
+          .where(eq(serviceAgreementItems.agreementId, agreementId)),
         db.delete(serviceAgreementSignatures)
-          .where(eq(serviceAgreementSignatures.serviceAgreementId, agreementId))
+          .where(eq(serviceAgreementSignatures.agreementId, agreementId))
       ]);
 
       const result = await db
@@ -220,7 +270,7 @@ export class ServiceAgreementService {
       return await db
         .select()
         .from(serviceAgreementItems)
-        .where(eq(serviceAgreementItems.serviceAgreementId, agreementId))
+        .where(eq(serviceAgreementItems.agreementId, agreementId))
         .orderBy(serviceAgreementItems.createdAt);
     } catch (error) {
       console.error('[SERVICE AGREEMENT SERVICE] Error getting agreement items:', error);
@@ -269,7 +319,7 @@ export class ServiceAgreementService {
 
       const itemData = convertToDecimalStrings({
         ...data,
-        serviceAgreementId: agreementId,
+        agreementId: agreementId,
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -339,7 +389,7 @@ export class ServiceAgreementService {
         .set(updateData)
         .where(and(
           eq(serviceAgreementItems.id, itemId),
-          eq(serviceAgreementItems.serviceAgreementId, agreementId)
+          eq(serviceAgreementItems.agreementId, agreementId)
         ))
         .returning();
 
@@ -369,7 +419,7 @@ export class ServiceAgreementService {
         .delete(serviceAgreementItems)
         .where(and(
           eq(serviceAgreementItems.id, itemId),
-          eq(serviceAgreementItems.serviceAgreementId, agreementId)
+          eq(serviceAgreementItems.agreementId, agreementId)
         ))
         .returning();
 
@@ -392,7 +442,7 @@ export class ServiceAgreementService {
       return await db
         .select()
         .from(serviceAgreementSignatures)
-        .where(eq(serviceAgreementSignatures.serviceAgreementId, agreementId))
+        .where(eq(serviceAgreementSignatures.agreementId, agreementId))
         .orderBy(serviceAgreementSignatures.signedAt);
     } catch (error) {
       console.error('[SERVICE AGREEMENT SERVICE] Error getting agreement signatures:', error);
@@ -413,7 +463,7 @@ export class ServiceAgreementService {
 
       const signatureData = {
         ...data,
-        serviceAgreementId: agreementId,
+        agreementId: agreementId,
         signedBy,
         signedAt: new Date()
       };
