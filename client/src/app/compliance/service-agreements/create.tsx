@@ -67,7 +67,7 @@ export default function CreateServiceAgreement() {
     mutationFn: async (data: { agreement: Partial<ServiceAgreement>; items: ServiceAgreementItem[] }) => {
       // First create the agreement
       const response = await apiRequest('POST', '/api/compliance/service-agreements', data.agreement);
-      const agreement = response as ServiceAgreement;
+      const agreement = await response.json() as ServiceAgreement;
       
       console.log('[FRONTEND] Agreement created:', agreement);
       console.log('[FRONTEND] Agreement ID:', agreement.id);
