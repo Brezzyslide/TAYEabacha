@@ -48,25 +48,25 @@ export const serviceAgreementUpdateSchema = z.object({
 export const serviceAgreementItemCreateSchema = z.object({
   ndisCode: z.string().min(1, "NDIS code is required"),
   supportDescription: z.string().min(1, "Support description is required"),
-  weeks: z.number().int().min(1, "Weeks must be at least 1"),
+  weeks: z.coerce.number().int().min(1, "Weeks must be at least 1"),
   
-  // Hours fields as numbers
-  hoursDay: z.number().min(0, "Day hours must be non-negative").default(0),
-  hoursEvening: z.number().min(0, "Evening hours must be non-negative").default(0),
-  hoursActiveNight: z.number().min(0, "Active night hours must be non-negative").default(0),
-  hoursSleepover: z.number().min(0, "Sleepover hours must be non-negative").default(0),
-  hoursSaturday: z.number().min(0, "Saturday hours must be non-negative").default(0),
-  hoursSunday: z.number().min(0, "Sunday hours must be non-negative").default(0),
-  hoursPublicHoliday: z.number().min(0, "Public holiday hours must be non-negative").default(0),
+  // Hours fields as numbers (coerce strings to numbers)
+  hoursDay: z.coerce.number().min(0, "Day hours must be non-negative").default(0),
+  hoursEvening: z.coerce.number().min(0, "Evening hours must be non-negative").default(0),
+  hoursActiveNight: z.coerce.number().min(0, "Active night hours must be non-negative").default(0),
+  hoursSleepover: z.coerce.number().min(0, "Sleepover hours must be non-negative").default(0),
+  hoursSaturday: z.coerce.number().min(0, "Saturday hours must be non-negative").default(0),
+  hoursSunday: z.coerce.number().min(0, "Sunday hours must be non-negative").default(0),
+  hoursPublicHoliday: z.coerce.number().min(0, "Public holiday hours must be non-negative").default(0),
   
-  // Unit rate fields as numbers (will be converted to Decimal internally)
-  unitDay: z.number().min(0, "Day rate must be non-negative").default(0),
-  unitEvening: z.number().min(0, "Evening rate must be non-negative").default(0),
-  unitActiveNight: z.number().min(0, "Active night rate must be non-negative").default(0),
-  unitSleepover: z.number().min(0, "Sleepover rate must be non-negative").default(0),
-  unitSaturday: z.number().min(0, "Saturday rate must be non-negative").default(0),
-  unitSunday: z.number().min(0, "Sunday rate must be non-negative").default(0),
-  unitPublicHoliday: z.number().min(0, "Public holiday rate must be non-negative").default(0),
+  // Unit rate fields as numbers (coerce strings to numbers, will be converted to Decimal internally)
+  unitDay: z.coerce.number().min(0, "Day rate must be non-negative").default(0),
+  unitEvening: z.coerce.number().min(0, "Evening rate must be non-negative").default(0),
+  unitActiveNight: z.coerce.number().min(0, "Active night rate must be non-negative").default(0),
+  unitSleepover: z.coerce.number().min(0, "Sleepover rate must be non-negative").default(0),
+  unitSaturday: z.coerce.number().min(0, "Saturday rate must be non-negative").default(0),
+  unitSunday: z.coerce.number().min(0, "Sunday rate must be non-negative").default(0),
+  unitPublicHoliday: z.coerce.number().min(0, "Public holiday rate must be non-negative").default(0),
   
   notes: z.string().optional().nullable(),
 });
