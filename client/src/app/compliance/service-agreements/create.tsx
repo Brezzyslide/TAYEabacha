@@ -72,9 +72,33 @@ export default function CreateServiceAgreement() {
       // Then add items if any
       if (data.items.length > 0) {
         await Promise.all(
-          data.items.map(item => 
-            apiRequest('POST', `/api/compliance/service-agreements/${agreement.id}/items`, item)
-          )
+          data.items.map(item => {
+            // Transform frontend field names to backend expected names
+            const transformedItem = {
+              ndisCode: item.ndisCode,
+              supportDescription: item.supportDescription,
+              weeks: parseInt(item.weeks?.toString()) || 0,
+              // Convert frontend field names to backend expected names
+              hoursDay: parseFloat(item.hoursDay?.toString()) || 0,
+              hoursEvening: parseFloat(item.hoursWeekdayEvening?.toString()) || 0, // hoursWeekdayEvening -> hoursEvening
+              hoursActiveNight: parseFloat(item.hoursActiveNight?.toString()) || 0,
+              hoursSleepover: parseFloat(item.hoursSleepover?.toString()) || 0,
+              hoursSaturday: parseFloat(item.hoursSaturday?.toString()) || 0,
+              hoursSunday: parseFloat(item.hoursSunday?.toString()) || 0,
+              hoursPublicHoliday: parseFloat(item.hoursPublicHoliday?.toString()) || 0,
+              // Unit rates
+              unitDay: parseFloat(item.unitDay?.toString()) || 0,
+              unitEvening: parseFloat(item.unitWeekdayEvening?.toString()) || 0, // unitWeekdayEvening -> unitEvening
+              unitActiveNight: parseFloat(item.unitActiveNight?.toString()) || 0,
+              unitSleepover: parseFloat(item.unitSleepover?.toString()) || 0,
+              unitSaturday: parseFloat(item.unitSaturday?.toString()) || 0,
+              unitSunday: parseFloat(item.unitSunday?.toString()) || 0,
+              unitPublicHoliday: parseFloat(item.unitPublicHoliday?.toString()) || 0,
+              notes: item.notes || null,
+            };
+            
+            return apiRequest('POST', `/api/compliance/service-agreements/${agreement.id}/items`, transformedItem);
+          })
         );
       }
       
