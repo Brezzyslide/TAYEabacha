@@ -50,23 +50,23 @@ export const serviceAgreementItemCreateSchema = z.object({
   supportDescription: z.string().min(1, "Support description is required"),
   weeks: z.coerce.number().int().min(1, "Weeks must be at least 1"),
   
-  // Hours fields as numbers (coerce strings to numbers)
-  hoursDay: z.coerce.number().min(0, "Day hours must be non-negative").default(0),
-  hoursEvening: z.coerce.number().min(0, "Evening hours must be non-negative").default(0),
-  hoursActiveNight: z.coerce.number().min(0, "Active night hours must be non-negative").default(0),
-  hoursSleepover: z.coerce.number().min(0, "Sleepover hours must be non-negative").default(0),
-  hoursSaturday: z.coerce.number().min(0, "Saturday hours must be non-negative").default(0),
-  hoursSunday: z.coerce.number().min(0, "Sunday hours must be non-negative").default(0),
-  hoursPublicHoliday: z.coerce.number().min(0, "Public holiday hours must be non-negative").default(0),
+  // Hours fields - handle empty strings and convert to numbers
+  hoursDay: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Day hours must be non-negative")),
+  hoursEvening: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Evening hours must be non-negative")),
+  hoursActiveNight: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Active night hours must be non-negative")),
+  hoursSleepover: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Sleepover hours must be non-negative")),
+  hoursSaturday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Saturday hours must be non-negative")),
+  hoursSunday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Sunday hours must be non-negative")),
+  hoursPublicHoliday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Public holiday hours must be non-negative")),
   
-  // Unit rate fields as numbers (coerce strings to numbers, will be converted to Decimal internally)
-  unitDay: z.coerce.number().min(0, "Day rate must be non-negative").default(0),
-  unitEvening: z.coerce.number().min(0, "Evening rate must be non-negative").default(0),
-  unitActiveNight: z.coerce.number().min(0, "Active night rate must be non-negative").default(0),
-  unitSleepover: z.coerce.number().min(0, "Sleepover rate must be non-negative").default(0),
-  unitSaturday: z.coerce.number().min(0, "Saturday rate must be non-negative").default(0),
-  unitSunday: z.coerce.number().min(0, "Sunday rate must be non-negative").default(0),
-  unitPublicHoliday: z.coerce.number().min(0, "Public holiday rate must be non-negative").default(0),
+  // Unit rate fields - handle empty strings and convert to numbers
+  unitDay: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Day rate must be non-negative")),
+  unitEvening: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Evening rate must be non-negative")),
+  unitActiveNight: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Active night rate must be non-negative")),
+  unitSleepover: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Sleepover rate must be non-negative")),
+  unitSaturday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Saturday rate must be non-negative")),
+  unitSunday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Sunday rate must be non-negative")),
+  unitPublicHoliday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Public holiday rate must be non-negative")),
   
   notes: z.string().optional().nullable(),
 });
