@@ -385,19 +385,26 @@ export default function CompliancePage() {
   };
 
   const getAgreementStatus = (agreement: any) => {
-    // Use the database status field, with fallback to date-based logic for backwards compatibility
-    if (agreement.status) {
-      return agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1);
+    // Check if agreement has signatures (signed = active)
+    if (agreement.signatures && agreement.signatures.length > 0) {
+      // Check if agreement has expired
+      const now = new Date();
+      const endDate = new Date(agreement.endDate);
+      if (now > endDate) return "Expired";
+      return "Active";
     }
     
-    // Fallback to date-based logic
-    const now = new Date();
-    const startDate = new Date(agreement.startDate);
-    const endDate = new Date(agreement.endDate);
+    // Use database status or default to draft
+    const status = agreement.status?.toLowerCase() || 'draft';
     
-    if (now < startDate) return "Pending";
-    if (now > endDate) return "Expired";
-    return "Active";
+    // Check for expired draft/pending agreements
+    if (status === 'draft' || status === 'pending') {
+      const now = new Date();
+      const endDate = new Date(agreement.endDate);
+      if (now > endDate) return "Expired";
+    }
+    
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const canDeleteAgreement = (agreement: any) => {
@@ -944,8 +951,20 @@ export default function CompliancePage() {
                             <h3 className="font-medium text-slate-900 dark:text-slate-100">
                               {getClientName(agreement.clientId)}
                             </h3>
-                            <Badge variant={getAgreementStatus(agreement) === "Active" ? "default" : 
-                                           getAgreementStatus(agreement) === "Pending" ? "secondary" : "destructive"}>
+                            <Badge 
+                              variant={
+                                getAgreementStatus(agreement) === "Active" ? "default" : 
+                                getAgreementStatus(agreement) === "Draft" ? "secondary" : 
+                                getAgreementStatus(agreement) === "Pending" ? "outline" : 
+                                "destructive"
+                              }
+                              className={
+                                getAgreementStatus(agreement) === "Active" ? "bg-blue-600 text-white" :
+                                getAgreementStatus(agreement) === "Draft" ? "bg-gray-500 text-white" :
+                                getAgreementStatus(agreement) === "Pending" ? "bg-yellow-500 text-white" :
+                                "bg-red-600 text-white"
+                              }
+                            >
                               {getAgreementStatus(agreement)}
                             </Badge>
                           </div>

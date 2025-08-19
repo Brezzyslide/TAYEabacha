@@ -513,10 +513,25 @@ export class ServiceAgreementService {
         signedAt: new Date()
       };
 
+      // Add the signature
       const result = await db
         .insert(serviceAgreementSignatures)
         .values(signatureData)
         .returning();
+
+      // Automatically update agreement status to 'active' when first signature is added
+      await db
+        .update(serviceAgreements)
+        .set({ 
+          status: 'active',
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(serviceAgreements.id, agreementId),
+          eq(serviceAgreements.companyId, companyId)
+        ));
+
+      console.log(`[SERVICE AGREEMENT SERVICE] Agreement ${agreementId} status updated to 'active' after signature added`);
 
       return result[0];
     } catch (error) {
