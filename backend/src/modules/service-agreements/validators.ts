@@ -68,7 +68,7 @@ export const serviceAgreementItemCreateSchema = z.object({
   unitSunday: z.number().min(0, "Sunday rate must be non-negative").default(0),
   unitPublicHoliday: z.number().min(0, "Public holiday rate must be non-negative").default(0),
   
-  notes: z.string().optional(),
+  notes: z.string().optional().nullable(),
 });
 
 export const serviceAgreementItemUpdateSchema = serviceAgreementItemCreateSchema.partial();

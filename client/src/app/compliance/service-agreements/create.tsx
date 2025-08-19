@@ -94,7 +94,7 @@ export default function CreateServiceAgreement() {
               unitSaturday: parseFloat(item.unitSaturday?.toString()) || 0,
               unitSunday: parseFloat(item.unitSunday?.toString()) || 0,
               unitPublicHoliday: parseFloat(item.unitPublicHoliday?.toString()) || 0,
-              notes: item.notes || null,
+              notes: item.notes || "",
             };
             
             return apiRequest('POST', `/api/compliance/service-agreements/${agreement.id}/items`, transformedItem);
