@@ -10,6 +10,14 @@ interface TotalsBarProps {
 }
 
 export default function TotalsBar({ items }: TotalsBarProps) {
+  // Helper function to safely convert values to numbers
+  const toNumber = (value: any): number => {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'string') return parseFloat(value) || 0;
+    if (typeof value === 'object' && value.toNumber) return value.toNumber(); // For Decimal objects
+    return Number(value) || 0;
+  };
+
   // Calculate totals by rate type
   const calculateTotalsByRate = () => {
     const totals = {
@@ -22,13 +30,8 @@ export default function TotalsBar({ items }: TotalsBarProps) {
       holidayTotal: 0,
     };
 
-    const toNumber = (value: string | number | undefined) => {
-      if (typeof value === 'string') return parseFloat(value) || 0;
-      return value || 0;
-    };
-
     items.forEach(item => {
-      const weeks = item.weeks || 1;
+      const weeks = toNumber(item.weeks) || 1;
       const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
       
       totals.dayTotal += toNumber(item.hoursDay) * toNumber(item.unitDay) * ratioMultiplier * weeks;
@@ -44,13 +47,8 @@ export default function TotalsBar({ items }: TotalsBarProps) {
   };
 
   const calculateGrandTotal = () => {
-    const toNumber = (value: string | number | undefined) => {
-      if (typeof value === 'string') return parseFloat(value) || 0;
-      return value || 0;
-    };
-
     return items.reduce((total, item) => {
-      const weeks = item.weeks || 1;
+      const weeks = toNumber(item.weeks) || 1;
       const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
       const itemTotal = 
         toNumber(item.hoursDay) * toNumber(item.unitDay) * ratioMultiplier +
@@ -67,15 +65,15 @@ export default function TotalsBar({ items }: TotalsBarProps) {
 
   const calculateTotalHours = () => {
     return items.reduce((total, item) => {
-      const weeks = item.weeks || 1;
+      const weeks = toNumber(item.weeks) || 1;
       const itemHours = 
-        (item.hoursDay || 0) +
-        (item.hoursWeekdayEvening || 0) +
-        (item.hoursActiveNight || 0) +
-        (item.hoursSleepover || 0) +
-        (item.hoursSaturday || 0) +
-        (item.hoursSunday || 0) +
-        (item.hoursPublicHoliday || 0);
+        toNumber(item.hoursDay) +
+        toNumber(item.hoursWeekdayEvening) +
+        toNumber(item.hoursActiveNight) +
+        toNumber(item.hoursSleepover) +
+        toNumber(item.hoursSaturday) +
+        toNumber(item.hoursSunday) +
+        toNumber(item.hoursPublicHoliday);
       
       return total + (itemHours * weeks);
     }, 0);
