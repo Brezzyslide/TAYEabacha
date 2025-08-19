@@ -230,8 +230,22 @@ export class ServiceAgreementController {
    */
   async createAgreementItem(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId, role } = req.user!;
+      const { role, id: userId, tenantId } = req.user!;
       const { id } = req.params;
+      
+      // Get company info for this tenant (same pattern as createAgreement)
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Check permissions
       if (!hasWritePermission(role)) {
