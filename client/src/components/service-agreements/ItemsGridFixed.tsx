@@ -22,10 +22,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Calculator, DollarSign } from "lucide-react";
+import { Plus, Edit, Trash2, Calculator, DollarSign, Sun, Moon, Bed, Calendar, Gift, Clock } from "lucide-react";
 import { formatCurrency } from "@shared/utils/calc";
 import { calculateRatioMultiplier } from "@shared/utils/ratioCalculator";
 import type { ServiceAgreementItem } from "@shared/schema";
+import ServiceItemSelector from "./ServiceItemSelector";
 
 interface ItemsGridProps {
   items: ServiceAgreementItem[];
