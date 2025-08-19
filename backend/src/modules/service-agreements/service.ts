@@ -235,6 +235,27 @@ export class ServiceAgreementService {
    */
   async deleteAgreement(agreementId: string, companyId: string) {
     try {
+      // First, check if the agreement exists and get its status
+      const existingAgreement = await db
+        .select({ status: serviceAgreements.status })
+        .from(serviceAgreements)
+        .where(and(
+          eq(serviceAgreements.id, agreementId),
+          eq(serviceAgreements.companyId, companyId)
+        ))
+        .limit(1);
+
+      if (existingAgreement.length === 0) {
+        throw new Error('Service agreement not found');
+      }
+
+      const status = existingAgreement[0].status.toLowerCase();
+      
+      // Only allow deletion of draft agreements
+      if (status !== 'draft') {
+        throw new Error(`Cannot delete ${status} service agreement. Only draft agreements can be deleted.`);
+      }
+
       // Delete related items and signatures first
       await Promise.all([
         db.delete(serviceAgreementItems)
@@ -252,12 +273,16 @@ export class ServiceAgreementService {
         .returning();
 
       if (result.length === 0) {
-        throw new Error('Service agreement not found');
+        throw new Error('Failed to delete service agreement');
       }
 
+      console.log(`[SERVICE AGREEMENT SERVICE] Successfully deleted draft agreement ${agreementId}`);
       return result[0];
     } catch (error) {
       console.error('[SERVICE AGREEMENT SERVICE] Error deleting agreement:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
       throw new Error('Failed to delete service agreement');
     }
   }

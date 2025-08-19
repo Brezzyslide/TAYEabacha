@@ -385,6 +385,12 @@ export default function CompliancePage() {
   };
 
   const getAgreementStatus = (agreement: any) => {
+    // Use the database status field, with fallback to date-based logic for backwards compatibility
+    if (agreement.status) {
+      return agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1);
+    }
+    
+    // Fallback to date-based logic
     const now = new Date();
     const startDate = new Date(agreement.startDate);
     const endDate = new Date(agreement.endDate);
@@ -392,6 +398,11 @@ export default function CompliancePage() {
     if (now < startDate) return "Pending";
     if (now > endDate) return "Expired";
     return "Active";
+  };
+
+  const canDeleteAgreement = (agreement: any) => {
+    const status = agreement.status?.toLowerCase();
+    return status === 'draft';
   };
 
   const handleDownload = (form: any) => {
@@ -981,14 +992,21 @@ export default function CompliancePage() {
                             <Download className="h-4 w-4" />
                             PDF
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => deleteAgreementMutation.mutate(agreement.id)}
-                            disabled={deleteAgreementMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {canDeleteAgreement(agreement) && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this draft service agreement? This action cannot be undone.')) {
+                                  deleteAgreementMutation.mutate(agreement.id);
+                                }
+                              }}
+                              disabled={deleteAgreementMutation.isPending}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
@@ -1016,7 +1034,7 @@ export default function CompliancePage() {
                                     <TableCell className="font-mono text-sm">{item.ndisCode}</TableCell>
                                     <TableCell className="max-w-[200px] truncate">{item.supportDescription}</TableCell>
                                     <TableCell>
-                                      {(Number(item.hoursDay || 0) + Number(item.hoursEvening || 0) + Number(item.hoursActiveNight || 0) + 
+                                      {(Number(item.hoursDay || 0) + Number(item.hoursEvening || item.hoursWeekdayEvening || 0) + Number(item.hoursActiveNight || 0) + 
                                         Number(item.hoursSleepover || 0) + Number(item.hoursSaturday || 0) + Number(item.hoursSunday || 0) + 
                                         Number(item.hoursPublicHoliday || 0)).toFixed(1)}
                                     </TableCell>
