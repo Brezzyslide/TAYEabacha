@@ -122,7 +122,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
           signerName: clientSignOnBehalf ? clientBehalfName : (clientDetails ? `${(clientDetails as any).firstName} ${(clientDetails as any).lastName}` : "Client Name")
         };
         
-        const response = await fetch(`/api/compliance/service-agreements/${agreementId}/signatures`, {
+        const response = await fetch(`/api/compliance/service-agreements/${agreementId}/sign`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -168,7 +168,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
           signerName: providerSignOnBehalf ? providerBehalfName : (currentUser ? (currentUser as any).fullName : "Provider Representative")
         };
         
-        const response = await fetch(`/api/compliance/service-agreements/${agreementId}/signatures`, {
+        const response = await fetch(`/api/compliance/service-agreements/${agreementId}/sign`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
