@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, User, Phone, Mail, Calculator, FileText, PenTool } from "lucide-react";
 import ItemsGrid from "./ItemsGridSimple";
 import TotalsBar from "./TotalsBar";
-import SignPanel from "./SignPanelFixed";
+import SignPanel from "./SignPanel";
 import TermsViewer from "./TermsViewer";
 import type { ServiceAgreement, ServiceAgreementItem } from "@shared/schema";
 
