@@ -1016,9 +1016,9 @@ export default function CompliancePage() {
                                     <TableCell className="font-mono text-sm">{item.ndisCode}</TableCell>
                                     <TableCell className="max-w-[200px] truncate">{item.supportDescription}</TableCell>
                                     <TableCell>
-                                      {((item.hoursDay || 0) + (item.hoursEvening || 0) + (item.hoursActiveNight || 0) + 
-                                        (item.hoursSleepover || 0) + (item.hoursSaturday || 0) + (item.hoursSunday || 0) + 
-                                        (item.hoursPublicHoliday || 0)).toFixed(1)}
+                                      {(Number(item.hoursDay || 0) + Number(item.hoursEvening || 0) + Number(item.hoursActiveNight || 0) + 
+                                        Number(item.hoursSleepover || 0) + Number(item.hoursSaturday || 0) + Number(item.hoursSunday || 0) + 
+                                        Number(item.hoursPublicHoliday || 0)).toFixed(1)}
                                     </TableCell>
                                     <TableCell>{item.weeks}</TableCell>
                                     <TableCell className="font-medium">
