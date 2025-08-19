@@ -348,7 +348,7 @@ export class ServiceAgreementPDFService {
       
       // Check if we have actual signatures
       const relevantSignature = signatures.find(sig => 
-        sig.signerRole?.toLowerCase().includes(box.label.toLowerCase().includes('participant') ? 'participant' : 'provider')
+        sig.signerRole?.toLowerCase().includes(box.label.toLowerCase().includes('participant') ? 'client' : 'organisation')
       );
       
       if (relevantSignature) {

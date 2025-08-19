@@ -75,8 +75,8 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
     
     // Check if we have signatures from the database
     const dbSignatures = (agreementData as any)?.signatures || [];
-    const clientDbSignature = dbSignatures.find((sig: any) => sig.signerRole === 'participant');
-    const providerDbSignature = dbSignatures.find((sig: any) => sig.signerRole === 'provider');
+    const clientDbSignature = dbSignatures.find((sig: any) => sig.signerRole === 'client');
+    const providerDbSignature = dbSignatures.find((sig: any) => sig.signerRole === 'organisation');
     
     return {
       client: {
@@ -117,9 +117,10 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
     // Save signature to backend if agreementId is available
     if (agreementId) {
       try {
+        const clientName = clientDetails ? `${(clientDetails as any).firstName} ${(clientDetails as any).lastName}` : "Participant";
         const signatureData = {
-          signerRole: 'participant',
-          signerName: clientSignOnBehalf ? clientBehalfName : (clientDetails ? `${(clientDetails as any).firstName} ${(clientDetails as any).lastName}` : "Client Name")
+          signerRole: 'client',
+          signerName: clientSignOnBehalf ? clientBehalfName : clientName
         };
         
         const response = await fetch(`/api/compliance/service-agreements/${agreementId}/sign`, {
@@ -164,7 +165,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
     if (agreementId) {
       try {
         const signatureData = {
-          signerRole: 'provider',
+          signerRole: 'organisation',
           signerName: providerSignOnBehalf ? providerBehalfName : (currentUser ? (currentUser as any).fullName : "Provider Representative")
         };
         

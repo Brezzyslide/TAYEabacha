@@ -74,8 +74,8 @@ export const serviceAgreementItemCreateSchema = z.object({
 export const serviceAgreementItemUpdateSchema = serviceAgreementItemCreateSchema.partial();
 
 export const signatureCreateSchema = z.object({
-  signerRole: z.enum(['participant', 'nominee', 'provider', 'witness'], {
-    errorMap: () => ({ message: "Signer role must be one of: participant, nominee, provider, witness" }),
+  signerRole: z.enum(['organisation', 'client', 'nominee'], {
+    errorMap: () => ({ message: "Signer role must be one of: organisation, client, nominee" }),
   }),
   signerName: z.string().min(1, "Signer name is required"),
 });
