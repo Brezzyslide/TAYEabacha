@@ -18,7 +18,7 @@ import {
   Fingerprint,
   Users
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ServiceAgreement } from "@shared/schema";
 
 interface SignPanelProps {
@@ -29,6 +29,7 @@ interface SignPanelProps {
 }
 
 export default function SignPanel({ isAccepted, onAcceptedChange, agreementData, agreementId }: SignPanelProps) {
+  const queryClient = useQueryClient();
   const [isClientSigned, setIsClientSigned] = useState(false);
   const [isProviderSigned, setIsProviderSigned] = useState(false);
   const [clientSignOnBehalf, setClientSignOnBehalf] = useState(false);
@@ -135,8 +136,14 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
         
         console.log('[SIGNATURE] Client signature saved to backend');
         
-        // Force page refresh to reload signatures from database
-        window.location.reload();
+        // Update local state and invalidate cache to refresh data
+        setIsClientSigned(true);
+        
+        // Invalidate agreement queries to refresh status and signatures
+        if (agreementId) {
+          queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements", agreementId] });
+          queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
+        }
       } catch (error) {
         console.error('[SIGNATURE] Error saving client signature:', error);
         alert('Failed to save signature. Please try again.');
@@ -175,8 +182,14 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
         
         console.log('[SIGNATURE] Provider signature saved to backend');
         
-        // Force page refresh to reload signatures from database
-        window.location.reload();
+        // Update local state and invalidate cache to refresh data
+        setIsProviderSigned(true);
+        
+        // Invalidate agreement queries to refresh status and signatures
+        if (agreementId) {
+          queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements", agreementId] });
+          queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
+        }
       } catch (error) {
         console.error('[SIGNATURE] Error saving provider signature:', error);
         alert('Failed to save signature. Please try again.');
