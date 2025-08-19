@@ -76,6 +76,9 @@ export default function EditServiceAgreement() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
       queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements", id] });
+      
+      // Redirect back to agreements list
+      setLocation("/compliance/service-agreements");
     },
     onError: (error: any) => {
       toast({
