@@ -46,19 +46,24 @@ export default function EditServiceAgreement() {
       // In production, you'd want more sophisticated item management
       const currentItems = agreement?.items || [];
       
-      // Delete removed items
+      // Delete removed items (only delete real database items, not temporary ones)
       for (const item of currentItems) {
-        if (!data.items.find(newItem => newItem.id === item.id)) {
+        if (item.id && !item.id.startsWith('temp_') && !data.items.find(newItem => newItem.id === item.id)) {
           await apiRequest('DELETE', `/api/compliance/service-agreements/${id}/items/${item.id}`);
         }
       }
       
       // Add or update items
       for (const item of data.items) {
-        if (item.id) {
+        // Check if this is a temporary item (starts with "temp_") or a real database item
+        if (item.id && !item.id.startsWith('temp_')) {
+          // Update existing item
           await apiRequest('PUT', `/api/compliance/service-agreements/${id}/items/${item.id}`, item);
         } else {
-          await apiRequest('POST', `/api/compliance/service-agreements/${id}/items`, item);
+          // Create new item (either no ID or temporary ID)
+          const itemData = { ...item };
+          delete itemData.id; // Remove temporary ID
+          await apiRequest('POST', `/api/compliance/service-agreements/${id}/items`, itemData);
         }
       }
       

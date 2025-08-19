@@ -54,10 +54,11 @@ export default function ItemsGridSimple({ items, onItemsChange }: ItemsGridProps
   const [showSelector, setShowSelector] = useState(false);
 
   const handleAddItem = (newItem: any) => {
-    // Generate a temporary ID for new items
+    // For new agreements, we'll store items locally until the agreement is saved
+    // For existing agreements, we should create the item via API
     const itemWithId = {
       ...newItem,
-      id: crypto.randomUUID(),
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Temporary ID pattern
       createdAt: new Date(),
       updatedAt: new Date(),
     };
