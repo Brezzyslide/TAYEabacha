@@ -312,7 +312,9 @@ export class ServiceAgreementService {
   async createAgreementItem(agreementId: string, data: any, companyId: string) {
     try {
       // Verify agreement exists and belongs to company
+      console.log('[SERVICE AGREEMENT SERVICE] Looking for agreement:', { agreementId, companyId });
       const agreement = await this.getAgreementById(agreementId, companyId);
+      console.log('[SERVICE AGREEMENT SERVICE] Agreement lookup result:', agreement);
       if (!agreement) {
         throw new Error('Service agreement not found');
       }
