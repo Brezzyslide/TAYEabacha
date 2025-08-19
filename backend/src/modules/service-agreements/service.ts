@@ -507,10 +507,13 @@ export class ServiceAgreementService {
       }
 
       const signatureData = {
-        ...data,
         agreementId: agreementId,
-        signedBy,
-        signedAt: new Date()
+        signerRole: data.signerRole,
+        signerName: data.signerName,
+        signedByUserId: signedBy.toString(),
+        signedAt: new Date(),
+        ipAddress: '127.0.0.1', // TODO: Get actual IP from request
+        userAgent: 'CareConnect App' // TODO: Get actual user agent from request
       };
 
       // Add the signature
