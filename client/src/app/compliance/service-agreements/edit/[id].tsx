@@ -228,6 +228,7 @@ export default function EditServiceAgreement() {
             isAccepted={isAccepted}
             onAcceptedChange={setIsAccepted}
             mode="edit"
+            agreementId={id}
           />
           
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t">

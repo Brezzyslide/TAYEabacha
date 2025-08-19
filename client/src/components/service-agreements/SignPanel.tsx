@@ -25,9 +25,10 @@ interface SignPanelProps {
   isAccepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
   agreementData: Partial<ServiceAgreement>;
+  agreementId?: string;
 }
 
-export default function SignPanel({ isAccepted, onAcceptedChange, agreementData }: SignPanelProps) {
+export default function SignPanel({ isAccepted, onAcceptedChange, agreementData, agreementId }: SignPanelProps) {
   const [isClientSigned, setIsClientSigned] = useState(false);
   const [isProviderSigned, setIsProviderSigned] = useState(false);
   const [clientSignOnBehalf, setClientSignOnBehalf] = useState(false);
@@ -65,32 +66,37 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
     queryKey: ["/api/auth/user"],
   });
 
-  // Mock signature metadata for development
+  // Get signature data - check database signatures first, then local state
   const getSignatureData = () => {
     const now = new Date();
-    const clientName = clientDetails ? `${clientDetails.firstName} ${clientDetails.lastName}` : "Client Name";
-    const providerName = currentUser ? currentUser.fullName : "Provider Representative";
+    const clientName = clientDetails ? `${(clientDetails as any).firstName} ${(clientDetails as any).lastName}` : "Client Name";
+    const providerName = currentUser ? (currentUser as any).fullName : "Provider Representative";
+    
+    // Check if we have signatures from the database
+    const dbSignatures = (agreementData as any)?.signatures || [];
+    const clientDbSignature = dbSignatures.find((sig: any) => sig.signerRole === 'participant');
+    const providerDbSignature = dbSignatures.find((sig: any) => sig.signerRole === 'provider');
     
     return {
       client: {
-        signed: agreementData?.status === "active" || isClientSigned,
-        signedBy: clientSignOnBehalf ? clientBehalfName : clientName,
-        signedByRole: clientSignOnBehalf ? clientBehalfRole : "NDIS Participant",
+        signed: !!clientDbSignature || isClientSigned,
+        signedBy: clientDbSignature ? clientDbSignature.signerName : (clientSignOnBehalf ? clientBehalfName : clientName),
+        signedByRole: clientDbSignature ? "NDIS Participant" : (clientSignOnBehalf ? clientBehalfRole : "NDIS Participant"),
         signedOnBehalf: clientSignOnBehalf,
         actualParticipant: clientName,
-        signedAt: agreementData?.status === "active" ? new Date().toISOString() : (isClientSigned ? now.toISOString() : null),
+        signedAt: clientDbSignature ? clientDbSignature.signedAt : (isClientSigned ? now.toISOString() : null),
         ipAddress: "203.45.123.xxx", // Masked for privacy
         location: "Melbourne, VIC",
         deviceInfo: "Chrome Browser on Windows",
         authenticationMethod: "Multi-factor Authentication",
       },
       provider: {
-        signed: agreementData?.status === "active" || isProviderSigned,
-        signedBy: providerSignOnBehalf ? providerBehalfName : providerName,
-        signedByRole: providerSignOnBehalf ? providerBehalfRole : "Service Provider Representative",
+        signed: !!providerDbSignature || isProviderSigned,
+        signedBy: providerDbSignature ? providerDbSignature.signerName : (providerSignOnBehalf ? providerBehalfName : providerName),
+        signedByRole: providerDbSignature ? "Service Provider Representative" : (providerSignOnBehalf ? providerBehalfRole : "Service Provider Representative"),
         signedOnBehalf: providerSignOnBehalf,
         actualProvider: providerName,
-        signedAt: agreementData?.status === "active" ? new Date().toISOString() : (isProviderSigned ? now.toISOString() : null),
+        signedAt: providerDbSignature ? providerDbSignature.signedAt : (isProviderSigned ? now.toISOString() : null),
         ipAddress: "203.45.123.xxx", // Masked for privacy
         location: "Melbourne, VIC",
         deviceInfo: "Chrome Browser on Windows",
@@ -101,19 +107,83 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData 
 
   const signatures = getSignatureData();
 
-  const handleClientSign = () => {
+  const handleClientSign = async () => {
     if (clientSignOnBehalf && (!clientBehalfName || !clientBehalfRole)) {
       alert("Please provide name and role when signing on behalf of the participant");
       return;
     }
+    
+    // Save signature to backend if agreementId is available
+    if (agreementId) {
+      try {
+        const signatureData = {
+          signerRole: 'participant',
+          signerName: clientSignOnBehalf ? clientBehalfName : (clientDetails ? `${(clientDetails as any).firstName} ${(clientDetails as any).lastName}` : "Client Name")
+        };
+        
+        const response = await fetch(`/api/compliance/service-agreements/${agreementId}/signatures`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(signatureData),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save signature');
+        }
+        
+        console.log('[SIGNATURE] Client signature saved to backend');
+        
+        // Force page refresh to reload signatures from database
+        window.location.reload();
+      } catch (error) {
+        console.error('[SIGNATURE] Error saving client signature:', error);
+        alert('Failed to save signature. Please try again.');
+        return;
+      }
+    }
+    
     setIsClientSigned(true);
   };
 
-  const handleProviderSign = () => {
+  const handleProviderSign = async () => {
     if (providerSignOnBehalf && (!providerBehalfName || !providerBehalfRole)) {
       alert("Please provide name and role when signing on behalf of the provider");
       return;
     }
+    
+    // Save signature to backend if agreementId is available
+    if (agreementId) {
+      try {
+        const signatureData = {
+          signerRole: 'provider',
+          signerName: providerSignOnBehalf ? providerBehalfName : (currentUser ? (currentUser as any).fullName : "Provider Representative")
+        };
+        
+        const response = await fetch(`/api/compliance/service-agreements/${agreementId}/signatures`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(signatureData),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save signature');
+        }
+        
+        console.log('[SIGNATURE] Provider signature saved to backend');
+        
+        // Force page refresh to reload signatures from database
+        window.location.reload();
+      } catch (error) {
+        console.error('[SIGNATURE] Error saving provider signature:', error);
+        alert('Failed to save signature. Please try again.');
+        return;
+      }
+    }
+    
     setIsProviderSigned(true);
   };
 

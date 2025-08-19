@@ -29,6 +29,7 @@ interface AgreementFormProps {
   isAccepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
   mode: "create" | "edit";
+  agreementId?: string;
 }
 
 export default function AgreementForm({
@@ -39,6 +40,7 @@ export default function AgreementForm({
   isAccepted,
   onAcceptedChange,
   mode,
+  agreementId,
 }: AgreementFormProps) {
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
@@ -400,12 +402,10 @@ export default function AgreementForm({
 
       {/* Digital Signatures */}
       <SignPanel
-        clientName={getClientDisplayName()}
-        onSignature={handleSignature}
-        signatures={{
-          clientSignature: agreementData.clientSignature || undefined,
-          providerSignature: agreementData.providerSignature || undefined,
-        }}
+        isAccepted={isAccepted}
+        onAcceptedChange={onAcceptedChange}
+        agreementData={agreementData}
+        agreementId={agreementId}
       />
 
 
