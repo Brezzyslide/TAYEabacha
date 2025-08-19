@@ -81,7 +81,21 @@ export class ServiceAgreementController {
    */
   async getAgreements(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId } = req.user!;
+      const { tenantId } = req.user!;
+      
+      // Get company info for this tenant (same pattern as createAgreement)
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Validate query parameters
       const queryValidation = clientIdQuerySchema.safeParse(req.query);
@@ -158,8 +172,22 @@ export class ServiceAgreementController {
    */
   async getAgreementById(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId } = req.user!;
+      const { tenantId } = req.user!;
       const { id } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       const agreement = await serviceAgreementService.getAgreementById(id, companyId);
       
@@ -178,8 +206,22 @@ export class ServiceAgreementController {
    */
   async updateAgreement(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId, role } = req.user!;
+      const { role, tenantId } = req.user!;
       const { id } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Check permissions
       if (!hasWritePermission(role)) {
@@ -209,8 +251,22 @@ export class ServiceAgreementController {
    */
   async deleteAgreement(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId, role } = req.user!;
+      const { role, tenantId } = req.user!;
       const { id } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Check permissions
       if (!hasWritePermission(role)) {
@@ -275,8 +331,22 @@ export class ServiceAgreementController {
    */
   async updateAgreementItem(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId, role } = req.user!;
+      const { role, tenantId } = req.user!;
       const { id, itemId } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Check permissions
       if (!hasWritePermission(role)) {
@@ -307,8 +377,22 @@ export class ServiceAgreementController {
    */
   async deleteAgreementItem(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId, role } = req.user!;
+      const { role, tenantId } = req.user!;
       const { id, itemId } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Check permissions
       if (!hasWritePermission(role)) {
@@ -328,8 +412,22 @@ export class ServiceAgreementController {
    */
   async addSignature(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId, role, id: userId } = req.user!;
+      const { role, id: userId, tenantId } = req.user!;
       const { id } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Check permissions
       if (!hasWritePermission(role)) {
@@ -360,8 +458,22 @@ export class ServiceAgreementController {
    */
   async generatePDF(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId } = req.user!;
+      const { tenantId } = req.user!;
       const { id } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Get the agreement with all details
       const agreement = await serviceAgreementService.getAgreementById(id, companyId);
@@ -391,8 +503,22 @@ export class ServiceAgreementController {
    */
   async calculateAgreementTotal(req: AuthenticatedRequest, res: Response) {
     try {
-      const { companyId } = req.user!;
+      const { tenantId } = req.user!;
       const { id } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
       
       // Verify agreement belongs to company first
       const agreement = await serviceAgreementService.getAgreementById(id, companyId);
