@@ -386,6 +386,24 @@ export class ServiceAgreementService {
         publicHoliday: lineBreakdown.publicHoliday.toFixed(2)
       });
 
+      // Debug: Check if item exists before update and list all items for this agreement
+      const allItemsForAgreement = await db
+        .select()
+        .from(serviceAgreementItems)
+        .where(eq(serviceAgreementItems.agreementId, agreementId));
+        
+      const existingItem = await db
+        .select()
+        .from(serviceAgreementItems)
+        .where(and(
+          eq(serviceAgreementItems.id, itemId),
+          eq(serviceAgreementItems.agreementId, agreementId)
+        ));
+      
+      console.log(`[DEBUG] Looking for item ID: ${itemId} (type: ${typeof itemId}) in agreement: ${agreementId}`);
+      console.log(`[DEBUG] All items for agreement ${agreementId}:`, allItemsForAgreement.map(item => ({ id: item.id, ndisCode: item.ndisCode })));
+      console.log(`[DEBUG] Found ${existingItem.length} matching items:`, existingItem);
+
       const result = await db
         .update(serviceAgreementItems)
         .set(updateData)
