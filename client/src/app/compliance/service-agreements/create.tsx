@@ -69,6 +69,13 @@ export default function CreateServiceAgreement() {
       const response = await apiRequest('POST', '/api/compliance/service-agreements', data.agreement);
       const agreement = response as ServiceAgreement;
       
+      console.log('[FRONTEND] Agreement created:', agreement);
+      console.log('[FRONTEND] Agreement ID:', agreement.id);
+      
+      if (!agreement.id) {
+        throw new Error('Agreement created but no ID returned');
+      }
+      
       // Then add items if any
       if (data.items.length > 0) {
         await Promise.all(
