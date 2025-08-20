@@ -476,9 +476,10 @@ export default function CompliancePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="service-agreements">NDIS Service Agreements</TabsTrigger>
+          <TabsTrigger value="referral-links">NDIS Referral Links</TabsTrigger>
           <TabsTrigger value="medication-forms">Medication Forms</TabsTrigger>
           <TabsTrigger value="evacuation-drills">Evacuation Drills</TabsTrigger>
         </TabsList>
@@ -569,16 +570,16 @@ export default function CompliancePage() {
                     <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">Referral Forms</h3>
-                    <p className="text-sm text-muted-foreground">Create shareable third-party forms</p>
+                    <h3 className="font-semibold text-lg">NDIS Referral Links</h3>
+                    <p className="text-sm text-muted-foreground">Create secure shareable referral links</p>
                   </div>
                 </div>
                 <Button 
                   variant="outline" 
                   className="w-full mt-4"
-                  onClick={() => window.location.href = "/compliance/referral-forms"}
+                  onClick={() => setActiveTab("referral-links")}
                 >
-                  Create Referral Form
+                  Manage Referral Links
                 </Button>
               </CardContent>
             </Card>
@@ -1569,6 +1570,34 @@ export default function CompliancePage() {
               </Form>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        <TabsContent value="referral-links" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>NDIS Referral Links</CardTitle>
+              <CardDescription>
+                Create and manage secure shareable links for external NDIS participant referrals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-blue-400" />
+                <h3 className="mt-2 text-lg font-medium text-slate-900 dark:text-slate-100">
+                  NDIS Referral System
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Create secure links that external parties can use to submit comprehensive NDIS participant referrals
+                </p>
+                <Button 
+                  className="mt-4"
+                  onClick={() => window.location.href = "/compliance/referral-links"}
+                >
+                  Manage Referral Links
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="medication-forms" className="space-y-6">
