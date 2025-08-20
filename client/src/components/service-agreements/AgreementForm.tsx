@@ -60,7 +60,7 @@ export default function AgreementForm({
 
   // Fetch default terms template for tenant
   const { data: defaultTerms } = useQuery({
-    queryKey: ["/api/compliance/terms-templates/default"],
+    queryKey: ["/api/terms-templates/default"],
     enabled: mode === "create",
   });
 
