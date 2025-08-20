@@ -1,0 +1,146 @@
+
+AI+
+NeedsCareAI+
+D
+A
+S
+DIAGNOSIS AS
+
+Welcome back, Fred Alale
+
+
+Dashboard
+Verified
+
+
+
+FA
+Fred Alale
+Back to Agreements
+Edit Service Agreement
+Agreement #SA-2025-0011
+
+Export PDF
+Service Agreement Details
+Update agreement information and line items
+Participant Selection
+Select the NDIS participant for this service agreement
+Client *
+Emma Williams - NDIS001003_T19
+Agreement Period
+Service dates and duration
+Start Date *
+19/08/2025
+End Date *
+01/07/2026
+Plan Nominee Information
+Authorized representative details
+Plan Nominee Name
+ouytdtfhgjkh
+Plan Nominee Contact
+04
+Billing Details
+NDIS plan and billing information
+NDIS Participant Number *
+NDIS001003_T19
+Plan Number *
+5585555
+Plan Manager
+tt
+Plan Manager Contact
+tt
+Service Items & Pricing
+NDIS support categories and hourly rates
+Service Items
+Add individual service types with specific hours and rates
+
+Add Service Item
+Service Type	NDIS Code	Description	Hours/Week	Unit Rate	Weeks	Ratio	Total	
+Evening
+01_014_0107_1_1	
+ff
+40	$80.00	52	1:1	$166400.00	
+Agreement Totals
+Breakdown by Rate Type
+Agreement Summary
+Total Service Items
+1 item
+Total Service Hours
+0.00 hours
+Grand Total
+$0.00
+Custom Terms & Conditions
+Additional terms specific to this agreement
+Enter any custom terms specific to this agreement...
+Enter any custom terms specific to this agreement...
+Standard Terms & Conditions
+Default terms that apply to all agreements
+Terms and Conditions
+Add Custom Terms
+Standard NDIS terms and conditions apply to this service agreement
+Standard NDIS Terms & Conditions
+Expand Full Terms
+This agreement includes standard NDIS terms covering:
+
+Service Delivery Standards
+Participant Rights and Responsibilities
+Provider Obligations
+Financial Terms
+Privacy and Confidentiality
+Agreement Variation and Termination
+Complaints and Disputes
+
+I acknowledge that I have read, understood, and agree to be bound by the terms and conditions outlined above, including all standard NDIS terms and any additional terms specified.
+By checking this box, both the NDIS participant (or their nominee) and the service provider agree to the terms of this service agreement. Digital signatures will be captured separately.
+
+Legal Notice:
+
+This agreement is governed by Australian law and NDIS regulations. Both parties acknowledge their understanding of rights and obligations under the NDIS Act 2013.
+
+Electronic Signatures
+Pending Signatures
+Secure digital signatures with multi-factor authentication and audit trail
+Agreement Status
+Awaiting digital signatures from all parties
+
+draft
+NDIS Participant Signature
+Awaiting participant signature
+
+
+Sign on behalf of participant
+Sign as Participant
+Service Provider Signature
+Awaiting provider signature
+
+
+Sign on behalf of provider
+Sign as Provider
+External Signing
+Share a secure link for third parties to sign this agreement
+
+Create Signing Link
+Digital Signature Legal Notice:
+
+Electronic signatures are legally binding under the Electronic Transactions Act
+Multi-factor authentication ensures signatory identity verification
+Comprehensive audit trail includes timestamps, IP addresses, and device information
+Signed documents are immutable and stored with 256-bit encryption
+All signature events are logged for legal compliance and verification
+Cancel
+Save as Draft
+Update Agreement
+[plugin:runtime-error-plugin] Failed to execute 'fetch' on 'Window': '/api/compliance/service-agreements/4c1a95ea-333e-43df-aa37-d4815be0a7da/share' is not a valid HTTP method.
+/home/runner/workspace/client/src/lib/queryClient.ts:18:21
+16 |    const isFormData = data instanceof FormData;
+17 |    
+18 |    const res = await fetch(url, {
+   |                      ^
+19 |      method,
+20 |      headers: data && !isFormData ? { "Content-Type": "application/json" } : {},
+
+
+    at apiRequest /home/runner/workspace/client/src/lib/queryClient.ts:18:21
+    at Object.mutationFn /home/runner/workspace/client/src/components/service-agreements/SignPanel.tsx:72:30
+Click outside, press Esc key, or fix the code to dismiss.
+You can also disable this overlay by setting server.hmr.overlay to false in vite.config.js.
