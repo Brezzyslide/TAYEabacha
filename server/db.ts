@@ -13,20 +13,26 @@ if (!databaseUrl) {
 
 console.log(`[DATABASE] Connecting to: ${databaseUrl.replace(/:[^:]*@/, ':***@')}`);
 
-// Create pool with improved configuration for development stability
+// Determine if this is an external database (AWS RDS, etc.) or Replit database
+const isExternalDatabase = databaseUrl.includes('rds.amazonaws.com') || 
+                           databaseUrl.includes('neon.tech') || 
+                           databaseUrl.includes('supabase.') ||
+                           !databaseUrl.includes('replit.dev');
+
+// Create pool with configuration for external or Replit databases
 export const pool = new Pool({ 
   connectionString: databaseUrl,
-  // Replit databases don't use SSL by default
-  ssl: false,
+  // External databases typically require SSL, Replit databases don't
+  ssl: isExternalDatabase ? { rejectUnauthorized: false } : false,
   max: 20,                      // Increased pool size
   min: 2,                       // Minimum connections
   idleTimeoutMillis: 60000,     // Longer idle timeout (1 minute)
-  connectionTimeoutMillis: 10000, // Longer connection timeout (10 seconds)
+  connectionTimeoutMillis: 15000, // Longer connection timeout for external DBs
   allowExitOnIdle: false,       // Don't exit on idle
 });
 
-console.log('[DATABASE] SSL configuration: disabled (Replit database)');
-console.log('[DATABASE] Connection pool configured for Replit environment');
+console.log(`[DATABASE] SSL configuration: ${isExternalDatabase ? 'enabled (external database)' : 'disabled (Replit database)'}`);
+console.log(`[DATABASE] Connection pool configured for ${isExternalDatabase ? 'external' : 'Replit'} database`);
 
 // Add connection event handlers for better error monitoring
 pool.on('error', (err) => {
