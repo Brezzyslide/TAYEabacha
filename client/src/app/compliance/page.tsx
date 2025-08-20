@@ -584,6 +584,27 @@ export default function CompliancePage() {
               </CardContent>
             </Card>
 
+            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-purple-500 transition-colors cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                    <Eye className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Referral Management</h3>
+                    <p className="text-sm text-muted-foreground">Review and assess NDIS referrals</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-4"
+                  onClick={() => window.open('/compliance/referral-management', '_self')}
+                >
+                  Manage Referrals
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-500 transition-colors cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3">

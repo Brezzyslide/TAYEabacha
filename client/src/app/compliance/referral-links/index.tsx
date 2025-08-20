@@ -327,7 +327,11 @@ export default function ReferralLinksPage() {
                     <Badge variant={referral.status === "pending" ? "secondary" : "default"}>
                       {referral.status}
                     </Badge>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(`/compliance/referral-management?referral=${referral.id}`, '_self')}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
                       View
                     </Button>
