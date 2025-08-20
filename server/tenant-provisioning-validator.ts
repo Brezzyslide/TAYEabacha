@@ -39,9 +39,9 @@ export async function checkProvisioning(options: { tenantId: number; expect: Pro
     const issues: string[] = [];
     const details: Record<string, any> = {};
 
-    // Check tax brackets
+    // Check tax brackets (tax brackets are global, not tenant-specific)
     if (expect.hasAtLeast.taxBrackets) {
-      const taxBracketCount = await db.select({ count: count() }).from(taxBrackets).where(eq(taxBrackets.tenantId, tenantId));
+      const taxBracketCount = await db.select({ count: count() }).from(taxBrackets);
       details.taxBrackets = taxBracketCount[0]?.count || 0;
       if (details.taxBrackets < expect.hasAtLeast.taxBrackets) {
         issues.push(`Expected at least ${expect.hasAtLeast.taxBrackets} tax brackets, found ${details.taxBrackets}`);

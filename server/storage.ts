@@ -398,6 +398,18 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserById(id: number, tenantId: number): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(
+        and(eq(users.id, id), eq(users.tenantId, tenantId))
+      );
+      return user || undefined;
+    } catch (error) {
+      console.error('[DB ERROR] getUserById failed:', error);
+      throw error;
+    }
+  }
+
   async getUsersByTenant(tenantId: number): Promise<User[]> {
     return await db.select().from(users).where(eq(users.tenantId, tenantId));
   }
@@ -3012,7 +3024,27 @@ export class DatabaseStorage implements IStorage {
     const [created] = await db
       .insert(serviceAgreementItems)
       .values({
-        ...item,
+        agreementId: item.agreementId,
+        ndisCode: item.ndisCode,
+        supportDescription: item.supportDescription,
+        weeks: item.weeks,
+        priceListId: item.priceListId,
+        hoursDay: typeof item.hoursDay === 'number' ? item.hoursDay.toString() : item.hoursDay,
+        hoursWeekdayEvening: typeof item.hoursWeekdayEvening === 'number' ? item.hoursWeekdayEvening.toString() : item.hoursWeekdayEvening,
+        hoursActiveNight: typeof item.hoursActiveNight === 'number' ? item.hoursActiveNight.toString() : item.hoursActiveNight,
+        hoursSleepover: typeof item.hoursSleepover === 'number' ? item.hoursSleepover.toString() : item.hoursSleepover,
+        hoursSaturday: typeof item.hoursSaturday === 'number' ? item.hoursSaturday.toString() : item.hoursSaturday,
+        hoursSunday: typeof item.hoursSunday === 'number' ? item.hoursSunday.toString() : item.hoursSunday,
+        hoursPublicHoliday: typeof item.hoursPublicHoliday === 'number' ? item.hoursPublicHoliday.toString() : item.hoursPublicHoliday,
+        unitDay: typeof item.unitDay === 'number' ? item.unitDay.toString() : item.unitDay,
+        unitWeekdayEvening: typeof item.unitWeekdayEvening === 'number' ? item.unitWeekdayEvening.toString() : item.unitWeekdayEvening,
+        unitActiveNight: typeof item.unitActiveNight === 'number' ? item.unitActiveNight.toString() : item.unitActiveNight,
+        unitSleepover: typeof item.unitSleepover === 'number' ? item.unitSleepover.toString() : item.unitSleepover,
+        unitSaturday: typeof item.unitSaturday === 'number' ? item.unitSaturday.toString() : item.unitSaturday,
+        unitSunday: typeof item.unitSunday === 'number' ? item.unitSunday.toString() : item.unitSunday,
+        unitPublicHoliday: typeof item.unitPublicHoliday === 'number' ? item.unitPublicHoliday.toString() : item.unitPublicHoliday,
+        ratioOfSupport: item.ratioOfSupport,
+        notes: item.notes,
         id: randomUUID()
       })
       .returning();
@@ -3020,9 +3052,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateServiceAgreementItem(id: string, item: Partial<InsertServiceAgreementItem>): Promise<ServiceAgreementItem | undefined> {
+    // Convert numeric values to strings for decimal fields
+    const updateData: any = { ...item, updatedAt: new Date() };
+    
+    if (typeof updateData.hoursDay === 'number') updateData.hoursDay = updateData.hoursDay.toString();
+    if (typeof updateData.hoursWeekdayEvening === 'number') updateData.hoursWeekdayEvening = updateData.hoursWeekdayEvening.toString();
+    if (typeof updateData.hoursActiveNight === 'number') updateData.hoursActiveNight = updateData.hoursActiveNight.toString();
+    if (typeof updateData.hoursSleepover === 'number') updateData.hoursSleepover = updateData.hoursSleepover.toString();
+    if (typeof updateData.hoursSaturday === 'number') updateData.hoursSaturday = updateData.hoursSaturday.toString();
+    if (typeof updateData.hoursSunday === 'number') updateData.hoursSunday = updateData.hoursSunday.toString();
+    if (typeof updateData.hoursPublicHoliday === 'number') updateData.hoursPublicHoliday = updateData.hoursPublicHoliday.toString();
+    if (typeof updateData.unitDay === 'number') updateData.unitDay = updateData.unitDay.toString();
+    if (typeof updateData.unitWeekdayEvening === 'number') updateData.unitWeekdayEvening = updateData.unitWeekdayEvening.toString();
+    if (typeof updateData.unitActiveNight === 'number') updateData.unitActiveNight = updateData.unitActiveNight.toString();
+    if (typeof updateData.unitSleepover === 'number') updateData.unitSleepover = updateData.unitSleepover.toString();
+    if (typeof updateData.unitSaturday === 'number') updateData.unitSaturday = updateData.unitSaturday.toString();
+    if (typeof updateData.unitSunday === 'number') updateData.unitSunday = updateData.unitSunday.toString();
+    if (typeof updateData.unitPublicHoliday === 'number') updateData.unitPublicHoliday = updateData.unitPublicHoliday.toString();
+
     const [updated] = await db
       .update(serviceAgreementItems)
-      .set({ ...item, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(serviceAgreementItems.id, id))
       .returning();
     return updated || undefined;

@@ -74,7 +74,7 @@ async function updateStaffHourAllocation(shiftId: number, userId: number, tenant
     // Update the hour allocation
     await storage.updateHourAllocation(staffAllocation.id, {
       maxHours: staffAllocation.maxHours,
-      remainingHours: newRemainingHours.toString()
+      remainingHours: newRemainingHours
     }, tenantId);
     
     console.log(`[HOUR ALLOCATION] Successfully ${action}d ${shiftHours} hours for staff ${userId}`);
@@ -2056,7 +2056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Handle overnight shifts
               if (updateData.shiftStartTime) {
                 const [startHours] = updateData.shiftStartTime.split(':').map(Number);
-                if (endHours < startHours || (endHours === startHours && endMinutes <= startMinutes)) {
+                if (endHours < startHours || (endHours === startHours && endMinutes <= parseInt(updateData.shiftStartTime.split(':')[1]))) {
                   newEndTime.setDate(newEndTime.getDate() + 1);
                 }
               }
