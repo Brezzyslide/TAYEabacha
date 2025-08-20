@@ -12873,25 +12873,18 @@ Maximum 400 words.`;
 
   app.get("/api/terms-templates/default", requireAuth, async (req: any, res) => {
     try {
-      console.log("[TERMS DEBUG] User object:", req.user);
-      console.log("[TERMS DEBUG] User companyId:", req.user.companyId);
-      console.log("[TERMS DEBUG] User tenantId:", req.user.tenantId);
-      
       // Get companyId from tenant if not directly available
       let companyId = req.user.companyId;
       if (!companyId && req.user.tenantId) {
         const tenant = await storage.getTenant(req.user.tenantId);
         companyId = tenant?.companyId;
-        console.log("[TERMS DEBUG] Retrieved companyId from tenant:", companyId);
       }
       
       if (!companyId) {
-        console.log("[TERMS DEBUG] No companyId found");
         return res.status(400).json({ message: "Company ID not found" });
       }
       
       const template = await storage.getDefaultTermsTemplate(companyId);
-      console.log("[TERMS DEBUG] Template found:", !!template, template?.id);
       res.json(template);
     } catch (error: any) {
       console.error("Get default terms template error:", error);
