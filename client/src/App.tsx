@@ -52,6 +52,7 @@ import EditServiceAgreement from "@/app/compliance/service-agreements/edit/[id]"
 import ViewServiceAgreement from "@/app/compliance/service-agreements/view/[id]";
 import PublicSignPage from "@/pages/public-sign";
 import { ProtectedRoute } from "./lib/protected-route";
+import { VerifyAuth } from "./debug/verifyAuth";
 
 function Router() {
   return (
@@ -110,6 +111,7 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <TooltipProvider>
+            <VerifyAuth />
             <Router />
             <Toaster />
           </TooltipProvider>
