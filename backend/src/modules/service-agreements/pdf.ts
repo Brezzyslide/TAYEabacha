@@ -283,54 +283,36 @@ export class ServiceAgreementPDFService {
     }
 
     if (termsTemplate && termsTemplate.body) {
-      // Parse the terms content into sections with proper formatting
-      const sections = termsTemplate.body.split(/(?=\d+\.\s)/).filter(section => section.trim());
+      // Split by lines and process each section properly 
+      const lines = termsTemplate.body.split('\n').map(line => line.trim()).filter(line => line);
+      let currentSection: {number: string, title: string, content: string[]} | null = null;
       
-      sections.forEach((section: string) => {
-        const lines = section.trim().split('\n').filter((line: string) => line.trim());
-        if (lines.length === 0) return;
+      for (const line of lines) {
+        // Check if this line starts a new section (number followed by period and space)
+        const sectionMatch = line.match(/^(\d+)\.\s+(.+)$/);
         
-        // First line should be the title with section number
-        const titleMatch = lines[0].match(/^(\d+\.\s*)(.+)$/);
-        if (titleMatch) {
-          const sectionNumber = titleMatch[1];
-          const title = titleMatch[2];
-          
-          // Bold and larger section heading
-          doc.setFontSize(12);
-          doc.setFont('helvetica', 'bold');
-          const sectionLines = doc.splitTextToSize(`${sectionNumber}${title}`, pageWidth - 40);
-          doc.text(sectionLines, 20, yPosition);
-          yPosition += sectionLines.length * 5 + 3;
-          
-          // Section content
-          const content = lines.slice(1).filter((line: string) => line.trim());
-          if (content.length > 0) {
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            content.forEach((contentLine: string) => {
-              const contentLines = doc.splitTextToSize(contentLine, pageWidth - 50);
-              doc.text(contentLines, 30, yPosition);
-              yPosition += contentLines.length * 4 + 2;
-            });
+        if (sectionMatch) {
+          // Render previous section if exists
+          if (currentSection) {
+            yPosition = this.renderTermsSection(doc, currentSection, yPosition, pageWidth, pageHeight, tenantData);
           }
-          yPosition += 4; // Extra spacing between sections
-        } else {
-          // Handle lines that don't match the expected format
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          const termLines = doc.splitTextToSize(lines[0], pageWidth - 40);
-          doc.text(termLines, 20, yPosition);
-          yPosition += termLines.length * 4 + 2;
+          
+          // Start new section
+          currentSection = {
+            number: sectionMatch[1],
+            title: sectionMatch[2],
+            content: []
+          };
+        } else if (currentSection && line) {
+          // Add content to current section
+          currentSection.content.push(line);
         }
-
-        // Check if we need a new page
-        if (yPosition > pageHeight - 50) {
-          doc.addPage();
-          this.addAgreementHeader(doc, tenantData.name, 'NDIS SERVICE AGREEMENT', pageWidth);
-          yPosition = 35;
-        }
-      });
+      }
+      
+      // Render the last section
+      if (currentSection) {
+        yPosition = this.renderTermsSection(doc, currentSection, yPosition, pageWidth, pageHeight, tenantData);
+      }
     } else {
       // Fallback to hardcoded terms if template not found
       const standardTerms = [
@@ -423,6 +405,50 @@ export class ServiceAgreementPDFService {
     });
 
     return yPosition + 40;
+  }
+
+  /**
+   * Render a single terms section
+   */
+  private renderTermsSection(doc: any, section: {number: string, title: string, content: string[]}, yPosition: number, pageWidth: number, pageHeight: number, tenantData: any): number {
+    // Check if we need a new page
+    if (yPosition > pageHeight - 60) {
+      doc.addPage();
+      this.addAgreementHeader(doc, tenantData.name, 'NDIS SERVICE AGREEMENT', pageWidth);
+      yPosition = 35;
+    }
+
+    // Bold and larger section heading
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    const sectionHeader = `${section.number}. ${section.title}`;
+    const sectionLines = doc.splitTextToSize(sectionHeader, pageWidth - 40);
+    doc.text(sectionLines, 20, yPosition);
+    yPosition += sectionLines.length * 5 + 3;
+    
+    // Section content
+    if (section.content.length > 0) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      section.content.forEach((contentLine: string) => {
+        if (contentLine.trim()) {
+          const contentLines = doc.splitTextToSize(contentLine, pageWidth - 50);
+          doc.text(contentLines, 30, yPosition);
+          yPosition += contentLines.length * 4 + 2;
+          
+          // Check if we need a new page during content
+          if (yPosition > pageHeight - 40) {
+            doc.addPage();
+            this.addAgreementHeader(doc, tenantData.name, 'NDIS SERVICE AGREEMENT', pageWidth);
+            yPosition = 35;
+          }
+        }
+      });
+    }
+    
+    yPosition += 6; // Extra spacing between sections
+    return yPosition;
   }
 
   /**
