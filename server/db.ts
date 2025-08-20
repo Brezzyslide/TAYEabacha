@@ -23,6 +23,11 @@ const isExternalDatabase = databaseUrl.includes('rds.amazonaws.com') ||
 // Start with SSL disabled as many databases don't require it
 let sslConfig = false;
 
+// For AWS RDS connections, enable SSL with proper configuration
+if (isExternalDatabase && databaseUrl.includes('rds.amazonaws.com')) {
+  sslConfig = { rejectUnauthorized: false }; // Allow self-signed certs for AWS RDS
+}
+
 // Create pool with configuration for external or Replit databases
 export const pool = new Pool({ 
   connectionString: databaseUrl,

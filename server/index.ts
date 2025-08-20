@@ -51,6 +51,7 @@ console.log('[ENV] FINAL CHECK:');
 console.log('[ENV] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
 console.log('[ENV] GMAIL_APP_PASSWORD_SET:', !!process.env.GMAIL_APP_PASSWORD);
 console.log('[ENV] GMAIL_APP_PASSWORD_LENGTH:', process.env.GMAIL_APP_PASSWORD?.length || 0);
+console.log('[ENV] DATABASE_URL:', process.env.DATABASE_URL?.replace(/:[^:]*@/, ':***@'));
 
 // Initialize email service AFTER environment is loaded
 import "./lib/email-service";
