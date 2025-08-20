@@ -1,0 +1,193 @@
+5. Responsibilities of the Provider
+
+The Provider will:
+
+Deliver agreed supports on time, following relevant laws and standards
+
+Treat the Participant with dignity and respect, and involve them in decisions
+
+Ensure staff are trained and competent
+
+Keep appointments or give at least 48 hours’ notice where changes are needed
+
+Review supports with the Participant at least every 6 months or sooner if needed
+
+Listen to feedback and resolve issues promptly
+
+Protect privacy and secure information, sharing only with consent or as required by law
+
+Disclose any conflicts of interest and support genuine choice
+
+Keep accurate service and billing records and provide clear statements
+
+6. Responsibilities of the Participant or Representative
+
+The Participant or their representative will:
+
+Tell the Provider what supports are needed and how they prefer to receive them
+
+Provide a copy of the current NDIS plan so supports align with goals
+
+Be respectful to staff
+
+Keep appointments or give at least 48 hours’ notice when changing or cancelling
+
+Raise concerns early if unhappy with any part of the service
+
+Update contact details when they change
+
+Advise if the NDIS plan changes or ends
+
+Pay invoices on time if self-managed or ensure the nominee or plan manager does so
+
+Give 28 days’ notice to change or end this Agreement
+
+7. Payments
+
+Payment is sought after supports are delivered and acknowledged.
+
+Choose what applies:
+
+NDIA-managed: The Provider claims from the NDIA.
+
+Self-managed: The Provider invoices the Participant. Payment due within {{billing.termsDays}} days by {{billing.methods}}.
+
+Plan nominee: The Provider invoices the nominee. Payment due within {{billing.termsDays}} days.
+
+Plan-managed: The Provider invoices the plan manager. Payment due within {{billing.termsDays}} days.
+
+Establishment fee and similar items are only claimed where allowed by the current NDIS rules and caps.
+
+8. Travel and Transport
+
+Provider travel and participant transport may be claimed only as permitted by the current NDIS rules and price limits and only where agreed. Out of pocket costs like public transport fares are discussed and, if agreed, charged at reasonable cost.
+
+9. Cancellations and No-Shows
+
+The Provider’s policy follows the NDIS Pricing Arrangements and Price Limits.
+
+Reasonable notice: No fee, the support will be rescheduled where possible.
+
+Short notice or no-show: A cancellation fee may apply up to the relevant NDIS price limit for the booked item, using the current clear business day rules.
+
+If the Provider cancels, they will give 48 hours’ notice where possible and offer a new time.
+
+10. Changes and Reviews
+
+If changes are needed, the parties will discuss and update the Schedule of Supports and, if required, amend this Agreement in writing and date it.
+
+11. Feedback, Complaints and Disputes
+
+Feedback is welcome. Start with the Provider’s service team.
+
+Service team: {{provider.service.email}} | {{provider.service.phone}} | {{provider.mailingAddress}}
+
+Escalation: {{provider.contactBlock}}
+
+If still unresolved, the Participant may contact the NDIA or the NDIS Quality and Safeguards Commission using the contacts published by those bodies.
+
+12. Privacy and Information Sharing
+
+The Provider keeps information safe and private. Information is shared only with consent or where the law permits or requires it, including in emergencies to protect life or health.
+
+13. Disaster and Emergency Management
+
+Purpose
+Set out how supports are maintained, adjusted or paused during disasters or emergencies like bushfire, flood, extreme weather, public health orders, major utility failure or police declared incidents.
+
+Provider commitments
+
+Keep an organisation-wide emergency and disaster plan and review it yearly
+
+Train staff on relevant emergency procedures
+
+Keep up-to-date emergency contacts for the Participant and nominee
+
+Put safety first and follow directions from emergency services
+
+Participant-specific planning
+
+Where appropriate, prepare or update a Participant-specific Disaster Management Plan and store it with the Participant’s records
+
+Include preferred communication, evacuation supports, essential items and medications, known risks and triggers, and after-event needs
+
+Review after any significant event or at least every 12 months
+
+Service delivery during an event
+
+Shift supports to safe alternate modes if needed, such as phone, video welfare checks, essential in-home supports, or temporary relocation supports
+
+Triage supports by risk and essential need and explain changes
+
+Charge bookings, cancellations and travel only as permitted by the current NDIS rules
+
+Communication and consent
+
+Make reasonable attempts to contact the Participant or nominee to discuss options and record decisions
+
+If urgent action is required to protect life or health and consent is not available, act reasonably and in good faith and notify as soon as practicable
+
+Information sharing and privacy
+
+Share necessary information with emergency services or health professionals to protect safety, consistent with the law
+
+Post-event review
+
+Review what happened, record lessons and update plans
+
+Emergency contacts
+
+Emergency phone: {{provider.emergencyPhone}}
+
+Emergency email: {{provider.emergencyEmail}}
+
+14. Continuity of Supports and Alternate Service
+
+Commitment
+The Provider will take reasonable steps to ensure supports continue through the life of this Agreement.
+
+If the Provider cannot continue
+If the Provider is unable to deliver supports, for example due to closure, workforce shortage, safety risk, loss of accreditation, insolvency or disaster impact, the Provider will:
+
+Give as much notice as possible, aiming for 28 days, or as soon as practicable in urgent cases
+
+Work with the Participant, nominee, plan manager or NDIA to identify an alternate provider or safe alternate mode of service
+
+Provide a written handover plan showing upcoming bookings, essential risks, medication and behaviour support notes where relevant, equipment considerations and key contacts
+
+Handover and records
+With consent or other lawful authority, the Provider will:
+
+Supply timely copies of relevant records to the Participant or the alternate provider, such as care notes, incident summaries, medication charts, behaviour strategies and agreed plans
+
+Arrange a warm handover meeting where needed
+
+Billing and unspent funds
+
+Issue final invoices for supports delivered to date and cease future claims
+
+Reconcile any prepayments fairly in line with Australian Consumer Law and NDIS rules
+
+Charge no exit fees unless expressly allowed by the current NDIS rules
+
+Participant choice
+The Participant keeps full choice to select any alternate provider. The Provider will not hinder reasonable transfers.
+
+15. Ending this Agreement
+
+Either party may end this Agreement with 28 days’ notice.
+The Provider may end supports if fees remain unpaid beyond agreed terms, if illegal activity occurs at a Provider setting, if the Participant ceases with the NDIS, or if continuing would pose serious risk or breach work health and safety duties. The Provider will give reasons and work toward a safe transition.
+
+16. GST
+
+For GST purposes, the parties confirm that supports supplied are reasonable and necessary under the Participant’s NDIS plan. The Participant or representative will notify the Provider if the plan changes or ends.
+
+17. Contact Blocks
+
+Participant: {{participant.contactBlock}}
+
+Alternate contact: {{participant.altContactBlock}}
+
+Plan manager or representative: {{planManager.block}}
+
+Provider contact: {{provider.contactBlock}}
