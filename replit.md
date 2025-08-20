@@ -30,7 +30,7 @@ CareConnect is built with a modern web stack:
 -   **Development Focus:** Completely purged of all production-related infrastructure. Recently removed: AWS debugging systems, production configuration files (production.config.js, productionConfig.ts), Vercel deployment setup (vercel.json), production optimization hooks (useProductionOptimizations.ts), enhanced fetch utilities (enhancedFetch.ts), AWS compatibility code in authentication, and all production environment detection logic. System operates purely in development mode with no production dependencies or references.
 
 ## External Dependencies
--   **Database:** PostgreSQL (`@neondatabase/serverless` for serverless connections, `connect-pg-simple` for session store).
+-   **Database:** PostgreSQL AWS RDS (`needscareai-dev.c3u4skeaqvx1.us-east-1.rds.amazonaws.com`) with SSL configuration (`@neondatabase/serverless` for serverless connections, `connect-pg-simple` for session store).
 -   **ORM:** Drizzle ORM.
 -   **Authentication:** Passport.js, Passport-Local.
 -   **UI Components:** @radix-ui/ components, lucide-react (icons).

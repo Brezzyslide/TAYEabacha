@@ -37,6 +37,7 @@ if (fs.existsSync(localEnvPath)) {
     const [key, value] = line.split('=');
     if (key && value) {
       process.env[key.trim()] = value.trim();
+      console.log(`[ENV] Override: ${key.trim()} = ${value.includes('DATABASE_URL') ? value.replace(/:[^:]*@/, ':***@') : value.substring(0, 20)}...`);
     }
   });
   console.log('[ENV] Loaded local environment variables');
@@ -53,7 +54,7 @@ console.log('[ENV] GMAIL_APP_PASSWORD_SET:', !!process.env.GMAIL_APP_PASSWORD);
 console.log('[ENV] GMAIL_APP_PASSWORD_LENGTH:', process.env.GMAIL_APP_PASSWORD?.length || 0);
 console.log('[ENV] DATABASE_URL:', process.env.DATABASE_URL?.replace(/:[^:]*@/, ':***@'));
 
-// Initialize email service AFTER environment is loaded
+// Initialize email service and database AFTER environment is loaded
 import "./lib/email-service";
 
 // Timezone configuration removed - Phase cleanup
