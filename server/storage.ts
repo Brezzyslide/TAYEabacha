@@ -354,20 +354,35 @@ export class DatabaseStorage implements IStorage {
 
   // Users
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user || undefined;
+    } catch (error) {
+      console.error('[DB ERROR] getUser failed:', error);
+      throw error;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user || undefined;
+    } catch (error) {
+      console.error('[DB ERROR] getUserByUsername failed:', error);
+      throw error;
+    }
   }
 
   async getUserByUsernameAndTenant(username: string, tenantId: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(
-      and(eq(users.username, username), eq(users.tenantId, tenantId))
-    );
-    return user || undefined;
+    try {
+      const [user] = await db.select().from(users).where(
+        and(eq(users.username, username), eq(users.tenantId, tenantId))
+      );
+      return user || undefined;
+    } catch (error) {
+      console.error('[DB ERROR] getUserByUsernameAndTenant failed:', error);
+      throw error;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
