@@ -58,7 +58,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
 
   // Fetch client details for signature
   const { data: clientDetails } = useQuery({
-    queryKey: ["/api/clients", agreementData.clientId],
+    queryKey: [`/api/clients/${agreementData.clientId}`],
     enabled: !!agreementData.clientId,
   });
 
@@ -117,17 +117,11 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
     // Save signature to backend if agreementId is available
     if (agreementId) {
       try {
-        // Debug client details structure
-        console.log('[DEBUG] Client Details:', clientDetails);
-        console.log('[DEBUG] Agreement Data ClientId:', agreementData.clientId);
-        
         const clientName = clientDetails ? 
           (clientDetails.firstName && clientDetails.lastName ? 
             `${clientDetails.firstName} ${clientDetails.lastName}` : 
             (clientDetails.fullName || `Client ${clientDetails.id}`)
           ) : "Participant";
-          
-        console.log('[DEBUG] Constructed client name:', clientName);
         
         const signatureData = {
           signerRole: 'client',
