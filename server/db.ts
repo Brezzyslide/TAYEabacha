@@ -19,11 +19,14 @@ const isExternalDatabase = databaseUrl.includes('rds.amazonaws.com') ||
                            databaseUrl.includes('supabase.') ||
                            !databaseUrl.includes('replit.dev');
 
+// Determine SSL configuration based on database type
+// Start with SSL disabled as many databases don't require it
+let sslConfig = false;
+
 // Create pool with configuration for external or Replit databases
 export const pool = new Pool({ 
   connectionString: databaseUrl,
-  // External databases typically require SSL, Replit databases don't
-  ssl: isExternalDatabase ? { rejectUnauthorized: false } : false,
+  ssl: sslConfig,
   max: 20,                      // Increased pool size
   min: 2,                       // Minimum connections
   idleTimeoutMillis: 60000,     // Longer idle timeout (1 minute)
