@@ -70,7 +70,7 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
   const createSharingLinkMutation = useMutation({
     mutationFn: async (data: { signerRole: string; recipientEmail?: string }) => {
       const response = await apiRequest('POST', `/api/compliance/service-agreements/${agreementId}/share`, data);
-      return response;
+      return await response.json();
     },
     onSuccess: (data) => {
       const baseUrl = window.location.origin;
