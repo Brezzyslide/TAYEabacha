@@ -148,7 +148,7 @@ export class ServiceAgreementPDFService {
       doc.text('Address:', 20, yPosition);
       yPosition += 5;
       
-      const addressLines = tenantData.businessAddress.split('\n').filter(line => line.trim());
+      const addressLines = tenantData.businessAddress.split('\n').filter((line: string) => line.trim());
       addressLines.forEach((line: string) => {
         doc.text(line.trim(), 20, yPosition);
         yPosition += 5;
