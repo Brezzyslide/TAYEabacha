@@ -163,7 +163,7 @@ router.get("/links/:token", async (req, res) => {
       return res.status(410).json({ error: "expired" });
     }
     
-    if (link.maxUses && link.currentUses >= link.maxUses) {
+    if (link.maxUses && (link.currentUses || 0) >= link.maxUses) {
       return res.status(429).json({ error: "link-usage-exceeded" });
     }
     
@@ -198,7 +198,7 @@ router.post("/submit/:token", async (req, res) => {
       return res.status(410).json({ error: "expired" });
     }
     
-    if (link.maxUses && link.currentUses >= link.maxUses) {
+    if (link.maxUses && (link.currentUses || 0) >= link.maxUses) {
       return res.status(429).json({ error: "link-usage-exceeded" });
     }
     
@@ -258,7 +258,7 @@ router.post("/submit/:token", async (req, res) => {
 
     // Increment link usage
     await db.update(referralLinks)
-      .set({ currentUses: link.currentUses + 1 })
+      .set({ currentUses: (link.currentUses || 0) + 1 })
       .where(eq(referralLinks.id, link.id));
 
     console.log(`[REFERRAL] New submission received for tenant ${payload.tenantId}: ${parsed.clientName}`);
@@ -297,6 +297,13 @@ router.get("/", async (req, res) => {
     res.json(submissions);
   } catch (error) {
     console.error("Get referrals error:", error);
+    
+    // If table doesn't exist, return empty array
+    if ((error as any)?.code === '42P01') {
+      console.log("Referral submissions table doesn't exist, returning empty array");
+      return res.json([]);
+    }
+    
     res.status(500).json({ error: "Failed to fetch referrals" });
   }
 });

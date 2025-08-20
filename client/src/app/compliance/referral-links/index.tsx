@@ -65,11 +65,9 @@ export default function ReferralLinksPage() {
 
   // Create referral link mutation
   const createLinkMutation = useMutation({
-    mutationFn: async (data: CreateLinkData) => {
-      return apiRequest("/api/referrals/links", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+    mutationFn: async (data: CreateLinkData): Promise<ReferralLink> => {
+      const response = await apiRequest("POST", "/api/referrals/links", data);
+      return response.json();
     },
     onSuccess: (newLink: ReferralLink) => {
       toast({
