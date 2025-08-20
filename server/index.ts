@@ -9,22 +9,25 @@ import { runStartupSecurityChecks } from "./enhanced-tenant-security";
 import path from 'path';
 import fs from 'fs';
 
-// Production Environment Configuration
-const isDevelopment = true; // Always development mode
+// Environment Configuration
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
-console.log('[ENV] Starting CareConnect in DEVELOPMENT mode');
+console.log(`[ENV] Starting CareConnect in ${isDevelopment ? 'DEVELOPMENT' : 'PRODUCTION'} mode`);
 console.log(`[ENV] Node environment: ${process.env.NODE_ENV}`);
 console.log(`[ENV] Replit ID: ${process.env.REPL_ID || 'undefined'}`);
 
-// Basic configuration - Phase 1 validation removed
+// Basic configuration
 const cfg = {
   APP_BASE_URL: process.env.APP_BASE_URL || 'http://localhost:5000',
   CORS_ORIGINS: process.env.CORS_ORIGINS,
   NODE_ENV: process.env.NODE_ENV || 'development'
 };
 
-// Basic development checks
-console.log('[DEV] Continuing in development mode...');
+if (isDevelopment) {
+  console.log('[DEV] Continuing in development mode...');
+} else {
+  console.log('[PROD] Running in production mode...');
+}
 
 // Load local environment variables for development FIRST
 const localEnvPath = path.join(process.cwd(), '.env.local');
@@ -151,9 +154,14 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     });
   });
 
-  // Development frontend setup
-  console.log("[FRONTEND] Setting up Vite development server");
-  await setupVite(app, server);
+  // Environment-aware frontend setup
+  if (isDevelopment) {
+    console.log("[FRONTEND] Setting up Vite development server");
+    await setupVite(app, server);
+  } else {
+    console.log("[FRONTEND] Setting up static file serving for production");
+    serveStatic(app);
+  }
 
   // Health endpoint already registered above
 
@@ -168,13 +176,19 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     host,
     reusePort: true,
   }, () => {
-    console.log(`[SERVER] CareConnect DEVELOPMENT server started`);
+    console.log(`[SERVER] CareConnect ${isDevelopment ? 'DEVELOPMENT' : 'PRODUCTION'} server started`);
     console.log(`[SERVER] Listening on http://${host}:${port}`);
-    console.log(`[SERVER] Environment: development`);
+    console.log(`[SERVER] Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`[SERVER] Health check: http://${host}:${port}/health`);
-    console.log(`[DEVELOPMENT] Full debugging enabled`);
-    console.log(`[DEVELOPMENT] Permissive CORS for development`);
-    console.log(`[DEVELOPMENT] Vite development server active`);
+    
+    if (isDevelopment) {
+      console.log(`[DEVELOPMENT] Full debugging enabled`);
+      console.log(`[DEVELOPMENT] Permissive CORS for development`);
+      console.log(`[DEVELOPMENT] Vite development server active`);
+    } else {
+      console.log(`[PRODUCTION] Static file serving active`);
+      console.log(`[PRODUCTION] Built assets served from dist/public`);
+    }
     
     log(`serving on port ${port}`);
   });
