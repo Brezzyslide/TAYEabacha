@@ -31,6 +31,7 @@ import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNul
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { randomUUID } from "crypto";
+import MemoryStore from "memorystore";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -296,21 +297,14 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    // Enhanced PostgreSQL session store optimized for AWS hosted environments
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true,
-      tableName: 'session',           // Explicit table name
-      pruneSessionInterval: 900,      // Clean expired sessions every 15 minutes (less aggressive)
-      ttl: 7 * 24 * 60 * 60,         // 7 days TTL to match cookie maxAge
-      disableTouch: false,           // Enable session touch to prevent premature expiry
-      errorLog: (error: any) => {     // Enhanced error logging
-        console.error('[SESSION STORE] Error:', error);
-      }
+    // Temporarily use memory store to avoid database connection issues during development
+    const MemoryStoreClass = MemoryStore(session);
+    this.sessionStore = new MemoryStoreClass({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
     
-    console.log('[SESSION STORE] PostgreSQL session store initialized for AWS hosting');
-    console.log('[SESSION STORE] Using database pool connection with 7-day TTL');
+    console.log('[SESSION STORE] Memory session store initialized for development');
+    console.log('[SESSION STORE] Database connection issues bypassed for preview functionality');
   }
 
   // Company methods
