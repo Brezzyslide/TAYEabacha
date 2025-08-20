@@ -73,7 +73,7 @@ async function updateStaffHourAllocation(shiftId: number, userId: number, tenant
     
     // Update the hour allocation
     await storage.updateHourAllocation(staffAllocation.id, {
-      hoursUsed: newUsedHours.toString(),
+      maxHours: staffAllocation.maxHours,
       remainingHours: newRemainingHours.toString()
     }, tenantId);
     
@@ -404,8 +404,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           adminCanSeeSubmissions: submitted.length > 0,
           latestSubmission: submitted.length > 0 ? submitted[0].submittedAt : null
         };
-      } catch (error) {
-        results.tests.timesheetSubmission = { status: 'failed', error: error.message };
+      } catch (error: any) {
+        results.tests.timesheetSubmission = { status: 'failed', error: error?.message };
       }
 
       // TEST 2: Budget deduction functionality
@@ -419,8 +419,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .limit(5);
 
         const budgetTransactions = await db.select()
-          .from(schema.budgetTransactions)
-          .where(eq(schema.budgetTransactions.tenantId, req.user.tenantId));
+          .from(budgetTransactions)
+          .where(eq(budgetTransactions.tenantId, req.user.tenantId));
 
         results.tests.budgetDeduction = {
           status: 'tested',
@@ -433,8 +433,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdAt: t.createdAt
           }))
         };
-      } catch (error) {
-        results.tests.budgetDeduction = { status: 'failed', error: error.message };
+      } catch (error: any) {
+        results.tests.budgetDeduction = { status: 'failed', error: error?.message };
       }
 
       // TEST 3: Multi-tenant consistency check
@@ -452,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .where(eq(shifts.tenantId, tenant.id));
 
           consistencyResults.push({
-            tenantId: tenant.id,
+            tenantId: tenant.id.toString(),
             users: parseInt(userCount[0].count),
             shifts: parseInt(shiftCount[0].count)
           });

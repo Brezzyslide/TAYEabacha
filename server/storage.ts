@@ -1248,10 +1248,10 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`[AWS STORAGE DEBUG] Successfully transformed ${transformedReports.length} reports`);
       return transformedReports;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching incident reports with closures:", error);
-      console.error("Error details:", error.message);
-      console.error("Error stack:", error.stack);
+      console.error("Error details:", error?.message);
+      console.error("Error stack:", error?.stack);
       
       // Fallback: return basic incident reports if the complex join fails
       console.log(`[AWS STORAGE DEBUG] Falling back to basic incident reports for tenant ${tenantId}`);
@@ -2945,10 +2945,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(serviceAgreements.companyId, companyId));
 
     if (clientId) {
-      return await query.where(and(
-        eq(serviceAgreements.companyId, companyId),
-        eq(serviceAgreements.clientId, clientId)
-      )).orderBy(desc(serviceAgreements.createdAt));
+      return await db.select().from(serviceAgreements)
+        .where(and(
+          eq(serviceAgreements.companyId, companyId),
+          eq(serviceAgreements.clientId, clientId)
+        )).orderBy(desc(serviceAgreements.createdAt));
     }
 
     return await query.orderBy(desc(serviceAgreements.createdAt));
