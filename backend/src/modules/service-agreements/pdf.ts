@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { db } from '../../../../server/db';
-import { companies, clients, termsTemplates } from '../../../../shared/schema';
+import { companies, clients, tenantTermsTemplates } from '../../../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { serviceAgreementService } from './service';
 import { getLineItemTotal, itemToRateSet, formatCurrency } from '../../../../shared/utils/calc';
@@ -274,8 +274,8 @@ export class ServiceAgreementPDFService {
     try {
       const [template] = await db
         .select()
-        .from(termsTemplates)
-        .where(eq(termsTemplates.companyId, tenantData.id))
+        .from(tenantTermsTemplates)
+        .where(eq(tenantTermsTemplates.companyId, tenantData.id))
         .limit(1);
       termsTemplate = template;
     } catch (error) {
@@ -286,8 +286,8 @@ export class ServiceAgreementPDFService {
       // Parse the terms content into sections with proper formatting
       const sections = termsTemplate.body.split(/(?=\d+\.\s)/).filter(section => section.trim());
       
-      sections.forEach(section => {
-        const lines = section.trim().split('\n').filter(line => line.trim());
+      sections.forEach((section: string) => {
+        const lines = section.trim().split('\n').filter((line: string) => line.trim());
         if (lines.length === 0) return;
         
         // First line should be the title with section number
@@ -304,11 +304,11 @@ export class ServiceAgreementPDFService {
           yPosition += sectionLines.length * 5 + 3;
           
           // Section content
-          const content = lines.slice(1).filter(line => line.trim());
+          const content = lines.slice(1).filter((line: string) => line.trim());
           if (content.length > 0) {
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            content.forEach(contentLine => {
+            content.forEach((contentLine: string) => {
               const contentLines = doc.splitTextToSize(contentLine, pageWidth - 50);
               doc.text(contentLines, 30, yPosition);
               yPosition += contentLines.length * 4 + 2;
