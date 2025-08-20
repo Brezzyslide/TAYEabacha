@@ -585,7 +585,7 @@ export class ServiceAgreementController {
       
       // Generate the public sharing URL
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
-      const sharingUrl = `${baseUrl}/sign/${id}/${token.token}`;
+      const sharingUrl = `${baseUrl}/sign/${token.token}`;
       
       console.log(`[CONTROLLER] Created sharing link for agreement ${id}, role: ${signerRole}`);
       

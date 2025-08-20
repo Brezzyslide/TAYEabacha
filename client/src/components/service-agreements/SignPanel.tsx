@@ -73,10 +73,12 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
       return await response.json();
     },
     onSuccess: (data) => {
+      console.log('[SHARING] Response data:', data);
       const baseUrl = window.location.origin;
-      const fullLink = `${baseUrl}/sign/${data.token}`;
+      // Use the correct path format: /sign/{token}
+      const fullLink = `${baseUrl}/sign/${data.token?.token || data.token}`;
       setGeneratedLink(fullLink);
-      setAccessCode(data.accessCode);
+      setAccessCode(data.accessCode || data.token?.accessCode);
       
       toast({
         title: "Sharing Link Created",
