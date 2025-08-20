@@ -539,6 +539,72 @@ export default function CompliancePage() {
             </Card>
           </div>
 
+          {/* Quick Actions */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">NDIS Service Agreements</h3>
+                    <p className="text-sm text-muted-foreground">Create and manage digital agreements</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-4"
+                  onClick={() => setActiveTab("service-agreements")}
+                >
+                  Manage Agreements
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-green-500 transition-colors cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Referral Forms</h3>
+                    <p className="text-sm text-muted-foreground">Create shareable third-party forms</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-4"
+                  onClick={() => window.location.href = "/compliance/referral-forms"}
+                >
+                  Create Referral Form
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-500 transition-colors cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                    <AlertTriangle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Safety & Drills</h3>
+                    <p className="text-sm text-muted-foreground">Track evacuation drills and safety</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-4"
+                  onClick={() => setActiveTab("evacuation-drills")}
+                >
+                  Manage Safety
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Downloadable Forms Library */}
           <Card>
             <CardHeader>

@@ -824,6 +824,88 @@ export const insertPaymentHistorySchema = createInsertSchema(paymentHistory).omi
   createdAt: true,
 });
 
+// Referral Forms
+export const referralForms = pgTable("referral_forms", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  formType: text("form_type").notNull(), // "medical", "therapy", "assessment", "support", "other"
+  title: text("title").notNull(),
+  description: text("description"),
+  fieldsSchema: jsonb("fields_schema").notNull(), // JSON schema for form fields
+  isActive: boolean("is_active").default(true),
+  requiresApproval: boolean("requires_approval").default(false),
+  allowMultipleSubmissions: boolean("allow_multiple_submissions").default(false),
+  customBranding: jsonb("custom_branding"), // Logo, colors, etc.
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Referral Form Submissions
+export const referralSubmissions = pgTable("referral_submissions", {
+  id: serial("id").primaryKey(),
+  referralFormId: integer("referral_form_id").notNull().references(() => referralForms.id),
+  submissionData: jsonb("submission_data").notNull(), // Form response data
+  submitterInfo: jsonb("submitter_info").notNull(), // Name, email, organization, etc.
+  status: text("status").default("pending"), // "pending", "approved", "rejected", "processing"
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  clientId: integer("client_id").references(() => clients.id), // Link to client if applicable
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+});
+
+// Referral Shareable Links
+export const referralLinks = pgTable("referral_links", {
+  id: serial("id").primaryKey(),
+  referralFormId: integer("referral_form_id").notNull().references(() => referralForms.id),
+  accessCode: text("access_code").notNull().unique(), // 8-character unique code
+  expiresAt: timestamp("expires_at"),
+  maxUses: integer("max_uses"), // null = unlimited
+  currentUses: integer("current_uses").default(0),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Referral Link Access Log
+export const referralAccessLog = pgTable("referral_access_log", {
+  id: serial("id").primaryKey(),
+  referralLinkId: integer("referral_link_id").notNull().references(() => referralLinks.id),
+  accessedAt: timestamp("accessed_at").defaultNow().notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  submissionId: integer("submission_id").references(() => referralSubmissions.id), // If submission was made
+});
+
+// Type exports for referral forms
+export type ReferralForm = typeof referralForms.$inferSelect;
+export type ReferralSubmission = typeof referralSubmissions.$inferSelect;
+export type ReferralLink = typeof referralLinks.$inferSelect;
+export type ReferralAccessLog = typeof referralAccessLog.$inferSelect;
+
+// Insert schemas for referral forms
+export const insertReferralFormSchema = createInsertSchema(referralForms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertReferralSubmissionSchema = createInsertSchema(referralSubmissions).omit({
+  id: true,
+  submittedAt: true,
+});
+
+export const insertReferralLinkSchema = createInsertSchema(referralLinks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralAccessLogSchema = createInsertSchema(referralAccessLog).omit({
+  id: true,
+  accessedAt: true,
+});
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,

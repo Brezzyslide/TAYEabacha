@@ -4,6 +4,8 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { serviceAgreementRouter } from "../backend/src/modules/service-agreements";
 import { publicServiceAgreementRouter } from "../backend/src/modules/service-agreements/public-routes";
+import { referralFormRouter } from "../backend/src/modules/referral-forms";
+import { publicReferralFormRouter } from "../backend/src/modules/referral-forms/public-routes";
 // All demo data provisioning removed - tenants start completely clean
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
@@ -11237,6 +11239,12 @@ Maximum 400 words.`;
 
   // Mount service agreement routes under compliance API path - Only Admin and Coordinators can access
   app.use("/api/compliance/service-agreements", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), serviceAgreementRouter);
+  
+  // Mount public referral form routes (no authentication required)
+  app.use("/api/public/referral", publicReferralFormRouter);
+  
+  // Mount referral form routes under compliance API path - Only Admin and Coordinators can access
+  app.use("/api/compliance/referral-forms", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), referralFormRouter);
 
   // Emergency demo data cleanup endpoint (ConsoleManager only)
   app.post("/api/emergency-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {
