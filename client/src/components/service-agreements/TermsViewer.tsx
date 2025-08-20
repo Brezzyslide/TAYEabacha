@@ -50,7 +50,7 @@ export default function TermsViewer({
     retry: false,
   });
 
-  // Parse the terms content into sections
+  // Parse the terms content into sections with proper formatting
   const parseTermsContent = (body: string) => {
     if (!body) return [];
     
@@ -61,18 +61,20 @@ export default function TermsViewer({
       const lines = section.trim().split('\n').filter(line => line.trim());
       if (lines.length === 0) return null;
       
-      // First line should be the title
-      const titleMatch = lines[0].match(/^\d+\.\s*(.+)$/);
-      const title = titleMatch ? titleMatch[1] : lines[0];
+      // First line should be the title with section number
+      const titleMatch = lines[0].match(/^(\d+\.\s*)(.+)$/);
+      const sectionNumber = titleMatch ? titleMatch[1] : '';
+      const title = titleMatch ? titleMatch[2] : lines[0];
       
       // Rest are content
       const content = lines.slice(1).filter(line => line.trim());
       
       return {
+        sectionNumber,
         title,
-        content: content.length > 0 ? content : [title]
+        content: content.length > 0 ? content : []
       };
-    }).filter((section): section is { title: string; content: string[] } => section !== null);
+    }).filter((section): section is { sectionNumber: string; title: string; content: string[] } => section !== null);
   };
 
   const standardTerms = termsTemplate ? parseTermsContent(termsTemplate.body) : [];
@@ -157,13 +159,30 @@ export default function TermsViewer({
                       <span className="ml-2 text-slate-600">Loading terms...</span>
                     </div>
                   ) : termsTemplate ? (
-                    <div className="prose prose-sm max-w-none text-slate-600 dark:text-slate-400">
-                      <div className="whitespace-pre-wrap">{termsTemplate.body}</div>
+                    <div className="space-y-6">
+                      {parseTermsContent(termsTemplate.body).map((section, index) => (
+                        <div key={index} className="space-y-3">
+                          <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-baseline gap-1">
+                            <span className="text-blue-600 dark:text-blue-400">{section.sectionNumber}</span>
+                            <span>{section.title}</span>
+                          </h4>
+                          {section.content.length > 0 && (
+                            <div className="space-y-2 ml-6">
+                              {section.content.map((item, itemIndex) => (
+                                <p key={itemIndex} className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                  {item}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                          {index < parseTermsContent(termsTemplate.body).length - 1 && <Separator className="my-4" />}
+                        </div>
+                      ))}
                     </div>
                   ) : standardTerms.length > 0 ? (
                     standardTerms.map((section, index) => (
                       <div key={index} className="space-y-3">
-                        <h4 className="font-medium text-slate-900 dark:text-slate-100">
+                        <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                           {section.title}
                         </h4>
                         <ul className="space-y-2 ml-4">

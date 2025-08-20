@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { db } from '../../../../server/db';
-import { companies, clients } from '../../../../shared/schema';
+import { companies, clients, termsTemplates } from '../../../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { serviceAgreementService } from './service';
 import { getLineItemTotal, itemToRateSet, formatCurrency } from '../../../../shared/utils/calc';
@@ -61,7 +61,7 @@ export class ServiceAgreementPDFService {
     yPosition = this.addGrandTotal(doc, agreement.items || [], yPosition);
 
     // Terms & Conditions Section
-    yPosition = this.addTermsAndConditions(doc, agreement, tenantData, yPosition, pageWidth, pageHeight);
+    yPosition = await this.addTermsAndConditions(doc, agreement, tenantData, yPosition, pageWidth, pageHeight);
 
     // Signatures Section
     yPosition = this.addSignatures(doc, agreement.signatures || [], yPosition, pageWidth, pageHeight);
@@ -256,7 +256,7 @@ export class ServiceAgreementPDFService {
   /**
    * Add terms and conditions section
    */
-  private addTermsAndConditions(doc: any, agreement: any, tenantData: any, yPosition: number, pageWidth: number, pageHeight: number): number {
+  private async addTermsAndConditions(doc: any, agreement: any, tenantData: any, yPosition: number, pageWidth: number, pageHeight: number): Promise<number> {
     // Check if we need a new page
     if (yPosition > pageHeight - 80) {
       doc.addPage();
@@ -264,46 +264,109 @@ export class ServiceAgreementPDFService {
       yPosition = 35;
     }
 
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('Terms & Conditions', 20, yPosition);
-    yPosition += 10;
+    yPosition += 12;
 
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
+    // Fetch terms template from database
+    let termsTemplate;
+    try {
+      const [template] = await db
+        .select()
+        .from(termsTemplates)
+        .where(eq(termsTemplates.companyId, tenantData.id))
+        .limit(1);
+      termsTemplate = template;
+    } catch (error) {
+      console.error('Error fetching terms template:', error);
+    }
 
-    // Standard NDIS terms
-    const standardTerms = [
-      '1. This agreement is governed by the NDIS Practice Standards and Quality and Safeguards Commission requirements.',
-      '2. Services will be delivered in accordance with the participant\'s NDIS plan and goals.',
-      '3. All support workers are appropriately qualified and undergo regular training updates.',
-      '4. The participant has the right to choose their support workers and request changes if needed.',
-      '5. Privacy and confidentiality will be maintained in accordance with Australian Privacy Principles.',
-      '6. Incidents will be reported in accordance with NDIS incident management requirements.',
-      '7. Feedback and complaints processes are available and will be communicated to participants.',
-      '8. This agreement may be reviewed and updated as required to meet changing needs.'
-    ];
+    if (termsTemplate && termsTemplate.body) {
+      // Parse the terms content into sections with proper formatting
+      const sections = termsTemplate.body.split(/(?=\d+\.\s)/).filter(section => section.trim());
+      
+      sections.forEach(section => {
+        const lines = section.trim().split('\n').filter(line => line.trim());
+        if (lines.length === 0) return;
+        
+        // First line should be the title with section number
+        const titleMatch = lines[0].match(/^(\d+\.\s*)(.+)$/);
+        if (titleMatch) {
+          const sectionNumber = titleMatch[1];
+          const title = titleMatch[2];
+          
+          // Bold and larger section heading
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          const sectionLines = doc.splitTextToSize(`${sectionNumber}${title}`, pageWidth - 40);
+          doc.text(sectionLines, 20, yPosition);
+          yPosition += sectionLines.length * 5 + 3;
+          
+          // Section content
+          const content = lines.slice(1).filter(line => line.trim());
+          if (content.length > 0) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            content.forEach(contentLine => {
+              const contentLines = doc.splitTextToSize(contentLine, pageWidth - 50);
+              doc.text(contentLines, 30, yPosition);
+              yPosition += contentLines.length * 4 + 2;
+            });
+          }
+          yPosition += 4; // Extra spacing between sections
+        } else {
+          // Handle lines that don't match the expected format
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          const termLines = doc.splitTextToSize(lines[0], pageWidth - 40);
+          doc.text(termLines, 20, yPosition);
+          yPosition += termLines.length * 4 + 2;
+        }
 
-    standardTerms.forEach((term) => {
-      const lines = doc.splitTextToSize(term, pageWidth - 40);
-      doc.text(lines, 20, yPosition);
-      yPosition += lines.length * 4 + 2;
+        // Check if we need a new page
+        if (yPosition > pageHeight - 50) {
+          doc.addPage();
+          this.addAgreementHeader(doc, tenantData.name, 'NDIS SERVICE AGREEMENT', pageWidth);
+          yPosition = 35;
+        }
+      });
+    } else {
+      // Fallback to hardcoded terms if template not found
+      const standardTerms = [
+        '1. This agreement is governed by the NDIS Practice Standards and Quality and Safeguards Commission requirements.',
+        '2. Services will be delivered in accordance with the participant\'s NDIS plan and goals.',
+        '3. All support workers are appropriately qualified and undergo regular training updates.',
+        '4. The participant has the right to choose their support workers and request changes if needed.',
+        '5. Privacy and confidentiality will be maintained in accordance with Australian Privacy Principles.',
+        '6. Incidents will be reported in accordance with NDIS incident management requirements.',
+        '7. Feedback and complaints processes are available and will be communicated to participants.',
+        '8. This agreement may be reviewed and updated as required to meet changing needs.'
+      ];
 
-      // Check if we need a new page
-      if (yPosition > pageHeight - 40) {
-        doc.addPage();
-        this.addAgreementHeader(doc, tenantData.name, 'NDIS SERVICE AGREEMENT', pageWidth);
-        yPosition = 35;
-      }
-    });
+      standardTerms.forEach((term) => {
+        const lines = doc.splitTextToSize(term, pageWidth - 40);
+        doc.text(lines, 20, yPosition);
+        yPosition += lines.length * 4 + 2;
+
+        // Check if we need a new page
+        if (yPosition > pageHeight - 40) {
+          doc.addPage();
+          this.addAgreementHeader(doc, tenantData.name, 'NDIS SERVICE AGREEMENT', pageWidth);
+          yPosition = 35;
+        }
+      });
+    }
 
     // Custom terms from agreement
     if (agreement.termsAndConditions) {
       yPosition += 5;
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Additional Terms:', 20, yPosition);
       yPosition += 8;
       
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       const customTermsLines = doc.splitTextToSize(agreement.termsAndConditions, pageWidth - 40);
       doc.text(customTermsLines, 20, yPosition);
