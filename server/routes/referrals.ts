@@ -13,6 +13,15 @@ import { randomUUID } from "crypto";
 
 const router = Router();
 
+// Temporary in-memory storage for referral links and submissions
+// This works around the database space allocation issue
+const memoryStore = {
+  links: new Map<string, any>(),
+  submissions: new Map<string, any>(),
+  nextLinkId: 1,
+  nextSubmissionId: 1
+};
+
 // Behaviour item schema for validation
 const BehaviourItem = z.object({
   behaviour: z.string().min(1),
@@ -105,28 +114,29 @@ router.post("/links", async (req, res) => {
     }
 
     const { expiresAt, maxUses } = req.body;
-    const linkId = randomUUID();
+    const linkId = memoryStore.nextLinkId++;
     const tenantId = user.tenantId;
-
-    // Create the link record
-    const [link] = await db.insert(referralLinks).values({
-      tenantId,
-      accessCode: "temp", // Will be updated with JWT
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
-      maxUses: maxUses || null,
-      createdBy: user.id,
-    }).returning();
 
     // Generate JWT token with link ID and tenant ID
     const token = signReferralToken({ 
-      linkId: link.id.toString(), 
+      linkId: linkId.toString(), 
       tenantId 
     });
 
-    // Update the link with the JWT token
-    await db.update(referralLinks)
-      .set({ accessCode: token })
-      .where(eq(referralLinks.id, link.id));
+    // Create the link record in memory
+    const link = {
+      id: linkId,
+      tenantId,
+      accessCode: token,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      maxUses: maxUses || null,
+      currentUses: 0,
+      isActive: true,
+      createdBy: user.id,
+      createdAt: new Date(),
+    };
+
+    memoryStore.links.set(linkId.toString(), link);
 
     // Return the shareable URL
     const baseUrl = process.env.NODE_ENV === "production" 
@@ -151,9 +161,7 @@ router.get("/links/:token", async (req, res) => {
   try {
     const payload = verifyReferralToken(req.params.token);
     
-    const [link] = await db.select()
-      .from(referralLinks)
-      .where(eq(referralLinks.id, parseInt(payload.linkId)));
+    const link = memoryStore.links.get(payload.linkId);
     
     if (!link) {
       return res.status(404).json({ error: "invalid-link" });
@@ -186,9 +194,7 @@ router.post("/submit/:token", async (req, res) => {
   try {
     const payload = verifyReferralToken(req.params.token);
     
-    const [link] = await db.select()
-      .from(referralLinks)
-      .where(eq(referralLinks.id, parseInt(payload.linkId)));
+    const link = memoryStore.links.get(payload.linkId);
     
     if (!link) {
       return res.status(404).json({ error: "invalid-link" });
@@ -209,8 +215,10 @@ router.post("/submit/:token", async (req, res) => {
     // Validate the form data
     const parsed = ReferralFormSchema.parse(req.body);
     
-    // Create the referral submission
-    const [referral] = await db.insert(referralSubmissions).values({
+    // Create the referral submission in memory
+    const submissionId = memoryStore.nextSubmissionId++;
+    const referral = {
+      id: submissionId,
       tenantId: payload.tenantId,
       linkId: link.id,
       dateOfReferral: parsed.dateOfReferral,
@@ -254,12 +262,14 @@ router.post("/submit/:token", async (req, res) => {
       invoiceAddress: parsed.invoiceAddress,
       source: "web-form",
       status: "pending",
-    }).returning();
+      submittedAt: new Date(),
+    };
 
-    // Increment link usage
-    await db.update(referralLinks)
-      .set({ currentUses: (link.currentUses || 0) + 1 })
-      .where(eq(referralLinks.id, link.id));
+    memoryStore.submissions.set(submissionId.toString(), referral);
+
+    // Increment link usage in memory
+    link.currentUses = (link.currentUses || 0) + 1;
+    memoryStore.links.set(payload.linkId, link);
 
     console.log(`[REFERRAL] New submission received for tenant ${payload.tenantId}: ${parsed.clientName}`);
 
@@ -289,21 +299,14 @@ router.get("/", async (req, res) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const submissions = await db.select()
-      .from(referralSubmissions)
-      .where(eq(referralSubmissions.tenantId, user.tenantId))
-      .orderBy(referralSubmissions.submittedAt);
+    // Get submissions from memory for this tenant
+    const submissions = Array.from(memoryStore.submissions.values())
+      .filter(submission => submission.tenantId === user.tenantId)
+      .sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
 
     res.json(submissions);
   } catch (error) {
     console.error("Get referrals error:", error);
-    
-    // If table doesn't exist, return empty array
-    if ((error as any)?.code === '42P01') {
-      console.log("Referral submissions table doesn't exist, returning empty array");
-      return res.json([]);
-    }
-    
     res.status(500).json({ error: "Failed to fetch referrals" });
   }
 });
