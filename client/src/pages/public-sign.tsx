@@ -40,6 +40,9 @@ export default function PublicSignPage() {
 
   const token = params?.token;
 
+  // State for manually triggering verification
+  const [shouldVerify, setShouldVerify] = useState(false);
+
   // Query to verify access code and get agreement details
   const { data: agreementData, isLoading, error } = useQuery({
     queryKey: ['/api/sign/verify-access', token, accessCode],
@@ -51,12 +54,13 @@ export default function PublicSignPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to verify access code');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to verify access code');
       }
       
       return response.json();
     },
-    enabled: !!token && !!accessCode && verificationStep === "access_code",
+    enabled: !!token && !!accessCode && shouldVerify && verificationStep === "access_code",
     retry: false
   });
 
@@ -109,6 +113,7 @@ export default function PublicSignPage() {
       });
       return;
     }
+    setShouldVerify(true);
   };
 
   // Handle signature submission
@@ -159,8 +164,24 @@ export default function PublicSignPage() {
   useEffect(() => {
     if (agreementData && verificationStep === "access_code") {
       setVerificationStep("signing");
+      toast({
+        title: "Access Code Verified",
+        description: "You can now proceed to sign the agreement.",
+      });
     }
-  }, [agreementData, verificationStep]);
+  }, [agreementData, verificationStep, toast]);
+
+  // Effect to show error messages when verification fails
+  useEffect(() => {
+    if (error && shouldVerify) {
+      toast({
+        title: "Access Code Invalid",
+        description: error.message || "The access code is incorrect or has expired.",
+        variant: "destructive",
+      });
+      setShouldVerify(false); // Reset so user can try again
+    }
+  }, [error, shouldVerify, toast]);
 
   if (!token) {
     return (
