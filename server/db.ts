@@ -22,11 +22,6 @@ export const pool = new Pool({
   min: 2,                       // Minimum connections
   idleTimeoutMillis: 60000,     // Longer idle timeout (1 minute)
   connectionTimeoutMillis: 10000, // Longer connection timeout (10 seconds)
-  acquireTimeoutMillis: 10000,  // Wait longer for available connection
-  createTimeoutMillis: 10000,   // Longer create timeout
-  destroyTimeoutMillis: 5000,   // Cleanup timeout
-  reapIntervalMillis: 1000,     // Check for idle connections every second
-  createRetryIntervalMillis: 200, // Retry interval
   allowExitOnIdle: false,       // Don't exit on idle
 });
 
