@@ -327,9 +327,14 @@ export class ServiceAgreementPDFService {
       ];
 
       standardTerms.forEach((term) => {
+        // Ensure consistent formatting for fallback terms
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        
         const lines = doc.splitTextToSize(term, pageWidth - 40);
         doc.text(lines, 20, yPosition);
-        yPosition += lines.length * 4 + 2;
+        yPosition += lines.length * 4.5 + 3;
 
         // Check if we need a new page
         if (yPosition > pageHeight - 40) {
@@ -345,6 +350,7 @@ export class ServiceAgreementPDFService {
       yPosition += 5;
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0); // Ensure black text
       doc.text('Additional Terms:', 20, yPosition);
       yPosition += 8;
       
@@ -418,24 +424,30 @@ export class ServiceAgreementPDFService {
       yPosition = 35;
     }
 
-    // Bold and larger section heading
+    // Bold and larger section heading (blue color)
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(59, 130, 246); // Blue color for headings
     const sectionHeader = `${section.number}. ${section.title}`;
     const sectionLines = doc.splitTextToSize(sectionHeader, pageWidth - 40);
     doc.text(sectionLines, 20, yPosition);
-    yPosition += sectionLines.length * 5 + 3;
+    yPosition += sectionLines.length * 6 + 5;
+    
+    // Reset to black for content
+    doc.setTextColor(0, 0, 0);
     
     // Section content
     if (section.content.length > 0) {
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      
-      section.content.forEach((contentLine: string) => {
+      section.content.forEach((contentLine: string, index: number) => {
         if (contentLine.trim()) {
-          const contentLines = doc.splitTextToSize(contentLine, pageWidth - 50);
+          // Always use normal font for content (no bold)
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(0, 0, 0);
+          
+          const contentLines = doc.splitTextToSize(contentLine.trim(), pageWidth - 50);
           doc.text(contentLines, 30, yPosition);
-          yPosition += contentLines.length * 4 + 2;
+          yPosition += contentLines.length * 4.5 + 3;
           
           // Check if we need a new page during content
           if (yPosition > pageHeight - 40) {
@@ -443,11 +455,14 @@ export class ServiceAgreementPDFService {
             this.addAgreementHeader(doc, tenantData.name, 'NDIS SERVICE AGREEMENT', pageWidth);
             yPosition = 35;
           }
+        } else {
+          // Add smaller spacing for empty lines
+          yPosition += 2;
         }
       });
     }
     
-    yPosition += 6; // Extra spacing between sections
+    yPosition += 8; // Extra spacing between sections
     return yPosition;
   }
 
