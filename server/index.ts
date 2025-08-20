@@ -1,5 +1,9 @@
 // Backend bootstrap removed - Phase 1 cleanup
 
+// Load environment variables FIRST before any other imports
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
@@ -29,23 +33,9 @@ if (isDevelopment) {
   console.log('[PROD] Running in production mode...');
 }
 
-// Load local environment variables for development FIRST
-const localEnvPath = path.join(process.cwd(), '.env.local');
-if (fs.existsSync(localEnvPath)) {
-  const envFile = fs.readFileSync(localEnvPath, 'utf8');
-  envFile.split('\n').forEach(line => {
-    const [key, value] = line.split('=');
-    if (key && value) {
-      process.env[key.trim()] = value.trim();
-      console.log(`[ENV] Override: ${key.trim()} = ${value.includes('DATABASE_URL') ? value.replace(/:[^:]*@/, ':***@') : value.substring(0, 20)}...`);
-    }
-  });
-  console.log('[ENV] Loaded local environment variables');
-  console.log('[ENV] GMAIL_EMAIL now set to:', process.env.GMAIL_EMAIL);
-  console.log('[ENV] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
-} else {
-  console.log('[ENV] .env.local file not found, using default environment');
-}
+console.log('[ENV] Environment variables loaded via dotenv');
+console.log('[ENV] GMAIL_EMAIL now set to:', process.env.GMAIL_EMAIL);
+console.log('[ENV] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
 
 // Force environment logging for debugging
 console.log('[ENV] FINAL CHECK:');
