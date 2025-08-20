@@ -262,9 +262,14 @@ export default function PublicReferralForm() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 
+                {/* Header Section - Matching the design */}
+                <div className="bg-amber-400 px-4 py-3 rounded-lg border-l-4 border-amber-600">
+                  <h3 className="text-lg font-semibold text-black">Referral and participant details</h3>
+                </div>
+                
                 {/* Basic Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Basic Information</h3>
+                  <h4 className="text-md font-medium text-gray-900">Basic Information</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -386,7 +391,9 @@ export default function PublicReferralForm() {
 
                 {/* Support Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Support Information</h3>
+                  <div className="bg-blue-50 px-4 py-3 rounded-lg border-l-4 border-blue-400">
+                    <h3 className="text-lg font-semibold text-blue-900">Support Information</h3>
+                  </div>
                   
                   <FormField
                     control={form.control}
@@ -451,7 +458,9 @@ export default function PublicReferralForm() {
 
                 {/* Medical Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Medical Information</h3>
+                  <div className="bg-green-50 px-4 py-3 rounded-lg border-l-4 border-green-400">
+                    <h3 className="text-lg font-semibold text-green-900">Medical Information</h3>
+                  </div>
                   
                   <FormField
                     control={form.control}
