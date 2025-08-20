@@ -34,8 +34,14 @@ export default function TotalsBar({ items }: TotalsBarProps) {
       const weeks = toNumber(item.weeks) || 1;
       const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
       
+      // Support both field naming patterns (old and new)
       totals.dayTotal += toNumber(item.hoursDay) * toNumber(item.unitDay) * ratioMultiplier * weeks;
-      totals.eveningTotal += toNumber(item.hoursWeekdayEvening) * toNumber(item.unitWeekdayEvening) * ratioMultiplier * weeks;
+      
+      // Evening - check both hoursEvening and hoursWeekdayEvening
+      const eveningHours = toNumber(item.hoursEvening) || toNumber(item.hoursWeekdayEvening);
+      const eveningRate = toNumber(item.unitEvening) || toNumber(item.unitWeekdayEvening);
+      totals.eveningTotal += eveningHours * eveningRate * ratioMultiplier * weeks;
+      
       totals.activeNightTotal += toNumber(item.hoursActiveNight) * toNumber(item.unitActiveNight) * ratioMultiplier * weeks;
       totals.sleeperTotal += toNumber(item.hoursSleepover) * toNumber(item.unitSleepover) * ratioMultiplier * weeks;
       totals.saturdayTotal += toNumber(item.hoursSaturday) * toNumber(item.unitSaturday) * ratioMultiplier * weeks;
@@ -50,9 +56,14 @@ export default function TotalsBar({ items }: TotalsBarProps) {
     return items.reduce((total, item) => {
       const weeks = toNumber(item.weeks) || 1;
       const ratioMultiplier = calculateRatioMultiplier(item.ratioOfSupport || "1:1");
+      
+      // Support both field naming patterns
+      const eveningHours = toNumber(item.hoursEvening) || toNumber(item.hoursWeekdayEvening);
+      const eveningRate = toNumber(item.unitEvening) || toNumber(item.unitWeekdayEvening);
+      
       const itemTotal = 
         toNumber(item.hoursDay) * toNumber(item.unitDay) * ratioMultiplier +
-        toNumber(item.hoursWeekdayEvening) * toNumber(item.unitWeekdayEvening) * ratioMultiplier +
+        eveningHours * eveningRate * ratioMultiplier +
         toNumber(item.hoursActiveNight) * toNumber(item.unitActiveNight) * ratioMultiplier +
         toNumber(item.hoursSleepover) * toNumber(item.unitSleepover) * ratioMultiplier +
         toNumber(item.hoursSaturday) * toNumber(item.unitSaturday) * ratioMultiplier +
@@ -66,9 +77,13 @@ export default function TotalsBar({ items }: TotalsBarProps) {
   const calculateTotalHours = () => {
     return items.reduce((total, item) => {
       const weeks = toNumber(item.weeks) || 1;
+      
+      // Support both field naming patterns
+      const eveningHours = toNumber(item.hoursEvening) || toNumber(item.hoursWeekdayEvening);
+      
       const itemHours = 
         toNumber(item.hoursDay) +
-        toNumber(item.hoursWeekdayEvening) +
+        eveningHours +
         toNumber(item.hoursActiveNight) +
         toNumber(item.hoursSleepover) +
         toNumber(item.hoursSaturday) +
@@ -120,7 +135,7 @@ export default function TotalsBar({ items }: TotalsBarProps) {
                     {rate.label}
                   </span>
                   <span className="text-sm font-medium">
-                    {formatCurrency(rate.amount)}
+                    ${rate.amount.toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -131,7 +146,7 @@ export default function TotalsBar({ items }: TotalsBarProps) {
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Subtotal</span>
                     <span className="text-sm font-medium">
-                      {formatCurrency(grandTotal)}
+                      ${grandTotal.toFixed(2)}
                     </span>
                   </div>
                 </>
@@ -173,7 +188,7 @@ export default function TotalsBar({ items }: TotalsBarProps) {
                   </span>
                 </div>
                 <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(grandTotal)}
+                  ${grandTotal.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -188,7 +203,7 @@ export default function TotalsBar({ items }: TotalsBarProps) {
                 Average Rate
               </div>
               <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {formatCurrency(grandTotal / totalHours)} per hour
+                ${(grandTotal / totalHours).toFixed(2)} per hour
               </div>
             </div>
           </div>

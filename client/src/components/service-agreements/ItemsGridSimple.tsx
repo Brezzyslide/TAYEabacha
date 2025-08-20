@@ -72,7 +72,7 @@ export default function ItemsGridSimple({ items, onItemsChange }: ItemsGridProps
   const getServiceTypeFromItem = (item: ServiceAgreementItem): string => {
     // Determine which service type has hours > 0
     if (Number(item.hoursDay) > 0) return 'day';
-    if (Number(item.hoursEvening) > 0) return 'evening';
+    if (Number(item.hoursEvening) > 0 || Number(item.hoursWeekdayEvening) > 0) return 'evening';
     if (Number(item.hoursActiveNight) > 0) return 'activeNight';
     if (Number(item.hoursSleepover) > 0) return 'sleepover';
     if (Number(item.hoursSaturday) > 0) return 'saturday';
@@ -84,6 +84,7 @@ export default function ItemsGridSimple({ items, onItemsChange }: ItemsGridProps
   const getItemHours = (item: ServiceAgreementItem): number => {
     if (Number(item.hoursDay) > 0) return Number(item.hoursDay);
     if (Number(item.hoursEvening) > 0) return Number(item.hoursEvening);
+    if (Number(item.hoursWeekdayEvening) > 0) return Number(item.hoursWeekdayEvening);
     if (Number(item.hoursActiveNight) > 0) return Number(item.hoursActiveNight);
     if (Number(item.hoursSleepover) > 0) return Number(item.hoursSleepover);
     if (Number(item.hoursSaturday) > 0) return Number(item.hoursSaturday);
@@ -95,6 +96,7 @@ export default function ItemsGridSimple({ items, onItemsChange }: ItemsGridProps
   const getItemUnitRate = (item: ServiceAgreementItem): number => {
     if (Number(item.hoursDay) > 0) return Number(item.unitDay);
     if (Number(item.hoursEvening) > 0) return Number(item.unitEvening);
+    if (Number(item.hoursWeekdayEvening) > 0) return Number(item.unitWeekdayEvening);
     if (Number(item.hoursActiveNight) > 0) return Number(item.unitActiveNight);
     if (Number(item.hoursSleepover) > 0) return Number(item.unitSleepover);
     if (Number(item.hoursSaturday) > 0) return Number(item.unitSaturday);
@@ -106,7 +108,8 @@ export default function ItemsGridSimple({ items, onItemsChange }: ItemsGridProps
   const calculateItemTotal = (item: ServiceAgreementItem): number => {
     const hours = getItemHours(item);
     const rate = getItemUnitRate(item);
-    return hours * rate * item.weeks;
+    const weeks = Number(item.weeks) || 1;
+    return hours * rate * weeks;
   };
 
   return (
