@@ -138,10 +138,10 @@ router.post("/links", async (req, res) => {
 
     memoryStore.links.set(linkId.toString(), link);
 
-    // Return the shareable URL
-    const baseUrl = process.env.NODE_ENV === "production" 
-      ? "https://your-domain.com" 
-      : `http://localhost:5000`;
+    // Return the shareable URL using Replit's public domain
+    const baseUrl = process.env.REPLIT_DOMAINS 
+      ? `https://${process.env.REPLIT_DOMAINS}` 
+      : `https://${process.env.REPL_SLUG || 'app'}.${process.env.REPL_OWNER || 'replit'}.replit.dev`;
     
     res.json({
       id: link.id,
