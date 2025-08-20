@@ -23,7 +23,8 @@ import {
   DollarSign,
   Receipt,
   CreditCard,
-  FileCheck
+  FileCheck,
+  ExternalLink
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,9 @@ const staffManagementNavigation = [
 ];
 
 const complianceNavigation = [
+  { name: "Compliance Overview", href: "/compliance", icon: Shield },
   { name: "Service Agreements", href: "/compliance/service-agreements", icon: FileCheck },
+  { name: "NDIS Referral Links", href: "/compliance/referral-links", icon: ExternalLink },
   { name: "Referral Forms", href: "/compliance/referral-forms", icon: Users },
 ];
 
