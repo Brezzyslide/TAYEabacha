@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,7 +17,8 @@ import {
   ChevronRight, 
   Shield, 
   AlertCircle,
-  Check
+  Check,
+  Loader2
 } from "lucide-react";
 
 interface TermsViewerProps {
@@ -24,6 +26,13 @@ interface TermsViewerProps {
   onCustomTermsChange: (terms: string) => void;
   isAccepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
+}
+
+interface TermsTemplate {
+  id: string;
+  title: string;
+  body: string;
+  isDefault: boolean;
 }
 
 export default function TermsViewer({
@@ -35,72 +44,38 @@ export default function TermsViewer({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showCustomTerms, setShowCustomTerms] = useState(false);
 
-  // Standard NDIS terms and conditions
-  const standardTerms = [
-    {
-      title: "Service Delivery Standards",
-      content: [
-        "All services will be delivered in accordance with NDIS Practice Standards and relevant legislation",
-        "Support will be provided in a manner that promotes choice, control, and independence",
-        "Services will be culturally appropriate and respectful of participant preferences",
-        "Regular reviews will be conducted to ensure service quality and participant satisfaction"
-      ]
-    },
-    {
-      title: "Participant Rights and Responsibilities",
-      content: [
-        "Participants have the right to receive safe, quality supports and services",
-        "Participants have the right to make informed choices about their supports",
-        "Participants are responsible for providing accurate information about their needs",
-        "Participants must give reasonable notice for changes or cancellations"
-      ]
-    },
-    {
-      title: "Provider Obligations",
-      content: [
-        "Maintain appropriate insurance coverage and professional registrations",
-        "Comply with all NDIS requirements including the NDIS Code of Conduct",
-        "Provide services as outlined in the participant's NDIS plan",
-        "Report any incidents or safeguarding concerns as required by law"
-      ]
-    },
-    {
-      title: "Financial Terms",
-      content: [
-        "Services will be charged in accordance with NDIS Price Guide rates",
-        "Invoices will be submitted monthly unless otherwise agreed",
-        "Cancellation fees may apply for insufficient notice as per NDIS guidelines",
-        "Any disputes regarding billing will be resolved through appropriate channels"
-      ]
-    },
-    {
-      title: "Privacy and Confidentiality",
-      content: [
-        "Personal information will be handled in accordance with Privacy Act 1988",
-        "Information will only be shared with consent or as required by law",
-        "Secure systems will be used for storing and transmitting personal data",
-        "Participants have the right to access and correct their personal information"
-      ]
-    },
-    {
-      title: "Agreement Variation and Termination",
-      content: [
-        "This agreement may be varied by mutual consent of both parties",
-        "Either party may terminate with 14 days written notice",
-        "Immediate termination may occur for serious breaches or safety concerns",
-        "Upon termination, final invoices and records transfer will be completed promptly"
-      ]
-    },
-    {
-      title: "Complaints and Disputes",
-      content: [
-        "Complaints should first be raised directly with the service provider",
-        "If unresolved, complaints may be escalated to the NDIS Quality and Safeguards Commission",
-        "Dispute resolution processes are available through appropriate channels",
-        "Participants may access independent advocacy support if needed"
-      ]
-    }
-  ];
+  // Fetch terms template from API
+  const { data: termsTemplate, isLoading: termsLoading } = useQuery<TermsTemplate>({
+    queryKey: ["/api/compliance/terms-templates/default"],
+    retry: false,
+  });
+
+  // Parse the terms content into sections
+  const parseTermsContent = (body: string) => {
+    if (!body) return [];
+    
+    // Split by section numbers (2., 3., etc.)
+    const sections = body.split(/(?=\d+\.\s)/).filter(section => section.trim());
+    
+    return sections.map(section => {
+      const lines = section.trim().split('\n').filter(line => line.trim());
+      if (lines.length === 0) return null;
+      
+      // First line should be the title
+      const titleMatch = lines[0].match(/^\d+\.\s*(.+)$/);
+      const title = titleMatch ? titleMatch[1] : lines[0];
+      
+      // Rest are content
+      const content = lines.slice(1).filter(line => line.trim());
+      
+      return {
+        title,
+        content: content.length > 0 ? content : [title]
+      };
+    }).filter((section): section is { title: string; content: string[] } => section !== null);
+  };
+
+  const standardTerms = termsTemplate ? parseTermsContent(termsTemplate.body) : [];
 
   return (
     <Card>
@@ -154,7 +129,9 @@ export default function TermsViewer({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <h3 className="font-medium">Standard NDIS Terms & Conditions</h3>
+              <h3 className="font-medium">
+                {termsTemplate?.title || "Standard NDIS Terms & Conditions"}
+              </h3>
             </div>
             <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
               <CollapsibleTrigger asChild>
@@ -174,22 +151,37 @@ export default function TermsViewer({
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4">
                 <div className="space-y-6 max-h-96 overflow-y-auto border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                  {standardTerms.map((section, index) => (
-                    <div key={index} className="space-y-3">
-                      <h4 className="font-medium text-slate-900 dark:text-slate-100">
-                        {index + 1}. {section.title}
-                      </h4>
-                      <ul className="space-y-2 ml-4">
-                        {section.content.map((item, itemIndex) => (
-                          <li key={itemIndex} className="text-sm text-slate-600 dark:text-slate-400 flex items-start gap-2">
-                            <span className="text-slate-400 mt-1">•</span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {index < standardTerms.length - 1 && <Separator />}
+                  {termsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-slate-600" />
+                      <span className="ml-2 text-slate-600">Loading terms...</span>
                     </div>
-                  ))}
+                  ) : termsTemplate ? (
+                    <div className="prose prose-sm max-w-none text-slate-600 dark:text-slate-400">
+                      <div className="whitespace-pre-wrap">{termsTemplate.body}</div>
+                    </div>
+                  ) : standardTerms.length > 0 ? (
+                    standardTerms.map((section, index) => (
+                      <div key={index} className="space-y-3">
+                        <h4 className="font-medium text-slate-900 dark:text-slate-100">
+                          {section.title}
+                        </h4>
+                        <ul className="space-y-2 ml-4">
+                          {section.content.map((item, itemIndex) => (
+                            <li key={itemIndex} className="text-sm text-slate-600 dark:text-slate-400 flex items-start gap-2">
+                              <span className="text-slate-400 mt-1">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {index < standardTerms.length - 1 && <Separator />}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">
+                      No terms template found. Please contact your administrator.
+                    </div>
+                  )}
                   
                   {customTerms && (
                     <>
@@ -212,17 +204,59 @@ export default function TermsViewer({
           {!isExpanded && (
             <div className="p-4 border rounded-lg bg-slate-50 dark:bg-slate-800">
               <div className="space-y-2">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  This agreement includes standard NDIS terms covering:
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                  {standardTerms.map((section, index) => (
-                    <div key={index} className="flex items-center gap-1">
-                      <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                      <span>{section.title}</span>
+                {termsLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-600" />
+                    <span className="text-sm text-slate-600">Loading terms preview...</span>
+                  </div>
+                ) : termsTemplate ? (
+                  <>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      This agreement includes comprehensive NDIS-compliant terms covering:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>Provider & Participant Responsibilities</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>Payment Terms & Billing</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>Cancellation Policies</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>Privacy & Information Sharing</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>Disaster & Emergency Management</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>Service Continuity & Handover</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>Agreement Termination</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span>GST & Compliance</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Total: {termsTemplate?.body ? Math.ceil(termsTemplate.body.length / 100) : 0} sections with detailed provisions
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Standard NDIS terms will be loaded automatically
+                  </p>
+                )}
                 {customTerms && (
                   <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
                     <Check className="h-3 w-3" />
