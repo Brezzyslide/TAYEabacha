@@ -60,6 +60,7 @@ const staffManagementNavigation = [
 
 const complianceNavigation = [
   { name: "Service Agreements", href: "/compliance/service-agreements", icon: FileCheck },
+  { name: "Referral Forms", href: "/compliance/referral-forms", icon: Users },
 ];
 
 const billingNavigation = [
