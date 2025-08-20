@@ -6,6 +6,7 @@ import { serviceAgreementRouter } from "../backend/src/modules/service-agreement
 import { publicServiceAgreementRouter } from "../backend/src/modules/service-agreements/public-routes";
 import { referralFormRouter } from "../backend/src/modules/referral-forms";
 import { publicReferralFormRouter } from "../backend/src/modules/referral-forms/public-routes";
+import referralRouter from "./routes/referrals";
 // All demo data provisioning removed - tenants start completely clean
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
@@ -11245,6 +11246,9 @@ Maximum 400 words.`;
   
   // Mount referral form routes under compliance API path - Only Admin and Coordinators can access
   app.use("/api/compliance/referral-forms", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), referralFormRouter);
+
+  // NDIS Referral system routes  
+  app.use("/api/referrals", referralRouter);
 
   // Emergency demo data cleanup endpoint (ConsoleManager only)
   app.post("/api/emergency-cleanup", requireAuth, requireRole(["ConsoleManager"]), async (req: any, res) => {

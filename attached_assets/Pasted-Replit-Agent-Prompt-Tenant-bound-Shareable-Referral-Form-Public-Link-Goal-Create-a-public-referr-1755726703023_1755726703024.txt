@@ -1,0 +1,712 @@
+Replit Agent Prompt: Tenant-bound Shareable Referral Form (Public Link)
+
+Goal
+Create a public referral form reachable via a shareable link like
+/share/referral/:token.
+The token is a signed JWT that embeds {tenantId, linkId}. Submissions write to the referrals table with that tenantId. No form builder. Just this one form.
+
+Tech baseline
+
+Frontend: React + TypeScript + React Hook Form + Zod + Tailwind/shadcn (use what is already in the repo)
+
+Backend: Node/Express (or existing API server)
+
+DB: Prisma or Supabase (choose the project’s current ORM)
+
+Security: JWT with REFERRAL_LINK_SECRET, CORS locked to app origin, rate limit on submit
+
+1) Database schema
+
+Create two tables: referral_links (manages public links) and referrals (stores submissions).
+
+Prisma (if using Prisma)
+
+model referral_links {
+  id         String   @id @default(uuid())
+  tenantId   String
+  token      String   @unique
+  expiresAt  DateTime?
+  maxUses    Int?
+  uses       Int      @default(0)
+  createdBy  String
+  createdAt  DateTime @default(now())
+}
+
+model referrals {
+  id                String   @id @default(uuid())
+  tenantId          String
+  linkId            String
+  // Header flags
+  dateOfReferral    DateTime
+  isNewClient       Boolean
+  isReturningClient Boolean
+  // Referrer
+  referrerName      String
+  referrerOrg       String?
+  referrerPosition  String?
+  referrerContact   String?   // phone + email free text
+  // Participant basics
+  clientName        String
+  dob               DateTime?
+  address           String?
+  phone             String?
+  // Emergency contact
+  emergencyName     String?
+  emergencyPhone    String?
+  emergencyAddress  String?
+  emergencyEmail    String?
+  // Type of support required (checkbox groups)
+  supportCategories String[]  // e.g. ["MultipleComplexDisability", "ForensicsSDA", ...]
+  planManagement    String[]  // e.g. ["PlanManagement"]
+  howWeSupport      String[]  // e.g. ["ADL","HandsOn","LegalOrder","PersonalCare",...]
+  // Strengths and profile
+  participantStrengths String?
+  ndisSupportAsFunded  String?
+  shiftDays            String?
+  shiftTimes           String?
+  preferredGender      String?  // "Male" | "Female" | "Other" | "No"
+  requiredSkillSet     String?
+  aboutParticipant     String?  // note on complexity
+  likes                String?
+  dislikes             String?
+  // Medical
+  medicalConditions    String?
+  medications          String?
+  medicationSideEffects String?
+  // Behaviour of concern table flattened
+  behaviours JSON?     // [{behaviour, trigger, management}]
+  // Funding
+  ndisNumber          String?
+  planStart           DateTime?
+  planEnd             DateTime?
+  fundManagementType  String?  // "NDIA" | "Self" | "Plan"
+  // Invoice details
+  invoiceName         String?
+  invoiceEmail        String?
+  invoicePhone        String?
+  invoiceAddress      String?
+  // Meta
+  source              String?  // e.g. website/partner/qr
+  createdAt           DateTime  @default(now())
+}
+
+
+Supabase SQL (if using SQL) – mirror the same columns
+Use text[] for arrays, jsonb for behaviours.
+
+2) JWT link strategy
+
+Sign a token with { linkId, tenantId, exp }.
+
+Secret: REFERRAL_LINK_SECRET.
+
+Token is the only thing in the URL. Never accept tenantId from client.
+
+Create helpers:
+
+// src/server/lib/referralToken.ts
+import jwt from "jsonwebtoken";
+const secret = process.env.REFERRAL_LINK_SECRET!;
+
+export function signReferralToken(payload: { linkId: string; tenantId: string; exp?: number }) {
+  return jwt.sign(payload, secret, payload.exp ? {} : { expiresIn: "90d" });
+}
+export function verifyReferralToken(token: string) {
+  return jwt.verify(token, secret) as { linkId: string; tenantId: string; exp?: number; iat: number };
+}
+
+3) Backend routes
+
+Namespace: /api/referrals.
+
+Create link (internal, auth required)
+
+// POST /api/referrals/links
+// body: { tenantId, expiresAt?: string, maxUses?: number }
+
+
+Insert into referral_links
+
+Sign token with { linkId, tenantId, exp }
+
+Return URL: ${APP_URL}/share/referral/${token}
+
+Validate link (public)
+
+// GET /api/referrals/links/:token
+
+
+Verify token and link row
+
+Check expiry and use limits
+
+Return { ok: true, tenantDisplayName?: string }
+
+Submit referral (public)
+
+// POST /api/referrals/submit/:token
+// body validated by Zod schema below
+
+
+Verify token + link
+
+Parse body
+
+Insert into referrals with tenantId from token
+
+Optionally increment uses
+
+Send intake email to tenant inbox
+
+Return 201 with new id
+
+Zod schema (backend)
+
+// src/server/validators/referral.ts
+import { z } from "zod";
+
+export const BehaviourItem = z.object({
+  behaviour: z.string().min(1),
+  trigger: z.string().optional(),
+  management: z.string().optional(),
+});
+
+export const ReferralSchema = z.object({
+  // Header + flags
+  dateOfReferral: z.string().transform((s) => new Date(s)),
+  clientStatus: z.enum(["New", "Returning"]),
+  // Referrer
+  referrerName: z.string().min(1),
+  referrerOrg: z.string().optional(),
+  referrerPosition: z.string().optional(),
+  referrerPhoneEmail: z.string().optional(),
+  // Participant basics
+  clientName: z.string().min(1),
+  dob: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  // Emergency
+  emergencyName: z.string().optional(),
+  emergencyPhone: z.string().optional(),
+  emergencyAddress: z.string().optional(),
+  emergencyEmail: z.string().optional(),
+  // Type of support required
+  supportCategories: z.array(z.enum([
+    "MultipleComplexDisability",
+    "ForensicsSDAFunded",
+    "ForensicsOutreach",
+    "NonComplexSupport",
+    "ForensicsPrivateRental"
+  ])).optional().default([]),
+  planManagement: z.array(z.enum(["PlanManagement"])).optional().default([]),
+  howWeSupport: z.array(z.enum([
+    "ADL",
+    "HandsOnSupervision",
+    "LegalOrderCompliance",
+    "PersonalCare",
+    "CommunityAccess",
+    "TransportTraining",
+    "SocialGroupActivity",
+    "BehaviouralManagement",
+    "CompanionshipMentorship",
+    "RestrictivePracticeImplementation"
+  ])).optional().default([]),
+  // Strengths and profile
+  participantStrengths: z.string().optional(),
+  ndisSupportAsFunded: z.string().optional(),
+  shiftDays: z.string().optional(),
+  shiftTimes: z.string().optional(),
+  preferredGender: z.enum(["Male","Female","Other","No"]).optional(),
+  requiredSkillSet: z.string().optional(),
+  aboutParticipant: z.string().optional(),
+  likes: z.string().optional(),
+  dislikes: z.string().optional(),
+  // Medical
+  medicalConditions: z.string().optional(),
+  medications: z.string().optional(),
+  medicationSideEffects: z.string().optional(),
+  behaviours: z.array(BehaviourItem).optional(),
+  // Funding
+  ndisNumber: z.string().optional(),
+  planStart: z.string().optional(),
+  planEnd: z.string().optional(),
+  fundManagementType: z.enum(["NDIA","Self","Plan"]).optional(),
+  // Invoice details
+  invoiceName: z.string().optional(),
+  invoiceEmail: z.string().email().optional(),
+  invoicePhone: z.string().optional(),
+  invoiceAddress: z.string().optional(),
+});
+
+
+Controller sketch
+
+// src/server/routes/referrals.ts
+import { verifyReferralToken } from "../lib/referralToken";
+import { ReferralSchema } from "../validators/referral";
+
+// GET validate link
+app.get("/api/referrals/links/:token", async (req, res) => {
+  try {
+    const payload = verifyReferralToken(req.params.token);
+    const link = await db.referral_links.findUnique({ where: { id: payload.linkId }});
+    if (!link) return res.status(404).json({ error: "invalid-link" });
+    if (link.expiresAt && new Date() > link.expiresAt) return res.status(410).json({ error: "expired" });
+    if (link.maxUses && link.uses >= (link.maxUses || 0)) return res.status(429).json({ error: "link-usage-exceeded" });
+    // Optionally return tenant display name
+    res.json({ ok: true });
+  } catch {
+    res.status(400).json({ error: "bad-token" });
+  }
+});
+
+// POST submit
+app.post("/api/referrals/submit/:token", async (req, res) => {
+  try {
+    const payload = verifyReferralToken(req.params.token);
+    const link = await db.referral_links.findUnique({ where: { id: payload.linkId }});
+    if (!link) return res.status(404).json({ error: "invalid-link" });
+    if (link.expiresAt && new Date() > link.expiresAt) return res.status(410).json({ error: "expired" });
+    if (link.maxUses && link.uses >= (link.maxUses || 0)) return res.status(429).json({ error: "link-usage-exceeded" });
+
+    const parsed = ReferralSchema.parse(req.body);
+
+    const referral = await db.referrals.create({
+      data: {
+        tenantId: payload.tenantId,
+        linkId: payload.linkId,
+        dateOfReferral: parsed.dateOfReferral,
+        isNewClient: parsed.clientStatus === "New",
+        isReturningClient: parsed.clientStatus === "Returning",
+        referrerName: parsed.referrerName,
+        referrerOrg: parsed.referrerOrg,
+        referrerPosition: parsed.referrerPosition,
+        referrerContact: parsed.referrerPhoneEmail,
+        clientName: parsed.clientName,
+        dob: parsed.dob ? new Date(parsed.dob) : null,
+        address: parsed.address,
+        phone: parsed.phone,
+        emergencyName: parsed.emergencyName,
+        emergencyPhone: parsed.emergencyPhone,
+        emergencyAddress: parsed.emergencyAddress,
+        emergencyEmail: parsed.emergencyEmail,
+        supportCategories: parsed.supportCategories,
+        planManagement: parsed.planManagement,
+        howWeSupport: parsed.howWeSupport,
+        participantStrengths: parsed.participantStrengths,
+        ndisSupportAsFunded: parsed.ndisSupportAsFunded,
+        shiftDays: parsed.shiftDays,
+        shiftTimes: parsed.shiftTimes,
+        preferredGender: parsed.preferredGender,
+        requiredSkillSet: parsed.requiredSkillSet,
+        aboutParticipant: parsed.aboutParticipant,
+        likes: parsed.likes,
+        dislikes: parsed.dislikes,
+        medicalConditions: parsed.medicalConditions,
+        medications: parsed.medications,
+        medicationSideEffects: parsed.medicationSideEffects,
+        behaviours: parsed.behaviours ?? [],
+        ndisNumber: parsed.ndisNumber,
+        planStart: parsed.planStart ? new Date(parsed.planStart) : null,
+        planEnd: parsed.planEnd ? new Date(parsed.planEnd) : null,
+        fundManagementType: parsed.fundManagementType,
+        invoiceName: parsed.invoiceName,
+        invoiceEmail: parsed.invoiceEmail,
+        invoicePhone: parsed.invoicePhone,
+        invoiceAddress: parsed.invoiceAddress,
+      },
+    });
+
+    // optional: increment uses
+    await db.referral_links.update({ where: { id: payload.linkId }, data: { uses: { increment: 1 }}});
+
+    // notify tenant intake inbox
+    await mailer.send({
+      to: getTenantInbox(payload.tenantId),
+      subject: "New Referral Submitted",
+      html: renderReferralEmail(referral),
+    });
+
+    res.status(201).json({ id: referral.id });
+  } catch (e) {
+    console.error("referral submit error", e);
+    res.status(400).json({ error: "invalid-payload-or-token" });
+  }
+});
+
+4) Frontend public page
+
+Route: /share/referral/:token
+
+On mount, call GET /api/referrals/links/:token
+
+If ok, render form
+
+On submit, post to /api/referrals/submit/:token
+
+Show “Thank you” screen
+
+Zod + RHF schema (frontend)
+
+// src/pages/share/referralSchema.ts
+import { z } from "zod";
+
+export const BehaviourItem = z.object({
+  behaviour: z.string().min(1),
+  trigger: z.string().optional(),
+  management: z.string().optional(),
+});
+
+export const ReferralFormSchema = z.object({
+  dateOfReferral: z.string().min(1),
+  clientStatus: z.enum(["New","Returning"]),
+  referrerName: z.string().min(1),
+  referrerOrg: z.string().optional(),
+  referrerPosition: z.string().optional(),
+  referrerPhoneEmail: z.string().optional(),
+  clientName: z.string().min(1),
+  dob: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  emergencyName: z.string().optional(),
+  emergencyPhone: z.string().optional(),
+  emergencyAddress: z.string().optional(),
+  emergencyEmail: z.string().optional(),
+  supportCategories: z.array(z.string()).optional(),
+  planManagement: z.array(z.string()).optional(),
+  howWeSupport: z.array(z.string()).optional(),
+  participantStrengths: z.string().optional(),
+  ndisSupportAsFunded: z.string().optional(),
+  shiftDays: z.string().optional(),
+  shiftTimes: z.string().optional(),
+  preferredGender: z.enum(["Male","Female","Other","No"]).optional(),
+  requiredSkillSet: z.string().optional(),
+  aboutParticipant: z.string().optional(),
+  likes: z.string().optional(),
+  dislikes: z.string().optional(),
+  medicalConditions: z.string().optional(),
+  medications: z.string().optional(),
+  medicationSideEffects: z.string().optional(),
+  behaviours: z.array(BehaviourItem).optional(),
+  ndisNumber: z.string().optional(),
+  planStart: z.string().optional(),
+  planEnd: z.string().optional(),
+  fundManagementType: z.enum(["NDIA","Self","Plan"]).optional(),
+  invoiceName: z.string().optional(),
+  invoiceEmail: z.string().email().optional(),
+  invoicePhone: z.string().optional(),
+  invoiceAddress: z.string().optional(),
+});
+export type ReferralFormData = z.infer<typeof ReferralFormSchema>;
+
+
+Form page (UI)
+
+// src/pages/share/ReferralPage.tsx
+import { useEffect, useState } from "react";
+import { useParams } from "wouter";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ReferralFormSchema, ReferralFormData } from "./referralSchema";
+
+const SUPPORT_CATEGORIES = [
+  { key: "MultipleComplexDisability", label: "Multiple and Complex Disability Support" },
+  { key: "ForensicsSDAFunded", label: "Forensics Disability Support (SDA funded)" },
+  { key: "ForensicsOutreach", label: "Forensics Outreach Support Work" },
+  { key: "NonComplexSupport", label: "Non-Complex Disability Support Work" },
+  { key: "ForensicsPrivateRental", label: "Forensics Disability Support (Private rental)" },
+];
+
+const PLAN_MANAGEMENT = [
+  { key: "PlanManagement", label: "Plan Management" },
+];
+
+const HOW_WE_SUPPORT = [
+  { key: "ADL", label: "In-home Assistance to undertake ADL" },
+  { key: "HandsOnSupervision", label: "Hands on support and supervision" },
+  { key: "LegalOrderCompliance", label: "Support to comply with Mandatory legal Order" },
+  { key: "PersonalCare", label: "Personal care assistance" },
+  { key: "CommunityAccess", label: "Access to community-based activities" },
+  { key: "TransportTraining", label: "Transport and travel training" },
+  { key: "SocialGroupActivity", label: "Support to attend Social/Group Activity" },
+  { key: "BehaviouralManagement", label: "Behavioural Management" },
+  { key: "CompanionshipMentorship", label: "Companionship and mentorship" },
+  { key: "RestrictivePracticeImplementation", label: "Implementation of restrictive practice" },
+];
+
+export default function ReferralPage() {
+  const { token } = useParams<{ token: string }>();
+  const [valid, setValid] = useState<boolean | null>(null);
+
+  const { register, handleSubmit, control, watch, setValue, formState: { errors, isSubmitting } } =
+    useForm<ReferralFormData>({ resolver: zodResolver(ReferralFormSchema), defaultValues: {
+      dateOfReferral: new Date().toISOString().slice(0,10),
+      clientStatus: "New",
+      supportCategories: [],
+      planManagement: [],
+      howWeSupport: [],
+      behaviours: []
+    }});
+
+  const { fields: behaviourFields, append: addBehaviour, remove: removeBehaviour } =
+    useFieldArray({ control, name: "behaviours" });
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/api/referrals/links/${token}`)
+      .then(r => setValid(r.ok))
+      .catch(() => setValid(false));
+  }, [token]);
+
+  if (valid === null) return <div className="p-6">Loading…</div>;
+  if (!valid) return <div className="p-6">Link is invalid or expired.</div>;
+
+  const toggleArray = (name: "supportCategories" | "planManagement" | "howWeSupport", val: string) => {
+    const arr = new Set(watch(name) || []);
+    if (arr.has(val)) arr.delete(val); else arr.add(val);
+    setValue(name, Array.from(arr));
+  };
+
+  const onSubmit = async (data: ReferralFormData) => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/referrals/submit/${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) window.location.href = "/share/thank-you";
+    else alert("Could not submit. Please try again.");
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-semibold">Referral Form</h1>
+
+      {/* Referral and participant details */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-4">
+          <label className="block">
+            <span>Date of referral</span>
+            <input type="date" className="input" {...register("dateOfReferral")} />
+          </label>
+          <label className="block">
+            <span>Client status</span>
+            <select className="input" {...register("clientStatus")}>
+              <option value="New">New client</option>
+              <option value="Returning">Returning client</option>
+            </select>
+          </label>
+
+          <label className="block md:col-span-2">
+            <span>Person completing this form</span>
+            <input className="input" {...register("referrerName")} placeholder="Name" />
+          </label>
+          <label className="block">
+            <span>Organisation</span>
+            <input className="input" {...register("referrerOrg")} />
+          </label>
+          <label className="block">
+            <span>Position</span>
+            <input className="input" {...register("referrerPosition")} />
+          </label>
+          <label className="block md:col-span-2">
+            <span>Number and Email</span>
+            <input className="input" {...register("referrerPhoneEmail")} placeholder="phone and/or email" />
+          </label>
+
+          <label className="block md:col-span-2">
+            <span>Client name</span>
+            <input className="input" {...register("clientName")} />
+          </label>
+          <label className="block">
+            <span>DOB</span>
+            <input type="date" className="input" {...register("dob")} />
+          </label>
+          <label className="block">
+            <span>Address</span>
+            <input className="input" {...register("address")} />
+          </label>
+          <label className="block">
+            <span>Number</span>
+            <input className="input" {...register("phone")} />
+          </label>
+        </div>
+
+        {/* Emergency contact */}
+        <fieldset className="space-y-4">
+          <legend className="font-semibold">Emergency contact</legend>
+          <div className="grid md:grid-cols-2 gap-4">
+            <input className="input" {...register("emergencyName")} placeholder="Name" />
+            <input className="input" {...register("emergencyPhone")} placeholder="Phone" />
+            <input className="input md:col-span-2" {...register("emergencyAddress")} placeholder="Address" />
+            <input className="input" {...register("emergencyEmail")} placeholder="Email" />
+          </div>
+        </fieldset>
+
+        {/* Type of support required */}
+        <fieldset className="space-y-3">
+          <legend className="font-semibold">Type of support required</legend>
+          <div className="grid md:grid-cols-2 gap-2">
+            {SUPPORT_CATEGORIES.map((c) => (
+              <label key={c.key} className="flex items-center gap-2">
+                <input type="checkbox"
+                  onChange={() => toggleArray("supportCategories", c.key)}
+                  checked={(watch("supportCategories") || []).includes(c.key)}
+                />
+                <span>{c.label}</span>
+              </label>
+            ))}
+            {PLAN_MANAGEMENT.map((c) => (
+              <label key={c.key} className="flex items-center gap-2">
+                <input type="checkbox"
+                  onChange={() => toggleArray("planManagement", c.key)}
+                  checked={(watch("planManagement") || []).includes(c.key)}
+                />
+                <span>{c.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        {/* Tell us how we support */}
+        <fieldset className="space-y-3">
+          <legend className="font-semibold">Tell us how</legend>
+          <div className="grid md:grid-cols-2 gap-2">
+            {HOW_WE_SUPPORT.map((c) => (
+              <label key={c.key} className="flex items-center gap-2">
+                <input type="checkbox"
+                  onChange={() => toggleArray("howWeSupport", c.key)}
+                  checked={(watch("howWeSupport") || []).includes(c.key)}
+                />
+                <span>{c.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        {/* Strengths and schedule */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <textarea className="textarea md:col-span-2" {...register("participantStrengths")} placeholder="Strengths of the participant" />
+          <input className="input" {...register("ndisSupportAsFunded")} placeholder="NDIS support as funded" />
+          <input className="input" {...register("shiftDays")} placeholder="Shift days" />
+          <input className="input" {...register("shiftTimes")} placeholder="Shift times" />
+          <label className="block">
+            <span>Preferred gender of support worker</span>
+            <select className="input" {...register("preferredGender")}>
+              <option>Male</option><option>Female</option><option>Other</option><option>No</option>
+            </select>
+          </label>
+          <input className="input" {...register("requiredSkillSet")} placeholder="Required skill set" />
+        </div>
+
+        {/* Participant profile */}
+        <textarea className="textarea" {...register("aboutParticipant")} placeholder="Tell us about the participant. Mention complexity e.g. dual disability, forensic history" />
+        <div className="grid md:grid-cols-2 gap-4">
+          <textarea className="textarea" {...register("likes")} placeholder="Likes" />
+          <textarea className="textarea" {...register("dislikes")} placeholder="Dislikes" />
+        </div>
+
+        {/* Medical */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <textarea className="textarea" {...register("medicalConditions")} placeholder="Medical condition" />
+          <textarea className="textarea" {...register("medications")} placeholder="Medications" />
+          <textarea className="textarea" {...register("medicationSideEffects")} placeholder="Side effects" />
+        </div>
+
+        {/* Behaviour of concern */}
+        <fieldset className="space-y-3">
+          <legend className="font-semibold">Behaviour of concern</legend>
+          {behaviourFields.map((f, i) => (
+            <div key={f.id} className="grid md:grid-cols-3 gap-2 items-start">
+              <input className="input" {...register(`behaviours.${i}.behaviour` as const)} placeholder="Behaviour" />
+              <input className="input" {...register(`behaviours.${i}.trigger` as const)} placeholder="Trigger" />
+              <input className="input" {...register(`behaviours.${i}.management` as const)} placeholder="Management" />
+              <button type="button" className="btn" onClick={() => removeBehaviour(i)}>Remove</button>
+            </div>
+          ))}
+          <button type="button" className="btn" onClick={() => addBehaviour({ behaviour: "" })}>Add behaviour</button>
+        </fieldset>
+
+        {/* Funding */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <input className="input" {...register("ndisNumber")} placeholder="NDIS number" />
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block">
+              <span>Plan start</span>
+              <input type="date" className="input" {...register("planStart")} />
+            </label>
+            <label className="block">
+              <span>Plan end</span>
+              <input type="date" className="input" {...register("planEnd")} />
+            </label>
+          </div>
+          <label className="block">
+            <span>Fund management</span>
+            <select className="input" {...register("fundManagementType")}>
+              <option value="">Select</option>
+              <option value="NDIA">NDIA managed</option>
+              <option value="Self">Self managed</option>
+              <option value="Plan">Plan managed</option>
+            </select>
+          </label>
+        </div>
+
+        {/* Invoice details */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <input className="input" {...register("invoiceName")} placeholder="Invoice name e.g. Plan Partners" />
+          <input className="input" {...register("invoiceEmail")} placeholder="Invoice email" />
+          <input className="input" {...register("invoicePhone")} placeholder="Telephone number" />
+          <input className="input md:col-span-2" {...register("invoiceAddress")} placeholder="Address" />
+        </div>
+
+        <button className="btn" disabled={isSubmitting}>Submit referral</button>
+      </form>
+    </div>
+  );
+}
+
+5) Security and tenancy
+
+Tenant binding only from JWT token. Ignore any tenantId in request body.
+
+Rate limit POST /submit (IP based).
+
+CORS: allow only your app origin.
+
+Log audit entries for link creation and referral submission.
+
+6) Files and wiring
+
+DB migration: add referral_links and referrals
+
+Server: src/server/lib/referralToken.ts, src/server/routes/referrals.ts, src/server/validators/referral.ts
+
+Frontend: src/pages/share/ReferralPage.tsx, src/pages/share/referralSchema.ts, route entry
+
+Add /share/thank-you simple page
+
+7) Acceptance checklist
+
+Can create a link internally and get a URL with token
+
+Opening link validates and shows form
+
+Submitting writes one row to referrals with correct tenantId
+
+Expired link returns 410
+
+Max uses enforced when set
+
+Email/notification fired to tenant intake inbox
+
+PDF export from CRM detail page can be added later (out of scope here)
+
+8) Notes for implementer
+
+Keep label text exactly as above to match ops language.
+
+Use existing input styles (.input, .textarea, .btn).
+
+Store behaviours as JSON array in DB.
+
+For emails, do not insert hyphens in addresses.
+
+Timezones: store dates as UTC.

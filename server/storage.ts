@@ -5,6 +5,7 @@ import {
   shiftCancellations, cancellationRequests, payScales, notifications, timesheets, timesheetEntries, leaveBalances, taxBrackets,
   downloadableForms, completedMedicationAuthorityForms, evacuationDrills, billingConfiguration,
   serviceAgreements, serviceAgreementItems, serviceAgreementSignatures, tenantTermsTemplates,
+  referralForms, referralSubmissions, referralLinks, referralAccessLog,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -22,7 +23,8 @@ import {
   type DownloadableForm, type InsertDownloadableForm, type CompletedMedicationAuthorityForm, type InsertCompletedMedicationAuthorityForm,
   type EvacuationDrill, type InsertEvacuationDrill,
   type ServiceAgreement, type InsertServiceAgreement, type ServiceAgreementItem, type InsertServiceAgreementItem,
-  type ServiceAgreementSignature, type InsertServiceAgreementSignature, type TenantTermsTemplate, type InsertTenantTermsTemplate
+  type ServiceAgreementSignature, type InsertServiceAgreementSignature, type TenantTermsTemplate, type InsertTenantTermsTemplate,
+  type ReferralForm, type ReferralSubmission, type ReferralLink, type ReferralAccessLog
 } from "@shared/schema";
 import { db, pool } from "./lib/dbClient";
 import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray, exists, like, ilike } from "drizzle-orm";

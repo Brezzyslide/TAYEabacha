@@ -841,25 +841,88 @@ export const referralForms = pgTable("referral_forms", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Referral Form Submissions
+// Referral Form Submissions - Enhanced for comprehensive NDIS referrals
 export const referralSubmissions = pgTable("referral_submissions", {
   id: serial("id").primaryKey(),
-  referralFormId: integer("referral_form_id").notNull().references(() => referralForms.id),
-  submissionData: jsonb("submission_data").notNull(), // Form response data
-  submitterInfo: jsonb("submitter_info").notNull(), // Name, email, organization, etc.
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  referralFormId: integer("referral_form_id").references(() => referralForms.id), // Optional for direct submissions
+  linkId: integer("link_id").references(() => referralLinks.id),
+  
+  // Header flags
+  dateOfReferral: timestamp("date_of_referral").notNull(),
+  isNewClient: boolean("is_new_client").notNull(),
+  isReturningClient: boolean("is_returning_client").notNull(),
+  
+  // Referrer information
+  referrerName: text("referrer_name").notNull(),
+  referrerOrg: text("referrer_org"),
+  referrerPosition: text("referrer_position"),
+  referrerContact: text("referrer_contact"), // phone + email
+  
+  // Participant details
+  clientName: text("client_name").notNull(),
+  dob: timestamp("dob"),
+  address: text("address"),
+  phone: text("phone"),
+  
+  // Emergency contact
+  emergencyName: text("emergency_name"),
+  emergencyPhone: text("emergency_phone"),
+  emergencyAddress: text("emergency_address"),
+  emergencyEmail: text("emergency_email"),
+  
+  // Support categories (NDIS specific)
+  supportCategories: text("support_categories").array().default([]),
+  planManagement: text("plan_management").array().default([]),
+  howWeSupport: text("how_we_support").array().default([]),
+  
+  // Participant profile
+  participantStrengths: text("participant_strengths"),
+  ndisSupportAsFunded: text("ndis_support_as_funded"),
+  shiftDays: text("shift_days"),
+  shiftTimes: text("shift_times"),
+  preferredGender: text("preferred_gender"),
+  requiredSkillSet: text("required_skill_set"),
+  aboutParticipant: text("about_participant"),
+  likes: text("likes"),
+  dislikes: text("dislikes"),
+  
+  // Medical information
+  medicalConditions: text("medical_conditions"),
+  medications: text("medications"),
+  medicationSideEffects: text("medication_side_effects"),
+  behaviours: jsonb("behaviours").$type<Array<{behaviour: string; trigger?: string; management?: string}>>().default([]),
+  
+  // NDIS funding details
+  ndisNumber: text("ndis_number"),
+  planStart: timestamp("plan_start"),
+  planEnd: timestamp("plan_end"),
+  fundManagementType: text("fund_management_type"),
+  
+  // Invoice details
+  invoiceName: text("invoice_name"),
+  invoiceEmail: text("invoice_email"),
+  invoicePhone: text("invoice_phone"),
+  invoiceAddress: text("invoice_address"),
+  
+  // Legacy fields for backward compatibility
+  submissionData: jsonb("submission_data"), // Form response data
+  submitterInfo: jsonb("submitter_info"), // Name, email, organization, etc.
   status: text("status").default("pending"), // "pending", "approved", "rejected", "processing"
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   reviewNotes: text("review_notes"),
   clientId: integer("client_id").references(() => clients.id), // Link to client if applicable
+  source: text("source"), // e.g. website/partner/qr
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
 });
 
-// Referral Shareable Links
+// Referral Shareable Links - Enhanced for JWT token support
 export const referralLinks = pgTable("referral_links", {
   id: serial("id").primaryKey(),
-  referralFormId: integer("referral_form_id").notNull().references(() => referralForms.id),
-  accessCode: text("access_code").notNull().unique(), // 8-character unique code
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  referralFormId: integer("referral_form_id").references(() => referralForms.id), // Optional - can be direct NDIS form
+  accessCode: text("access_code").notNull().unique(), // JWT token for security
   expiresAt: timestamp("expires_at"),
   maxUses: integer("max_uses"), // null = unlimited
   currentUses: integer("current_uses").default(0),
@@ -2072,5 +2135,6 @@ export type ServiceAgreementSignature = typeof serviceAgreementSignatures.$infer
 export type InsertServiceAgreementSignature = z.infer<typeof insertServiceAgreementSignatureSchema>;
 export type TenantTermsTemplate = typeof tenantTermsTemplates.$inferSelect;
 export type InsertTenantTermsTemplate = z.infer<typeof insertTenantTermsTemplateSchema>;
+
 
 

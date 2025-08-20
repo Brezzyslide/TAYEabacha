@@ -52,7 +52,9 @@ import EditServiceAgreement from "@/app/compliance/service-agreements/edit/[id]"
 import ViewServiceAgreement from "@/app/compliance/service-agreements/view/[id]";
 import ReferralFormsIndex from "@/app/compliance/referral-forms/index";
 import CreateReferralForm from "@/app/compliance/referral-forms/create";
+import ReferralLinksPage from "@/app/compliance/referral-links/index";
 import PublicSignPage from "@/pages/public-sign";
+import PublicReferralForm from "@/pages/PublicReferralForm";
 import { ProtectedRoute } from "./lib/protected-route";
 import { VerifyAuth } from "./debug/verifyAuth";
 
@@ -62,6 +64,7 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/sign/:token" component={PublicSignPage} />
+      <Route path="/share/referral/:token" component={PublicReferralForm} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
       <ProtectedRoute path="/clients/create" component={() => <SimpleCreateClientForm />} />
@@ -95,6 +98,7 @@ function Router() {
       <ProtectedRoute path="/compliance/service-agreements/edit/:id" component={EditServiceAgreement} />
       <ProtectedRoute path="/compliance/referral-forms" component={ReferralFormsIndex} />
       <ProtectedRoute path="/compliance/referral-forms/create" component={CreateReferralForm} />
+      <ProtectedRoute path="/compliance/referral-links" component={ReferralLinksPage} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
