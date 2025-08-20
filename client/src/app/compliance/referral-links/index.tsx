@@ -52,6 +52,7 @@ export default function ReferralLinksPage() {
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [createdLinks, setCreatedLinks] = useState<ReferralLink[]>([]);
 
   const form = useForm<CreateLinkData>({
     resolver: zodResolver(CreateLinkSchema),
@@ -70,6 +71,7 @@ export default function ReferralLinksPage() {
       return response.json();
     },
     onSuccess: (newLink: ReferralLink) => {
+      setCreatedLinks(prev => [newLink, ...prev]);
       toast({
         title: "Referral Link Created",
         description: "Your referral link has been created successfully.",
@@ -215,6 +217,77 @@ export default function ReferralLinksPage() {
                 </div>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Created Referral Links */}
+      {createdLinks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Created Referral Links</CardTitle>
+            <CardDescription>
+              Your generated referral links ready to share with external parties
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {createdLinks.map((link) => (
+                <div
+                  key={link.id}
+                  className="flex items-center justify-between p-4 border rounded-lg bg-green-50 dark:bg-green-950"
+                >
+                  <div className="space-y-2 flex-1">
+                    <div className="font-medium text-green-800 dark:text-green-200">
+                      Referral Link #{link.id}
+                    </div>
+                    <div className="text-sm font-mono bg-white dark:bg-gray-800 p-2 rounded border break-all">
+                      {link.url}
+                    </div>
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      {link.expiresAt && (
+                        <span>Expires: {format(new Date(link.expiresAt), "PPP")}</span>
+                      )}
+                      {link.maxUses && <span>Max uses: {link.maxUses}</span>}
+                      {!link.expiresAt && !link.maxUses && <span>No restrictions</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(link.url, link.token)}
+                      className="flex items-center gap-2"
+                    >
+                      {copiedToken === link.token ? (
+                        <>
+                          <Eye className="h-4 w-4" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copy Link
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(link.url, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Alert className="mt-4">
+              <AlertDescription>
+                <strong>How to share:</strong> Copy the link above and send it to external parties (hospitals, doctors, coordinators) 
+                who need to submit NDIS participant referrals. They can fill out the form without needing login credentials.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       )}
