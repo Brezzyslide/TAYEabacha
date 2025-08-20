@@ -114,38 +114,61 @@ export function setupAuth(app: Express) {
         console.log(`[PASSPORT] User ${id} not found during deserialization`);
         done(null, false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[PASSPORT] Deserialization error for user ${id}:`, error);
-      done(error, null);
+      // Handle database connection issues gracefully during startup
+      if (error.code === '57P03' || error.message?.includes('database system is not yet accepting connections')) {
+        console.log(`[PASSPORT] Database initializing, user ${id} will need to re-authenticate`);
+        done(null, false);
+      } else {
+        done(error, null);
+      }
     }
   });
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
-        return done(null, user);
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
+        } else {
+          return done(null, user);
+        }
+      } catch (error: any) {
+        // Handle database connection issues gracefully during startup
+        console.error('[AUTH ERROR] Database connection failed during login:', error.message);
+        if (error.code === '57P03' || error.message?.includes('database system is not yet accepting connections')) {
+          return done(null, false, { message: 'Database is initializing. Please try again in a moment.' });
+        }
+        return done(error);
       }
     }),
   );
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
+    try {
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).send("Username already exists");
+      }
+
+      const user = await storage.createUser({
+        ...req.body,
+        password: await hashPassword(req.body.password),
+      });
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } catch (error: any) {
+      console.error('[REGISTER ERROR] Database connection failed during registration:', error.message);
+      if (error.code === '57P03' || error.message?.includes('database system is not yet accepting connections')) {
+        return res.status(503).json({ message: 'Database is initializing. Please try again in a moment.' });
+      }
+      return next(error);
     }
-
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
   });
 
   app.post("/api/login", (req, res, next) => {
