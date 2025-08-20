@@ -57,3 +57,18 @@ serviceAgreementRouter.get('/:id/pdf', (req, res) => {
 serviceAgreementRouter.get('/:id/calculate-total', (req, res) => {
   serviceAgreementController.calculateAgreementTotal(req as any, res);
 });
+
+// POST /:id/create-sharing-link - Create a shareable link for third-party signing
+serviceAgreementRouter.post('/:id/create-sharing-link', (req, res) => {
+  serviceAgreementController.createSharingLink(req as any, res);
+});
+
+// GET /:id/sharing-tokens - Get all sharing tokens for an agreement
+serviceAgreementRouter.get('/:id/sharing-tokens', (req, res) => {
+  serviceAgreementController.getSharingTokens(req as any, res);
+});
+
+// POST /sharing-tokens/:tokenId/deactivate - Deactivate a sharing token
+serviceAgreementRouter.post('/sharing-tokens/:tokenId/deactivate', (req, res) => {
+  serviceAgreementController.deactivateSharingToken(req as any, res);
+});

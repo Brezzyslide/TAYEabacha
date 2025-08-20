@@ -50,6 +50,7 @@ import ServiceAgreementsList from "@/app/compliance/service-agreements/index";
 import CreateServiceAgreement from "@/app/compliance/service-agreements/create";
 import EditServiceAgreement from "@/app/compliance/service-agreements/edit/[id]";
 import ViewServiceAgreement from "@/app/compliance/service-agreements/view/[id]";
+import PublicSignPage from "@/pages/public-sign";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -57,6 +58,7 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/sign/:token" component={PublicSignPage} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
       <ProtectedRoute path="/clients/create" component={() => <SimpleCreateClientForm />} />

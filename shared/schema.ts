@@ -1836,12 +1836,34 @@ export const serviceAgreementSignatures = pgTable("service_agreement_signatures"
   agreementId: text("agreement_id").notNull().references(() => serviceAgreements.id, { onDelete: "cascade" }),
   signerRole: text("signer_role").notNull(), // organisation, client, nominee
   signerName: text("signer_name").notNull(),
+  signerEmail: text("signer_email"),
   signedAt: timestamp("signed_at").defaultNow().notNull(),
-  signedByUserId: text("signed_by_user_id"),
+  signedByUserId: text("signed_by_user_id"), // null for external signers
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  isExternalSigner: boolean("is_external_signer").default(false),
+  sharingTokenId: text("sharing_token_id"), // link to sharing token used
 }, (table) => ({
   agreementIdx: index().on(table.agreementId),
+}));
+
+// Service Agreement Sharing Tokens - For third-party signing
+export const serviceAgreementSharingTokens = pgTable("service_agreement_sharing_tokens", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  agreementId: text("agreement_id").notNull().references(() => serviceAgreements.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(), // URL-safe random token
+  accessCode: text("access_code").notNull(), // 6-digit code for verification
+  createdByUserId: text("created_by_user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isActive: boolean("is_active").default(true),
+  maxUses: integer("max_uses").default(1), // how many times it can be used
+  usedCount: integer("used_count").default(0),
+  signerRole: text("signer_role").notNull(), // which role this token is for
+  recipientEmail: text("recipient_email"), // optional - who this was sent to
+}, (table) => ({
+  agreementIdx: index().on(table.agreementId),
+  tokenIdx: index().on(table.token),
 }));
 
 // Tenant Terms Templates - Reusable T&C per tenant
@@ -1869,6 +1891,7 @@ export const serviceAgreementsRelations = relations(serviceAgreements, ({ one, m
   }),
   items: many(serviceAgreementItems),
   signatures: many(serviceAgreementSignatures),
+  sharingTokens: many(serviceAgreementSharingTokens),
 }));
 
 export const serviceAgreementItemsRelations = relations(serviceAgreementItems, ({ one }) => ({
@@ -1883,6 +1906,18 @@ export const serviceAgreementSignaturesRelations = relations(serviceAgreementSig
     fields: [serviceAgreementSignatures.agreementId],
     references: [serviceAgreements.id],
   }),
+  sharingToken: one(serviceAgreementSharingTokens, {
+    fields: [serviceAgreementSignatures.sharingTokenId],
+    references: [serviceAgreementSharingTokens.id],
+  }),
+}));
+
+export const serviceAgreementSharingTokensRelations = relations(serviceAgreementSharingTokens, ({ one, many }) => ({
+  agreement: one(serviceAgreements, {
+    fields: [serviceAgreementSharingTokens.agreementId],
+    references: [serviceAgreements.id],
+  }),
+  signatures: many(serviceAgreementSignatures),
 }));
 
 export const tenantTermsTemplatesRelations = relations(tenantTermsTemplates, ({ one }) => ({

@@ -16,9 +16,28 @@ import {
   Shield,
   MapPin,
   Fingerprint,
-  Users
+  Users,
+  Link,
+  Copy
 } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { ServiceAgreement } from "@shared/schema";
 
 interface SignPanelProps {
@@ -30,6 +49,7 @@ interface SignPanelProps {
 
 export default function SignPanel({ isAccepted, onAcceptedChange, agreementData, agreementId }: SignPanelProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [isClientSigned, setIsClientSigned] = useState(false);
   const [isProviderSigned, setIsProviderSigned] = useState(false);
   const [clientSignOnBehalf, setClientSignOnBehalf] = useState(false);
@@ -38,6 +58,42 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
   const [clientBehalfRole, setClientBehalfRole] = useState("");
   const [providerBehalfName, setProviderBehalfName] = useState("");
   const [providerBehalfRole, setProviderBehalfRole] = useState("");
+  
+  // Third-party signing state
+  const [showSharingDialog, setShowSharingDialog] = useState(false);
+  const [selectedSignerRole, setSelectedSignerRole] = useState<string>("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [generatedLink, setGeneratedLink] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+
+  // Create sharing link mutation
+  const createSharingLinkMutation = useMutation({
+    mutationFn: async (data: { signerRole: string; recipientEmail?: string }) => {
+      const response = await apiRequest(`/api/compliance/service-agreements/${agreementId}/share`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      const baseUrl = window.location.origin;
+      const fullLink = `${baseUrl}/sign/${data.token}`;
+      setGeneratedLink(fullLink);
+      setAccessCode(data.accessCode);
+      
+      toast({
+        title: "Sharing Link Created",
+        description: "The agreement can now be signed by external parties using this link.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Failed to Create Sharing Link",
+        description: "There was an error creating the sharing link. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Optimized change handlers to prevent cursor jumping
   const handleClientBehalfNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +111,57 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
   const handleProviderBehalfRoleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setProviderBehalfRole(e.target.value);
   }, []);
+
+  // Handler for creating sharing link
+  const handleCreateSharingLink = () => {
+    if (!selectedSignerRole) {
+      toast({
+        title: "Please select a signer role",
+        description: "You must specify who will be signing this agreement.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createSharingLinkMutation.mutate({
+      signerRole: selectedSignerRole,
+      recipientEmail: recipientEmail || undefined
+    });
+  };
+
+  // Handler for copying link to clipboard
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedLink);
+      toast({
+        title: "Link copied to clipboard",
+        description: "The sharing link has been copied successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy link",
+        description: "Please copy the link manually.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handler for copying access code
+  const handleCopyAccessCode = async () => {
+    try {
+      await navigator.clipboard.writeText(accessCode);
+      toast({
+        title: "Access code copied",
+        description: "The access code has been copied successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy access code",
+        description: "Please copy the access code manually.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch client details for signature
   const { data: clientDetails } = useQuery({
@@ -424,6 +531,122 @@ export default function SignPanel({ isAccepted, onAcceptedChange, agreementData,
             behalfRole={providerBehalfRole}
             setBehalfRole={setProviderBehalfRole}
           />
+        </div>
+
+        {/* Third-party Signing Section */}
+        <Separator />
+        
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-lg font-medium">External Signing</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Share a secure link for third parties to sign this agreement
+              </p>
+            </div>
+            
+            <Dialog open={showSharingDialog} onOpenChange={setShowSharingDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Link className="h-4 w-4" />
+                  Create Signing Link
+                </Button>
+              </DialogTrigger>
+              
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create External Signing Link</DialogTitle>
+                  <DialogDescription>
+                    Generate a secure link to allow external parties to sign this service agreement.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signer-role">Who will be signing?</Label>
+                    <Select value={selectedSignerRole} onValueChange={setSelectedSignerRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select signer role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="client">Client/Participant</SelectItem>
+                        <SelectItem value="provider">Service Provider</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="recipient-email">Recipient Email (Optional)</Label>
+                    <Input
+                      id="recipient-email"
+                      type="email"
+                      placeholder="recipient@example.com"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                    />
+                    <p className="text-xs text-slate-500">
+                      Optional: Record who the link was sent to
+                    </p>
+                  </div>
+                  
+                  {!generatedLink ? (
+                    <Button
+                      onClick={handleCreateSharingLink}
+                      disabled={createSharingLinkMutation.isPending}
+                      className="w-full"
+                    >
+                      {createSharingLinkMutation.isPending ? "Creating..." : "Generate Signing Link"}
+                    </Button>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Signing Link</Label>
+                        <div className="flex">
+                          <Input
+                            value={generatedLink}
+                            readOnly
+                            className="rounded-r-none"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="rounded-l-none border-l-0"
+                            onClick={handleCopyLink}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Access Code</Label>
+                        <div className="flex">
+                          <Input
+                            value={accessCode}
+                            readOnly
+                            className="rounded-r-none font-mono"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="rounded-l-none border-l-0"
+                            onClick={handleCopyAccessCode}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          The recipient will need this access code to sign the agreement
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Legal Notice */}

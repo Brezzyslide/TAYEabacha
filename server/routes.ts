@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { serviceAgreementRouter } from "../backend/src/modules/service-agreements";
+import { publicServiceAgreementRouter } from "../backend/src/modules/service-agreements/public-routes";
 // All demo data provisioning removed - tenants start completely clean
 import { db, pool } from "./lib/dbClient";
 import * as schema from "@shared/schema";
@@ -11230,6 +11231,9 @@ Maximum 400 words.`;
       res.status(500).json({ message: "Failed to delete evacuation drill" });
     }
   });
+
+  // Mount public service agreement routes for third-party signing (no authentication required)
+  app.use("/api", publicServiceAgreementRouter);
 
   // Mount service agreement routes under compliance API path - Only Admin and Coordinators can access
   app.use("/api/compliance/service-agreements", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), serviceAgreementRouter);

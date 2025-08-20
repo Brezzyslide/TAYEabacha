@@ -41,6 +41,7 @@ import {
   signatureCreateSchema,
   clientIdQuerySchema
 } from './validators';
+import { serviceAgreementSharingService } from './sharing';
 import { ZodError } from 'zod';
 
 /**
@@ -530,6 +531,129 @@ export class ServiceAgreementController {
       res.json(calculation);
     } catch (error) {
       handleError(res, error, 'Failed to calculate agreement total');
+    }
+  }
+
+  /**
+   * POST /:id/create-sharing-link - Create a shareable link for third-party signing
+   */
+  async createSharingLink(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { tenantId, id: userId } = req.user!;
+      const { id } = req.params;
+      const { signerRole, recipientEmail, expirationDays = 7, maxUses = 1 } = req.body;
+      
+      // Verify user has write permissions
+      if (!hasWritePermission(req.user!.role)) {
+        return res.status(403).json({ message: 'Insufficient permissions to create sharing links' });
+      }
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
+      
+      // Verify agreement belongs to company
+      const agreement = await serviceAgreementService.getAgreementById(id, companyId);
+      if (!agreement) {
+        return res.status(404).json({ message: 'Service agreement not found' });
+      }
+      
+      // Validate signer role
+      if (!['client', 'organisation', 'nominee'].includes(signerRole)) {
+        return res.status(400).json({ message: 'Invalid signer role' });
+      }
+      
+      // Create sharing token
+      const token = await serviceAgreementSharingService.createSharingToken(
+        id,
+        signerRole,
+        userId.toString(),
+        expirationDays,
+        maxUses,
+        recipientEmail
+      );
+      
+      // Generate the public sharing URL
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+      const sharingUrl = `${baseUrl}/sign/${id}/${token.token}`;
+      
+      console.log(`[CONTROLLER] Created sharing link for agreement ${id}, role: ${signerRole}`);
+      
+      res.json({
+        success: true,
+        token: token,
+        sharingUrl,
+        accessCode: token.accessCode,
+        expiresAt: token.expiresAt
+      });
+    } catch (error) {
+      handleError(res, error, 'Failed to create sharing link');
+    }
+  }
+
+  /**
+   * GET /:id/sharing-tokens - Get all sharing tokens for an agreement
+   */
+  async getSharingTokens(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { tenantId } = req.user!;
+      const { id } = req.params;
+      
+      // Get company info for this tenant
+      const company = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .innerJoin(tenants, eq(companies.id, tenants.companyId))
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (company.length === 0) {
+        return res.status(404).json({ message: 'Company not found for tenant' });
+      }
+      
+      const companyId = company[0].id;
+      
+      // Verify agreement belongs to company
+      const agreement = await serviceAgreementService.getAgreementById(id, companyId);
+      if (!agreement) {
+        return res.status(404).json({ message: 'Service agreement not found' });
+      }
+      
+      const tokens = await serviceAgreementSharingService.getSharingTokensForAgreement(id);
+      
+      res.json(tokens);
+    } catch (error) {
+      handleError(res, error, 'Failed to retrieve sharing tokens');
+    }
+  }
+
+  /**
+   * POST /sharing-tokens/:tokenId/deactivate - Deactivate a sharing token
+   */
+  async deactivateSharingToken(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { tokenId } = req.params;
+      
+      // Verify user has write permissions
+      if (!hasWritePermission(req.user!.role)) {
+        return res.status(403).json({ message: 'Insufficient permissions to deactivate sharing tokens' });
+      }
+      
+      await serviceAgreementSharingService.deactivateToken(tokenId);
+      
+      res.json({ success: true, message: 'Sharing token deactivated' });
+    } catch (error) {
+      handleError(res, error, 'Failed to deactivate sharing token');
     }
   }
 }
