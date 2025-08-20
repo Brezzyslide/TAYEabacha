@@ -74,7 +74,7 @@ export class ServiceAgreementSharingService {
       const tokenRecord = sharingToken[0];
       
       // Check if token has been used up
-      if (tokenRecord.usedCount >= tokenRecord.maxUses) {
+      if ((tokenRecord.usedCount || 0) >= (tokenRecord.maxUses || 1)) {
         return null;
       }
       
@@ -173,9 +173,9 @@ export class ServiceAgreementSharingService {
       await db
         .update(serviceAgreementSharingTokens)
         .set({
-          usedCount: token.usedCount + 1,
+          usedCount: (token.usedCount || 0) + 1,
           // Deactivate token if it's reached max uses
-          isActive: token.usedCount + 1 < token.maxUses
+          isActive: (token.usedCount || 0) + 1 < (token.maxUses || 1)
         })
         .where(eq(serviceAgreementSharingTokens.id, tokenId));
       

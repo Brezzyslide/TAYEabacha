@@ -42,12 +42,12 @@ export default function PublicSignPage() {
 
   // Query to verify access code and get agreement details
   const { data: agreementData, isLoading, error } = useQuery({
-    queryKey: ['/api/public/sign/verify', token, accessCode],
+    queryKey: ['/api/sign/verify-access', token, accessCode],
     queryFn: async () => {
-      const response = await fetch(`/api/public/sign/verify/${token}`, {
+      const response = await fetch(`/api/sign/verify-access`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessCode })
+        body: JSON.stringify({ token, accessCode })
       });
       
       if (!response.ok) {
@@ -63,11 +63,11 @@ export default function PublicSignPage() {
   // Mutation to submit signature
   const signMutation = useMutation({
     mutationFn: async (signatureData: any) => {
-      const response = await fetch(`/api/public/sign/submit/${token}`, {
+      const response = await fetch(`/api/sign/submit-signature`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          accessCode,
+          tokenId: agreementData?.tokenId,
           signerName,
           signerEmail,
           onBehalfOf,
