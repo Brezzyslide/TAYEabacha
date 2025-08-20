@@ -138,18 +138,33 @@ export class ServiceAgreementPDFService {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('Provider Contact Information', 20, yPosition);
-    yPosition += 8;
+    yPosition += 10;
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Address: ${tenantData.businessAddress || 'Not specified'}`, 20, yPosition);
-    yPosition += 6;
+    
+    // Handle multi-line address properly
+    if (tenantData.businessAddress) {
+      doc.text('Address:', 20, yPosition);
+      yPosition += 5;
+      
+      const addressLines = tenantData.businessAddress.split('\n').filter(line => line.trim());
+      addressLines.forEach((line: string) => {
+        doc.text(line.trim(), 20, yPosition);
+        yPosition += 5;
+      });
+      yPosition += 3; // Extra space after address
+    } else {
+      doc.text('Address: Not specified', 20, yPosition);
+      yPosition += 8;
+    }
+    
     doc.text(`Contact: ${tenantData.primaryContactName || 'Not specified'}`, 20, yPosition);
-    yPosition += 6;
+    yPosition += 8;
     doc.text(`Email: ${tenantData.primaryContactEmail || 'Not specified'}`, 20, yPosition);
-    yPosition += 6;
+    yPosition += 8;
     doc.text(`Phone: ${tenantData.primaryContactPhone || 'Not specified'}`, 20, yPosition);
-    yPosition += 15;
+    yPosition += 18;
 
     return yPosition;
   }
