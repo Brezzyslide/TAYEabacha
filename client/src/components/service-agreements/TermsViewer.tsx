@@ -46,7 +46,7 @@ export default function TermsViewer({
 
   // Fetch terms template from API
   const { data: termsTemplate, isLoading: termsLoading } = useQuery<TermsTemplate>({
-    queryKey: ["/api/compliance/terms-templates/default"],
+    queryKey: ["/api/terms-templates/default"],
     retry: false,
   });
 
