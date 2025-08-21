@@ -23,7 +23,7 @@ interface ReferralForm {
 export default function ReferralFormsIndex() {
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  const { data: forms, isLoading } = useQuery({
+  const { data: forms = [], isLoading } = useQuery<ReferralForm[]>({
     queryKey: ["/api/compliance/referral-forms"],
   });
 

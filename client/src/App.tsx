@@ -52,6 +52,7 @@ import EditServiceAgreement from "@/app/compliance/service-agreements/edit/[id]"
 import ViewServiceAgreement from "@/app/compliance/service-agreements/view/[id]";
 import ReferralFormsIndex from "@/app/compliance/referral-forms/index";
 import CreateReferralForm from "@/app/compliance/referral-forms/create";
+import ViewReferralForm from "@/app/compliance/referral-forms/view/[id]";
 import ReferralLinksPage from "@/app/compliance/referral-links/index";
 import ReferralManagementPage from "@/app/compliance/referral-management/index";
 import PublicSignPage from "@/pages/public-sign";
@@ -99,6 +100,7 @@ function Router() {
       <ProtectedRoute path="/compliance/service-agreements/edit/:id" component={EditServiceAgreement} />
       <ProtectedRoute path="/compliance/referral-forms" component={ReferralFormsIndex} />
       <ProtectedRoute path="/compliance/referral-forms/create" component={CreateReferralForm} />
+      <ProtectedRoute path="/compliance/referral-forms/view/:id" component={ViewReferralForm} />
       <ProtectedRoute path="/compliance/referral-links" component={ReferralLinksPage} />
       <ProtectedRoute path="/compliance/referral-management" component={ReferralManagementPage} />
 
