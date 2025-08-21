@@ -30,6 +30,13 @@ const BehaviourSchema = z.object({
   management: z.string().optional(),
 });
 
+// Medication item schema
+const MedicationSchema = z.object({
+  name: z.string().min(1, "Medication name is required"),
+  frequency: z.string().min(1, "Frequency is required"),
+  dosage: z.string().min(1, "Dosage is required"),
+});
+
 // Main form schema
 const ReferralFormSchema = z.object({
   // Header + flags
@@ -89,7 +96,7 @@ const ReferralFormSchema = z.object({
   
   // Medical
   medicalConditions: z.string().optional(),
-  medications: z.string().optional(),
+  medications: z.array(MedicationSchema).optional(),
   medicationSideEffects: z.string().optional(),
   behaviours: z.array(BehaviourSchema).optional(),
   
@@ -124,12 +131,18 @@ export default function PublicReferralForm() {
       planManagement: [],
       howWeSupport: [],
       behaviours: [],
+      medications: [],
     },
   });
 
   const { fields: behaviourFields, append: appendBehaviour, remove: removeBehaviour } = useFieldArray({
     control: form.control,
     name: "behaviours",
+  });
+
+  const { fields: medicationFields, append: appendMedication, remove: removeMedication } = useFieldArray({
+    control: form.control,
+    name: "medications",
   });
 
   // Validate the referral link on mount
@@ -612,19 +625,87 @@ export default function PublicReferralForm() {
                     )}
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="medications"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Medications</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="List current medications" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                  {/* Current Medications */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-lg font-medium">Current Medications</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendMedication({ name: "", frequency: "", dosage: "" })}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Medication
+                      </Button>
+                    </div>
+                    
+                    {medicationFields.length === 0 && (
+                      <p className="text-sm text-muted-foreground italic">No medications added yet. Click "Add Medication" to start.</p>
                     )}
-                  />
+                    
+                    {medicationFields.map((field, index) => (
+                      <div key={field.id} className="border rounded-lg p-4 space-y-4 bg-gray-50">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium text-sm text-gray-700">Medication #{index + 1}</h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeMedication(index)}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`medications.${index}.name`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Medication Name *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Paracetamol" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`medications.${index}.frequency`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Frequency *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Twice daily" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`medications.${index}.dosage`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Dosage *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 500mg" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <Separator />
