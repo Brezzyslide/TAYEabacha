@@ -65,8 +65,8 @@ export function setupAuth(app: Express) {
   // CRITICAL: Tenant-safe session validation middleware
   app.use(async (req, res, next) => {
     try {
-      const userId = req.session?.userId || req.user?.id;
-      const tenantId = req.session?.tenantId || req.user?.tenantId;
+      const userId = (req.session as any)?.userId || req.user?.id;
+      const tenantId = (req.session as any)?.tenantId || req.user?.tenantId;
 
       if (userId && tenantId) {
         // Verify user still exists and belongs to correct tenant  

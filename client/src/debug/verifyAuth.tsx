@@ -36,9 +36,13 @@ export function VerifyAuth() {
     console.log("📄 Page load type:", navType, "(reload/navigate/back_forward/prerender)");
 
     // 3. Test API call with detailed response analysis
-    fetch(`${import.meta.env.VITE_API_URL || '/api'}/auth/user`, {
-      method: "GET",
+    fetch(`/api/auth/user`, {
+      method: "GET", 
       credentials: "include",
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
     })
       .then(async (res) => {
         console.log("🔐 Auth /user status:", res.status);
