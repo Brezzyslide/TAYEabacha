@@ -11,6 +11,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +34,8 @@ import {
   ArrowRight,
   FileText,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -82,6 +84,8 @@ export default function ReferralManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [referralToDelete, setReferralToDelete] = useState<ReferralSubmission | null>(null);
 
   const assessmentForm = useForm<AssessmentData>({
     resolver: zodResolver(AssessmentSchema),
@@ -142,6 +146,30 @@ export default function ReferralManagementPage() {
       toast({
         title: "PDF Export Failed",
         description: error.message || "Could not generate PDF",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete referral mutation
+  const deleteReferralMutation = useMutation({
+    mutationFn: async (referralId: string) => {
+      const response = await apiRequest("DELETE", `/api/referrals/${referralId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Referral Deleted",
+        description: "The referral form has been permanently deleted.",
+      });
+      setDeleteDialogOpen(false);
+      setReferralToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/referrals"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Could not delete referral form",
         variant: "destructive",
       });
     },
@@ -343,6 +371,43 @@ export default function ReferralManagementPage() {
                         Assess
                       </Button>
                     )}
+
+                    <AlertDialog open={deleteDialogOpen && referralToDelete?.id === referral.id} onOpenChange={setDeleteDialogOpen}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setReferralToDelete(referral);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Referral Form</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to permanently delete this referral form for <strong>{referral.clientName}</strong>?
+                            <br /><br />
+                            This action cannot be undone. All data associated with this referral will be permanently removed from the system.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteReferralMutation.mutate(referral.id)}
+                            disabled={deleteReferralMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            {deleteReferralMutation.isPending ? "Deleting..." : "Delete Permanently"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}

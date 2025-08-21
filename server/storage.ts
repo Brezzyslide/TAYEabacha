@@ -3187,6 +3187,22 @@ export class DatabaseStorage implements IStorage {
     return submission || undefined;
   }
 
+  async deleteReferralSubmission(id: number, tenantId: number): Promise<boolean> {
+    try {
+      const result = await db.delete(referralSubmissions)
+        .where(and(
+          eq(referralSubmissions.id, id),
+          eq(referralSubmissions.tenantId, tenantId)
+        ));
+      
+      // Check if any rows were affected (deleted)
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error("Delete referral submission error:", error);
+      return false;
+    }
+  }
+
   async createReferralSubmission(submission: any): Promise<ReferralSubmission> {
     const [created] = await db
       .insert(referralSubmissions)
