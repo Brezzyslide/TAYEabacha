@@ -208,29 +208,27 @@ router.post("/links", async (req, res) => {
     }
 
     const { expiresAt, maxUses } = req.body;
-    const linkId = memoryStore.nextLinkId++;
     const tenantId = user.tenantId;
 
-    // Generate JWT token with link ID and tenant ID
+    // Generate a temporary link ID for the token
+    const tempLinkId = Date.now();
+
+    // Generate JWT token with temporary link ID and tenant ID
     const token = signReferralToken({ 
-      linkId: linkId.toString(), 
+      linkId: tempLinkId.toString(), 
       tenantId 
     });
 
-    // Create the link record in memory
-    const link = {
-      id: linkId,
+    // Create link record in database with the generated token
+    const link = await storage.createReferralLink({
       tenantId,
       accessCode: token,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       maxUses: maxUses || null,
       currentUses: 0,
       isActive: true,
-      createdBy: user.id,
-      createdAt: new Date(),
-    };
-
-    memoryStore.links.set(linkId.toString(), link);
+      createdBy: user.id
+    });
 
     // Return the shareable URL using Replit's public domain
     const baseUrl = process.env.REPLIT_DOMAINS 
@@ -255,7 +253,8 @@ router.get("/links/:token", async (req, res) => {
   try {
     const payload = verifyReferralToken(req.params.token);
     
-    const link = memoryStore.links.get(payload.linkId);
+    // Get link from database by token
+    const link = await storage.getReferralLinkByToken(req.params.token);
     
     if (!link) {
       return res.status(404).json({ error: "invalid-link" });
