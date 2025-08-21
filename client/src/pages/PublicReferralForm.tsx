@@ -304,6 +304,30 @@ export default function PublicReferralForm() {
                   <h3 className="text-lg font-semibold text-black">Referral and participant details</h3>
                 </div>
                 
+                {/* Date of Referral */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="dateOfReferral"
+                    render={({ field }) => (
+                      <FormItem className="w-full md:w-1/2">
+                        <FormLabel>Date of Referral *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                            value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : field.value}
+                            onChange={(e) => field.onChange(new Date(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <Separator />
+                
                 {/* Basic Information */}
                 <div className="space-y-4">
                   <h4 className="text-md font-medium text-gray-900">Basic Information</h4>
