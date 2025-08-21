@@ -376,11 +376,14 @@ export default function ViewServiceAgreement() {
         </CardContent>
       </Card>
 
+      {/* Standard Terms & Conditions */}
+      <StandardTermsCard />
+
       {/* Custom Terms */}
       {agreement.customTerms && (
         <Card>
           <CardHeader>
-            <CardTitle>Custom Terms & Conditions</CardTitle>
+            <CardTitle>Additional Terms & Conditions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="prose dark:prose-invert max-w-none">
@@ -392,5 +395,104 @@ export default function ViewServiceAgreement() {
         </Card>
       )}
     </div>
+  );
+}
+
+// Standard Terms Display Component
+function StandardTermsCard() {
+  const { data: termsTemplate, isLoading: termsLoading } = useQuery({
+    queryKey: ["/api/terms-templates/default"],
+    retry: false,
+  });
+
+  const parseTermsContent = (body: string) => {
+    if (!body) return [];
+    
+    // Split by section numbers (2., 3., etc.) but handle the first section without a number
+    const sections = body.split(/(?=\d+\.\s)/).filter(section => section.trim());
+    
+    // Handle the introductory section without a number
+    const allSections = [];
+    
+    // Check if there's content before the first numbered section
+    const firstSection = body.split(/\d+\.\s/)[0];
+    if (firstSection && firstSection.trim()) {
+      allSections.push({
+        sectionNumber: '',
+        title: 'Introduction',
+        content: firstSection.trim().split('\n').filter(line => line.trim())
+      });
+    }
+    
+    // Process numbered sections
+    sections.forEach(section => {
+      const lines = section.trim().split('\n').filter(line => line.trim());
+      if (lines.length === 0) return;
+      
+      // First line should be the title with section number
+      const titleMatch = lines[0].match(/^(\d+\.\s*)(.+)$/);
+      const sectionNumber = titleMatch ? titleMatch[1] : '';
+      const title = titleMatch ? titleMatch[2] : lines[0];
+      
+      // Rest are content
+      const content = lines.slice(1).filter(line => line.trim());
+      
+      allSections.push({
+        sectionNumber,
+        title,
+        content: content.length > 0 ? content : []
+      });
+    });
+
+    return allSections.filter(section => section.title && section.title !== 'Introduction' || section.content.length > 0);
+  };
+
+  const standardTerms = termsTemplate ? parseTermsContent(termsTemplate.body) : [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          {termsTemplate?.title || "Standard NDIS Terms & Conditions"}
+        </CardTitle>
+        <CardDescription>
+          Standard terms and conditions that apply to this service agreement
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {termsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-slate-600">Loading terms...</span>
+          </div>
+        ) : termsTemplate ? (
+          <div className="space-y-6 max-h-96 overflow-y-auto border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+            {standardTerms.map((section, index) => (
+              <div key={index} className="space-y-2">
+                <h4 className="font-medium text-slate-900 dark:text-slate-100">
+                  {section.sectionNumber}{section.title}
+                </h4>
+                {section.content.map((paragraph, pIndex) => (
+                  <p key={pIndex} className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <FileText className="mx-auto h-12 w-12 text-slate-400" />
+            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+              No terms template found
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Contact your administrator to set up standard terms.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

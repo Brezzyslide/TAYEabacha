@@ -52,7 +52,7 @@ export const serviceAgreementItemCreateSchema = z.object({
   
   // Hours fields - handle empty strings and convert to numbers
   hoursDay: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Day hours must be non-negative")),
-  hoursEvening: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Evening hours must be non-negative")),
+  hoursWeekdayEvening: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Evening hours must be non-negative")),
   hoursActiveNight: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Active night hours must be non-negative")),
   hoursSleepover: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Sleepover hours must be non-negative")),
   hoursSaturday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Saturday hours must be non-negative")),
@@ -61,7 +61,7 @@ export const serviceAgreementItemCreateSchema = z.object({
   
   // Unit rate fields - handle empty strings and convert to numbers
   unitDay: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Day rate must be non-negative")),
-  unitEvening: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Evening rate must be non-negative")),
+  unitWeekdayEvening: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Evening rate must be non-negative")),
   unitActiveNight: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Active night rate must be non-negative")),
   unitSleepover: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Sleepover rate must be non-negative")),
   unitSaturday: z.union([z.string(), z.number()]).transform(val => val === "" || val === null || val === undefined ? 0 : Number(val)).pipe(z.number().min(0, "Saturday rate must be non-negative")),
@@ -95,8 +95,16 @@ export const clientIdQuerySchema = z.object({
 // Helper function to convert numbers to Decimal strings for database operations
 export const convertToDecimalStrings = (data: any) => {
   const decimalFields = [
-    'unitDay', 'unitEvening', 'unitActiveNight', 'unitSleepover',
-    'unitSaturday', 'unitSunday', 'unitPublicHoliday'
+    // Hours fields (camelCase and snake_case)
+    'hoursDay', 'hoursWeekdayEvening', 'hoursActiveNight', 'hoursSleepover',
+    'hoursSaturday', 'hoursSunday', 'hoursPublicHoliday',
+    'hours_day', 'hours_weekday_evening', 'hours_active_night', 'hours_sleepover',
+    'hours_saturday', 'hours_sunday', 'hours_public_holiday',
+    // Unit rate fields (camelCase and snake_case)
+    'unitDay', 'unitWeekdayEvening', 'unitActiveNight', 'unitSleepover',
+    'unitSaturday', 'unitSunday', 'unitPublicHoliday',
+    'unit_day', 'unit_weekday_evening', 'unit_active_night', 'unit_sleepover',
+    'unit_saturday', 'unit_sunday', 'unit_public_holiday'
   ];
   
   const converted = { ...data };
@@ -111,15 +119,24 @@ export const convertToDecimalStrings = (data: any) => {
 
 // Helper function to convert Decimal strings back to numbers for API responses
 export const convertFromDecimalStrings = (data: any) => {
-  const decimalFields = [
-    'unitDay', 'unitEvening', 'unitActiveNight', 'unitSleepover',
-    'unitSaturday', 'unitSunday', 'unitPublicHoliday'
+  const allFields = [
+    // Hours fields (camelCase and snake_case)
+    'hoursDay', 'hoursWeekdayEvening', 'hoursActiveNight', 'hoursSleepover',
+    'hoursSaturday', 'hoursSunday', 'hoursPublicHoliday',
+    'hours_day', 'hours_weekday_evening', 'hours_active_night', 'hours_sleepover',
+    'hours_saturday', 'hours_sunday', 'hours_public_holiday',
+    // Unit rate fields (camelCase and snake_case)
+    'unitDay', 'unitWeekdayEvening', 'unitActiveNight', 'unitSleepover',
+    'unitSaturday', 'unitSunday', 'unitPublicHoliday',
+    'unit_day', 'unit_weekday_evening', 'unit_active_night', 'unit_sleepover',
+    'unit_saturday', 'unit_sunday', 'unit_public_holiday'
   ];
   
   const converted = { ...data };
-  decimalFields.forEach(field => {
+  allFields.forEach(field => {
     if (typeof converted[field] === 'string') {
-      converted[field] = parseFloat(converted[field]);
+      const numValue = parseFloat(converted[field]);
+      converted[field] = isNaN(numValue) ? 0 : numValue;
     }
   });
   
