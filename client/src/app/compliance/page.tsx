@@ -1,1682 +1,369 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, FileText, Upload, Calendar, AlertTriangle, Plus, Trash2, Edit, Eye, Users, DollarSign, Clock } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-
-const uploadFormSchema = z.object({
-  formType: z.string().min(1, "Form type is required"),
-  file: z.any().refine((files) => files?.length > 0, "File is required"),
-});
-
-const serviceAgreementSchema = z.object({
-  clientId: z.number().min(1, "Client is required"),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
-  planNomineeName: z.string().optional(),
-  planNomineeContact: z.string().optional(),
-  billingDetails: z.object({
-    participantNumber: z.string().optional(),
-    planNumber: z.string().optional(),
-    planManager: z.string().optional(),
-    planManagerContact: z.string().optional(),
-  }).optional(),
-  customTerms: z.string().optional(),
-});
-
-const serviceAgreementItemSchema = z.object({
-  ndisCode: z.string().min(1, "NDIS code is required"),
-  supportDescription: z.string().min(1, "Support description is required"),
-  weeks: z.number().min(1, "Number of weeks is required"),
-  hoursDay: z.number().min(0, "Hours must be positive").optional(),
-  hoursEvening: z.number().min(0, "Hours must be positive").optional(),
-  hoursActiveNight: z.number().min(0, "Hours must be positive").optional(),
-  hoursSleepover: z.number().min(0, "Hours must be positive").optional(),
-  hoursSaturday: z.number().min(0, "Hours must be positive").optional(),
-  hoursSunday: z.number().min(0, "Hours must be positive").optional(),
-  hoursPublicHoliday: z.number().min(0, "Hours must be positive").optional(),
-  unitDay: z.number().min(0, "Rate must be positive").optional(),
-  unitEvening: z.number().min(0, "Rate must be positive").optional(),
-  unitActiveNight: z.number().min(0, "Rate must be positive").optional(),
-  unitSleepover: z.number().min(0, "Rate must be positive").optional(),
-  unitSaturday: z.number().min(0, "Rate must be positive").optional(),
-  unitSunday: z.number().min(0, "Rate must be positive").optional(),
-  unitPublicHoliday: z.number().min(0, "Rate must be positive").optional(),
-  notes: z.string().optional(),
-});
-
-const FORM_TYPES = [
-  { value: "med_authority", label: "Medication Authority Form" },
-  { value: "med_administration", label: "Medication Administration Consent Form" },
-  { value: "med_purpose", label: "Medication Purpose Form" },
-  { value: "rp_consent", label: "Restrictive Practice Consent Form" },
-  { value: "rp_guide", label: "Restrictive Practice Guide" },
-  { value: "incident_report", label: "Incident Report Template" },
-  { value: "care_plan", label: "Care Plan Template" },
-  { value: "assessment", label: "Assessment Form" },
-];
-
-// Sample forms data when API fails
-const SAMPLE_FORMS = [
-  {
-    id: 1,
-    formType: "med_purpose",
-    fileName: "Medication Purpose Form - Office Professional Practice.pdf",
-    fileUrl: "/sample-forms/medication-purpose-form.pdf",
-    uploadedAt: "2025-07-14T10:00:00Z"
-  },
-  {
-    id: 2,
-    formType: "med_administration", 
-    fileName: "Medication Administration Record (Treatment Sheet).pdf",
-    fileUrl: "/sample-forms/medication-treatment-sheet.pdf",
-    uploadedAt: "2025-07-14T10:00:00Z"
-  },
-  {
-    id: 3,
-    formType: "rp_consent",
-    fileName: "Restrictive Practice Consent Form.pdf",
-    fileUrl: "/sample-forms/restrictive-practice-consent.pdf",
-    uploadedAt: "2025-07-14T10:00:00Z"
-  },
-  {
-    id: 4,
-    formType: "rp_guide",
-    fileName: "Restrictive Practice Implementation Guide.pdf",
-    fileUrl: "/sample-forms/restrictive-practice-guide.pdf",
-    uploadedAt: "2025-07-14T10:00:00Z"
-  }
-];
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
+import { hasPermission } from "@/lib/permissions";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Plus, 
+  FileText, 
+  Download, 
+  Edit, 
+  Search,
+  Filter,
+  Shield,
+  Lock,
+  Eye,
+  ExternalLink,
+  Users,
+  FileCheck,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  TrendingUp
+} from "lucide-react";
+import { format } from "date-fns";
 
 export default function CompliancePage() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showAgreementDialog, setShowAgreementDialog] = useState(false);
-  const [showItemDialog, setShowItemDialog] = useState(false);
-  const [selectedAgreement, setSelectedAgreement] = useState<any>(null);
-  const [editingAgreement, setEditingAgreement] = useState<any>(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [moduleFilter, setModuleFilter] = useState("all");
 
-  // Query for downloadable forms (global library) - fallback to sample data if API fails
-  const { data: downloadableForms = [], isLoading: formsLoading, error: formsError } = useQuery<any[]>({
-    queryKey: ["/api/compliance/forms"],
-    retry: false,
+  // Get current user data for permission checking
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/user"],
   });
 
-  // Use sample data if API fails
-  const formsToDisplay: any[] = formsError ? SAMPLE_FORMS : downloadableForms;
+  // Check if user has access to compliance module
+  if (user && !hasPermission(user, "ACCESS_COMPLIANCE")) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="flex items-center gap-3 p-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <Lock className="h-8 w-8 text-red-600 dark:text-red-400" />
+          <div>
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">
+              Access Restricted
+            </h3>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              Only Admin and Program Coordinators can access the Compliance module.
+            </p>
+          </div>
+        </div>
+        <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
+          <Shield className="h-3 w-3 mr-1" />
+          Your role: {user?.role || "Unknown"}
+        </Badge>
+      </div>
+    );
+  }
 
-  // Query for completed medication forms (tenant-specific)
-  const { data: medicationForms = [], isLoading: medicationLoading } = useQuery<any[]>({
-    queryKey: ["/api/compliance/medication-forms"],
-    retry: false,
-  });
-
-  // Query for evacuation drills (tenant-specific)
-  const { data: evacuationDrills = [], isLoading: drillsLoading } = useQuery<any[]>({
-    queryKey: ["/api/compliance/evacuation-drills"],
-    retry: false,
-  });
-
-  // Query for NDIS service agreements
-  const { data: serviceAgreements = [], isLoading: agreementsLoading } = useQuery<any[]>({
+  // Query for service agreements
+  const { data: agreements = [], isLoading: agreementsLoading } = useQuery({
     queryKey: ["/api/compliance/service-agreements"],
-    retry: false,
   });
 
-  // Query for clients (for creating new agreements)
-  const { data: clients = [] } = useQuery<any[]>({
-    queryKey: ["/api/clients"],
-    retry: false,
+  // Query for referral submissions
+  const { data: referrals = [], isLoading: referralsLoading } = useQuery({
+    queryKey: ["/api/referrals"],
   });
 
-  const canUploadForms = user?.role === "Admin" || user?.role === "ConsoleManager";
-
-  const form = useForm({
-    resolver: zodResolver(uploadFormSchema),
-    defaultValues: {
-      formType: "",
-      file: undefined,
-    },
+  // Query for referral links
+  const { data: referralLinks = [], isLoading: linksLoading } = useQuery({
+    queryKey: ["/api/compliance/referral-links"],
   });
-
-  const agreementForm = useForm({
-    resolver: zodResolver(serviceAgreementSchema),
-    defaultValues: {
-      clientId: 0,
-      startDate: "",
-      endDate: "",
-      planNomineeName: "",
-      planNomineeContact: "",
-      billingDetails: {
-        participantNumber: "",
-        planNumber: "",
-        planManager: "",
-        planManagerContact: "",
-      },
-      customTerms: "",
-    },
-  });
-
-  const itemForm = useForm({
-    resolver: zodResolver(serviceAgreementItemSchema),
-    defaultValues: {
-      ndisCode: "",
-      supportDescription: "",
-      weeks: 1,
-      hoursDay: 0,
-      hoursEvening: 0,
-      hoursActiveNight: 0,
-      hoursSleepover: 0,
-      hoursSaturday: 0,
-      hoursSunday: 0,
-      hoursPublicHoliday: 0,
-      unitDay: 0,
-      unitEvening: 0,
-      unitActiveNight: 0,
-      unitSleepover: 0,
-      unitSaturday: 0,
-      unitSunday: 0,
-      unitPublicHoliday: 0,
-      notes: "",
-    },
-  });
-
-  const uploadMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const formData = new FormData();
-      formData.append('file', data.file[0]);
-      formData.append('formType', data.formType);
-      
-      return apiRequest('POST', '/api/compliance/forms/upload', formData);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Form uploaded successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/compliance/forms"] });
-      setShowUploadDialog(false);
-      form.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upload form",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (formId: number) => {
-      return apiRequest('DELETE', `/api/compliance/forms/${formId}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Form deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/compliance/forms"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete form",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Service Agreement mutations
-  const createAgreementMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/compliance/service-agreements', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Service agreement created successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
-      setShowAgreementDialog(false);
-      agreementForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create service agreement",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateAgreementMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return apiRequest('PUT', `/api/compliance/service-agreements/${id}`, data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Service agreement updated successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
-      setShowAgreementDialog(false);
-      setEditingAgreement(null);
-      agreementForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update service agreement",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteAgreementMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return apiRequest('DELETE', `/api/compliance/service-agreements/${id}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Service agreement deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete service agreement",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const createItemMutation = useMutation({
-    mutationFn: async ({ agreementId, data }: { agreementId: string; data: any }) => {
-      return apiRequest('POST', `/api/compliance/service-agreements/${agreementId}/items`, data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Service item added successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/compliance/service-agreements"] });
-      setShowItemDialog(false);
-      itemForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add service item",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: any) => {
-    uploadMutation.mutate(data);
-  };
-
-  const onAgreementSubmit = (data: any) => {
-    if (editingAgreement) {
-      updateAgreementMutation.mutate({ id: editingAgreement.id, data });
-    } else {
-      createAgreementMutation.mutate(data);
-    }
-  };
-
-  const onItemSubmit = (data: any) => {
-    if (selectedAgreement) {
-      createItemMutation.mutate({ agreementId: selectedAgreement.id, data });
-    }
-  };
-
-  const openEditAgreement = (agreement: any) => {
-    setEditingAgreement(agreement);
-    agreementForm.reset({
-      clientId: agreement.clientId,
-      startDate: agreement.startDate?.split('T')[0] || "",
-      endDate: agreement.endDate?.split('T')[0] || "",
-      planNomineeName: agreement.planNomineeName || "",
-      planNomineeContact: agreement.planNomineeContact || "",
-      billingDetails: agreement.billingDetails || {
-        participantNumber: "",
-        planNumber: "",
-        planManager: "",
-        planManagerContact: "",
-      },
-      customTerms: agreement.customTerms || "",
-    });
-    setShowAgreementDialog(true);
-  };
-
-  const calculateItemTotal = (item: any) => {
-    const hours = (item.hoursDay || 0) + (item.hoursEvening || 0) + (item.hoursActiveNight || 0) + 
-                 (item.hoursSleepover || 0) + (item.hoursSaturday || 0) + (item.hoursSunday || 0) + 
-                 (item.hoursPublicHoliday || 0);
-    const rates = (item.unitDay || 0) + (item.unitEvening || 0) + (item.unitActiveNight || 0) + 
-                 (item.unitSleepover || 0) + (item.unitSaturday || 0) + (item.unitSunday || 0) + 
-                 (item.unitPublicHoliday || 0);
-    return hours * rates * (item.weeks || 1);
-  };
-
-  const getClientName = (clientId: number) => {
-    const client = clients.find((c: any) => c.id === clientId);
-    return client ? `${client.firstName} ${client.lastName}` : "Unknown Client";
-  };
 
   const getAgreementStatus = (agreement: any) => {
-    // Check if agreement has signatures (signed = active)
-    if (agreement.signatures && agreement.signatures.length > 0) {
-      // Check if agreement has expired
-      const now = new Date();
-      const endDate = new Date(agreement.endDate);
-      if (now > endDate) return "Expired";
-      return "Active";
+    const now = new Date();
+    const startDate = new Date(agreement.startDate);
+    const endDate = new Date(agreement.endDate);
+    
+    if (now < startDate) return "Pending";
+    if (now > endDate) return "Expired";
+    return "Active";
+  };
+
+  const getReferralStatus = (referral: any) => {
+    return referral.status || "pending";
+  };
+
+  const complianceModules = [
+    {
+      id: "service-agreements",
+      title: "Service Agreements",
+      description: "Manage NDIS service agreements with digital signatures",
+      icon: FileCheck,
+      count: Array.isArray(agreements) ? agreements.length : 0,
+      href: "/compliance/service-agreements",
+      status: "operational",
+      lastUpdate: agreements.length > 0 ? agreements[0]?.updatedAt : null,
+      color: "blue"
+    },
+    {
+      id: "referral-management",
+      title: "Referral Management",
+      description: "Process and assess NDIS participant referrals",
+      icon: Users,
+      count: Array.isArray(referrals) ? referrals.length : 0,
+      href: "/compliance/referral-management",
+      status: "operational",
+      lastUpdate: referrals.length > 0 ? referrals[0]?.submittedAt : null,
+      color: "green"
+    },
+    {
+      id: "referral-links",
+      title: "NDIS Referral Links",
+      description: "Create and manage public referral form links",
+      icon: ExternalLink,
+      count: Array.isArray(referralLinks) ? referralLinks.length : 0,
+      href: "/compliance/referral-links",
+      status: "operational",
+      lastUpdate: referralLinks.length > 0 ? referralLinks[0]?.createdAt : null,
+      color: "purple"
     }
+  ];
+
+  const filteredModules = complianceModules.filter((module) => {
+    const matchesModule = moduleFilter === "all" || module.id === moduleFilter;
+    const matchesStatus = statusFilter === "all" || module.status === statusFilter;
+    const matchesSearch = !searchTerm || 
+      module.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      module.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Use database status or default to draft
-    const status = agreement.status?.toLowerCase() || 'draft';
-    
-    // Check for expired draft/pending agreements
-    if (status === 'draft' || status === 'pending') {
-      const now = new Date();
-      const endDate = new Date(agreement.endDate);
-      if (now > endDate) return "Expired";
-    }
-    
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
+    return matchesModule && matchesStatus && matchesSearch;
+  });
 
-  const canDeleteAgreement = (agreement: any) => {
-    const status = agreement.status?.toLowerCase();
-    return status === 'draft';
-  };
-
-  const handleDownload = (form: any) => {
-    // In a real implementation, this would download from the server
-    const link = document.createElement('a');
-    link.href = form.fileUrl;
-    link.download = form.fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const getFormTypeLabel = (formType: string) => {
-    const type = FORM_TYPES.find(t => t.value === formType);
-    return type ? type.label : formType.replace('_', ' ');
-  };
-
-  const handleExportPDF = async (agreementId: string) => {
-    try {
-      const response = await fetch(`/api/compliance/service-agreements/${agreementId}/pdf`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/pdf',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `service-agreement-${agreementId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "PDF Export Successful",
-        description: "Service agreement PDF has been downloaded.",
-      });
-    } catch (error) {
-      console.error('PDF export error:', error);
-      toast({
-        title: "Export Failed",
-        description: "Failed to generate PDF. Please try again.",
-        variant: "destructive",
-      });
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "operational":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "warning":
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case "error":
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "operational":
+        return <Badge variant="default" className="bg-green-100 text-green-800">Operational</Badge>;
+      case "warning":
+        return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Warning</Badge>;
+      case "error":
+        return <Badge variant="destructive">Error</Badge>;
+      default:
+        return <Badge variant="secondary">Unknown</Badge>;
+    }
+  };
+
+  const getModuleColor = (color: string) => {
+    switch (color) {
+      case "blue":
+        return "border-blue-200 bg-blue-50/50 hover:bg-blue-100/50";
+      case "green":
+        return "border-green-200 bg-green-50/50 hover:bg-green-100/50";
+      case "purple":
+        return "border-purple-200 bg-purple-50/50 hover:bg-purple-100/50";
+      default:
+        return "border-gray-200 bg-gray-50/50 hover:bg-gray-100/50";
+    }
+  };
+
+  const isLoading = agreementsLoading || referralsLoading || linksLoading;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-          Compliance Centre
-        </h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          Manage compliance documents, medication forms, and safety records
-        </p>
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Compliance Overview
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Manage NDIS compliance modules and service documentation
+          </p>
+        </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="service-agreements">NDIS Service Agreements</TabsTrigger>
-          <TabsTrigger value="referral-links">NDIS Referral Links</TabsTrigger>
-          <TabsTrigger value="medication-forms">Medication Forms</TabsTrigger>
-          <TabsTrigger value="evacuation-drills">Evacuation Drills</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {/* Stats Cards */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">NDIS Agreements</CardTitle>
-                <Users className="h-4 w-4 text-slate-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{serviceAgreements?.length || 0}</div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Active service agreements
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Available Forms</CardTitle>
-                <FileText className="h-4 w-4 text-slate-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formsToDisplay?.length || 0}</div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Global forms library
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Medication Records</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-slate-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{medicationForms?.length || 0}</div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Completed forms
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Safety Drills</CardTitle>
-                <Calendar className="h-4 w-4 text-slate-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{evacuationDrills?.length || 0}</div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  This year
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">NDIS Service Agreements</h3>
-                    <p className="text-sm text-muted-foreground">Create and manage digital agreements</p>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4"
-                  onClick={() => setActiveTab("service-agreements")}
-                >
-                  Manage Agreements
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-green-500 transition-colors cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">NDIS Referral Links</h3>
-                    <p className="text-sm text-muted-foreground">Create secure shareable referral links</p>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4"
-                  onClick={() => setActiveTab("referral-links")}
-                >
-                  Manage Referral Links
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-purple-500 transition-colors cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                    <Eye className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Referral Management</h3>
-                    <p className="text-sm text-muted-foreground">Review and assess NDIS referrals</p>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4"
-                  onClick={() => window.open('/compliance/referral-management', '_self')}
-                >
-                  Manage Referrals
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-orange-500 transition-colors cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                    <AlertTriangle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Safety & Drills</h3>
-                    <p className="text-sm text-muted-foreground">Track evacuation drills and safety</p>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4"
-                  onClick={() => setActiveTab("evacuation-drills")}
-                >
-                  Manage Safety
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Downloadable Forms Library */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Downloadable Forms Library</CardTitle>
-                  <CardDescription>
-                    Manage global compliance forms available to all tenants
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  {formsError && (
-                    <span className="text-sm text-amber-600">Using sample data</span>
-                  )}
-                  {canUploadForms && (
-                    <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Form
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>Upload Compliance Form</DialogTitle>
-                          <DialogDescription>
-                            Upload a new compliance form to make it available to all tenants.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <Form {...form}>
-                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                            <FormField
-                              control={form.control}
-                              name="formType"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Form Type</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select a form type" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {FORM_TYPES.map((type) => (
-                                        <SelectItem key={type.value} value={type.value}>
-                                          {type.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormDescription>
-                                    Choose the type of compliance form you're uploading.
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name="file"
-                              render={({ field: { onChange, value, ...field } }) => (
-                                <FormItem>
-                                  <FormLabel>File</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="file"
-                                      accept=".pdf,.doc,.docx"
-                                      onChange={(e) => onChange(e.target.files)}
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                  <FormDescription>
-                                    Upload a PDF, DOC, or DOCX file (max 10MB).
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowUploadDialog(false)}
-                              >
-                                Cancel
-                              </Button>
-                              <Button type="submit" disabled={uploadMutation.isPending}>
-                                {uploadMutation.isPending ? "Uploading..." : "Upload"}
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {formsLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="text-slate-600">Loading forms...</div>
-                </div>
-              ) : formsToDisplay?.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {formsToDisplay.map((form: any) => (
-                    <Card key={form.id} className="relative">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-1">
-                              {form.fileName}
-                            </h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 capitalize mb-2">
-                              {getFormTypeLabel(form.formType)}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {new Date(form.uploadedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleDownload(form)}
-                            className="flex-1"
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                          {canUploadForms && !formsError && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => deleteMutation.mutate(form.id)}
-                              disabled={deleteMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto h-12 w-12 text-slate-400" />
-                  <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
-                    No forms uploaded yet
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Upload compliance forms to make them available for staff to download.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="service-agreements" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">NDIS Service Agreements</h2>
-              <p className="text-slate-600 dark:text-slate-400">
-                Manage service agreements with line items, pricing, and electronic signatures
-              </p>
+      {/* Search and Filter Controls */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Search & Filter
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search modules..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <Dialog open={showAgreementDialog} onOpenChange={setShowAgreementDialog}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Service Agreement
-                </Button>
-              </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingAgreement ? "Edit Service Agreement" : "Create New Service Agreement"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      Set up a comprehensive NDIS service agreement with billing details and terms.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form {...agreementForm}>
-                    <form onSubmit={agreementForm.handleSubmit(onAgreementSubmit)} className="space-y-4">
-                      <FormField
-                        control={agreementForm.control}
-                        name="clientId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Client</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a client" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {clients.map((client: any) => (
-                                  <SelectItem key={client.id} value={client.id.toString()}>
-                                    {client.firstName} {client.lastName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={agreementForm.control}
-                          name="startDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Start Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={agreementForm.control}
-                          name="endDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>End Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+            
+            <Select value={moduleFilter} onValueChange={setModuleFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by module" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Modules</SelectItem>
+                <SelectItem value="service-agreements">Service Agreements</SelectItem>
+                <SelectItem value="referral-management">Referral Management</SelectItem>
+                <SelectItem value="referral-links">Referral Links</SelectItem>
+              </SelectContent>
+            </Select>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={agreementForm.control}
-                          name="planNomineeName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Plan Nominee Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter nominee name" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={agreementForm.control}
-                          name="planNomineeContact"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Plan Nominee Contact</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Email or phone" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="space-y-3">
-                        <h3 className="text-lg font-medium">Billing Details</h3>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={agreementForm.control}
-                            name="billingDetails.participantNumber"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>NDIS Participant Number</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Enter participant number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={agreementForm.control}
-                            name="billingDetails.planNumber"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Plan Number</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Enter plan number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={agreementForm.control}
-                            name="billingDetails.planManager"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Plan Manager</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Enter plan manager name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={agreementForm.control}
-                            name="billingDetails.planManagerContact"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Plan Manager Contact</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Email or phone" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-
-                      <FormField
-                        control={agreementForm.control}
-                        name="customTerms"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Custom Terms & Conditions</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Enter any custom terms specific to this agreement..." 
-                                className="min-h-[100px]"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              These will be added to the standard terms template.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setShowAgreementDialog(false);
-                            setEditingAgreement(null);
-                            agreementForm.reset();
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          type="submit" 
-                          disabled={createAgreementMutation.isPending || updateAgreementMutation.isPending}
-                        >
-                          {createAgreementMutation.isPending || updateAgreementMutation.isPending
-                            ? "Saving..." 
-                            : editingAgreement ? "Update Agreement" : "Create Agreement"
-                          }
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="operational">Operational</SelectItem>
+                <SelectItem value="warning">Warning</SelectItem>
+                <SelectItem value="error">Error</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Service Agreements List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Service Agreements
-              </CardTitle>
-              <CardDescription>
-                Manage active and pending service agreements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {agreementsLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="text-slate-600">Loading agreements...</div>
-                </div>
-              ) : serviceAgreements?.length > 0 ? (
-                <div className="space-y-4">
-                  {serviceAgreements.map((agreement: any) => (
-                    <Card key={agreement.id} className="p-4">
+      {/* Compliance Modules Grid */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Compliance Modules ({filteredModules.length})</CardTitle>
+          <CardDescription>
+            Access and manage compliance modules for NDIS service delivery
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8">Loading modules...</div>
+          ) : filteredModules.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {complianceModules.length === 0 
+                ? "No compliance modules available."
+                : "No modules match your current filters."
+              }
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredModules.map((module) => (
+                <Link key={module.id} href={module.href}>
+                  <Card className={`transition-all duration-200 hover:shadow-md cursor-pointer ${getModuleColor(module.color)}`}>
+                    <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-medium text-slate-900 dark:text-slate-100">
-                              {getClientName(agreement.clientId)}
-                            </h3>
-                            <Badge 
-                              variant={
-                                getAgreementStatus(agreement) === "Active" ? "default" : 
-                                getAgreementStatus(agreement) === "Draft" ? "secondary" : 
-                                getAgreementStatus(agreement) === "Pending" ? "outline" : 
-                                "destructive"
-                              }
-                              className={
-                                getAgreementStatus(agreement) === "Active" ? "bg-blue-600 text-white" :
-                                getAgreementStatus(agreement) === "Draft" ? "bg-gray-500 text-white" :
-                                getAgreementStatus(agreement) === "Pending" ? "bg-yellow-500 text-white" :
-                                "bg-red-600 text-white"
-                              }
-                            >
-                              {getAgreementStatus(agreement)}
-                            </Badge>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg bg-white border shadow-sm`}>
+                            <module.icon className="h-5 w-5 text-gray-700" />
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600 dark:text-slate-400">
-                            <div>
-                              <span className="font-medium">Start:</span> {new Date(agreement.startDate).toLocaleDateString()}
-                            </div>
-                            <div>
-                              <span className="font-medium">End:</span> {new Date(agreement.endDate).toLocaleDateString()}
-                            </div>
-                            <div>
-                              <span className="font-medium">Plan Manager:</span> {agreement.billingDetails?.planManager || "N/A"}
-                            </div>
-                            <div>
-                              <span className="font-medium">Items:</span> {agreement.items?.length || 0}
+                          <div>
+                            <CardTitle className="text-lg">{module.title}</CardTitle>
+                            <div className="flex items-center gap-2 mt-1">
+                              {getStatusIcon(module.status)}
+                              {getStatusBadge(module.status)}
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedAgreement(agreement);
-                              setShowItemDialog(true);
-                            }}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Item
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => openEditAgreement(agreement)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleExportPDF(agreement.id)}
-                            className="flex items-center gap-1"
-                          >
-                            <Download className="h-4 w-4" />
-                            PDF
-                          </Button>
-                          {canDeleteAgreement(agreement) && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this draft service agreement? This action cannot be undone.')) {
-                                  deleteAgreementMutation.mutate(agreement.id);
-                                }
-                              }}
-                              disabled={deleteAgreementMutation.isPending}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
                         </div>
                       </div>
-                      
-                      {/* Service Items */}
-                      {agreement.items && agreement.items.length > 0 && (
-                        <div className="mt-4 pt-4 border-t">
-                          <h4 className="font-medium mb-3 flex items-center gap-2">
-                            <DollarSign className="h-4 w-4" />
-                            Service Items
-                          </h4>
-                          <div className="overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>NDIS Code</TableHead>
-                                  <TableHead>Description</TableHead>
-                                  <TableHead>Hours</TableHead>
-                                  <TableHead>Weeks</TableHead>
-                                  <TableHead>Total</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {agreement.items.map((item: any) => (
-                                  <TableRow key={item.id}>
-                                    <TableCell className="font-mono text-sm">{item.ndisCode}</TableCell>
-                                    <TableCell className="max-w-[200px] truncate">{item.supportDescription}</TableCell>
-                                    <TableCell>
-                                      {(Number(item.hoursDay || 0) + Number(item.hoursEvening || item.hoursWeekdayEvening || 0) + Number(item.hoursActiveNight || 0) + 
-                                        Number(item.hoursSleepover || 0) + Number(item.hoursSaturday || 0) + Number(item.hoursSunday || 0) + 
-                                        Number(item.hoursPublicHoliday || 0)).toFixed(1)}
-                                    </TableCell>
-                                    <TableCell>{item.weeks}</TableCell>
-                                    <TableCell className="font-medium">
-                                      ${calculateItemTotal(item).toFixed(2)}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {module.description}
+                      </p>
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{module.count} items</span>
                         </div>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-slate-400" />
-                  <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
-                    No service agreements yet
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                    Create your first NDIS service agreement to get started.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                        {module.lastUpdate && (
+                          <span className="text-muted-foreground">
+                            {format(new Date(module.lastUpdate), "MMM d, yyyy")}
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Add Service Item Dialog */}
-          <Dialog open={showItemDialog} onOpenChange={setShowItemDialog}>
-            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add Service Item</DialogTitle>
-                <DialogDescription>
-                  Add a new service item with NDIS code, hours, and pricing details.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...itemForm}>
-                <form onSubmit={itemForm.handleSubmit(onItemSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={itemForm.control}
-                      name="ndisCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>NDIS Code</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 01_011_0107_1_1" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Enter the official NDIS support item code
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={itemForm.control}
-                      name="weeks"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Number of Weeks</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              min="1" 
-                              placeholder="52" 
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Active Agreements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Array.isArray(agreements) ? agreements.filter(a => getAgreementStatus(a) === "Active").length : 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Out of {Array.isArray(agreements) ? agreements.length : 0} total agreements
+            </p>
+          </CardContent>
+        </Card>
 
-                  <FormField
-                    control={itemForm.control}
-                    name="supportDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Support Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Describe the support service being provided..." 
-                            className="min-h-[80px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Pending Referrals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Array.isArray(referrals) ? referrals.filter(r => getReferralStatus(r) === "pending").length : 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Out of {Array.isArray(referrals) ? referrals.length : 0} total referrals
+            </p>
+          </CardContent>
+        </Card>
 
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Hours per Week</h3>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <FormField
-                        control={itemForm.control}
-                        name="hoursDay"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Day Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.25" 
-                                min="0" 
-                                placeholder="0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="hoursEvening"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Evening Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.25" 
-                                min="0" 
-                                placeholder="0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="hoursActiveNight"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Active Night Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.25" 
-                                min="0" 
-                                placeholder="0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="hoursSleepover"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sleepover Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.25" 
-                                min="0" 
-                                placeholder="0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <FormField
-                        control={itemForm.control}
-                        name="hoursSaturday"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Saturday Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.25" 
-                                min="0" 
-                                placeholder="0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="hoursSunday"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sunday Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.25" 
-                                min="0" 
-                                placeholder="0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="hoursPublicHoliday"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Public Holiday Hours</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.25" 
-                                min="0" 
-                                placeholder="0" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Unit Rates (per hour)</h3>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <FormField
-                        control={itemForm.control}
-                        name="unitDay"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Day Rate ($)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="0.00" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="unitEvening"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Evening Rate ($)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="0.00" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="unitActiveNight"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Active Night Rate ($)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="0.00" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="unitSleepover"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sleepover Rate ($)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="0.00" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <FormField
-                        control={itemForm.control}
-                        name="unitSaturday"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Saturday Rate ($)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="0.00" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="unitSunday"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Sunday Rate ($)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="0.00" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={itemForm.control}
-                        name="unitPublicHoliday"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Public Holiday Rate ($)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                step="0.01" 
-                                min="0" 
-                                placeholder="0.00" 
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <FormField
-                    control={itemForm.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Any additional notes or special conditions..." 
-                            className="min-h-[80px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowItemDialog(false);
-                        itemForm.reset();
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={createItemMutation.isPending}
-                    >
-                      {createItemMutation.isPending ? "Adding..." : "Add Service Item"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </TabsContent>
-
-        <TabsContent value="referral-links" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>NDIS Referral Links</CardTitle>
-              <CardDescription>
-                Create and manage secure shareable links for external NDIS participant referrals
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Users className="mx-auto h-12 w-12 text-blue-400" />
-                <h3 className="mt-2 text-lg font-medium text-slate-900 dark:text-slate-100">
-                  NDIS Referral System
-                </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Create secure links that external parties can use to submit comprehensive NDIS participant referrals
-                </p>
-                <Button 
-                  className="mt-4"
-                  onClick={() => window.location.href = "/compliance/referral-links"}
-                >
-                  Manage Referral Links
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="medication-forms" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Completed Medication Authority Forms</CardTitle>
-              <CardDescription>
-                Track completed medication consent and authority documentation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {medicationLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="text-slate-600">Loading medication forms...</div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <AlertTriangle className="mx-auto h-12 w-12 text-slate-400" />
-                  <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
-                    No medication forms completed
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Completed medication authority forms will appear here
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="evacuation-drills" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Evacuation Drill Records</CardTitle>
-              <CardDescription>
-                Log and track mandatory evacuation drill compliance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {drillsLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="text-slate-600">Loading evacuation drills...</div>
-                </div>
-                ) : (
-                <div className="text-center py-8">
-                  <Calendar className="mx-auto h-12 w-12 text-slate-400" />
-                  <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
-                    No evacuation drills recorded
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Evacuation drill records will appear here
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Active Links</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Array.isArray(referralLinks) ? referralLinks.filter(l => l.status === "active").length : 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Out of {Array.isArray(referralLinks) ? referralLinks.length : 0} total links
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
