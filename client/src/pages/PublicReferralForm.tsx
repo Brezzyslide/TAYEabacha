@@ -104,9 +104,19 @@ const ReferralFormSchema = z.object({
   
   // Funding
   ndisNumber: z.string().optional(),
-  planStart: z.date().optional(),
-  planEnd: z.date().optional(),
+  ndisPlanStartDate: z.date().optional(),
+  ndisPlanEndDate: z.date().optional(),
   fundManagementType: z.enum(["NDIA","Self","Plan"]).optional(),
+  
+  // Fund Details with current balances
+  coreCurrentBalance: z.string().optional(),
+  coreFundedAmount: z.string().optional(),
+  silCurrentBalance: z.string().optional(),
+  silFundedAmount: z.string().optional(),
+  irregularSilCurrentBalance: z.string().optional(),
+  irregularSilFundedAmount: z.string().optional(),
+  otherCurrentBalance: z.string().optional(),
+  otherFundedAmount: z.string().optional(),
   
   // Invoice
   invoiceName: z.string().optional(),
@@ -825,6 +835,298 @@ export default function PublicReferralForm() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Fund Details */}
+                <div className="space-y-4">
+                  <div className="bg-blue-50 px-4 py-3 rounded-lg border-l-4 border-blue-400">
+                    <h3 className="text-lg font-semibold text-blue-900">Fund Details</h3>
+                  </div>
+                  
+                  {/* NDIS Plan Dates */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="ndisPlanStartDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>NDIS Plan Start Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? format(field.value, "PPP") : "Select date"}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="ndisPlanEndDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>NDIS Plan End Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? format(field.value, "PPP") : "Select date"}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date < new Date()}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Core Support Funding */}
+                  <div className="border rounded-lg p-4 space-y-4 bg-blue-50">
+                    <h4 className="font-medium text-sm text-blue-700">Core Support Funding</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="coreCurrentBalance"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Current Balance</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="coreFundedAmount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Funded Support Core</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* SIL Support Funding */}
+                  <div className="border rounded-lg p-4 space-y-4 bg-green-50">
+                    <h4 className="font-medium text-sm text-green-700">SIL Support Funding</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="silCurrentBalance"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Current Balance</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="silFundedAmount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Funded Support SIL</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Irregular SIL Support Funding */}
+                  <div className="border rounded-lg p-4 space-y-4 bg-yellow-50">
+                    <h4 className="font-medium text-sm text-yellow-700">Irregular SIL Support Funding</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="irregularSilCurrentBalance"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Current Balance</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="irregularSilFundedAmount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Funded Support Irregular SIL</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Other Funding */}
+                  <div className="border rounded-lg p-4 space-y-4 bg-purple-50">
+                    <h4 className="font-medium text-sm text-purple-700">Other Funding</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="otherCurrentBalance"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Current Balance</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="otherFundedAmount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Other Funded Support</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input 
+                                  placeholder="0.00" 
+                                  className="pl-8" 
+                                  type="number"
+                                  step="0.01"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
 
