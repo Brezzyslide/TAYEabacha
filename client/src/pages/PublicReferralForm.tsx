@@ -287,6 +287,20 @@ export default function PublicReferralForm() {
                     
                     <FormField
                       control={form.control}
+                      name="referrerPosition"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your role or position" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
                       name="clientName"
                       render={({ field }) => (
                         <FormItem>
