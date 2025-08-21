@@ -191,13 +191,25 @@ export default function PublicReferralForm() {
     setErrorMessage("");
 
     try {
-      // Transform dates to strings for API
+      // Transform data for API - convert arrays to expected format
       const submitData = {
         ...data,
         dateOfReferral: data.dateOfReferral.toISOString().split('T')[0],
         dob: data.dob?.toISOString().split('T')[0],
-        ndisPlanStartDate: data.ndisPlanStartDate?.toISOString().split('T')[0],
-        ndisPlanEndDate: data.ndisPlanEndDate?.toISOString().split('T')[0],
+        // Map to correct backend field names
+        planStart: data.ndisPlanStartDate?.toISOString().split('T')[0],
+        planEnd: data.ndisPlanEndDate?.toISOString().split('T')[0],
+        referrerContact: data.referrerPhoneEmail, // Map referrer contact field
+        // Remove frontend-only fields to avoid conflicts
+        ndisPlanStartDate: undefined,
+        ndisPlanEndDate: undefined,
+        referrerPhoneEmail: undefined,
+        // Transform medications array to JSON string for backend
+        medications: data.medications && data.medications.length > 0 
+          ? JSON.stringify(data.medications) 
+          : "",
+        // supportCategories, planManagement, howWeSupport remain as arrays (backend expects arrays)
+        // behaviours remains as array (backend expects jsonb array)
       };
 
       const response = await fetch(`/api/referrals/submit/${token}`, {

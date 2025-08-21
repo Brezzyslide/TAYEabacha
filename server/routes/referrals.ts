@@ -195,6 +195,16 @@ export const ReferralFormSchema = z.object({
   planEnd: z.string().optional(),
   fundManagementType: z.enum(["NDIA","Self","Plan"]).optional(),
   
+  // Fund Details with current balances
+  coreCurrentBalance: z.string().optional(),
+  coreFundedAmount: z.string().optional(),
+  silCurrentBalance: z.string().optional(),
+  silFundedAmount: z.string().optional(),
+  irregularSilCurrentBalance: z.string().optional(),
+  irregularSilFundedAmount: z.string().optional(),
+  otherCurrentBalance: z.string().optional(),
+  otherFundedAmount: z.string().optional(),
+  
   // Invoice details
   invoiceName: z.string().optional(),
   invoiceEmail: z.string().email().optional().or(z.literal("")),
