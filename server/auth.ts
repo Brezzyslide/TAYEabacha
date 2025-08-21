@@ -29,27 +29,27 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Session configuration optimized for AWS hosted environments
-  const isAWSHosted = process.env.REPL_ID && process.env.REPLIT_URL;
+  // Session configuration optimized for Replit development environment
+  const isReplit = !!process.env.REPLIT_CLUSTER;
   
   console.log('[AUTH] Setting up session configuration...');
-  console.log('[AUTH] AWS hosted environment detected:', !!isAWSHosted);
+  console.log('[AUTH] Replit environment detected:', isReplit);
   
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'careconnect-session-secret-dev-2025',
-    resave: true, // Force session save on each request for AWS compatibility
+    resave: false, // Don't force session save - let it be saved when changed
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Always false for development - AWS uses HTTP internally
+      secure: false, // Always false for development
       httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for better persistence
-      sameSite: 'lax', // More permissive for AWS hosting
-      domain: undefined // Let browser determine domain automatically
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: 'lax', // Compatible with Replit
+      path: '/' // Ensure cookie works for all paths
     },
     rolling: true, // Reset expiration on each request
-    name: 'careconnect.sid',
-    proxy: !!isAWSHosted // Trust proxy when hosted on AWS
+    name: 'connect.sid', // Use standard name for better compatibility
+    proxy: isReplit // Trust proxy when on Replit
   };
   
   console.log('[AUTH] Session cookie settings:', sessionSettings.cookie);
