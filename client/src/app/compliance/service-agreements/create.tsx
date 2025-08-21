@@ -85,9 +85,9 @@ export default function CreateServiceAgreement() {
               ndisCode: item.ndisCode,
               supportDescription: item.supportDescription,
               weeks: parseInt(item.weeks?.toString()) || 0,
-              // Convert frontend field names to backend expected names
+              // Use correct field names that match validation schema
               hoursDay: parseFloat(item.hoursDay?.toString()) || 0,
-              hoursEvening: parseFloat(item.hoursWeekdayEvening?.toString()) || 0, // hoursWeekdayEvening -> hoursEvening
+              hoursWeekdayEvening: parseFloat(item.hoursWeekdayEvening?.toString()) || 0,
               hoursActiveNight: parseFloat(item.hoursActiveNight?.toString()) || 0,
               hoursSleepover: parseFloat(item.hoursSleepover?.toString()) || 0,
               hoursSaturday: parseFloat(item.hoursSaturday?.toString()) || 0,
@@ -95,7 +95,7 @@ export default function CreateServiceAgreement() {
               hoursPublicHoliday: parseFloat(item.hoursPublicHoliday?.toString()) || 0,
               // Unit rates
               unitDay: parseFloat(item.unitDay?.toString()) || 0,
-              unitEvening: parseFloat(item.unitWeekdayEvening?.toString()) || 0, // unitWeekdayEvening -> unitEvening
+              unitWeekdayEvening: parseFloat(item.unitWeekdayEvening?.toString()) || 0,
               unitActiveNight: parseFloat(item.unitActiveNight?.toString()) || 0,
               unitSleepover: parseFloat(item.unitSleepover?.toString()) || 0,
               unitSaturday: parseFloat(item.unitSaturday?.toString()) || 0,

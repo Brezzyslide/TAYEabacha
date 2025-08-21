@@ -149,8 +149,10 @@ export class ServiceAgreementController {
       }
       
       // Validate request body
+      console.log('[SERVICE AGREEMENT CONTROLLER] Request body:', JSON.stringify(req.body, null, 2));
       const validation = serviceAgreementCreateSchema.safeParse(req.body);
       if (!validation.success) {
+        console.log('[SERVICE AGREEMENT CONTROLLER] Validation failed:', validation.error.errors);
         return handleError(res, validation.error, 'Invalid request data');
       }
       
@@ -310,8 +312,10 @@ export class ServiceAgreementController {
       }
       
       // Validate request body
+      console.log('[SERVICE AGREEMENT ITEM CONTROLLER] Request body:', JSON.stringify(req.body, null, 2));
       const validation = serviceAgreementItemCreateSchema.safeParse(req.body);
       if (!validation.success) {
+        console.log('[SERVICE AGREEMENT ITEM CONTROLLER] Validation failed:', validation.error.errors);
         return handleError(res, validation.error, 'Invalid request data');
       }
       
