@@ -210,8 +210,8 @@ router.post("/links", async (req, res) => {
     const { expiresAt, maxUses } = req.body;
     const tenantId = user.tenantId;
 
-    // Generate a temporary link ID for the token
-    const tempLinkId = Date.now();
+    // Generate a simple incremental link ID for the token
+    const tempLinkId = Math.floor(Math.random() * 1000000);
 
     // Generate JWT token with temporary link ID and tenant ID
     const token = signReferralToken({ 
