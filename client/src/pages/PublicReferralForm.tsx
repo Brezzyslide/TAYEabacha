@@ -23,11 +23,13 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// Behaviour item schema
+// Behaviour of Concern item schema
 const BehaviourSchema = z.object({
   behaviour: z.string().min(1, "Behaviour is required"),
+  description: z.string().optional(),
+  howItPresents: z.string().optional(),
   trigger: z.string().optional(),
-  management: z.string().optional(),
+  managementStrategy: z.string().optional(),
 });
 
 // Medication item schema
@@ -600,6 +602,124 @@ export default function PublicReferralForm() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  {/* Behaviour of Concern */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-lg font-medium">Behaviours of Concern</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => appendBehaviour({ 
+                          behaviour: "", 
+                          description: "", 
+                          howItPresents: "", 
+                          trigger: "", 
+                          managementStrategy: "" 
+                        })}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Behaviour
+                      </Button>
+                    </div>
+                    
+                    {behaviourFields.length === 0 && (
+                      <p className="text-sm text-muted-foreground italic">No behaviours of concern added yet. Click "Add Behaviour" to start.</p>
+                    )}
+                    
+                    {behaviourFields.map((field, index) => (
+                      <div key={field.id} className="border rounded-lg p-4 space-y-4 bg-orange-50">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium text-sm text-orange-700">Behaviour of Concern #{index + 1}</h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeBehaviour(index)}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`behaviours.${index}.behaviour`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Behaviour *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Verbal aggression" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`behaviours.${index}.description`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                  <Textarea placeholder="Describe the behaviour in detail" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name={`behaviours.${index}.howItPresents`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>How it Presents</FormLabel>
+                                <FormControl>
+                                  <Textarea placeholder="How does this behaviour manifest or appear?" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`behaviours.${index}.trigger`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Trigger</FormLabel>
+                                  <FormControl>
+                                    <Textarea placeholder="What triggers this behaviour?" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name={`behaviours.${index}.managementStrategy`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Management Strategy</FormLabel>
+                                  <FormControl>
+                                    <Textarea placeholder="How should this behaviour be managed?" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
