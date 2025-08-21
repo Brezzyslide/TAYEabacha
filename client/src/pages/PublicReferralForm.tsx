@@ -1178,6 +1178,70 @@ export default function PublicReferralForm() {
 
                 <Separator />
 
+                {/* Invoice Details */}
+                <div className="space-y-4">
+                  <div className="bg-gray-50 px-4 py-3 rounded-lg border-l-4 border-gray-400">
+                    <h3 className="text-lg font-semibold text-gray-900">Invoice Details</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="invoiceEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Address</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="invoice@example.com" 
+                              type="email"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="invoicePhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telephone Number</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g., (03) 9123 4567" 
+                              type="tel"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="invoiceAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter full postal address for invoicing" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <Separator />
+
                 {/* Submit Section */}
                 {submissionStatus === "error" && (
                   <Alert variant="destructive">
