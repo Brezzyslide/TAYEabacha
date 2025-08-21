@@ -409,6 +409,128 @@ export default function PublicReferralForm() {
                     <h3 className="text-lg font-semibold text-blue-900">Support Information</h3>
                   </div>
                   
+                  {/* Support Categories */}
+                  <FormField
+                    control={form.control}
+                    name="supportCategories"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Support Categories</FormLabel>
+                        <div className="space-y-3">
+                          {[
+                            { id: "MultipleComplexDisability", label: "Multiple Complex Disability" },
+                            { id: "ForensicsSDAFunded", label: "Forensics SDA Funded" },
+                            { id: "ForensicsOutreach", label: "Forensics Outreach" },
+                            { id: "NonComplexSupport", label: "Non-Complex Support" },
+                            { id: "ForensicsPrivateRental", label: "Forensics Private Rental" }
+                          ].map((category) => (
+                            <div key={category.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={category.id}
+                                checked={field.value?.includes(category.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...currentValue, category.id]);
+                                  } else {
+                                    field.onChange(currentValue.filter((item: string) => item !== category.id));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={category.id}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                {category.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Plan Management */}
+                  <FormField
+                    control={form.control}
+                    name="planManagement"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Plan Management</FormLabel>
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="PlanManagement"
+                              checked={field.value?.includes("PlanManagement") || false}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange(["PlanManagement"]);
+                                } else {
+                                  field.onChange([]);
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor="PlanManagement"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Plan Management Required
+                            </label>
+                          </div>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* How We Support */}
+                  <FormField
+                    control={form.control}
+                    name="howWeSupport"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Types of Support Needed</FormLabel>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {[
+                            { id: "ADL", label: "Activities of Daily Living (ADL)" },
+                            { id: "HandsOnSupervision", label: "Hands-On Supervision" },
+                            { id: "LegalOrderCompliance", label: "Legal Order Compliance" },
+                            { id: "PersonalCare", label: "Personal Care" },
+                            { id: "CommunityAccess", label: "Community Access" },
+                            { id: "TransportTraining", label: "Transport Training" },
+                            { id: "SocialGroupActivity", label: "Social Group Activity" },
+                            { id: "BehaviouralManagement", label: "Behavioural Management" },
+                            { id: "CompanionshipMentorship", label: "Companionship/Mentorship" },
+                            { id: "RestrictivePracticeImplementation", label: "Restrictive Practice Implementation" }
+                          ].map((supportType) => (
+                            <div key={supportType.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={supportType.id}
+                                checked={field.value?.includes(supportType.id) || false}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...currentValue, supportType.id]);
+                                  } else {
+                                    field.onChange(currentValue.filter((item: string) => item !== supportType.id));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={supportType.id}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                {supportType.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="participantStrengths"
