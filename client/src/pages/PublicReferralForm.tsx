@@ -432,10 +432,10 @@ export default function PublicReferralForm() {
                         <div className="space-y-3">
                           {[
                             { id: "MultipleComplexDisability", label: "Multiple Complex Disability" },
-                            { id: "ForensicsSDAFunded", label: "Forensics SDA Funded" },
-                            { id: "ForensicsOutreach", label: "Forensics Outreach" },
+                            { id: "ForensicsSDAFunded", label: "Disability Forensics SDA Funded" },
+                            { id: "ForensicsOutreach", label: "Disability Forensics Outreach" },
                             { id: "NonComplexSupport", label: "Non-Complex Support" },
-                            { id: "ForensicsPrivateRental", label: "Forensics Private Rental" }
+                            { id: "ForensicsPrivateRental", label: "Disability Forensics Private Rental" }
                           ].map((category) => (
                             <div key={category.id} className="flex items-center space-x-2">
                               <Checkbox
