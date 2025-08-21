@@ -1,0 +1,91 @@
+
+This Service Agreement is made for the purpose of providing supports to the Participant under their NDIS Plan.
+The Provider and Participant agree that this Agreement is consistent with the aims and policies of the NDIS, particularly in supporting Participants to have choice and control over the supports they receive.
+
+2. Supports Provided
+
+The Provider agrees to deliver supports in line with the Participant’s current NDIS Plan, as set out in the attached Schedule of Supports.
+
+All prices are GST inclusive (where applicable).
+
+Prices are based on the rates set out in the most recent NDIS Price Guide/Catalogue as authorised.
+
+The scope and frequency of supports are as agreed with the Participant and documented in this Agreement.
+
+3. Payment Terms
+
+Payment is sought after supports are delivered and acknowledged.
+
+Depending on how the Participant’s NDIS Plan is managed, the following applies:
+
+NDIA-managed: The Provider will claim directly from the NDIA.
+
+Self-managed: The Provider will issue an invoice to the Participant. Payment is due within 7 Days.
+
+Plan-managed: The Provider will invoice the Plan Manager. Payment is due within 7 Days.
+
+Nominee-managed: The Provider will invoice the Nominee. Payment is due within 7 Days
+
+4. Participant Responsibilities
+
+The Participant (or their representative) agrees to:
+
+Provide accurate information about their needs and supports.
+
+Inform the Provider of any changes to their NDIS Plan, funding, or circumstances that may affect this Agreement.
+
+Notify the Provider if they cannot attend or do not require a scheduled support.
+
+5. Provider Responsibilities
+
+The Provider agrees to:
+
+Deliver supports in a manner that upholds Participant rights, dignity, and safety.
+
+Maintain up-to-date knowledge of NDIS requirements and pricing.
+
+Provide invoices/statements of services delivered.
+
+Ensure workers are appropriately qualified and compliant with industry standards.
+
+6. Continuity of Support
+
+If the Provider is unable to deliver agreed supports (for reasons such as staff shortages, business closure, or other disruption), the Provider will:
+
+Inform the Participant as soon as practicable.
+
+Arrange alternative staff or services where possible.
+
+Support the Participant to find an alternate Provider if necessary.
+
+7. Disaster & Emergency Management
+
+The Provider agrees to take reasonable steps to continue or resume supports in the event of emergencies such as natural disasters, health emergencies, or unforeseen disruptions.
+
+This may include:
+
+Developing risk and disaster management procedures.
+
+Outlining alternate arrangements for essential supports.
+
+Communicating clearly with Participants during and after any disruption.
+
+8. Changes to this Agreement
+
+This Agreement may be updated or varied if both the Provider and Participant (or their representative) agree in writing.
+
+9. Ending this Agreement
+
+Either party may end this Agreement by providing {{termination.noticePeriod}} days’ written notice.
+
+Immediate termination may occur if:
+
+A serious breach of this Agreement occurs.
+
+The Participant’s NDIS Plan funding changes and supports can no longer be delivered under this Agreement.
+
+10. Complaints & Feedback
+
+Participants can raise complaints directly with the Provider with contact details provider on page 1 of this agreement unless an alternative contact details was provided to the participant
+
+If unresolved, complaints can be taken to the NDIS Quality and Safeguards Commission.
