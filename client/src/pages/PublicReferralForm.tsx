@@ -196,8 +196,8 @@ export default function PublicReferralForm() {
         ...data,
         dateOfReferral: data.dateOfReferral.toISOString().split('T')[0],
         dob: data.dob?.toISOString().split('T')[0],
-        planStart: data.planStart?.toISOString().split('T')[0],
-        planEnd: data.planEnd?.toISOString().split('T')[0],
+        ndisPlanStartDate: data.ndisPlanStartDate?.toISOString().split('T')[0],
+        ndisPlanEndDate: data.ndisPlanEndDate?.toISOString().split('T')[0],
       };
 
       const response = await fetch(`/api/referrals/submit/${token}`, {
@@ -452,13 +452,13 @@ export default function PublicReferralForm() {
                             <div key={category.id} className="flex items-center space-x-2">
                               <Checkbox
                                 id={category.id}
-                                checked={field.value?.includes(category.id) || false}
+                                checked={field.value?.includes(category.id as any) || false}
                                 onCheckedChange={(checked) => {
                                   const currentValue = field.value || [];
                                   if (checked) {
-                                    field.onChange([...currentValue, category.id]);
+                                    field.onChange([...currentValue, category.id as any]);
                                   } else {
-                                    field.onChange(currentValue.filter((item: string) => item !== category.id));
+                                    field.onChange(currentValue.filter((item) => item !== category.id));
                                   }
                                 }}
                               />
@@ -532,13 +532,13 @@ export default function PublicReferralForm() {
                             <div key={supportType.id} className="flex items-center space-x-2">
                               <Checkbox
                                 id={supportType.id}
-                                checked={field.value?.includes(supportType.id) || false}
+                                checked={field.value?.includes(supportType.id as any) || false}
                                 onCheckedChange={(checked) => {
                                   const currentValue = field.value || [];
                                   if (checked) {
-                                    field.onChange([...currentValue, supportType.id]);
+                                    field.onChange([...currentValue, supportType.id as any]);
                                   } else {
-                                    field.onChange(currentValue.filter((item: string) => item !== supportType.id));
+                                    field.onChange(currentValue.filter((item) => item !== supportType.id));
                                   }
                                 }}
                               />
