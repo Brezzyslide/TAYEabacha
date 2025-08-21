@@ -7,13 +7,13 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, User, Calendar, Phone, Mail, FileText, DollarSign, Heart, Activity } from "lucide-react";
+import { ArrowLeft, Download, User, Calendar, Phone, Mail, FileText, DollarSign, Heart, Activity, Star, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
-// Referral form interface (matches backend structure)
+// Referral form interface (matches actual backend structure)
 interface ReferralForm {
   id: string;
   tenantId: number;
@@ -29,12 +29,41 @@ interface ReferralForm {
   
   // Participant details
   clientName: string;
-  clientDOB?: string;
-  clientAddress?: string;
-  clientPhone?: string;
-  clientEmail?: string;
-  emergencyContact?: string;
+  dob?: string;
+  address?: string;
+  phone?: string;
+  
+  // Emergency contacts
+  emergencyName?: string;
   emergencyPhone?: string;
+  emergencyAddress?: string;
+  emergencyEmail?: string;
+  
+  // Support categories
+  supportCategories?: string[];
+  planManagement?: string[];
+  howWeSupport?: string[];
+  
+  // Participant profile
+  participantStrengths?: string;
+  ndisSupportAsFunded?: string;
+  shiftDays?: string;
+  shiftTimes?: string;
+  preferredGender?: "Male" | "Female" | "Other" | "No";
+  requiredSkillSet?: string;
+  aboutParticipant?: string;
+  likes?: string;
+  dislikes?: string;
+  
+  // Medical information
+  medicalConditions?: string;
+  medications?: string;
+  medicationSideEffects?: string;
+  behaviours?: Array<{
+    behaviour: string;
+    trigger?: string;
+    management?: string;
+  }>;
   
   // NDIS details
   ndisNumber?: string;
@@ -56,28 +85,183 @@ interface ReferralForm {
   invoicePhone?: string;
   invoiceAddress?: string;
   
-  // Health and support details
-  currentSupports?: string;
-  supportGoals?: string;
-  medicalInformation?: string;
-  medications?: string;
-  behaviours?: Array<{
-    behaviour: string;
-    description?: string;
-    howItPresents?: string;
-    trigger?: string;
-    managementStrategy?: string;
-  }>;
-  
   // Metadata
   submittedAt: string;
+  createdAt?: string;
   status?: string;
-  assessment?: any;
+  assessment?: {
+    decision: string;
+    notes?: string;
+    assessedBy?: string;
+    assessedAt?: string;
+  };
 }
 
 export default function ReferralViewPage() {
   const [match, params] = useRoute("/compliance/referral-forms/view/:id");
   const referralId = params?.id;
+
+  // PDF Export function
+  const handlePDFExport = async () => {
+    if (!referral) return;
+    
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.text('Referral Details', 20, 20);
+      
+      doc.setFontSize(14);
+      doc.text(`Client: ${referral.clientName}`, 20, 35);
+      doc.text(`Date of Referral: ${format(new Date(referral.dateOfReferral), "MMMM d, yyyy")}`, 20, 45);
+      doc.text(`Status: ${referral.clientStatus}`, 20, 55);
+      
+      let yPosition = 70;
+      
+      // Referrer Information
+      doc.setFontSize(16);
+      doc.text('Referrer Information', 20, yPosition);
+      yPosition += 10;
+      doc.setFontSize(12);
+      doc.text(`Name: ${referral.referrerName}`, 25, yPosition);
+      yPosition += 8;
+      if (referral.referrerOrg) {
+        doc.text(`Organization: ${referral.referrerOrg}`, 25, yPosition);
+        yPosition += 8;
+      }
+      if (referral.referrerPosition) {
+        doc.text(`Position: ${referral.referrerPosition}`, 25, yPosition);
+        yPosition += 8;
+      }
+      
+      yPosition += 10;
+      
+      // Support Categories
+      if (referral.supportCategories?.length) {
+        doc.setFontSize(16);
+        doc.text('Support Categories', 20, yPosition);
+        yPosition += 10;
+        doc.setFontSize(12);
+        referral.supportCategories.forEach(category => {
+          doc.text(`• ${category}`, 25, yPosition);
+          yPosition += 8;
+        });
+        yPosition += 5;
+      }
+      
+      // Medical Conditions
+      if (referral.medicalConditions) {
+        doc.setFontSize(16);
+        doc.text('Medical Conditions', 20, yPosition);
+        yPosition += 10;
+        doc.setFontSize(12);
+        const medicalText = doc.splitTextToSize(referral.medicalConditions, 170);
+        doc.text(medicalText, 25, yPosition);
+        yPosition += medicalText.length * 5 + 10;
+      }
+      
+      // Medications
+      if (referral.medications) {
+        doc.setFontSize(16);
+        doc.text('Medications', 20, yPosition);
+        yPosition += 10;
+        doc.setFontSize(12);
+        const medicationsText = doc.splitTextToSize(referral.medications, 170);
+        doc.text(medicationsText, 25, yPosition);
+        yPosition += medicationsText.length * 5 + 10;
+      }
+      
+      // Behaviours
+      if (referral.behaviours?.length) {
+        doc.setFontSize(16);
+        doc.text('Behaviours of Concern', 20, yPosition);
+        yPosition += 10;
+        doc.setFontSize(12);
+        referral.behaviours.forEach(behaviour => {
+          doc.text(`• ${behaviour.behaviour}`, 25, yPosition);
+          yPosition += 8;
+          if (behaviour.trigger) {
+            doc.text(`  Trigger: ${behaviour.trigger}`, 30, yPosition);
+            yPosition += 6;
+          }
+          if (behaviour.management) {
+            doc.text(`  Management: ${behaviour.management}`, 30, yPosition);
+            yPosition += 6;
+          }
+          yPosition += 3;
+        });
+        yPosition += 5;
+      }
+      
+      // Fund Details (if available)
+      if (referral.coreCurrentBalance || referral.silCurrentBalance || referral.otherCurrentBalance) {
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        doc.setFontSize(16);
+        doc.text('Fund Details', 20, yPosition);
+        yPosition += 10;
+        doc.setFontSize(12);
+        
+        if (referral.coreCurrentBalance || referral.coreFundedAmount) {
+          doc.text('Core Supports:', 25, yPosition);
+          yPosition += 8;
+          if (referral.coreFundedAmount) {
+            doc.text(`  Funded Amount: $${referral.coreFundedAmount}`, 30, yPosition);
+            yPosition += 6;
+          }
+          if (referral.coreCurrentBalance) {
+            doc.text(`  Current Balance: $${referral.coreCurrentBalance}`, 30, yPosition);
+            yPosition += 6;
+          }
+        }
+        
+        if (referral.silCurrentBalance || referral.silFundedAmount) {
+          doc.text('SIL Supports:', 25, yPosition);
+          yPosition += 8;
+          if (referral.silFundedAmount) {
+            doc.text(`  Funded Amount: $${referral.silFundedAmount}`, 30, yPosition);
+            yPosition += 6;
+          }
+          if (referral.silCurrentBalance) {
+            doc.text(`  Current Balance: $${referral.silCurrentBalance}`, 30, yPosition);
+            yPosition += 6;
+          }
+        }
+        yPosition += 10;
+      }
+      
+      // Assessment
+      if (referral.assessment) {
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        doc.setFontSize(16);
+        doc.text('Assessment', 20, yPosition);
+        yPosition += 10;
+        doc.setFontSize(12);
+        doc.text(`Decision: ${referral.assessment.decision}`, 25, yPosition);
+        yPosition += 8;
+        if (referral.assessment.notes) {
+          const assessmentText = doc.splitTextToSize(referral.assessment.notes, 170);
+          doc.text('Notes:', 25, yPosition);
+          yPosition += 8;
+          doc.text(assessmentText, 25, yPosition);
+        }
+      }
+      
+      // Save the PDF
+      doc.save(`referral-${referral.clientName.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  };
 
   const { data: referral, isLoading, error } = useQuery<ReferralForm>({
     queryKey: ["/api/referrals", referralId],
@@ -170,7 +354,7 @@ export default function ReferralViewPage() {
                 {referral.status.replace('-', ' ')}
               </Badge>
             )}
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => handlePDFExport()}>
               <Download className="h-4 w-4 mr-2" />
               Download PDF
             </Button>
@@ -199,10 +383,10 @@ export default function ReferralViewPage() {
                 <label className="text-sm font-medium text-muted-foreground">Participant Name</label>
                 <p className="font-medium">{referral.clientName}</p>
               </div>
-              {referral.clientDOB && (
+              {referral.dob && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Date of Birth</label>
-                  <p className="font-medium">{format(new Date(referral.clientDOB), "MMMM d, yyyy")}</p>
+                  <p className="font-medium">{format(new Date(referral.dob), "MMMM d, yyyy")}</p>
                 </div>
               )}
             </div>
@@ -246,7 +430,7 @@ export default function ReferralViewPage() {
         </Card>
 
         {/* Contact Details */}
-        {(referral.clientAddress || referral.clientPhone || referral.clientEmail) && (
+        {(referral.address || referral.phone || referral.emergencyName) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -256,34 +440,155 @@ export default function ReferralViewPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {referral.clientAddress && (
+                {referral.address && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Address</label>
-                    <p className="font-medium">{referral.clientAddress}</p>
+                    <p className="font-medium">{referral.address}</p>
                   </div>
                 )}
-                {referral.clientPhone && (
+                {referral.phone && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                    <p className="font-medium">{referral.clientPhone}</p>
+                    <p className="font-medium">{referral.phone}</p>
                   </div>
                 )}
-                {referral.clientEmail && (
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Email</label>
-                    <p className="font-medium">{referral.clientEmail}</p>
-                  </div>
-                )}
-                {referral.emergencyContact && (
+                {referral.emergencyName && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Emergency Contact</label>
-                    <p className="font-medium">{referral.emergencyContact}</p>
+                    <p className="font-medium">{referral.emergencyName}</p>
                     {referral.emergencyPhone && (
                       <p className="text-sm text-muted-foreground">{referral.emergencyPhone}</p>
+                    )}
+                    {referral.emergencyEmail && (
+                      <p className="text-sm text-muted-foreground">{referral.emergencyEmail}</p>
                     )}
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Support Categories */}
+        {(referral.supportCategories?.length || referral.howWeSupport?.length) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Heart className="h-5 w-5 mr-2" />
+                Support Categories
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {referral.supportCategories?.length && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Support Categories</label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {referral.supportCategories.map((category, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {category.replace(/([A-Z])/g, ' $1').trim()}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {referral.howWeSupport?.length && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">How We Support</label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {referral.howWeSupport.map((support, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {support.replace(/([A-Z])/g, ' $1').trim()}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Participant Profile */}
+        {(referral.aboutParticipant || referral.participantStrengths || referral.likes || referral.dislikes) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Star className="h-5 w-5 mr-2" />
+                About Participant
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {referral.aboutParticipant && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">About Participant</label>
+                  <p className="mt-1">{referral.aboutParticipant}</p>
+                </div>
+              )}
+              {referral.participantStrengths && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Participant Strengths</label>
+                  <p className="mt-1">{referral.participantStrengths}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {referral.likes && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Likes</label>
+                    <p className="mt-1">{referral.likes}</p>
+                  </div>
+                )}
+                {referral.dislikes && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Dislikes</label>
+                    <p className="mt-1">{referral.dislikes}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Shift Information */}
+        {(referral.shiftDays || referral.shiftTimes || referral.preferredGender || referral.requiredSkillSet) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Clock className="h-5 w-5 mr-2" />
+                Shift & Support Requirements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {referral.shiftDays && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Shift Days</label>
+                    <p className="font-medium">{referral.shiftDays}</p>
+                  </div>
+                )}
+                {referral.shiftTimes && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Shift Times</label>
+                    <p className="font-medium">{referral.shiftTimes}</p>
+                  </div>
+                )}
+                {referral.preferredGender && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Preferred Gender</label>
+                    <Badge variant="outline">{referral.preferredGender}</Badge>
+                  </div>
+                )}
+              </div>
+              {referral.requiredSkillSet && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Required Skill Set</label>
+                  <p className="mt-1">{referral.requiredSkillSet}</p>
+                </div>
+              )}
+              {referral.ndisSupportAsFunded && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">NDIS Support as Funded</label>
+                  <p className="mt-1">{referral.ndisSupportAsFunded}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -400,34 +705,10 @@ export default function ReferralViewPage() {
           </Card>
         )}
 
-        {/* Support Information */}
-        {(referral.currentSupports || referral.supportGoals) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Heart className="h-5 w-5 mr-2" />
-                Support Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {referral.currentSupports && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Current Supports</label>
-                  <p className="mt-1">{referral.currentSupports}</p>
-                </div>
-              )}
-              {referral.supportGoals && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Support Goals</label>
-                  <p className="mt-1">{referral.supportGoals}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Health Information */}
-        {(referral.medicalInformation || referral.medications || referral.behaviours?.length) && (
+        {(referral.medicalConditions || referral.medications || referral.medicationSideEffects || referral.behaviours?.length) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -436,16 +717,22 @@ export default function ReferralViewPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {referral.medicalInformation && (
+              {referral.medicalConditions && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Medical Information</label>
-                  <p className="mt-1">{referral.medicalInformation}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Medical Conditions</label>
+                  <p className="mt-1">{referral.medicalConditions}</p>
                 </div>
               )}
               {referral.medications && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Current Medications</label>
                   <p className="mt-1">{referral.medications}</p>
+                </div>
+              )}
+              {referral.medicationSideEffects && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Medication Side Effects</label>
+                  <p className="mt-1">{referral.medicationSideEffects}</p>
                 </div>
               )}
               {referral.behaviours && referral.behaviours.length > 0 && (
@@ -455,26 +742,17 @@ export default function ReferralViewPage() {
                     {referral.behaviours.map((behaviour, index) => (
                       <div key={index} className="border rounded-lg p-3">
                         <h5 className="font-medium">{behaviour.behaviour}</h5>
-                        {behaviour.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{behaviour.description}</p>
-                        )}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                          {behaviour.howItPresents && (
-                            <div>
-                              <label className="text-xs font-medium text-muted-foreground">How it Presents</label>
-                              <p className="text-sm">{behaviour.howItPresents}</p>
-                            </div>
-                          )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                           {behaviour.trigger && (
                             <div>
                               <label className="text-xs font-medium text-muted-foreground">Triggers</label>
                               <p className="text-sm">{behaviour.trigger}</p>
                             </div>
                           )}
-                          {behaviour.managementStrategy && (
+                          {behaviour.management && (
                             <div>
                               <label className="text-xs font-medium text-muted-foreground">Management Strategy</label>
-                              <p className="text-sm">{behaviour.managementStrategy}</p>
+                              <p className="text-sm">{behaviour.management}</p>
                             </div>
                           )}
                         </div>
@@ -551,8 +829,20 @@ export default function ReferralViewPage() {
                 </div>
                 {referral.assessment.notes && (
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                    <label className="text-sm font-medium text-muted-foreground">Assessment Notes</label>
                     <p className="mt-1">{referral.assessment.notes}</p>
+                  </div>
+                )}
+                {referral.assessment.assessedBy && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Assessed By</label>
+                    <p className="mt-1">{referral.assessment.assessedBy}</p>
+                  </div>
+                )}
+                {referral.assessment.assessedAt && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Assessment Date</label>
+                    <p className="mt-1">{format(new Date(referral.assessment.assessedAt), "MMMM d, yyyy 'at' h:mm a")}</p>
                   </div>
                 )}
               </div>
