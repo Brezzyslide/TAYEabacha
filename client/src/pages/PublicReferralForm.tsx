@@ -921,6 +921,52 @@ export default function PublicReferralForm() {
                     />
                   </div>
                   
+                  {/* Fund Management Type */}
+                  <FormField
+                    control={form.control}
+                    name="fundManagementType"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Fund Management Type</FormLabel>
+                        <FormControl>
+                          <div className="flex flex-col space-y-2">
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                value="NDIA"
+                                checked={field.value === "NDIA"}
+                                onChange={() => field.onChange("NDIA")}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                              />
+                              <span className="text-sm font-medium text-gray-900">NDIA Managed</span>
+                            </label>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                value="Self"
+                                checked={field.value === "Self"}
+                                onChange={() => field.onChange("Self")}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                              />
+                              <span className="text-sm font-medium text-gray-900">Self Managed</span>
+                            </label>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                value="Plan"
+                                checked={field.value === "Plan"}
+                                onChange={() => field.onChange("Plan")}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                              />
+                              <span className="text-sm font-medium text-gray-900">Plan Managed</span>
+                            </label>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   {/* Core Support Funding */}
                   <div className="border rounded-lg p-4 space-y-4 bg-blue-50">
                     <h4 className="font-medium text-sm text-blue-700">Core Support Funding</h4>
