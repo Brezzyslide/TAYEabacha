@@ -14,13 +14,7 @@ import { randomUUID } from "crypto";
 const router = Router();
 
 // Temporary in-memory storage for referral links and submissions
-// This works around the database space allocation issue
-const memoryStore = {
-  links: new Map<string, any>(),
-  submissions: new Map<string, any>(),
-  nextLinkId: 1,
-  nextSubmissionId: 1
-};
+import { storage } from "../storage";
 
 // Initialize with sample data
 const initializeSampleData = () => {
@@ -108,16 +102,9 @@ const initializeSampleData = () => {
     }
   ];
 
-  // Add sample submissions to memory store
-  sampleSubmissions.forEach(submission => {
-    memoryStore.submissions.set(submission.id, submission);
-  });
-
-  console.log('[REFERRAL] Initialized with sample referral data');
+  // Sample data now stored in database instead of memory
+  console.log('[REFERRAL] Sample data initialization disabled - using database storage');
 };
-
-// Initialize sample data
-initializeSampleData();
 
 // Behaviour item schema for validation
 const BehaviourItem = z.object({
@@ -301,7 +288,8 @@ router.post("/submit/:token", async (req, res) => {
   try {
     const payload = verifyReferralToken(req.params.token);
     
-    const link = memoryStore.links.get(payload.linkId);
+    // Get link from database instead of memory
+    const link = await storage.getReferralLinkById(payload.linkId);
     
     if (!link) {
       return res.status(404).json({ error: "invalid-link" });
@@ -322,13 +310,11 @@ router.post("/submit/:token", async (req, res) => {
     // Validate the form data
     const parsed = ReferralFormSchema.parse(req.body);
     
-    // Create the referral submission in memory
-    const submissionId = memoryStore.nextSubmissionId++;
-    const referral = {
-      id: submissionId,
+    // Create the referral submission in database
+    const referral = await storage.createReferralSubmission({
       tenantId: payload.tenantId,
       linkId: link.id,
-      dateOfReferral: parsed.dateOfReferral,
+      dateOfReferral: new Date(parsed.dateOfReferral),
       isNewClient: parsed.clientStatus === "New",
       isReturningClient: parsed.clientStatus === "Returning",
       referrerName: parsed.referrerName,
@@ -368,15 +354,11 @@ router.post("/submit/:token", async (req, res) => {
       invoicePhone: parsed.invoicePhone,
       invoiceAddress: parsed.invoiceAddress,
       source: "web-form",
-      status: "pending",
-      submittedAt: new Date(),
-    };
+      status: "pending"
+    });
 
-    memoryStore.submissions.set(submissionId.toString(), referral);
-
-    // Increment link usage in memory
-    link.currentUses = (link.currentUses || 0) + 1;
-    memoryStore.links.set(payload.linkId, link);
+    // Increment link usage
+    await storage.incrementReferralLinkUsage(link.id);
 
     console.log(`[REFERRAL] New submission received for tenant ${payload.tenantId}: ${parsed.clientName}`);
 
@@ -406,11 +388,8 @@ router.get("/", async (req, res) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    // Get submissions from memory for this tenant
-    const submissions = Array.from(memoryStore.submissions.values())
-      .filter(submission => submission.tenantId === user.tenantId)
-      .sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
-
+    // Get submissions from database for this tenant
+    const submissions = await storage.getReferralSubmissions(user.tenantId);
     res.json(submissions);
   } catch (error) {
     console.error("Get referrals error:", error);
@@ -426,10 +405,10 @@ router.get("/:id", async (req, res) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    // Get from memory storage
-    const referral = memoryStore.submissions.get(req.params.id);
+    // Get from database storage
+    const referral = await storage.getReferralSubmission(parseInt(req.params.id), user.tenantId);
     
-    if (!referral || referral.tenantId !== user.tenantId) {
+    if (!referral) {
       return res.status(404).json({ error: "Referral not found" });
     }
 

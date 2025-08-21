@@ -3141,6 +3141,82 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated || undefined;
   }
+
+  // Referral management methods
+  async getReferralForms(tenantId: number): Promise<ReferralForm[]> {
+    return await db.select().from(referralForms)
+      .where(eq(referralForms.tenantId, tenantId))
+      .orderBy(desc(referralForms.createdAt));
+  }
+
+  async createReferralForm(form: any): Promise<ReferralForm> {
+    const [created] = await db
+      .insert(referralForms)
+      .values(form)
+      .returning();
+    return created;
+  }
+
+  async getReferralSubmissions(tenantId: number): Promise<ReferralSubmission[]> {
+    return await db.select().from(referralSubmissions)
+      .where(eq(referralSubmissions.tenantId, tenantId))
+      .orderBy(desc(referralSubmissions.submittedAt));
+  }
+
+  async getReferralSubmission(id: number, tenantId: number): Promise<ReferralSubmission | undefined> {
+    const [submission] = await db.select().from(referralSubmissions)
+      .where(and(
+        eq(referralSubmissions.id, id),
+        eq(referralSubmissions.tenantId, tenantId)
+      ));
+    return submission || undefined;
+  }
+
+  async createReferralSubmission(submission: any): Promise<ReferralSubmission> {
+    const [created] = await db
+      .insert(referralSubmissions)
+      .values({
+        ...submission,
+        submittedAt: new Date()
+      })
+      .returning();
+    return created;
+  }
+
+  async getReferralLinks(tenantId: number): Promise<ReferralLink[]> {
+    return await db.select().from(referralLinks)
+      .where(eq(referralLinks.tenantId, tenantId))
+      .orderBy(desc(referralLinks.createdAt));
+  }
+
+  async createReferralLink(link: any): Promise<ReferralLink> {
+    const [created] = await db
+      .insert(referralLinks)
+      .values(link)
+      .returning();
+    return created;
+  }
+
+  async getReferralLinkByToken(token: string): Promise<ReferralLink | undefined> {
+    const [link] = await db.select().from(referralLinks)
+      .where(eq(referralLinks.accessCode, token));
+    return link || undefined;
+  }
+
+  async getReferralLinkById(linkId: number): Promise<ReferralLink | undefined> {
+    const [link] = await db.select().from(referralLinks)
+      .where(eq(referralLinks.id, linkId));
+    return link || undefined;
+  }
+
+  async incrementReferralLinkUsage(linkId: number): Promise<void> {
+    await db
+      .update(referralLinks)
+      .set({
+        currentUses: sql`${referralLinks.currentUses} + 1`
+      })
+      .where(eq(referralLinks.id, linkId));
+  }
 }
 
 export const storage = new DatabaseStorage();
