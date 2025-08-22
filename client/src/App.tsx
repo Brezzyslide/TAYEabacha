@@ -67,6 +67,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/sign/:token" component={PublicSignPage} />
       <Route path="/share/referral/:token" component={PublicReferralForm} />
+      <Route path="/referral/:token" component={PublicReferralForm} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/clients" component={ClientListPage} />
       <ProtectedRoute path="/clients/create" component={() => <SimpleCreateClientForm />} />
