@@ -287,8 +287,8 @@ router.post("/submit/:token", async (req, res) => {
   try {
     const payload = verifyReferralToken(req.params.token);
     
-    // Get link from database instead of memory
-    const link = await storage.getReferralLinkById(payload.linkId);
+    // Get link from database by token, not by linkId
+    const link = await storage.getReferralLinkByToken(req.params.token);
     
     if (!link) {
       return res.status(404).json({ error: "invalid-link" });
@@ -328,9 +328,9 @@ router.post("/submit/:token", async (req, res) => {
       emergencyPhone: parsed.emergencyPhone,
       emergencyAddress: parsed.emergencyAddress,
       emergencyEmail: parsed.emergencyEmail,
-      supportCategories: parsed.supportCategories,
-      planManagement: parsed.planManagement,
-      howWeSupport: parsed.howWeSupport,
+      supportCategories: Array.isArray(parsed.supportCategories) && parsed.supportCategories.length > 0 ? parsed.supportCategories : null,
+      planManagement: Array.isArray(parsed.planManagement) && parsed.planManagement.length > 0 ? parsed.planManagement : null,
+      howWeSupport: Array.isArray(parsed.howWeSupport) && parsed.howWeSupport.length > 0 ? parsed.howWeSupport : null,
       participantStrengths: parsed.participantStrengths,
       ndisSupportAsFunded: parsed.ndisSupportAsFunded,
       shiftDays: parsed.shiftDays,
@@ -343,7 +343,7 @@ router.post("/submit/:token", async (req, res) => {
       medicalConditions: parsed.medicalConditions,
       medications: parsed.medications,
       medicationSideEffects: parsed.medicationSideEffects,
-      behaviours: parsed.behaviours || [],
+      behaviours: Array.isArray(parsed.behaviours) && parsed.behaviours.length > 0 ? parsed.behaviours : null,
       ndisNumber: parsed.ndisNumber,
       planStart: parsed.planStart ? new Date(parsed.planStart) : null,
       planEnd: parsed.planEnd ? new Date(parsed.planEnd) : null,

@@ -1,0 +1,125 @@
+
+hook.js:608 Warning: A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://reactjs.org/link/controlled-components Error Component Stack
+    at input (<anonymous>)
+    at _c (input.tsx:6:6)
+    at chunk-2K77HOHX.js?v=c80224a8:79:13
+    at chunk-2K77HOHX.js?v=c80224a8:56:13
+    at form.tsx:107:9
+    at div (<anonymous>)
+    at form.tsx:76:6
+    at Controller (chunk-4BFJKWC4.js?v=c80224a8:298:35)
+    at FormField (form.tsx:33:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at form (<anonymous>)
+    at FormProvider (chunk-4BFJKWC4.js?v=c80224a8:102:11)
+    at div (<anonymous>)
+    at _c9 (card.tsx:62:6)
+    at div (<anonymous>)
+    at _c (card.tsx:8:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at PublicReferralForm (PublicReferralForm.tsx:131:22)
+    at Route (wouter.js?v=c80224a8:323:16)
+    at Switch (wouter.js?v=c80224a8:379:17)
+    at Router (<anonymous>)
+    at Provider (chunk-OXZDJRWN.js?v=c80224a8:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=c80224a8:64:5)
+    at AuthProvider (use-auth.tsx:23:32)
+    at ThemeProvider (theme-provider.tsx:15:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=c80224a8:2805:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+printWarning @ chunk-RPCDYKBN.js?v=c80224a8:521
+error @ chunk-RPCDYKBN.js?v=c80224a8:505
+updateWrapper @ chunk-RPCDYKBN.js?v=c80224a8:1968
+updateProperties @ chunk-RPCDYKBN.js?v=c80224a8:7762
+commitUpdate @ chunk-RPCDYKBN.js?v=c80224a8:8419
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17763
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17737
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=c80224a8:17794
+commitMutationEffects @ chunk-RPCDYKBN.js?v=c80224a8:17663
+commitRootImpl @ chunk-RPCDYKBN.js?v=c80224a8:19347
+commitRoot @ chunk-RPCDYKBN.js?v=c80224a8:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=c80224a8:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=c80224a8:9119
+flushSync @ chunk-RPCDYKBN.js?v=c80224a8:18959
+finishEventHandler @ chunk-RPCDYKBN.js?v=c80224a8:3569
+batchedUpdates @ chunk-RPCDYKBN.js?v=c80224a8:3582
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=c80224a8:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=c80224a8:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=c80224a8:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=c80224a8:5449Understand this error
+PublicReferralForm.tsx:215  POST https://dfa1c93e-22e7-4a41-940d-04115919166e-00-256xa7l1xi06n.picard.replit.dev/api/referrals/submit/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsaW5rSWQiOiI5Njg1MCIsInRlbmFudElkIjoyLCJpYXQiOjE3NTU4MjI1NDgsImV4cCI6MTc2MzU5ODU0OH0.ztEv7qhXIwEMLZ-qswNnw3tGORxC-24eN_YySw_NxXw 404 (Not Found)

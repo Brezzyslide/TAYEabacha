@@ -128,7 +128,7 @@ const ReferralFormSchema = z.object({
 type FormData = z.infer<typeof ReferralFormSchema>;
 
 export default function PublicReferralForm() {
-  const [, params] = useRoute("/share/referral/:token");
+  const [, params] = useRoute("/share/referral/:token") || useRoute("/referral/:token");
   const token = params?.token;
   
   const [linkStatus, setLinkStatus] = useState<"loading" | "valid" | "invalid" | "expired" | "exceeded">("loading");
@@ -139,11 +139,49 @@ export default function PublicReferralForm() {
     resolver: zodResolver(ReferralFormSchema),
     defaultValues: {
       dateOfReferral: new Date(),
+      clientStatus: "New",
+      referrerName: "",
+      referrerOrg: "",
+      referrerPosition: "",
+      referrerPhoneEmail: "",
+      clientName: "",
+      dob: "",
+      address: "",
+      phone: "",
+      emergencyName: "",
+      emergencyPhone: "",
+      emergencyAddress: "",
+      emergencyEmail: "",
       supportCategories: [],
       planManagement: [],
       howWeSupport: [],
+      participantStrengths: "",
+      ndisSupportAsFunded: "",
+      shiftDays: "",
+      shiftTimes: "",
+      requiredSkillSet: "",
+      aboutParticipant: "",
+      likes: "",
+      dislikes: "",
+      medicalConditions: "",
+      medications: "",
+      medicationSideEffects: "",
       behaviours: [],
-      medications: [],
+      ndisNumber: "",
+      planStart: "",
+      planEnd: "",
+      coreCurrentBalance: "",
+      coreFundedAmount: "",
+      silCurrentBalance: "",
+      silFundedAmount: "",
+      irregularSilCurrentBalance: "",
+      irregularSilFundedAmount: "",
+      otherCurrentBalance: "",
+      otherFundedAmount: "",
+      invoiceName: "",
+      invoiceEmail: "",
+      invoicePhone: "",
+      invoiceAddress: "",
     },
   });
 
