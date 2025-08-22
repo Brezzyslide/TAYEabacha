@@ -144,8 +144,8 @@ export const ReferralFormSchema = z.object({
     "ForensicsOutreach",
     "NonComplexSupport",
     "ForensicsPrivateRental"
-  ])).optional().default([]),
-  planManagement: z.array(z.enum(["PlanManagement"])).optional().default([]),
+  ])).nullable().optional(),
+  planManagement: z.array(z.enum(["PlanManagement"])).nullable().optional(),
   howWeSupport: z.array(z.enum([
     "ADL",
     "HandsOnSupervision",
@@ -157,7 +157,7 @@ export const ReferralFormSchema = z.object({
     "BehaviouralManagement",
     "CompanionshipMentorship",
     "RestrictivePracticeImplementation"
-  ])).optional().default([]),
+  ])).nullable().optional(),
   
   // Strengths and profile
   participantStrengths: z.string().optional(),
@@ -172,9 +172,13 @@ export const ReferralFormSchema = z.object({
   
   // Medical
   medicalConditions: z.string().optional(),
-  medications: z.string().optional(),
+  medications: z.array(z.object({
+    name: z.string(),
+    dosage: z.string().optional(),
+    frequency: z.string().optional()
+  })).nullable().optional(),
   medicationSideEffects: z.string().optional(),
-  behaviours: z.array(BehaviourItem).optional().default([]),
+  behaviours: z.array(BehaviourItem).nullable().optional(),
   
   // Funding
   ndisNumber: z.string().optional(),

@@ -872,9 +872,9 @@ export const referralSubmissions = pgTable("referral_submissions", {
   emergencyEmail: text("emergency_email"),
   
   // Support categories (NDIS specific)
-  supportCategories: text("support_categories").array().default([]),
-  planManagement: text("plan_management").array().default([]),
-  howWeSupport: text("how_we_support").array().default([]),
+  supportCategories: text("support_categories").array(),
+  planManagement: text("plan_management").array(),
+  howWeSupport: text("how_we_support").array(),
   
   // Participant profile
   participantStrengths: text("participant_strengths"),
@@ -889,9 +889,9 @@ export const referralSubmissions = pgTable("referral_submissions", {
   
   // Medical information
   medicalConditions: text("medical_conditions"),
-  medications: text("medications"),
+  medications: jsonb("medications").$type<Array<{name: string; dosage?: string; frequency?: string}>>(),
   medicationSideEffects: text("medication_side_effects"),
-  behaviours: jsonb("behaviours").$type<Array<{behaviour: string; trigger?: string; management?: string}>>().default([]),
+  behaviours: jsonb("behaviours").$type<Array<{behaviour: string; trigger?: string; management?: string}>>(),
   
   // NDIS funding details
   ndisNumber: text("ndis_number"),
