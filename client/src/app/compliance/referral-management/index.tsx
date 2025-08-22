@@ -40,6 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { ReferralDetailsView } from "./components/ReferralDetailsView";
 
 // Assessment form schema
 const AssessmentSchema = z.object({
@@ -129,15 +130,23 @@ export default function ReferralManagementPage() {
     },
   });
 
-  // PDF export mutation
+  // PDF export mutation  
   const pdfExportMutation = useMutation({
     mutationFn: async (referralId: string) => {
       try {
-        const response = await apiRequest("GET", `/api/referrals/${referralId}/pdf`);
+        // Use fetch directly with credentials included for authenticated request
+        const response = await fetch(`/api/referrals/${referralId}/pdf`, {
+          method: "GET",
+          credentials: "include", // Include session cookies
+          headers: {
+            "Accept": "application/pdf",
+          },
+        });
         
         // Check if response is ok
         if (!response.ok) {
-          throw new Error(`Export failed: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`Export failed: ${response.status} - ${errorText}`);
         }
         
         const blob = await response.blob();
@@ -744,115 +753,3 @@ export default function ReferralManagementPage() {
   );
 }
 
-// Detailed referral view component
-function ReferralDetailsView({ referral }: { referral: ReferralSubmission }) {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold">Client Information</h4>
-            <div className="space-y-1 text-sm">
-              <div><strong>Name:</strong> {referral.clientName}</div>
-              <div><strong>NDIS Number:</strong> {referral.ndisNumber || "Not provided"}</div>
-              {referral.planStart && (
-                <div><strong>Plan Period:</strong> {format(new Date(referral.planStart), "PPP")} - {referral.planEnd ? format(new Date(referral.planEnd), "PPP") : "Ongoing"}</div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold">Referrer Information</h4>
-            <div className="space-y-1 text-sm">
-              <div><strong>Name:</strong> {referral.referrerName}</div>
-              {referral.referrerOrg && <div><strong>Organization:</strong> {referral.referrerOrg}</div>}
-              <div><strong>Submitted:</strong> {format(new Date(referral.submittedAt), "PPP p")}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold">Support Categories</h4>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {referral.supportCategories?.map((category) => (
-                <Badge key={category} variant="outline" className="text-xs">
-                  {category}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold">How We Support</h4>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {referral.howWeSupport?.map((support) => (
-                <Badge key={support} variant="secondary" className="text-xs">
-                  {support}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {referral.aboutParticipant && (
-        <div>
-          <h4 className="font-semibold">About Participant</h4>
-          <p className="text-sm mt-2">{referral.aboutParticipant}</p>
-        </div>
-      )}
-
-      {referral.medicalConditions && (
-        <div>
-          <h4 className="font-semibold">Medical Conditions</h4>
-          <p className="text-sm mt-2">{referral.medicalConditions}</p>
-        </div>
-      )}
-
-      {referral.behaviours && referral.behaviours.length > 0 && (
-        <div>
-          <h4 className="font-semibold">Behaviours of Concern</h4>
-          <div className="space-y-2 mt-2">
-            {referral.behaviours.map((behaviour, index) => (
-              <div key={index} className="p-3 bg-muted rounded-lg text-sm">
-                <div><strong>Behaviour:</strong> {behaviour.behaviour}</div>
-                {behaviour.trigger && <div><strong>Trigger:</strong> {behaviour.trigger}</div>}
-                {behaviour.management && <div><strong>Management:</strong> {behaviour.management}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {referral.assessment && (
-        <div>
-          <h4 className="font-semibold">Assessment Results</h4>
-          <div className="p-4 bg-muted rounded-lg mt-2">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><strong>Organizational Capacity:</strong> {referral.assessment.organizationalCapacity}</div>
-              <div><strong>Skillset Capacity:</strong> {referral.assessment.skillsetCapacity}</div>
-              <div><strong>Funding Sufficient:</strong> {referral.assessment.fundingSufficient}</div>
-              <div><strong>Restrictive Practice:</strong> {referral.assessment.restrictivePractice}</div>
-              <div><strong>Manual Handling:</strong> {referral.assessment.manualHandling}</div>
-              <div><strong>Medication Management:</strong> {referral.assessment.medicationManagement}</div>
-            </div>
-            <div className="mt-4">
-              <div><strong>Support Overview:</strong></div>
-              <p className="mt-1">{referral.assessment.supportOverview}</p>
-            </div>
-            <div className="mt-4">
-              <div><strong>Decision:</strong> <Badge variant={referral.assessment.decision === "proceed" ? "default" : "secondary"}>{referral.assessment.decision}</Badge></div>
-              {referral.assessment.declineReason && (
-                <div className="mt-2"><strong>Decline Reason:</strong> {referral.assessment.declineReason}</div>
-              )}
-              {referral.assessment.referralPathway && (
-                <div className="mt-2"><strong>Referral Pathway:</strong> {referral.assessment.referralPathway}</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
