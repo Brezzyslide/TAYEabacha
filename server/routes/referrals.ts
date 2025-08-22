@@ -515,19 +515,63 @@ router.get("/:id/pdf", async (req, res) => {
 
 // Helper function to generate PDF (simplified placeholder)
 function generateReferralPDF(referral: any): Buffer {
-  // For now, return a simple text-based PDF placeholder
-  // In production, you'd use a library like puppeteer or jsPDF
+  // Generate a comprehensive PDF report
   const content = `
 NDIS REFERRAL REPORT
 ===================
 
-Client: ${referral.clientName}
-Referrer: ${referral.referrerName}
-Date: ${new Date(referral.submittedAt).toLocaleDateString()}
+CLIENT INFORMATION
+------------------
+Name: ${referral.clientName}
 NDIS Number: ${referral.ndisNumber || 'Not provided'}
+Plan Period: ${referral.planStart ? new Date(referral.planStart).toLocaleDateString() : 'Not specified'} - ${referral.planEnd ? new Date(referral.planEnd).toLocaleDateString() : 'Ongoing'}
 
+REFERRER INFORMATION
+-------------------
+Name: ${referral.referrerName}
+Organization: ${referral.referrerOrg || 'Not specified'}
+Date Submitted: ${new Date(referral.submittedAt).toLocaleDateString()}
+Referral Date: ${referral.dateOfReferral ? new Date(referral.dateOfReferral).toLocaleDateString() : 'Not specified'}
+
+SUPPORT DETAILS
+--------------
 Support Categories: ${referral.supportCategories?.join(', ') || 'None specified'}
-Support Types: ${referral.howWeSupport?.join(', ') || 'None specified'}
+How We Support: ${referral.howWeSupport?.join(', ') || 'None specified'}
+
+PARTICIPANT INFORMATION
+----------------------
+About Participant: ${referral.aboutParticipant || 'Not provided'}
+Medical Conditions: ${referral.medicalConditions || 'Not provided'}
+
+BEHAVIOURS OF CONCERN
+--------------------
+${referral.behaviours && referral.behaviours.length > 0 
+  ? referral.behaviours.map((b: any, i: number) => `
+${i + 1}. Behaviour: ${b.behaviour || 'Not specified'}
+   Trigger: ${b.trigger || 'Not specified'}
+   Management: ${b.management || 'Not specified'}`).join('\n')
+  : 'None specified'}
+
+${referral.assessment ? `
+ASSESSMENT RESULTS
+-----------------
+Status: ${referral.status}
+Organizational Capacity: ${referral.assessment.organizationalCapacity}
+Skillset Capacity: ${referral.assessment.skillsetCapacity}
+Funding Sufficient: ${referral.assessment.fundingSufficient}
+Restrictive Practice: ${referral.assessment.restrictivePractice}
+Manual Handling: ${referral.assessment.manualHandling}
+Medication Management: ${referral.assessment.medicationManagement}
+
+Decision: ${referral.assessment.decision}
+${referral.assessment.declineReason ? `Decline Reason: ${referral.assessment.declineReason}` : ''}
+${referral.assessment.referralPathway ? `Referral Pathway: ${referral.assessment.referralPathway}` : ''}
+
+Support Overview: ${referral.assessment.supportOverview}
+` : ''}
+
+Generated on: ${new Date().toLocaleString()}
+Report ID: REF-${referral.id}
 
 About Participant:
 ${referral.aboutParticipant || 'No information provided'}

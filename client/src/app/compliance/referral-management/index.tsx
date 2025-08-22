@@ -81,6 +81,7 @@ export default function ReferralManagementPage() {
   const queryClient = useQueryClient();
   const [selectedReferral, setSelectedReferral] = useState<ReferralSubmission | null>(null);
   const [showAssessment, setShowAssessment] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>();
@@ -131,16 +132,37 @@ export default function ReferralManagementPage() {
   // PDF export mutation
   const pdfExportMutation = useMutation({
     mutationFn: async (referralId: string) => {
-      const response = await apiRequest("GET", `/api/referrals/${referralId}/pdf`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `referral-${referralId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      try {
+        const response = await apiRequest("GET", `/api/referrals/${referralId}/pdf`);
+        
+        // Check if response is ok
+        if (!response.ok) {
+          throw new Error(`Export failed: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        
+        // Check if we actually got a PDF
+        if (blob.size === 0) {
+          throw new Error("PDF export returned empty file");
+        }
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `referral-${referralId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PDF Exported",
+          description: "Referral PDF has been downloaded successfully",
+        });
+      } catch (error: any) {
+        throw error;
+      }
     },
     onError: (error: any) => {
       toast({
@@ -345,7 +367,29 @@ export default function ReferralManagementPage() {
                             Complete referral information and assessment
                           </DialogDescription>
                         </DialogHeader>
-                        {selectedReferral && <ReferralDetailsView referral={selectedReferral} />}
+                        <ReferralDetailsView referral={referral} />
+                        <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedReferral(referral);
+                              setShowAssessment(true);
+                            }}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Assess
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => pdfExportMutation.mutate(referral.id)}
+                            disabled={pdfExportMutation.isPending}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            {pdfExportMutation.isPending ? "Exporting..." : "Export PDF"}
+                          </Button>
+                        </div>
                       </DialogContent>
                     </Dialog>
 
