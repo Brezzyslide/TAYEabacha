@@ -1337,6 +1337,18 @@ export default function PublicReferralForm() {
                     {submissionStatus === "submitting" ? "Submitting..." : "Submit Referral"}
                   </Button>
                 </div>
+                
+                {/* Debug info - remove in production */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
+                    <p>Form Valid: {form.formState.isValid ? 'Yes' : 'No'}</p>
+                    <p>Submission Status: {submissionStatus}</p>
+                    <p>Errors: {Object.keys(form.formState.errors).length}</p>
+                    {Object.keys(form.formState.errors).length > 0 && (
+                      <pre>{JSON.stringify(form.formState.errors, null, 2)}</pre>
+                    )}
+                  </div>
+                )}
               </form>
             </Form>
           </CardContent>
