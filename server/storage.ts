@@ -3201,6 +3201,27 @@ export class DatabaseStorage implements IStorage {
     return submission || undefined;
   }
 
+  async updateReferralSubmissionStatus(id: number, tenantId: number, status: string, assessment?: any): Promise<ReferralSubmission | undefined> {
+    try {
+      const [updated] = await db.update(referralSubmissions)
+        .set({
+          status: status,
+          assessment: assessment ? JSON.stringify(assessment) : undefined,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(referralSubmissions.id, id),
+          eq(referralSubmissions.tenantId, tenantId)
+        ))
+        .returning();
+      
+      return updated || undefined;
+    } catch (error) {
+      console.error("Update referral submission error:", error);
+      return undefined;
+    }
+  }
+
   async deleteReferralSubmission(id: number, tenantId: number): Promise<boolean> {
     try {
       const result = await db.delete(referralSubmissions)

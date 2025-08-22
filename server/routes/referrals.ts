@@ -454,9 +454,25 @@ router.post("/:id/assessment", async (req, res) => {
       return res.status(404).json({ error: "Referral not found" });
     }
 
-    // Update referral with assessment data (this would need to be implemented)
-    // For now, just return success as the original implementation used memory store
-    console.log("Assessment data:", req.body);
+    // Update referral with assessment data in database
+    const assessmentData = req.body;
+    console.log("Assessment data received:", assessmentData);
+
+    // Determine status based on decision
+    const newStatus = assessmentData.decision === "proceed" ? "approved" : 
+                     assessmentData.decision === "decline" ? "declined" : "under-review";
+
+    // Update the referral in the database with assessment and new status
+    const updatedReferral = await storage.updateReferralSubmissionStatus(
+      parseInt(req.params.id), 
+      user.tenantId, 
+      newStatus, 
+      assessmentData
+    );
+
+    if (!updatedReferral) {
+      return res.status(500).json({ error: "Failed to update referral assessment" });
+    }
 
     console.log(`[REFERRAL] Assessment completed for referral ${req.params.id} by ${user.username}`);
     
