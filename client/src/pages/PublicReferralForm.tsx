@@ -145,7 +145,7 @@ export default function PublicReferralForm() {
       referrerPosition: "",
       referrerPhoneEmail: "",
       clientName: "",
-      dob: "",
+      dob: undefined,
       address: "",
       phone: "",
       emergencyName: "",
@@ -164,12 +164,13 @@ export default function PublicReferralForm() {
       likes: "",
       dislikes: "",
       medicalConditions: "",
-      medications: "",
+      medications: [],
       medicationSideEffects: "",
       behaviours: [],
       ndisNumber: "",
       planStart: "",
       planEnd: "",
+      fundManagementType: "",
       coreCurrentBalance: "",
       coreFundedAmount: "",
       silCurrentBalance: "",
@@ -182,6 +183,9 @@ export default function PublicReferralForm() {
       invoiceEmail: "",
       invoicePhone: "",
       invoiceAddress: "",
+      ndisPlanStartDate: undefined,
+      ndisPlanEndDate: undefined,
+      preferredGender: "",
     },
   });
 
@@ -335,7 +339,7 @@ export default function PublicReferralForm() {
           
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
                 
                 {/* Header Section - Matching the design */}
                 <div className="bg-amber-400 px-4 py-3 rounded-lg border-l-4 border-amber-600">
@@ -345,7 +349,7 @@ export default function PublicReferralForm() {
                 {/* Date of Referral */}
                 <div className="space-y-4">
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="dateOfReferral"
                     render={({ field }) => (
                       <FormItem className="w-full md:w-1/2">
@@ -371,7 +375,7 @@ export default function PublicReferralForm() {
                   <h4 className="text-md font-medium text-gray-900">Basic Information</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="referrerName"
                       render={({ field }) => (
                         <FormItem>
@@ -385,7 +389,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="referrerPosition"
                       render={({ field }) => (
                         <FormItem>
@@ -399,7 +403,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="clientName"
                       render={({ field }) => (
                         <FormItem>
@@ -413,7 +417,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="clientStatus"
                       render={({ field }) => (
                         <FormItem>
@@ -435,7 +439,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="referrerPhoneEmail"
                       render={({ field }) => (
                         <FormItem>
@@ -457,7 +461,7 @@ export default function PublicReferralForm() {
                   <h3 className="text-lg font-semibold">Participant Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="ndisNumber"
                       render={({ field }) => (
                         <FormItem>
@@ -471,7 +475,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
@@ -485,7 +489,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="address"
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
@@ -510,7 +514,7 @@ export default function PublicReferralForm() {
                   
                   {/* Support Categories */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="supportCategories"
                     render={({ field }) => (
                       <FormItem>
@@ -552,7 +556,7 @@ export default function PublicReferralForm() {
 
                   {/* Plan Management */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="planManagement"
                     render={({ field }) => (
                       <FormItem>
@@ -585,7 +589,7 @@ export default function PublicReferralForm() {
 
                   {/* How We Support */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="howWeSupport"
                     render={({ field }) => (
                       <FormItem>
@@ -631,7 +635,7 @@ export default function PublicReferralForm() {
                   />
 
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="participantStrengths"
                     render={({ field }) => (
                       <FormItem>
@@ -645,7 +649,7 @@ export default function PublicReferralForm() {
                   />
                   
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="aboutParticipant"
                     render={({ field }) => (
                       <FormItem>
@@ -660,7 +664,7 @@ export default function PublicReferralForm() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="likes"
                       render={({ field }) => (
                         <FormItem>
@@ -674,7 +678,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="dislikes"
                       render={({ field }) => (
                         <FormItem>
@@ -731,7 +735,7 @@ export default function PublicReferralForm() {
                         
                         <div className="grid grid-cols-1 gap-4">
                           <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name={`behaviours.${index}.behaviour`}
                             render={({ field }) => (
                               <FormItem>
@@ -745,7 +749,7 @@ export default function PublicReferralForm() {
                           />
                           
                           <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name={`behaviours.${index}.description`}
                             render={({ field }) => (
                               <FormItem>
@@ -759,7 +763,7 @@ export default function PublicReferralForm() {
                           />
                           
                           <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name={`behaviours.${index}.howItPresents`}
                             render={({ field }) => (
                               <FormItem>
@@ -774,7 +778,7 @@ export default function PublicReferralForm() {
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
-                              control={form.control}
+                              control={form.control as any}
                               name={`behaviours.${index}.trigger`}
                               render={({ field }) => (
                                 <FormItem>
@@ -788,7 +792,7 @@ export default function PublicReferralForm() {
                             />
                             
                             <FormField
-                              control={form.control}
+                              control={form.control as any}
                               name={`behaviours.${index}.managementStrategy`}
                               render={({ field }) => (
                                 <FormItem>
@@ -816,7 +820,7 @@ export default function PublicReferralForm() {
                   </div>
                   
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="medicalConditions"
                     render={({ field }) => (
                       <FormItem>
@@ -866,7 +870,7 @@ export default function PublicReferralForm() {
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name={`medications.${index}.name`}
                             render={({ field }) => (
                               <FormItem>
@@ -880,7 +884,7 @@ export default function PublicReferralForm() {
                           />
                           
                           <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name={`medications.${index}.frequency`}
                             render={({ field }) => (
                               <FormItem>
@@ -894,7 +898,7 @@ export default function PublicReferralForm() {
                           />
                           
                           <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name={`medications.${index}.dosage`}
                             render={({ field }) => (
                               <FormItem>
@@ -923,7 +927,7 @@ export default function PublicReferralForm() {
                   {/* NDIS Plan Dates */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="ndisPlanStartDate"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
@@ -959,7 +963,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="ndisPlanEndDate"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
@@ -997,7 +1001,7 @@ export default function PublicReferralForm() {
                   
                   {/* Fund Management Type */}
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="fundManagementType"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
@@ -1046,7 +1050,7 @@ export default function PublicReferralForm() {
                     <h4 className="font-medium text-sm text-blue-700">Core Support Funding</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="coreCurrentBalance"
                         render={({ field }) => (
                           <FormItem>
@@ -1069,7 +1073,7 @@ export default function PublicReferralForm() {
                       />
                       
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="coreFundedAmount"
                         render={({ field }) => (
                           <FormItem>
@@ -1098,7 +1102,7 @@ export default function PublicReferralForm() {
                     <h4 className="font-medium text-sm text-green-700">SIL Support Funding</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="silCurrentBalance"
                         render={({ field }) => (
                           <FormItem>
@@ -1121,7 +1125,7 @@ export default function PublicReferralForm() {
                       />
                       
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="silFundedAmount"
                         render={({ field }) => (
                           <FormItem>
@@ -1150,7 +1154,7 @@ export default function PublicReferralForm() {
                     <h4 className="font-medium text-sm text-yellow-700">Irregular SIL Support Funding</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="irregularSilCurrentBalance"
                         render={({ field }) => (
                           <FormItem>
@@ -1173,7 +1177,7 @@ export default function PublicReferralForm() {
                       />
                       
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="irregularSilFundedAmount"
                         render={({ field }) => (
                           <FormItem>
@@ -1202,7 +1206,7 @@ export default function PublicReferralForm() {
                     <h4 className="font-medium text-sm text-purple-700">Other Funding</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="otherCurrentBalance"
                         render={({ field }) => (
                           <FormItem>
@@ -1225,7 +1229,7 @@ export default function PublicReferralForm() {
                       />
                       
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="otherFundedAmount"
                         render={({ field }) => (
                           <FormItem>
@@ -1260,7 +1264,7 @@ export default function PublicReferralForm() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="invoiceEmail"
                       render={({ field }) => (
                         <FormItem>
@@ -1278,7 +1282,7 @@ export default function PublicReferralForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="invoicePhone"
                       render={({ field }) => (
                         <FormItem>
@@ -1297,7 +1301,7 @@ export default function PublicReferralForm() {
                   </div>
                   
                   <FormField
-                    control={form.control}
+                    control={form.control as any}
                     name="invoiceAddress"
                     render={({ field }) => (
                       <FormItem>
