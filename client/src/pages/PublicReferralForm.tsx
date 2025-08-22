@@ -170,7 +170,7 @@ export default function PublicReferralForm() {
       ndisNumber: "",
       planStart: "",
       planEnd: "",
-      fundManagementType: "",
+      fundManagementType: undefined,
       coreCurrentBalance: "",
       coreFundedAmount: "",
       silCurrentBalance: "",
@@ -185,7 +185,7 @@ export default function PublicReferralForm() {
       invoiceAddress: "",
       ndisPlanStartDate: undefined,
       ndisPlanEndDate: undefined,
-      preferredGender: "",
+      preferredGender: undefined,
     },
   });
 
