@@ -1,0 +1,94 @@
+// inside onSubmit, before fetch()
+const cleanBehaviours =
+  (data.behaviours ?? [])
+    .filter(b => (b?.behaviour ?? "").trim().length > 0)
+    .map(b => ({
+      behaviour: b.behaviour.trim(),
+      trigger: (b.trigger ?? "").trim() || undefined,
+      management: (b.managementStrategy ?? "").trim() || undefined, // map name
+    }));
+
+const cleanMedications =
+  (data.medications ?? [])
+    .filter(m => (m?.name ?? "").trim().length > 0)
+    .map(m => ({
+      name: m.name.trim(),
+      dosage: (m.dosage ?? "").trim() || undefined,
+      frequency: (m.frequency ?? "").trim() || undefined,
+    }));
+
+const submitData = {
+  ...data,
+  dateOfReferral: data.dateOfReferral.toISOString().split("T")[0],
+  dob: data.dob?.toISOString().split("T")[0],
+  planStart: data.ndisPlanStartDate?.toISOString().split("T")[0],
+  planEnd: data.ndisPlanEndDate?.toISOString().split("T")[0],
+  referrerContact: data.referrerPhoneEmail,
+
+  // strip frontend-only keys so they don't get serialized at all
+  ndisPlanStartDate: undefined,
+  ndisPlanEndDate: undefined,
+  referrerPhoneEmail: undefined,
+
+  // arrays: null when empty, otherwise cleaned
+  supportCategories: data.supportCategories?.length ? data.supportCategories : null,
+  planManagement: data.planManagement?.length ? data.planManagement : null,
+  howWeSupport: data.howWeSupport?.length ? data.howWeSupport : null,
+  behaviours: cleanBehaviours.length ? cleanBehaviours : null,
+  medications: cleanMedications.length ? cleanMedications : null,
+};
+Nice-to-have (backend side, defensive)
+If you want the API to be more forgiving, you can coerce/clean too:
+
+ts
+Copy
+Edit
+const BehaviourItem = z.object({
+  behaviour: z.string().min(1),
+  trigger: z.string().optional(),
+  management: z.string().optional(),
+});
+
+const ReferralFormSchema = z.object({
+  // ...
+  behaviours: z.array(
+    z.object({
+      behaviour: z.string().transform(s => s.trim()),
+      trigger: z.string().optional(),
+      // accept either key and normalize
+      management: z.string().optional()
+    }).passthrough() // so extra keys don't explode
+  ).nullable().optional()
+}).transform(v => ({
+  ...v,
+  behaviours: Array.isArray(v.behaviours)
+    ? v.behaviours
+        .map(b => ({
+          behaviour: (b.behaviour ?? "").trim(),
+          trigger: (b.trigger ?? "").trim() || undefined,
+          management: (b.management ?? b.managementStrategy ?? "").trim() || undefined,
+        }))
+        .filter(b => b.behaviour.length > 0)
+    : v.behaviours
+}));
+Two quick checks to confirm
+Add a blank “Behaviour” row, hit submit → you should now pass (blank rows get filtered).
+
+Add a behaviour with only managementStrategy filled → you should still pass (mapped to management).
+
+Bonus: bubble up real errors
+Right now, any Zod error returns "invalid-payload-or-token". Make debugging easier:
+
+ts
+Copy
+Edit
+} catch (error) {
+  console.error("Submit referral error:", error);
+  if (error instanceof z.ZodError) {
+    return res.status(400).json({
+      error: "invalid-payload",
+      issues: error.issues  // <-- let the frontend show this in dev
+    });
+  }
+  return res.status(500).json({ error: "server-error" });
+}

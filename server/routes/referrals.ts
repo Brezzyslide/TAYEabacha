@@ -106,12 +106,18 @@ const initializeSampleData = () => {
   console.log('[REFERRAL] Sample data initialization disabled - using database storage');
 };
 
-// Behaviour item schema for validation
+// Behaviour item schema for validation - defensive with field mapping
 const BehaviourItem = z.object({
-  behaviour: z.string().min(1),
+  behaviour: z.string().transform(s => s.trim()),
   trigger: z.string().optional(),
   management: z.string().optional(),
-});
+  managementStrategy: z.string().optional(), // Accept both field names
+}).passthrough() // Allow extra keys without failing
+.transform(b => ({
+  behaviour: (b.behaviour ?? "").trim(),
+  trigger: (b.trigger ?? "").trim() || undefined,
+  management: (b.management ?? b.managementStrategy ?? "").trim() || undefined,
+}));
 
 // Comprehensive NDIS referral form schema
 export const ReferralFormSchema = z.object({
@@ -173,12 +179,22 @@ export const ReferralFormSchema = z.object({
   // Medical
   medicalConditions: z.string().optional(),
   medications: z.array(z.object({
-    name: z.string(),
+    name: z.string().transform(s => s.trim()),
     dosage: z.string().optional(),
     frequency: z.string().optional()
-  })).nullable().optional(),
+  })).nullable().optional()
+    .transform(medications => 
+      Array.isArray(medications) 
+        ? medications.filter(m => m.name.length > 0) // Filter out empty medications
+        : medications
+    ),
   medicationSideEffects: z.string().optional(),
-  behaviours: z.array(BehaviourItem).nullable().optional(),
+  behaviours: z.array(BehaviourItem).nullable().optional()
+    .transform(behaviours => 
+      Array.isArray(behaviours) 
+        ? behaviours.filter(b => b.behaviour.length > 0) // Filter out empty behaviours
+        : behaviours
+    ),
   
   // Funding
   ndisNumber: z.string().optional(),
@@ -373,13 +389,14 @@ router.post("/submit/:token", async (req, res) => {
     console.error("Submit referral error:", error);
     
     if (error instanceof z.ZodError) {
+      console.error("Validation errors:", error.issues);
       return res.status(400).json({ 
-        error: "invalid-form-data",
-        details: error.errors 
+        error: "invalid-payload",
+        issues: error.issues // Show validation details for debugging
       });
     }
     
-    res.status(400).json({ error: "invalid-payload-or-token" });
+    res.status(500).json({ error: "server-error" });
   }
 });
 

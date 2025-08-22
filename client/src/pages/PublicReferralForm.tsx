@@ -233,6 +233,26 @@ export default function PublicReferralForm() {
     setErrorMessage("");
 
     try {
+      // Clean and filter behaviours - remove empty entries and map field names properly
+      const cleanBehaviours =
+        (data.behaviours ?? [])
+          .filter(b => (b?.behaviour ?? "").trim().length > 0)
+          .map(b => ({
+            behaviour: b.behaviour.trim(),
+            trigger: (b.trigger ?? "").trim() || undefined,
+            management: (b.managementStrategy ?? "").trim() || undefined, // map managementStrategy to management
+          }));
+
+      // Clean and filter medications - remove empty entries
+      const cleanMedications =
+        (data.medications ?? [])
+          .filter(m => (m?.name ?? "").trim().length > 0)
+          .map(m => ({
+            name: m.name.trim(),
+            dosage: (m.dosage ?? "").trim() || undefined,
+            frequency: (m.frequency ?? "").trim() || undefined,
+          }));
+
       // Transform data for API - handle arrays properly for PostgreSQL
       const submitData = {
         ...data,
@@ -241,17 +261,19 @@ export default function PublicReferralForm() {
         // Map to correct backend field names
         planStart: data.ndisPlanStartDate?.toISOString().split('T')[0],
         planEnd: data.ndisPlanEndDate?.toISOString().split('T')[0],
-        referrerContact: data.referrerPhoneEmail, // Map referrer contact field
-        // Remove frontend-only fields to avoid conflicts
+        referrerContact: data.referrerPhoneEmail,
+        
+        // Strip frontend-only keys so they don't get serialized at all
         ndisPlanStartDate: undefined,
         ndisPlanEndDate: undefined,
         referrerPhoneEmail: undefined,
-        // Handle arrays properly - send null for empty arrays to avoid PostgreSQL errors
-        supportCategories: data.supportCategories && data.supportCategories.length > 0 ? data.supportCategories : null,
-        planManagement: data.planManagement && data.planManagement.length > 0 ? data.planManagement : null,
-        howWeSupport: data.howWeSupport && data.howWeSupport.length > 0 ? data.howWeSupport : null,
-        behaviours: data.behaviours && data.behaviours.length > 0 ? data.behaviours : null,
-        medications: data.medications && data.medications.length > 0 ? data.medications : null,
+        
+        // Arrays: null when empty, otherwise cleaned data
+        supportCategories: data.supportCategories?.length ? data.supportCategories : null,
+        planManagement: data.planManagement?.length ? data.planManagement : null,
+        howWeSupport: data.howWeSupport?.length ? data.howWeSupport : null,
+        behaviours: cleanBehaviours.length ? cleanBehaviours : null,
+        medications: cleanMedications.length ? cleanMedications : null,
       };
 
       const response = await fetch(`/api/referrals/submit/${token}`, {
@@ -264,7 +286,13 @@ export default function PublicReferralForm() {
         setSubmissionStatus("success");
       } else {
         const errorData = await response.json();
-        setErrorMessage(errorData.error || "Submission failed");
+        // Show validation issues in development for debugging
+        if (errorData.issues && import.meta.env.DEV) {
+          console.error("Validation issues:", errorData.issues);
+          setErrorMessage(`Validation error: ${errorData.issues.map(i => i.message).join(', ')}`);
+        } else {
+          setErrorMessage(errorData.error || "Submission failed");
+        }
         setSubmissionStatus("error");
       }
     } catch (error) {
