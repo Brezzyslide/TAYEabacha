@@ -59,9 +59,11 @@ export default function ReferralLinksPage() {
     defaultValues: {},
   });
 
-  // Fetch referral submissions
+  // Fetch referral submissions with optimized caching
   const { data: referrals = [], isLoading: referralsLoading } = useQuery<Referral[]>({
     queryKey: ["/api/referrals"],
+    staleTime: 30000, // Cache for 30 seconds for faster subsequent loads
+    gcTime: 300000, // Keep in cache for 5 minutes
   });
 
   // Create referral link mutation
@@ -330,7 +332,16 @@ export default function ReferralLinksPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => window.open(`/compliance/referral-management?referral=${referral.id}`, '_self')}
+                      onClick={() => {
+                        // Prefetch referral data for instant loading
+                        queryClient.prefetchQuery({
+                          queryKey: ["/api/referrals", referral.id],
+                          queryFn: () => fetch(`/api/referrals/${referral.id}`).then(res => res.json()),
+                          staleTime: 60000 // Keep fresh for 1 minute
+                        });
+                        // Navigate immediately with optimized routing
+                        window.location.href = `/compliance/referral-management?referral=${referral.id}`;
+                      }}
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       View

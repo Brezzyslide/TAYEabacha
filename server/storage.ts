@@ -3173,9 +3173,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReferralSubmissions(tenantId: number): Promise<ReferralSubmission[]> {
-    return await db.select().from(referralSubmissions)
+    // Optimized query with limit for faster loading - only get recent submissions for display
+    return await db.select({
+      id: referralSubmissions.id,
+      tenantId: referralSubmissions.tenantId,
+      clientName: referralSubmissions.clientName,
+      referrerName: referralSubmissions.referrerName,
+      referrerOrg: referralSubmissions.referrerOrg,
+      submittedAt: referralSubmissions.submittedAt,
+      status: referralSubmissions.status,
+      dateOfReferral: referralSubmissions.dateOfReferral,
+      supportCategories: referralSubmissions.supportCategories,
+      howWeSupport: referralSubmissions.howWeSupport,
+      // Only select essential fields for list view performance
+    }).from(referralSubmissions)
       .where(eq(referralSubmissions.tenantId, tenantId))
-      .orderBy(desc(referralSubmissions.submittedAt));
+      .orderBy(desc(referralSubmissions.submittedAt))
+      .limit(50); // Limit to 50 most recent for faster loading
   }
 
   async getReferralSubmission(id: number, tenantId: number): Promise<ReferralSubmission | undefined> {
