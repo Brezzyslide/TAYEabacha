@@ -233,7 +233,7 @@ export default function PublicReferralForm() {
     setErrorMessage("");
 
     try {
-      // Transform data for API - convert arrays to expected format
+      // Transform data for API - handle arrays properly for PostgreSQL
       const submitData = {
         ...data,
         dateOfReferral: data.dateOfReferral.toISOString().split('T')[0],
@@ -246,12 +246,12 @@ export default function PublicReferralForm() {
         ndisPlanStartDate: undefined,
         ndisPlanEndDate: undefined,
         referrerPhoneEmail: undefined,
-        // Transform medications array to JSON string for backend
-        medications: data.medications && data.medications.length > 0 
-          ? JSON.stringify(data.medications) 
-          : "",
-        // supportCategories, planManagement, howWeSupport remain as arrays (backend expects arrays)
-        // behaviours remains as array (backend expects jsonb array)
+        // Handle arrays properly - send null for empty arrays to avoid PostgreSQL errors
+        supportCategories: data.supportCategories && data.supportCategories.length > 0 ? data.supportCategories : null,
+        planManagement: data.planManagement && data.planManagement.length > 0 ? data.planManagement : null,
+        howWeSupport: data.howWeSupport && data.howWeSupport.length > 0 ? data.howWeSupport : null,
+        behaviours: data.behaviours && data.behaviours.length > 0 ? data.behaviours : null,
+        medications: data.medications && data.medications.length > 0 ? data.medications : null,
       };
 
       const response = await fetch(`/api/referrals/submit/${token}`, {
