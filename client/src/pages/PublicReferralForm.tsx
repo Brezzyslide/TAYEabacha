@@ -750,35 +750,35 @@ export default function PublicReferralForm() {
                         render={({ field }) => (
                           <FormItem className="space-y-3">
                             <FormLabel className="text-base font-medium">Behavior Types *</FormLabel>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {[
-                                "Physical aggression towards others",
-                                "Verbal aggression towards others", 
-                                "Property damage",
-                                "Self-harm",
-                                "Medical emergency",
-                                "Environmental hazard",
-                                "Medication error",
-                                "Unauthorized absence",
-                                "Sexual misconduct",
-                                "Financial exploitation",
-                                "Neglect",
-                                "Other"
-                              ].map((type) => (
-                                <FormItem key={type} className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem
-                                      value={type}
-                                      checked={field.value === type}
-                                      onCheckedChange={() => field.onChange(type)}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="text-sm font-normal cursor-pointer">
-                                    {type}
-                                  </FormLabel>
-                                </FormItem>
-                              ))}
-                            </div>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                              >
+                                {[
+                                  "Physical aggression towards others",
+                                  "Verbal aggression towards others", 
+                                  "Property damage",
+                                  "Self-harm",
+                                  "Medical emergency",
+                                  "Environmental hazard",
+                                  "Medication error",
+                                  "Unauthorized absence",
+                                  "Sexual misconduct",
+                                  "Financial exploitation",
+                                  "Neglect",
+                                  "Other"
+                                ].map((type) => (
+                                  <div key={type} className="flex items-center space-x-3">
+                                    <RadioGroupItem value={type} id={`behavior-${type}`} />
+                                    <label htmlFor={`behavior-${type}`} className="text-sm font-normal cursor-pointer">
+                                      {type}
+                                    </label>
+                                  </div>
+                                ))}
+                              </RadioGroup>
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
