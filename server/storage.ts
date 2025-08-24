@@ -3245,15 +3245,22 @@ export class DatabaseStorage implements IStorage {
         behaviours: submission.behaviours
       });
       
+      // Process JSONB arrays properly - ensure they're native JS arrays, not stringified JSON
+      const processedSubmission = {
+        ...submission,
+        medications: Array.isArray(submission.medications) && submission.medications.length > 0 ? submission.medications : null,
+        behaviours: Array.isArray(submission.behaviours) && submission.behaviours.length > 0 ? submission.behaviours : null,
+        submittedAt: new Date()
+      };
+      
+      console.log('[STORAGE] Processed submission data:', {
+        medications: processedSubmission.medications,
+        behaviours: processedSubmission.behaviours
+      });
+      
       const [created] = await db
         .insert(referralSubmissions)
-        .values({
-          ...submission,
-          // Ensure JSONB arrays are properly formatted - only pass clean arrays
-          medications: Array.isArray(submission.medications) && submission.medications.length > 0 ? submission.medications : null,
-          behaviours: Array.isArray(submission.behaviours) && submission.behaviours.length > 0 ? submission.behaviours : null,
-          submittedAt: new Date()
-        })
+        .values(processedSubmission)
         .returning();
       return created;
     } catch (error) {
