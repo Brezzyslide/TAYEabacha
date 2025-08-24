@@ -168,8 +168,6 @@ export default function PublicReferralForm() {
       medicationSideEffects: "",
       behaviours: [],
       ndisNumber: "",
-      planStart: "",
-      planEnd: "",
       fundManagementType: undefined,
       coreCurrentBalance: "",
       coreFundedAmount: "",
@@ -289,7 +287,7 @@ export default function PublicReferralForm() {
         // Show validation issues in development for debugging
         if (errorData.issues && import.meta.env.DEV) {
           console.error("Validation issues:", errorData.issues);
-          setErrorMessage(`Validation error: ${errorData.issues.map(i => i.message).join(', ')}`);
+          setErrorMessage(`Validation error: ${errorData.issues.map((i: any) => i.message).join(', ')}`);
         } else {
           setErrorMessage(errorData.error || "Submission failed");
         }
@@ -564,7 +562,7 @@ export default function PublicReferralForm() {
                                   if (checked) {
                                     field.onChange([...currentValue, category.id as any]);
                                   } else {
-                                    field.onChange(currentValue.filter((item) => item !== category.id));
+                                    field.onChange(currentValue.filter((item: any) => item !== category.id));
                                   }
                                 }}
                               />
@@ -644,7 +642,7 @@ export default function PublicReferralForm() {
                                   if (checked) {
                                     field.onChange([...currentValue, supportType.id as any]);
                                   } else {
-                                    field.onChange(currentValue.filter((item) => item !== supportType.id));
+                                    field.onChange(currentValue.filter((item: any) => item !== supportType.id));
                                   }
                                 }}
                               />
