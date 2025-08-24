@@ -3243,6 +3243,9 @@ export class DatabaseStorage implements IStorage {
       .insert(referralSubmissions)
       .values({
         ...submission,
+        // Ensure JSONB arrays are properly formatted
+        medications: submission.medications || null,
+        behaviours: submission.behaviours || null,
         submittedAt: new Date()
       })
       .returning();
