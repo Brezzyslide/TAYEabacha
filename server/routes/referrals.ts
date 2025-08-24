@@ -326,6 +326,10 @@ router.post("/submit/:token", async (req, res) => {
       return res.status(403).json({ error: "link-disabled" });
     }
 
+    // Debug the incoming request data
+    console.log('[REFERRAL] Raw behavior data received:', JSON.stringify(req.body.behaviours, null, 2));
+    console.log('[REFERRAL] Raw medication data received:', JSON.stringify(req.body.medications, null, 2));
+    
     // Validate the form data
     const parsed = ReferralFormSchema.parse(req.body);
     

@@ -231,6 +231,10 @@ export default function PublicReferralForm() {
     setErrorMessage("");
 
     try {
+      // Debug: Log the raw form data before processing
+      console.log('[FORM DEBUG] Raw behaviours from form:', JSON.stringify(data.behaviours, null, 2));
+      console.log('[FORM DEBUG] Raw medications from form:', JSON.stringify(data.medications, null, 2));
+      
       // Clean and filter behaviours - remove empty entries and map field names properly
       const cleanBehaviours =
         (data.behaviours ?? [])
@@ -240,6 +244,8 @@ export default function PublicReferralForm() {
             trigger: (b.trigger ?? "").trim() || undefined,
             management: (b.managementStrategy ?? "").trim() || undefined, // map managementStrategy to management
           }));
+      
+      console.log('[FORM DEBUG] Cleaned behaviours:', JSON.stringify(cleanBehaviours, null, 2));
 
       // Clean and filter medications - remove empty entries
       const cleanMedications =

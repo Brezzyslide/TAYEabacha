@@ -3239,17 +3239,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReferralSubmission(submission: any): Promise<ReferralSubmission> {
-    const [created] = await db
-      .insert(referralSubmissions)
-      .values({
-        ...submission,
-        // Ensure JSONB arrays are properly formatted
-        medications: submission.medications || null,
-        behaviours: submission.behaviours || null,
-        submittedAt: new Date()
-      })
-      .returning();
-    return created;
+    try {
+      console.log('[STORAGE] Creating referral submission with data:', {
+        medications: submission.medications,
+        behaviours: submission.behaviours
+      });
+      
+      const [created] = await db
+        .insert(referralSubmissions)
+        .values({
+          ...submission,
+          // Ensure JSONB arrays are properly formatted - only pass clean arrays
+          medications: Array.isArray(submission.medications) && submission.medications.length > 0 ? submission.medications : null,
+          behaviours: Array.isArray(submission.behaviours) && submission.behaviours.length > 0 ? submission.behaviours : null,
+          submittedAt: new Date()
+        })
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('[STORAGE] Failed to create referral submission:', error);
+      console.error('[STORAGE] Submission data that failed:', submission);
+      throw error;
+    }
   }
 
   async getReferralLinks(tenantId: number): Promise<ReferralLink[]> {
