@@ -3198,7 +3198,41 @@ export class DatabaseStorage implements IStorage {
         eq(referralSubmissions.id, id),
         eq(referralSubmissions.tenantId, tenantId)
       ));
-    return submission || undefined;
+    
+    if (!submission) return undefined;
+    
+    // Transform database fields to match frontend expectations
+    const transformed = {
+      ...submission,
+      // Parse behavior triggers array from database
+      behaviourTriggers: Array.isArray(submission.behaviourTriggers) 
+        ? submission.behaviourTriggers 
+        : (submission.behaviourTriggers ? JSON.parse(submission.behaviourTriggers as string) : null),
+      // Ensure behavior types are available as both field names for compatibility
+      behaviourTypes: submission.behaviourType 
+        ? submission.behaviourType.split(', ').filter(t => t.length > 0) 
+        : null,
+      // Parse medications array if stored as JSON
+      medications: typeof submission.medications === 'string' 
+        ? JSON.parse(submission.medications) 
+        : submission.medications,
+      // Parse behaviors array if stored as JSON  
+      behaviours: typeof submission.behaviours === 'string' 
+        ? JSON.parse(submission.behaviours) 
+        : submission.behaviours,
+      // Parse support categories arrays
+      supportCategories: typeof submission.supportCategories === 'string' 
+        ? JSON.parse(submission.supportCategories) 
+        : submission.supportCategories,
+      planManagement: typeof submission.planManagement === 'string' 
+        ? JSON.parse(submission.planManagement) 
+        : submission.planManagement,
+      howWeSupport: typeof submission.howWeSupport === 'string' 
+        ? JSON.parse(submission.howWeSupport) 
+        : submission.howWeSupport,
+    };
+    
+    return transformed;
   }
 
   async updateReferralSubmissionStatus(id: number, tenantId: number, status: string, assessment?: any): Promise<ReferralSubmission | undefined> {
