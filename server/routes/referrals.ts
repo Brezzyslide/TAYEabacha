@@ -193,7 +193,7 @@ export const ReferralFormSchema = z.object({
   // New behavior structure
   behaviourTypes: z.array(z.string()).optional(),
   behaviourTriggers: z.array(z.string()).optional(),
-  behaviourOverview: z.string().optional(),
+  behaviourOverview: z.string().nullable().optional(),
   
   // Legacy behavior array (kept for compatibility)
   behaviours: z.array(BehaviourItem).nullable().optional()
