@@ -3182,33 +3182,56 @@ export class DatabaseStorage implements IStorage {
     // Transform database fields to match frontend expectations for all items
     return submissions.map(submission => ({
       ...submission,
-      // Parse behavior triggers array from database
-      behaviourTriggers: Array.isArray(submission.behaviourTriggers) 
-        ? submission.behaviourTriggers 
-        : (submission.behaviourTriggers ? 
-           (typeof submission.behaviourTriggers === 'string' ? 
-            JSON.parse(submission.behaviourTriggers) : submission.behaviourTriggers) 
-           : null),
+      // Parse behavior triggers array from database - with safe parsing
+      behaviourTriggers: (() => {
+        try {
+          return Array.isArray(submission.behaviourTriggers) 
+            ? submission.behaviourTriggers 
+            : (submission.behaviourTriggers && typeof submission.behaviourTriggers === 'string' && submission.behaviourTriggers.trim()) 
+              ? JSON.parse(submission.behaviourTriggers) 
+              : null;
+        } catch { return null; }
+      })(),
       // Ensure behavior types are available as both field names for compatibility
       behaviourTypes: submission.behaviourType 
         ? submission.behaviourType.split(', ').filter(t => t.length > 0) 
         : null,
-      // Parse JSON fields if stored as strings
-      medications: typeof submission.medications === 'string' 
-        ? JSON.parse(submission.medications) 
-        : submission.medications,
-      behaviours: typeof submission.behaviours === 'string' 
-        ? JSON.parse(submission.behaviours) 
-        : submission.behaviours,
-      supportCategories: typeof submission.supportCategories === 'string' 
-        ? JSON.parse(submission.supportCategories) 
-        : submission.supportCategories,
-      planManagement: typeof submission.planManagement === 'string' 
-        ? JSON.parse(submission.planManagement) 
-        : submission.planManagement,
-      howWeSupport: typeof submission.howWeSupport === 'string' 
-        ? JSON.parse(submission.howWeSupport) 
-        : submission.howWeSupport,
+      // Parse JSON fields if stored as strings - with safe parsing
+      medications: (() => {
+        try {
+          return (typeof submission.medications === 'string' && submission.medications.trim()) 
+            ? JSON.parse(submission.medications) 
+            : submission.medications;
+        } catch { return null; }
+      })(),
+      behaviours: (() => {
+        try {
+          return (typeof submission.behaviours === 'string' && submission.behaviours.trim()) 
+            ? JSON.parse(submission.behaviours) 
+            : submission.behaviours;
+        } catch { return null; }
+      })(),
+      supportCategories: (() => {
+        try {
+          return (typeof submission.supportCategories === 'string' && submission.supportCategories.trim()) 
+            ? JSON.parse(submission.supportCategories) 
+            : submission.supportCategories;
+        } catch { return null; }
+      })(),
+      planManagement: (() => {
+        try {
+          return (typeof submission.planManagement === 'string' && submission.planManagement.trim()) 
+            ? JSON.parse(submission.planManagement) 
+            : submission.planManagement;
+        } catch { return null; }
+      })(),
+      howWeSupport: (() => {
+        try {
+          return (typeof submission.howWeSupport === 'string' && submission.howWeSupport.trim()) 
+            ? JSON.parse(submission.howWeSupport) 
+            : submission.howWeSupport;
+        } catch { return null; }
+      })(),
     }));
   }
 
@@ -3224,13 +3247,16 @@ export class DatabaseStorage implements IStorage {
     // Transform database fields to match frontend expectations
     const transformed = {
       ...submission,
-      // Parse behavior triggers array from database
-      behaviourTriggers: Array.isArray(submission.behaviourTriggers) 
-        ? submission.behaviourTriggers 
-        : (submission.behaviourTriggers ? 
-           (typeof submission.behaviourTriggers === 'string' ? 
-            JSON.parse(submission.behaviourTriggers) : submission.behaviourTriggers) 
-           : null),
+      // Parse behavior triggers array from database - with safe parsing
+      behaviourTriggers: (() => {
+        try {
+          return Array.isArray(submission.behaviourTriggers) 
+            ? submission.behaviourTriggers 
+            : (submission.behaviourTriggers && typeof submission.behaviourTriggers === 'string' && submission.behaviourTriggers.trim()) 
+              ? JSON.parse(submission.behaviourTriggers) 
+              : null;
+        } catch { return null; }
+      })(),
       // Ensure behavior types are available as both field names for compatibility
       behaviourTypes: submission.behaviourType 
         ? submission.behaviourType.split(', ').filter(t => t.length > 0) 
