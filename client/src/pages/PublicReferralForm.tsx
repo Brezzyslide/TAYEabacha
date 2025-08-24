@@ -242,14 +242,14 @@ export default function PublicReferralForm() {
 
     try {
       // Debug: Log the raw form data before processing
-      console.log('[FORM DEBUG] Raw behaviour type:', data.behaviourType);
+      console.log('[FORM DEBUG] Raw behaviour types:', data.behaviourTypes);
       console.log('[FORM DEBUG] Raw behaviour triggers:', JSON.stringify(data.behaviourTriggers, null, 2));
       console.log('[FORM DEBUG] Raw behaviour overview:', data.behaviourOverview);
       console.log('[FORM DEBUG] Raw medications from form:', JSON.stringify(data.medications, null, 2));
       
       // Process new behavior structure
       const behaviourData = {
-        type: data.behaviourType?.trim() || undefined,
+        type: data.behaviourTypes?.join(', ')?.trim() || undefined,
         triggers: data.behaviourTriggers && data.behaviourTriggers.length > 0 ? data.behaviourTriggers : undefined,
         overview: data.behaviourOverview?.trim() || undefined,
       };
@@ -786,7 +786,7 @@ export default function PublicReferralForm() {
                                                 ? field.onChange([...field.value || [], type.id])
                                                 : field.onChange(
                                                     field.value?.filter(
-                                                      (value) => value !== type.id
+                                                      (value: string) => value !== type.id
                                                     )
                                                   )
                                             }}

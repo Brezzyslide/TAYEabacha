@@ -1,0 +1,200 @@
+NDIS Participant Referral Form
+Please complete this referral form to help us understand the participant's needs.
+Referral and participant details
+Date of Referral *
+24/08/2025
+Basic Information
+Your Name *
+Your full name
+Role
+Your role or position
+Participant Name *
+Participant's full name
+Client Status *
+New Client
+
+Your Contact Details
+Phone and/or email
+Participant Details
+NDIS Number
+NDIS participant number
+Phone Number
+Participant's phone
+Address
+Full address
+Support Information
+Support Categories
+
+Multiple Complex Disability
+
+Disability Forensics SDA Funded
+
+Disability Forensics Outreach
+
+Non-Complex Support
+
+Disability Forensics Private Rental
+Plan Management
+
+Plan Management Required
+Types of Support Needed
+
+Activities of Daily Living (ADL)
+
+Hands-On Supervision
+
+Legal Order Compliance
+
+Personal Care
+
+Community Access
+
+Transport Training
+
+Social Group Activity
+
+Behavioural Management
+
+Companionship/Mentorship
+
+Restrictive Practice Implementation
+Participant Strengths
+What are the participant's strengths and abilities?
+About the Participant
+Tell us about the participant's needs and situation
+Likes/Interests
+What does the participant enjoy?
+Dislikes/Concerns
+What should we be aware of?
+Behaviours of Concern
+Select Behavior Types *
+Choose all behavior types that apply. Multiple selections allowed.
+
+
+Physical aggression towards others
+
+Verbal aggression towards others
+
+Property damage
+
+Self-harm
+
+Medical emergency
+
+Environmental hazard
+
+Medication error
+
+Unauthorized absence
+
+Sexual misconduct
+
+Financial exploitation
+
+Neglect
+
+Other
+Select Behavior Triggers *
+Choose all triggers that may contribute to this behavior. At least one trigger must be selected.
+
+
+Lack of choice and control
+Individual is not offered options or autonomy in daily decisions (e.g. meals, activities, clothing).
+
+
+Changes in routine
+Unplanned or unexplained disruptions to known schedules (e.g. missed outings, new support worker).
+
+
+Unmet needs
+Delays or absence of support for basic needs (e.g. hunger, hygiene, rest, medical care, emotional regulation).
+
+
+Sensory overload or discomfort
+Exposure to overwhelming stimuli (e.g. loud noises, bright lights, strong smells, physical touch).
+
+
+Poor communication or being misunderstood
+Limited access to AAC, complex instructions, or lack of validation leading to frustration.
+
+
+Loss of predictability or structure
+Inconsistent support routines, unclear expectations, or lack of visual/temporal cues.
+
+
+Feeling disrespected or excluded
+Not being heard, ignored, spoken over, or left out of peer/staff interaction.
+
+
+Unfamiliar environments or people
+Anxiety or distress from being in a new setting or interacting with unfamiliar staff/peers.
+
+
+Health discomfort or untreated pain
+Physical distress due to illness, pain, or side effects of medication not being identified or addressed.
+
+
+Past trauma or distress triggers
+Exposure to reminders of past trauma (e.g. restraint, tone of voice, uniforms, confrontation).
+
+
+Other
+A trigger not covered by the above categories.
+
+General Overview of Behavior of Concern
+Please provide a general overview describing the behavior of concern, including any additional context, patterns, or management strategies.
+
+Please describe the behavior of concern in detail, including how it presents, any patterns you've noticed, and any current management approaches...
+Medical Information
+Medical Conditions
+Any relevant medical conditions or diagnoses
+Current Medications
+Add Medication
+No medications added yet. Click "Add Medication" to start.
+
+Fund Details
+NDIS Plan Start Date
+Select date
+NDIS Plan End Date
+Select date
+Fund Management Type
+
+NDIA Managed
+
+Self Managed
+
+Plan Managed
+Core Support Funding
+Current Balance
+$
+0.00
+Funded Support Core
+$
+0.00
+SIL Support Funding
+Current Balance
+$
+0.00
+Funded Support SIL
+$
+0.00
+Irregular SIL Support Funding
+Current Balance
+$
+0.00
+Funded Support Irregular SIL
+$
+0.00
+Other Funding
+Current Balance
+$
+0.00
+Other Funded Support
+$
+0.00
+Invoice Details
+Email Address
+invoice@example.com
+Telephone Number
+e.g., (03) 9123 4567
+Address
