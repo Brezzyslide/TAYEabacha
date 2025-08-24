@@ -3173,23 +3173,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReferralSubmissions(tenantId: number): Promise<ReferralSubmission[]> {
-    // Optimized query with limit for faster loading - only get recent submissions for display
-    return await db.select({
-      id: referralSubmissions.id,
-      tenantId: referralSubmissions.tenantId,
-      clientName: referralSubmissions.clientName,
-      referrerName: referralSubmissions.referrerName,
-      referrerOrg: referralSubmissions.referrerOrg,
-      submittedAt: referralSubmissions.submittedAt,
-      status: referralSubmissions.status,
-      dateOfReferral: referralSubmissions.dateOfReferral,
-      supportCategories: referralSubmissions.supportCategories,
-      howWeSupport: referralSubmissions.howWeSupport,
-      // Only select essential fields for list view performance
-    }).from(referralSubmissions)
+    // Get all data for full compatibility with frontend
+    const submissions = await db.select().from(referralSubmissions)
       .where(eq(referralSubmissions.tenantId, tenantId))
       .orderBy(desc(referralSubmissions.submittedAt))
       .limit(50); // Limit to 50 most recent for faster loading
+    
+    // Transform database fields to match frontend expectations for all items
+    return submissions.map(submission => ({
+      ...submission,
+      // Parse behavior triggers array from database
+      behaviourTriggers: Array.isArray(submission.behaviourTriggers) 
+        ? submission.behaviourTriggers 
+        : (submission.behaviourTriggers ? 
+           (typeof submission.behaviourTriggers === 'string' ? 
+            JSON.parse(submission.behaviourTriggers) : submission.behaviourTriggers) 
+           : null),
+      // Ensure behavior types are available as both field names for compatibility
+      behaviourTypes: submission.behaviourType 
+        ? submission.behaviourType.split(', ').filter(t => t.length > 0) 
+        : null,
+      // Parse JSON fields if stored as strings
+      medications: typeof submission.medications === 'string' 
+        ? JSON.parse(submission.medications) 
+        : submission.medications,
+      behaviours: typeof submission.behaviours === 'string' 
+        ? JSON.parse(submission.behaviours) 
+        : submission.behaviours,
+      supportCategories: typeof submission.supportCategories === 'string' 
+        ? JSON.parse(submission.supportCategories) 
+        : submission.supportCategories,
+      planManagement: typeof submission.planManagement === 'string' 
+        ? JSON.parse(submission.planManagement) 
+        : submission.planManagement,
+      howWeSupport: typeof submission.howWeSupport === 'string' 
+        ? JSON.parse(submission.howWeSupport) 
+        : submission.howWeSupport,
+    }));
   }
 
   async getReferralSubmission(id: number, tenantId: number): Promise<ReferralSubmission | undefined> {
@@ -3207,7 +3227,10 @@ export class DatabaseStorage implements IStorage {
       // Parse behavior triggers array from database
       behaviourTriggers: Array.isArray(submission.behaviourTriggers) 
         ? submission.behaviourTriggers 
-        : (submission.behaviourTriggers ? JSON.parse(submission.behaviourTriggers as string) : null),
+        : (submission.behaviourTriggers ? 
+           (typeof submission.behaviourTriggers === 'string' ? 
+            JSON.parse(submission.behaviourTriggers) : submission.behaviourTriggers) 
+           : null),
       // Ensure behavior types are available as both field names for compatibility
       behaviourTypes: submission.behaviourType 
         ? submission.behaviourType.split(', ').filter(t => t.length > 0) 
