@@ -14,6 +14,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, Plus, Minus, Check, AlertCircle } from "lucide-react";
@@ -23,7 +24,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// Behaviour of Concern item schema
+// Individual behavior item schema (legacy - kept for compatibility)
 const BehaviourSchema = z.object({
   behaviour: z.string().min(1, "Behaviour is required"),
   description: z.string().optional(),
@@ -100,6 +101,11 @@ const ReferralFormSchema = z.object({
   medicalConditions: z.string().optional(),
   medications: z.array(MedicationSchema).optional(),
   medicationSideEffects: z.string().optional(),
+  // New behavior fields
+  behaviourType: z.string().optional(),
+  behaviourTriggers: z.array(z.string()).optional(),
+  behaviourOverview: z.string().optional(),
+  // Legacy behavior array (kept for compatibility)
   behaviours: z.array(BehaviourSchema).optional(),
   
   // Funding
@@ -166,6 +172,10 @@ export default function PublicReferralForm() {
       medicalConditions: "",
       medications: [],
       medicationSideEffects: "",
+      // New behavior structure
+      behaviourType: "",
+      behaviourTriggers: [],
+      behaviourOverview: "",
       behaviours: [],
       ndisNumber: "",
       fundManagementType: undefined,
@@ -232,20 +242,19 @@ export default function PublicReferralForm() {
 
     try {
       // Debug: Log the raw form data before processing
-      console.log('[FORM DEBUG] Raw behaviours from form:', JSON.stringify(data.behaviours, null, 2));
+      console.log('[FORM DEBUG] Raw behaviour type:', data.behaviourType);
+      console.log('[FORM DEBUG] Raw behaviour triggers:', JSON.stringify(data.behaviourTriggers, null, 2));
+      console.log('[FORM DEBUG] Raw behaviour overview:', data.behaviourOverview);
       console.log('[FORM DEBUG] Raw medications from form:', JSON.stringify(data.medications, null, 2));
       
-      // Clean and filter behaviours - remove empty entries and map field names properly
-      const cleanBehaviours =
-        (data.behaviours ?? [])
-          .filter(b => (b?.behaviour ?? "").trim().length > 0)
-          .map(b => ({
-            behaviour: b.behaviour.trim(),
-            trigger: (b.trigger ?? "").trim() || undefined,
-            management: (b.managementStrategy ?? "").trim() || undefined, // map managementStrategy to management
-          }));
+      // Process new behavior structure
+      const behaviourData = {
+        type: data.behaviourType?.trim() || undefined,
+        triggers: data.behaviourTriggers && data.behaviourTriggers.length > 0 ? data.behaviourTriggers : undefined,
+        overview: data.behaviourOverview?.trim() || undefined,
+      };
       
-      console.log('[FORM DEBUG] Cleaned behaviours:', JSON.stringify(cleanBehaviours, null, 2));
+      console.log('[FORM DEBUG] Processed behaviour data:', JSON.stringify(behaviourData, null, 2));
 
       // Clean and filter medications - remove empty entries
       const cleanMedications =
@@ -276,7 +285,12 @@ export default function PublicReferralForm() {
         supportCategories: data.supportCategories?.length ? data.supportCategories : null,
         planManagement: data.planManagement?.length ? data.planManagement : null,
         howWeSupport: data.howWeSupport?.length ? data.howWeSupport : null,
-        behaviours: cleanBehaviours.length ? cleanBehaviours : null,
+        // NEW: Send new behavior structure
+        behaviourType: behaviourData.type,
+        behaviourTriggers: behaviourData.triggers,
+        behaviourOverview: behaviourData.overview,
+        // Legacy fields
+        behaviours: null, // No longer using dynamic behavior array
         medications: cleanMedications.length ? cleanMedications : null,
       };
 
@@ -724,122 +738,145 @@ export default function PublicReferralForm() {
                     />
                   </div>
 
-                  {/* Behaviour of Concern */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="text-lg font-medium">Behaviours of Concern</FormLabel>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => appendBehaviour({ 
-                          behaviour: "", 
-                          description: "", 
-                          howItPresents: "", 
-                          trigger: "", 
-                          managementStrategy: "" 
-                        })}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Behaviour
-                      </Button>
+                  {/* Behaviour of Concern - New Style */}
+                  <div className="space-y-6">
+                    <FormLabel className="text-lg font-medium">Behaviours of Concern</FormLabel>
+                    
+                    {/* Behavior Types */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control as any}
+                        name="behaviourType"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel className="text-base font-medium">Behavior Types *</FormLabel>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {[
+                                "Physical aggression towards others",
+                                "Verbal aggression towards others", 
+                                "Property damage",
+                                "Self-harm",
+                                "Medical emergency",
+                                "Environmental hazard",
+                                "Medication error",
+                                "Unauthorized absence",
+                                "Sexual misconduct",
+                                "Financial exploitation",
+                                "Neglect",
+                                "Other"
+                              ].map((type) => (
+                                <FormItem key={type} className="flex items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem
+                                      value={type}
+                                      checked={field.value === type}
+                                      onCheckedChange={() => field.onChange(type)}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="text-sm font-normal cursor-pointer">
+                                    {type}
+                                  </FormLabel>
+                                </FormItem>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                    
-                    {behaviourFields.length === 0 && (
-                      <p className="text-sm text-muted-foreground italic">No behaviours of concern added yet. Click "Add Behaviour" to start.</p>
-                    )}
-                    
-                    {behaviourFields.map((field, index) => (
-                      <div key={field.id} className="border rounded-lg p-4 space-y-4 bg-orange-50">
-                        <div className="flex justify-between items-center">
-                          <h4 className="font-medium text-sm text-orange-700">Behaviour of Concern #{index + 1}</h4>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeBehaviour(index)}
-                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 gap-4">
-                          <FormField
-                            control={form.control as any}
-                            name={`behaviours.${index}.behaviour`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Behaviour *</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="e.g., Verbal aggression" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control as any}
-                            name={`behaviours.${index}.description`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Description</FormLabel>
-                                <FormControl>
-                                  <Textarea placeholder="Describe the behaviour in detail" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control as any}
-                            name={`behaviours.${index}.howItPresents`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>How it Presents</FormLabel>
-                                <FormControl>
-                                  <Textarea placeholder="How does this behaviour manifest or appear?" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control as any}
-                              name={`behaviours.${index}.trigger`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Trigger</FormLabel>
-                                  <FormControl>
-                                    <Textarea placeholder="What triggers this behaviour?" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={form.control as any}
-                              name={`behaviours.${index}.managementStrategy`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Management Strategy</FormLabel>
-                                  <FormControl>
-                                    <Textarea placeholder="How should this behaviour be managed?" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+
+                    {/* Behavior Triggers */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control as any}
+                        name="behaviourTriggers"
+                        render={() => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">Select Behavior Triggers *</FormLabel>
+                            <FormDescription className="text-sm text-muted-foreground">
+                              Choose all triggers that may contribute to this behavior. At least one trigger must be selected.
+                            </FormDescription>
+                            <div className="space-y-3">
+                              {[
+                                { id: "choice_control", label: "Lack of choice and control", description: "Individual is not offered options or autonomy in daily decisions (e.g. meals, activities, clothing)." },
+                                { id: "change_routine", label: "Changes in routine", description: "Unplanned or unexplained disruptions to known schedules (e.g. missed outings, new support worker)." },
+                                { id: "unmet_needs", label: "Unmet needs", description: "Delays or absence of support for basic needs (e.g. hunger, hygiene, rest, medical care, emotional regulation)." },
+                                { id: "sensory", label: "Sensory overload or discomfort", description: "Exposure to overwhelming stimuli (e.g. loud noises, bright lights, strong smells, physical touch)." },
+                                { id: "communication", label: "Poor communication or being misunderstood", description: "Limited access to AAC, complex instructions, or lack of validation leading to frustration." },
+                                { id: "structure_loss", label: "Loss of predictability or structure", description: "Inconsistent support routines, unclear expectations, or lack of visual/temporal cues." },
+                                { id: "disrespect", label: "Feeling disrespected or excluded", description: "Not being heard, ignored, spoken over, or left out of peer/staff interaction." },
+                                { id: "unfamiliarity", label: "Unfamiliar environments or people", description: "Anxiety or distress from being in a new setting or interacting with unfamiliar staff/peers." },
+                                { id: "health_discomfort", label: "Health discomfort or untreated pain", description: "Physical distress due to illness, pain, or side effects of medication not being identified or addressed." },
+                                { id: "trauma_triggers", label: "Past trauma or distress triggers", description: "Exposure to reminders of past trauma (e.g. restraint, tone of voice, uniforms, confrontation)." },
+                                { id: "other", label: "Other", description: "A trigger not covered by the above categories." }
+                              ].map((trigger) => (
+                                <FormField
+                                  key={trigger.id}
+                                  control={form.control as any}
+                                  name="behaviourTriggers"
+                                  render={({ field }) => {
+                                    return (
+                                      <FormItem
+                                        key={trigger.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                      >
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(trigger.id)}
+                                            onCheckedChange={(checked) => {
+                                              return checked
+                                                ? field.onChange([...(field.value || []), trigger.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                      (value: string) => value !== trigger.id
+                                                    )
+                                                  )
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                          <FormLabel className="text-sm font-medium">
+                                            {trigger.label}
+                                          </FormLabel>
+                                          <p className="text-xs text-muted-foreground">
+                                            {trigger.description}
+                                          </p>
+                                        </div>
+                                      </FormItem>
+                                    )
+                                  }}
+                                />
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* General Overview */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control as any}
+                        name="behaviourOverview"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">General Overview of Behavior of Concern</FormLabel>
+                            <FormDescription className="text-sm text-muted-foreground">
+                              Please provide a general overview describing the behavior of concern, including any additional context, patterns, or management strategies.
+                            </FormDescription>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Please describe the behavior of concern in detail, including how it presents, any patterns you've noticed, and any current management approaches..."
+                                className="min-h-[100px]"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
 

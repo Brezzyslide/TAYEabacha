@@ -891,6 +891,13 @@ export const referralSubmissions = pgTable("referral_submissions", {
   medicalConditions: text("medical_conditions"),
   medications: jsonb("medications").$type<Array<{name: string; dosage?: string; frequency?: string}>>(),
   medicationSideEffects: text("medication_side_effects"),
+  
+  // NEW: Behavior fields (structured like incident reports)
+  behaviourType: text("behaviour_type"), // Single behavior type selection
+  behaviourTriggers: text("behaviour_triggers").array(), // Array of trigger selections  
+  behaviourOverview: text("behaviour_overview"), // General behavior overview text
+  
+  // Legacy behavior field (kept for compatibility)
   behaviours: jsonb("behaviours").$type<Array<{behaviour: string; trigger?: string; management?: string}>>(),
   
   // NDIS funding details
