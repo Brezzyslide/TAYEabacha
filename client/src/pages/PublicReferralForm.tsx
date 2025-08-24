@@ -285,10 +285,10 @@ export default function PublicReferralForm() {
         supportCategories: data.supportCategories?.length ? data.supportCategories : null,
         planManagement: data.planManagement?.length ? data.planManagement : null,
         howWeSupport: data.howWeSupport?.length ? data.howWeSupport : null,
-        // NEW: Send new behavior structure
-        behaviourType: behaviourData.type,
-        behaviourTriggers: behaviourData.triggers,
-        behaviourOverview: behaviourData.overview,
+        // NEW: Send new behavior structure - use correct field names
+        behaviourTypes: data.behaviourTypes?.length ? data.behaviourTypes : null,
+        behaviourTriggers: data.behaviourTriggers?.length ? data.behaviourTriggers : null,
+        behaviourOverview: data.behaviourOverview?.trim() || null,
         // Legacy fields
         behaviours: null, // No longer using dynamic behavior array
         medications: cleanMedications.length ? cleanMedications : null,

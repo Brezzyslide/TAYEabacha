@@ -26,6 +26,7 @@ interface ReferralForm {
   referrerOrg?: string;
   referrerPosition?: string;
   referrerPhoneEmail?: string;
+  referrerContact?: string;
   
   // Participant details
   clientName: string;
@@ -57,8 +58,20 @@ interface ReferralForm {
   
   // Medical information
   medicalConditions?: string;
-  medications?: string;
+  medications?: Array<{
+    name: string;
+    dosage?: string;
+    frequency?: string;
+  }>;
   medicationSideEffects?: string;
+  
+  // NEW: Behavior fields (multi-select structure)
+  behaviourType?: string; // Join of array from database
+  behaviourTypes?: string[];
+  behaviourTriggers?: string[];
+  behaviourOverview?: string;
+  
+  // Legacy behavior field
   behaviours?: Array<{
     behaviour: string;
     trigger?: string;
@@ -71,11 +84,13 @@ interface ReferralForm {
   planEnd?: string;
   fundManagementType?: "NDIA" | "Self" | "Plan";
   
-  // Fund Details
+  // Fund Details (NEW - missing fields)
   coreCurrentBalance?: string;
   coreFundedAmount?: string;
   silCurrentBalance?: string;
   silFundedAmount?: string;
+  irregularSilCurrentBalance?: string;
+  irregularSilFundedAmount?: string;
   otherCurrentBalance?: string;
   otherFundedAmount?: string;
   
@@ -162,21 +177,73 @@ export default function ReferralViewPage() {
         yPosition += medicalText.length * 5 + 10;
       }
       
-      // Medications
+      // Medications (handle array format)
       if (referral.medications) {
         doc.setFontSize(16);
         doc.text('Medications', 20, yPosition);
         yPosition += 10;
         doc.setFontSize(12);
-        const medicationsText = doc.splitTextToSize(referral.medications, 170);
-        doc.text(medicationsText, 25, yPosition);
-        yPosition += medicationsText.length * 5 + 10;
+        
+        if (Array.isArray(referral.medications)) {
+          referral.medications.forEach(med => {
+            doc.text(`• ${med.name}`, 25, yPosition);
+            yPosition += 8;
+            if (med.dosage) {
+              doc.text(`  Dosage: ${med.dosage}`, 30, yPosition);
+              yPosition += 6;
+            }
+            if (med.frequency) {
+              doc.text(`  Frequency: ${med.frequency}`, 30, yPosition);
+              yPosition += 6;
+            }
+            yPosition += 3;
+          });
+        } else {
+          const medicationsText = doc.splitTextToSize(referral.medications, 170);
+          doc.text(medicationsText, 25, yPosition);
+          yPosition += medicationsText.length * 5;
+        }
+        yPosition += 10;
       }
       
-      // Behaviours
-      if (referral.behaviours?.length) {
+      // NEW: Behaviour Information (structured)
+      if (referral.behaviourType || referral.behaviourTriggers?.length || referral.behaviourOverview) {
         doc.setFontSize(16);
         doc.text('Behaviours of Concern', 20, yPosition);
+        yPosition += 10;
+        doc.setFontSize(12);
+        
+        if (referral.behaviourType) {
+          doc.text('Behaviour Types:', 25, yPosition);
+          yPosition += 8;
+          doc.text(`  ${referral.behaviourType}`, 30, yPosition);
+          yPosition += 8;
+        }
+        
+        if (referral.behaviourTriggers?.length) {
+          doc.text('Behaviour Triggers:', 25, yPosition);
+          yPosition += 8;
+          referral.behaviourTriggers.forEach(trigger => {
+            doc.text(`• ${trigger}`, 30, yPosition);
+            yPosition += 6;
+          });
+          yPosition += 4;
+        }
+        
+        if (referral.behaviourOverview) {
+          doc.text('Behaviour Overview:', 25, yPosition);
+          yPosition += 8;
+          const overviewText = doc.splitTextToSize(referral.behaviourOverview, 160);
+          doc.text(overviewText, 30, yPosition);
+          yPosition += overviewText.length * 5 + 8;
+        }
+        yPosition += 5;
+      }
+      
+      // Legacy Behaviours
+      if (referral.behaviours?.length) {
+        doc.setFontSize(16);
+        doc.text('Legacy Behaviours of Concern', 20, yPosition);
         yPosition += 10;
         doc.setFontSize(12);
         referral.behaviours.forEach(behaviour => {
@@ -195,8 +262,8 @@ export default function ReferralViewPage() {
         yPosition += 5;
       }
       
-      // Fund Details (if available)
-      if (referral.coreCurrentBalance || referral.silCurrentBalance || referral.otherCurrentBalance) {
+      // Fund Details (if available) - Updated to include irregular SIL
+      if (referral.coreCurrentBalance || referral.silCurrentBalance || referral.irregularSilCurrentBalance || referral.otherCurrentBalance) {
         if (yPosition > 250) {
           doc.addPage();
           yPosition = 20;
@@ -634,7 +701,7 @@ export default function ReferralViewPage() {
         )}
 
         {/* Fund Details */}
-        {(referral.coreCurrentBalance || referral.silCurrentBalance || referral.otherCurrentBalance) && (
+        {(referral.coreCurrentBalance || referral.silCurrentBalance || referral.irregularSilCurrentBalance || referral.otherCurrentBalance) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -682,6 +749,25 @@ export default function ReferralViewPage() {
                   </div>
                 )}
                 
+                {/* Irregular SIL Supports */}
+                {(referral.irregularSilCurrentBalance || referral.irregularSilFundedAmount) && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Irregular SIL Supports</h4>
+                    {referral.irregularSilFundedAmount && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Funded Amount</label>
+                        <p className="font-medium">${referral.irregularSilFundedAmount}</p>
+                      </div>
+                    )}
+                    {referral.irregularSilCurrentBalance && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Current Balance</label>
+                        <p className="font-medium">${referral.irregularSilCurrentBalance}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {/* Other Supports */}
                 {(referral.otherCurrentBalance || referral.otherFundedAmount) && (
                   <div className="space-y-2">
@@ -708,7 +794,7 @@ export default function ReferralViewPage() {
 
 
         {/* Health Information */}
-        {(referral.medicalConditions || referral.medications || referral.medicationSideEffects || referral.behaviours?.length) && (
+        {(referral.medicalConditions || referral.medications || referral.medicationSideEffects || referral.behaviours?.length || referral.behaviourType || referral.behaviourTriggers?.length || referral.behaviourOverview) && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -726,7 +812,30 @@ export default function ReferralViewPage() {
               {referral.medications && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Current Medications</label>
-                  <p className="mt-1">{referral.medications}</p>
+                  <div className="mt-1 space-y-2">
+                    {Array.isArray(referral.medications) 
+                      ? referral.medications.map((med, index) => (
+                          <div key={index} className="border rounded-lg p-3">
+                            <h5 className="font-medium">{med.name}</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                              {med.dosage && (
+                                <div>
+                                  <label className="text-xs font-medium text-muted-foreground">Dosage</label>
+                                  <p className="text-sm">{med.dosage}</p>
+                                </div>
+                              )}
+                              {med.frequency && (
+                                <div>
+                                  <label className="text-xs font-medium text-muted-foreground">Frequency</label>
+                                  <p className="text-sm">{med.frequency}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      : <p className="mt-1">{referral.medications}</p>
+                    }
+                  </div>
                 </div>
               )}
               {referral.medicationSideEffects && (
@@ -735,9 +844,43 @@ export default function ReferralViewPage() {
                   <p className="mt-1">{referral.medicationSideEffects}</p>
                 </div>
               )}
-              {referral.behaviours && referral.behaviours.length > 0 && (
+              {/* NEW: Multi-select Behavior Fields */}
+              {(referral.behaviourType || referral.behaviourTriggers?.length || referral.behaviourOverview) && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Behaviours of Concern</label>
+                  <div className="mt-2 space-y-3">
+                    {referral.behaviourType && (
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Behaviour Types</label>
+                        <p className="text-sm">{referral.behaviourType}</p>
+                      </div>
+                    )}
+                    {referral.behaviourTriggers?.length > 0 && (
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Behaviour Triggers</label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {referral.behaviourTriggers.map((trigger, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {trigger}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {referral.behaviourOverview && (
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Behaviour Overview</label>
+                        <p className="text-sm">{referral.behaviourOverview}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Legacy Behavior Fields */}
+              {referral.behaviours && referral.behaviours.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Legacy Behaviours of Concern</label>
                   <div className="mt-2 space-y-3">
                     {referral.behaviours.map((behaviour, index) => (
                       <div key={index} className="border rounded-lg p-3">

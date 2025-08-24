@@ -3206,8 +3206,7 @@ export class DatabaseStorage implements IStorage {
       const [updated] = await db.update(referralSubmissions)
         .set({
           status: status,
-          assessment: assessment ? JSON.stringify(assessment) : undefined,
-          updatedAt: new Date()
+          submissionData: assessment ? JSON.stringify(assessment) : undefined,
         })
         .where(and(
           eq(referralSubmissions.id, id),

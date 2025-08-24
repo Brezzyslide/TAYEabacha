@@ -374,11 +374,29 @@ router.post("/submit/:token", async (req, res) => {
       medicalConditions: parsed.medicalConditions,
       medications: parsed.medications,
       medicationSideEffects: parsed.medicationSideEffects,
+      
+      // NEW: Behavior fields - map correctly to database columns
+      behaviourType: Array.isArray(parsed.behaviourTypes) && parsed.behaviourTypes.length > 0 ? parsed.behaviourTypes.join(', ') : null,
+      behaviourTriggers: Array.isArray(parsed.behaviourTriggers) && parsed.behaviourTriggers.length > 0 ? parsed.behaviourTriggers : null,
+      behaviourOverview: parsed.behaviourOverview,
+      
+      // Legacy behavior fields
       behaviours: Array.isArray(parsed.behaviours) && parsed.behaviours.length > 0 ? parsed.behaviours : null,
       ndisNumber: parsed.ndisNumber,
       planStart: parsed.planStart ? new Date(parsed.planStart) : null,
       planEnd: parsed.planEnd ? new Date(parsed.planEnd) : null,
       fundManagementType: parsed.fundManagementType,
+      
+      // Fund balance fields
+      coreCurrentBalance: parsed.coreCurrentBalance,
+      coreFundedAmount: parsed.coreFundedAmount,
+      silCurrentBalance: parsed.silCurrentBalance,
+      silFundedAmount: parsed.silFundedAmount,
+      irregularSilCurrentBalance: parsed.irregularSilCurrentBalance,
+      irregularSilFundedAmount: parsed.irregularSilFundedAmount,
+      otherCurrentBalance: parsed.otherCurrentBalance,
+      otherFundedAmount: parsed.otherFundedAmount,
+      
       invoiceName: parsed.invoiceName,
       invoiceEmail: parsed.invoiceEmail,
       invoicePhone: parsed.invoicePhone,
@@ -536,32 +554,83 @@ CLIENT INFORMATION
 Name: ${referral.clientName}
 NDIS Number: ${referral.ndisNumber || 'Not provided'}
 Plan Period: ${referral.planStart ? new Date(referral.planStart).toLocaleDateString() : 'Not specified'} - ${referral.planEnd ? new Date(referral.planEnd).toLocaleDateString() : 'Ongoing'}
+Fund Management Type: ${referral.fundManagementType || 'Not specified'}
+
+FUND BALANCES
+-------------
+Core Current Balance: ${referral.coreCurrentBalance || 'Not specified'}
+Core Funded Amount: ${referral.coreFundedAmount || 'Not specified'}
+SIL Current Balance: ${referral.silCurrentBalance || 'Not specified'}
+SIL Funded Amount: ${referral.silFundedAmount || 'Not specified'}
+Irregular SIL Current Balance: ${referral.irregularSilCurrentBalance || 'Not specified'}
+Irregular SIL Funded Amount: ${referral.irregularSilFundedAmount || 'Not specified'}
+Other Current Balance: ${referral.otherCurrentBalance || 'Not specified'}
+Other Funded Amount: ${referral.otherFundedAmount || 'Not specified'}
 
 REFERRER INFORMATION
 -------------------
 Name: ${referral.referrerName}
 Organization: ${referral.referrerOrg || 'Not specified'}
+Position: ${referral.referrerPosition || 'Not specified'}
+Contact: ${referral.referrerContact || 'Not specified'}
 Date Submitted: ${new Date(referral.submittedAt).toLocaleDateString()}
 Referral Date: ${referral.dateOfReferral ? new Date(referral.dateOfReferral).toLocaleDateString() : 'Not specified'}
+Client Status: ${referral.isNewClient ? 'New Client' : referral.isReturningClient ? 'Returning Client' : 'Not specified'}
 
 SUPPORT DETAILS
 --------------
 Support Categories: ${referral.supportCategories?.join(', ') || 'None specified'}
+Plan Management: ${referral.planManagement?.join(', ') || 'None specified'}
 How We Support: ${referral.howWeSupport?.join(', ') || 'None specified'}
 
 PARTICIPANT INFORMATION
 ----------------------
+Date of Birth: ${referral.dob ? new Date(referral.dob).toLocaleDateString() : 'Not provided'}
+Address: ${referral.address || 'Not provided'}
+Phone: ${referral.phone || 'Not provided'}
 About Participant: ${referral.aboutParticipant || 'Not provided'}
+Participant Strengths: ${referral.participantStrengths || 'Not provided'}
+Likes: ${referral.likes || 'Not provided'}
+Dislikes: ${referral.dislikes || 'Not provided'}
+NDIS Support as Funded: ${referral.ndisSupportAsFunded || 'Not provided'}
+Shift Days: ${referral.shiftDays || 'Not provided'}
+Shift Times: ${referral.shiftTimes || 'Not provided'}
+Preferred Gender: ${referral.preferredGender || 'No preference'}
+Required Skill Set: ${referral.requiredSkillSet || 'Not specified'}
+
+EMERGENCY CONTACT
+-----------------
+Name: ${referral.emergencyName || 'Not provided'}
+Phone: ${referral.emergencyPhone || 'Not provided'}
+Address: ${referral.emergencyAddress || 'Not provided'}
+Email: ${referral.emergencyEmail || 'Not provided'}
+
+MEDICAL INFORMATION
+------------------
 Medical Conditions: ${referral.medicalConditions || 'Not provided'}
+Medications: ${Array.isArray(referral.medications) && referral.medications.length > 0 
+  ? referral.medications.map((med: any) => `${med.name}${med.dosage ? ` - ${med.dosage}` : ''}${med.frequency ? ` - ${med.frequency}` : ''}`).join('\n') 
+  : 'None specified'}
+Medication Side Effects: ${referral.medicationSideEffects || 'None reported'}
 
 BEHAVIOURS OF CONCERN
 --------------------
-${referral.behaviours && referral.behaviours.length > 0 
-  ? referral.behaviours.map((b: any, i: number) => `
+Behaviour Types: ${referral.behaviourType || 'Not specified'}
+Behaviour Triggers: ${Array.isArray(referral.behaviourTriggers) ? referral.behaviourTriggers.join(', ') : referral.behaviourTriggers || 'Not specified'}
+Behaviour Overview: ${referral.behaviourOverview || 'Not specified'}
+
+${referral.behaviours && referral.behaviours.length > 0 ? `Legacy Behaviour Details:
+${referral.behaviours.map((b: any, i: number) => `
 ${i + 1}. Behaviour: ${b.behaviour || 'Not specified'}
    Trigger: ${b.trigger || 'Not specified'}
-   Management: ${b.management || 'Not specified'}`).join('\n')
-  : 'None specified'}
+   Management: ${b.management || 'Not specified'}`).join('\n')}` : ''}
+
+INVOICE DETAILS
+--------------
+Invoice Name: ${referral.invoiceName || 'Not specified'}
+Invoice Email: ${referral.invoiceEmail || 'Not specified'}
+Invoice Phone: ${referral.invoicePhone || 'Not specified'}
+Invoice Address: ${referral.invoiceAddress || 'Not specified'}
 
 ${referral.assessment ? `
 ASSESSMENT RESULTS
@@ -583,30 +652,6 @@ Support Overview: ${referral.assessment.supportOverview}
 
 Generated on: ${new Date().toLocaleString()}
 Report ID: REF-${referral.id}
-
-About Participant:
-${referral.aboutParticipant || 'No information provided'}
-
-Medical Conditions:
-${referral.medicalConditions || 'None specified'}
-
-${referral.assessment ? `
-ASSESSMENT RESULTS
-==================
-Organizational Capacity: ${referral.assessment.organizationalCapacity}
-Skillset Capacity: ${referral.assessment.skillsetCapacity}
-Funding Sufficient: ${referral.assessment.fundingSufficient}
-Restrictive Practice: ${referral.assessment.restrictivePractice}
-Manual Handling: ${referral.assessment.manualHandling}
-Medication Management: ${referral.assessment.medicationManagement}
-
-Support Overview:
-${referral.assessment.supportOverview}
-
-Decision: ${referral.assessment.decision}
-${referral.assessment.declineReason ? `Decline Reason: ${referral.assessment.declineReason}` : ''}
-${referral.assessment.referralPathway ? `Referral Pathway: ${referral.assessment.referralPathway}` : ''}
-` : ''}
   `;
   
   return Buffer.from(content, 'utf8');

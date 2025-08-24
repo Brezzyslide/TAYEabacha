@@ -906,6 +906,16 @@ export const referralSubmissions = pgTable("referral_submissions", {
   planEnd: timestamp("plan_end"),
   fundManagementType: text("fund_management_type"),
   
+  // Fund balance fields
+  coreCurrentBalance: text("core_current_balance"),
+  coreFundedAmount: text("core_funded_amount"),
+  silCurrentBalance: text("sil_current_balance"),
+  silFundedAmount: text("sil_funded_amount"),
+  irregularSilCurrentBalance: text("irregular_sil_current_balance"),
+  irregularSilFundedAmount: text("irregular_sil_funded_amount"),
+  otherCurrentBalance: text("other_current_balance"),
+  otherFundedAmount: text("other_funded_amount"),
+  
   // Invoice details
   invoiceName: text("invoice_name"),
   invoiceEmail: text("invoice_email"),
