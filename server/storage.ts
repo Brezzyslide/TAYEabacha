@@ -3250,6 +3250,16 @@ export class DatabaseStorage implements IStorage {
         ...submission,
         medications: Array.isArray(submission.medications) && submission.medications.length > 0 ? submission.medications : null,
         behaviours: Array.isArray(submission.behaviours) && submission.behaviours.length > 0 ? submission.behaviours : null,
+        // Handle new behavior fields
+        behaviour_type: Array.isArray(submission.behaviourTypes) && submission.behaviourTypes.length > 0 
+          ? submission.behaviourTypes.join(', ') // Join array to string for TEXT column
+          : null,
+        behaviour_triggers: Array.isArray(submission.behaviourTriggers) && submission.behaviourTriggers.length > 0 
+          ? submission.behaviourTriggers // Keep as array for TEXT[] column
+          : null,
+        behaviour_overview: submission.behaviourOverview && submission.behaviourOverview.trim().length > 0
+          ? submission.behaviourOverview.trim()
+          : null,
         submittedAt: new Date()
       };
       

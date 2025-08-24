@@ -189,6 +189,13 @@ export const ReferralFormSchema = z.object({
         : medications
     ),
   medicationSideEffects: z.string().optional(),
+  
+  // New behavior structure
+  behaviourTypes: z.array(z.string()).optional(),
+  behaviourTriggers: z.array(z.string()).optional(),
+  behaviourOverview: z.string().optional(),
+  
+  // Legacy behavior array (kept for compatibility)
   behaviours: z.array(BehaviourItem).nullable().optional()
     .transform(behaviours => 
       Array.isArray(behaviours) 

@@ -102,7 +102,7 @@ const ReferralFormSchema = z.object({
   medications: z.array(MedicationSchema).optional(),
   medicationSideEffects: z.string().optional(),
   // New behavior fields
-  behaviourType: z.string().optional(),
+  behaviourTypes: z.array(z.string()).optional(), // Changed from single to multiple
   behaviourTriggers: z.array(z.string()).optional(),
   behaviourOverview: z.string().optional(),
   // Legacy behavior array (kept for compatibility)
@@ -173,7 +173,7 @@ export default function PublicReferralForm() {
       medications: [],
       medicationSideEffects: "",
       // New behavior structure
-      behaviourType: "",
+      behaviourTypes: [], // Changed from single to multiple
       behaviourTriggers: [],
       behaviourOverview: "",
       behaviours: [],
@@ -746,39 +746,61 @@ export default function PublicReferralForm() {
                     <div className="space-y-4">
                       <FormField
                         control={form.control as any}
-                        name="behaviourType"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="text-base font-medium">Behavior Types *</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                value={field.value}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
-                              >
-                                {[
-                                  "Physical aggression towards others",
-                                  "Verbal aggression towards others", 
-                                  "Property damage",
-                                  "Self-harm",
-                                  "Medical emergency",
-                                  "Environmental hazard",
-                                  "Medication error",
-                                  "Unauthorized absence",
-                                  "Sexual misconduct",
-                                  "Financial exploitation",
-                                  "Neglect",
-                                  "Other"
-                                ].map((type) => (
-                                  <div key={type} className="flex items-center space-x-3">
-                                    <RadioGroupItem value={type} id={`behavior-${type}`} />
-                                    <label htmlFor={`behavior-${type}`} className="text-sm font-normal cursor-pointer">
-                                      {type}
-                                    </label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
+                        name="behaviourTypes"
+                        render={() => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">Select Behavior Types *</FormLabel>
+                            <FormDescription className="text-sm text-muted-foreground">
+                              Choose all behavior types that apply. Multiple selections allowed.
+                            </FormDescription>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {[
+                                { id: "physical_aggression", label: "Physical aggression towards others" },
+                                { id: "verbal_aggression", label: "Verbal aggression towards others" },
+                                { id: "property_damage", label: "Property damage" },
+                                { id: "self_harm", label: "Self-harm" },
+                                { id: "medical_emergency", label: "Medical emergency" },
+                                { id: "environmental_hazard", label: "Environmental hazard" },
+                                { id: "medication_error", label: "Medication error" },
+                                { id: "unauthorized_absence", label: "Unauthorized absence" },
+                                { id: "sexual_misconduct", label: "Sexual misconduct" },
+                                { id: "financial_exploitation", label: "Financial exploitation" },
+                                { id: "neglect", label: "Neglect" },
+                                { id: "other", label: "Other" }
+                              ].map((type) => (
+                                <FormField
+                                  key={type.id}
+                                  control={form.control as any}
+                                  name="behaviourTypes"
+                                  render={({ field }) => {
+                                    return (
+                                      <FormItem
+                                        key={type.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                      >
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(type.id)}
+                                            onCheckedChange={(checked) => {
+                                              return checked
+                                                ? field.onChange([...field.value || [], type.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                      (value) => value !== type.id
+                                                    )
+                                                  )
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <FormLabel className="text-sm font-normal cursor-pointer">
+                                          {type.label}
+                                        </FormLabel>
+                                      </FormItem>
+                                    )
+                                  }}
+                                />
+                              ))}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
