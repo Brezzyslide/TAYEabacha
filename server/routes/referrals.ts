@@ -549,116 +549,265 @@ router.get("/:id/pdf", async (req, res) => {
   }
 });
 
-// Helper function to generate proper PDF using jsPDF
+// Helper function to generate professional PDF using jsPDF (matching invoice style)
 function generateReferralPDF(doc: any, referral: any): void {
-  let yPosition = 20;
+  // TUSK-inspired color palette (matching invoice PDFs)
+  const COLORS = {
+    deepNavy: '#2B4C7E',     // Deep Navy
+    warmGold: '#D4AF37',     // Warm Gold
+    sageGreen: '#87A96B',    // Sage Green
+    cream: '#F5F5DC',        // Cream
+    lightGray: '#F8F9FA',
+    darkGray: '#6B7280',
+    black: '#1F2937'
+  };
+
+  const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 20;
-  const lineHeight = 8;
+  let yPosition = 20;
 
-  // Helper function to add text with page break
-  const addText = (text: string, fontSize: number = 12, isBold: boolean = false) => {
-    if (yPosition > pageHeight - 30) {
+  // Helper function to check for page break and add new page
+  const checkPageBreak = (requiredSpace: number = 20) => {
+    if (yPosition > pageHeight - requiredSpace - 40) {
+      addFooter();
       doc.addPage();
       yPosition = 20;
     }
-    doc.setFontSize(fontSize);
-    if (isBold) {
-      doc.setFont('helvetica', 'bold');
-    } else {
-      doc.setFont('helvetica', 'normal');
-    }
-    doc.text(text, margin, yPosition);
-    yPosition += lineHeight;
   };
 
-  // Title
-  addText('NDIS REFERRAL REPORT', 18, true);
-  yPosition += 5;
+  // Helper function to add styled section header
+  const addSectionHeader = (title: string) => {
+    checkPageBreak(25);
+    
+    // Background rectangle for section header
+    doc.setFillColor(COLORS.deepNavy);
+    doc.rect(margin, yPosition - 3, pageWidth - 2 * margin, 18, 'F');
+    
+    // Section title text
+    doc.setTextColor('#FFFFFF');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(title, margin + 5, yPosition + 8);
+    
+    yPosition += 25;
+    doc.setTextColor(COLORS.black);
+  };
 
-  // Client Information
-  addText('CLIENT INFORMATION', 14, true);
-  addText(`Name: ${referral.clientName}`);
-  if (referral.ndisNumber) addText(`NDIS Number: ${referral.ndisNumber}`);
-  if (referral.planStart || referral.planEnd) {
-    addText(`Plan Period: ${referral.planStart ? new Date(referral.planStart).toLocaleDateString() : 'Not specified'} - ${referral.planEnd ? new Date(referral.planEnd).toLocaleDateString() : 'Ongoing'}`);
-  }
-  if (referral.fundManagementType) addText(`Fund Management Type: ${referral.fundManagementType}`);
-  yPosition += 5;
-
-  // Fund Balances
-  if (referral.coreCurrentBalance || referral.coreFundedAmount || referral.silCurrentBalance) {
-    addText('FUND BALANCES', 14, true);
-    if (referral.coreCurrentBalance) addText(`Core Current Balance: ${referral.coreCurrentBalance}`);
-    if (referral.coreFundedAmount) addText(`Core Funded Amount: ${referral.coreFundedAmount}`);
-    if (referral.silCurrentBalance) addText(`SIL Current Balance: ${referral.silCurrentBalance}`);
-    if (referral.silFundedAmount) addText(`SIL Funded Amount: ${referral.silFundedAmount}`);
-    if (referral.irregularSilCurrentBalance) addText(`Irregular SIL Current Balance: ${referral.irregularSilCurrentBalance}`);
-    if (referral.irregularSilFundedAmount) addText(`Irregular SIL Funded Amount: ${referral.irregularSilFundedAmount}`);
-    if (referral.otherCurrentBalance) addText(`Other Current Balance: ${referral.otherCurrentBalance}`);
-    if (referral.otherFundedAmount) addText(`Other Funded Amount: ${referral.otherFundedAmount}`);
-    yPosition += 5;
-  }
-
-  // Referrer Information
-  addText('REFERRER INFORMATION', 14, true);
-  addText(`Name: ${referral.referrerName}`);
-  if (referral.referrerOrg) addText(`Organization: ${referral.referrerOrg}`);
-  if (referral.referrerPosition) addText(`Position: ${referral.referrerPosition}`);
-  if (referral.referrerContact) addText(`Contact: ${referral.referrerContact}`);
-  addText(`Date Submitted: ${new Date(referral.submittedAt).toLocaleDateString()}`);
-  if (referral.dateOfReferral) addText(`Referral Date: ${new Date(referral.dateOfReferral).toLocaleDateString()}`);
-  yPosition += 5;
-
-  // Support Details
-  if (referral.supportCategories?.length || referral.howWeSupport?.length) {
-    addText('SUPPORT DETAILS', 14, true);
-    if (referral.supportCategories?.length) addText(`Support Categories: ${referral.supportCategories.join(', ')}`);
-    if (referral.howWeSupport?.length) addText(`How We Support: ${referral.howWeSupport.join(', ')}`);
-    yPosition += 5;
-  }
-
-  // Behaviors of Concern
-  if (referral.behaviourType || referral.behaviourTriggers || referral.behaviourOverview) {
-    addText('BEHAVIOURS OF CONCERN', 14, true);
-    if (referral.behaviourType) addText(`Behaviour Types: ${referral.behaviourType}`);
-    if (referral.behaviourTriggers) {
-      const triggers = Array.isArray(referral.behaviourTriggers) ? referral.behaviourTriggers.join(', ') : referral.behaviourTriggers;
-      addText(`Behaviour Triggers: ${triggers}`);
+  // Helper function to add regular text
+  const addText = (label: string, value: string = '', isBold: boolean = false, indent: number = 0) => {
+    checkPageBreak();
+    
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(COLORS.black);
+    
+    if (value) {
+      // Label-value pair
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, margin + indent, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text(value, margin + indent + 60, yPosition);
+    } else {
+      // Single text (value is empty, so label contains full text)
+      doc.text(label, margin + indent, yPosition);
     }
-    if (referral.behaviourOverview) addText(`Behaviour Overview: ${referral.behaviourOverview}`);
-    yPosition += 5;
+    
+    yPosition += 12;
+  };
+
+  // Helper function to add footer
+  const addFooter = () => {
+    // Footer line
+    doc.setDrawColor(COLORS.deepNavy);
+    doc.setLineWidth(0.5);
+    doc.line(margin, pageHeight - 30, pageWidth - margin, pageHeight - 30);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.darkGray);
+    doc.text('Generated by CareConnect NDIS Management System', margin, pageHeight - 22);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, pageWidth - margin, pageHeight - 22, { align: 'right' });
+  };
+
+  // === DOCUMENT HEADER ===
+  // Header background
+  doc.setFillColor(COLORS.deepNavy);
+  doc.rect(0, 0, pageWidth, 45, 'F');
+  
+  // Company name and title
+  doc.setTextColor('#FFFFFF');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('NDIS PARTICIPANT REFERRAL', margin, 20);
+  doc.setFontSize(12);
+  doc.text('Professional Assessment & Management Report', margin, 35);
+  
+  yPosition = 60;
+
+  // === REFERRAL OVERVIEW ===
+  addSectionHeader('REFERRAL OVERVIEW');
+  addText('Referral ID:', `REF-${referral.id}`, true);
+  addText('Client Name:', referral.clientName, true);
+  addText('Current Status:', referral.status || 'Pending Review', true);
+  addText('Date Submitted:', new Date(referral.submittedAt).toLocaleDateString());
+  if (referral.dateOfReferral) {
+    addText('Referral Date:', new Date(referral.dateOfReferral).toLocaleDateString());
+  }
+  yPosition += 10;
+
+  // === CLIENT INFORMATION ===
+  addSectionHeader('CLIENT INFORMATION');
+  addText('Full Name:', referral.clientName);
+  if (referral.ndisNumber) addText('NDIS Number:', referral.ndisNumber);
+  if (referral.dob) addText('Date of Birth:', new Date(referral.dob).toLocaleDateString());
+  if (referral.phone) addText('Phone:', referral.phone);
+  if (referral.address) addText('Address:', referral.address);
+  
+  if (referral.planStart || referral.planEnd) {
+    addText('Plan Period:', `${referral.planStart ? new Date(referral.planStart).toLocaleDateString() : 'Not specified'} - ${referral.planEnd ? new Date(referral.planEnd).toLocaleDateString() : 'Ongoing'}`);
+  }
+  if (referral.fundManagementType) addText('Fund Management:', referral.fundManagementType);
+  yPosition += 10;
+
+  // === FUND BALANCES ===
+  if (referral.coreCurrentBalance || referral.coreFundedAmount || referral.silCurrentBalance) {
+    addSectionHeader('FUND BALANCES');
+    if (referral.coreCurrentBalance) addText('Core Current Balance:', referral.coreCurrentBalance);
+    if (referral.coreFundedAmount) addText('Core Funded Amount:', referral.coreFundedAmount);
+    if (referral.silCurrentBalance) addText('SIL Current Balance:', referral.silCurrentBalance);
+    if (referral.silFundedAmount) addText('SIL Funded Amount:', referral.silFundedAmount);
+    if (referral.irregularSilCurrentBalance) addText('Irregular SIL Current:', referral.irregularSilCurrentBalance);
+    if (referral.irregularSilFundedAmount) addText('Irregular SIL Funded:', referral.irregularSilFundedAmount);
+    if (referral.otherCurrentBalance) addText('Other Current Balance:', referral.otherCurrentBalance);
+    if (referral.otherFundedAmount) addText('Other Funded Amount:', referral.otherFundedAmount);
+    yPosition += 10;
   }
 
-  // Medical Information
-  if (referral.medicalConditions || (referral.medications?.length > 0)) {
-    addText('MEDICAL INFORMATION', 14, true);
-    if (referral.medicalConditions) addText(`Medical Conditions: ${referral.medicalConditions}`);
-    if (Array.isArray(referral.medications) && referral.medications.length > 0) {
-      addText('Medications:');
-      referral.medications.forEach((med: any) => {
-        addText(`  • ${med.name}${med.dosage ? ` - ${med.dosage}` : ''}${med.frequency ? ` - ${med.frequency}` : ''}`);
+  // === REFERRER INFORMATION ===
+  addSectionHeader('REFERRER INFORMATION');
+  addText('Referrer Name:', referral.referrerName);
+  if (referral.referrerOrg) addText('Organization:', referral.referrerOrg);
+  if (referral.referrerPosition) addText('Position:', referral.referrerPosition);
+  if (referral.referrerContact) addText('Contact Details:', referral.referrerContact);
+  yPosition += 10;
+
+  // === SUPPORT REQUIREMENTS ===
+  if (referral.supportCategories?.length || referral.howWeSupport?.length) {
+    addSectionHeader('SUPPORT REQUIREMENTS');
+    if (referral.supportCategories?.length) {
+      addText('Support Categories:', '');
+      referral.supportCategories.forEach((category: string) => {
+        addText(`• ${category}`, '', false, 10);
       });
     }
-    if (referral.medicationSideEffects) addText(`Medication Side Effects: ${referral.medicationSideEffects}`);
-    yPosition += 5;
+    if (referral.howWeSupport?.length) {
+      addText('How We Support:', '');
+      referral.howWeSupport.forEach((support: string) => {
+        addText(`• ${support}`, '', false, 10);
+      });
+    }
+    yPosition += 10;
   }
 
-  // Assessment (if available)
+  // === PARTICIPANT DETAILS ===
+  if (referral.aboutParticipant || referral.participantStrengths || referral.likes || referral.dislikes) {
+    addSectionHeader('PARTICIPANT DETAILS');
+    if (referral.aboutParticipant) addText('About Participant:', referral.aboutParticipant);
+    if (referral.participantStrengths) addText('Strengths:', referral.participantStrengths);
+    if (referral.likes) addText('Likes/Interests:', referral.likes);
+    if (referral.dislikes) addText('Dislikes/Concerns:', referral.dislikes);
+    if (referral.preferredGender) addText('Preferred Gender:', referral.preferredGender);
+    if (referral.requiredSkillSet) addText('Required Skill Set:', referral.requiredSkillSet);
+    yPosition += 10;
+  }
+
+  // === BEHAVIOURS OF CONCERN ===
+  if (referral.behaviourType || referral.behaviourTriggers || referral.behaviourOverview) {
+    addSectionHeader('BEHAVIOURS OF CONCERN');
+    if (referral.behaviourType) addText('Behaviour Types:', referral.behaviourType);
+    if (referral.behaviourTriggers) {
+      const triggers = Array.isArray(referral.behaviourTriggers) ? referral.behaviourTriggers.join(', ') : referral.behaviourTriggers;
+      addText('Behaviour Triggers:', triggers);
+    }
+    if (referral.behaviourOverview) addText('Overview:', referral.behaviourOverview);
+    yPosition += 10;
+  }
+
+  // === MEDICAL INFORMATION ===
+  if (referral.medicalConditions || (referral.medications?.length > 0) || referral.medicationSideEffects) {
+    addSectionHeader('MEDICAL INFORMATION');
+    if (referral.medicalConditions) addText('Medical Conditions:', referral.medicalConditions);
+    
+    if (Array.isArray(referral.medications) && referral.medications.length > 0) {
+      addText('Current Medications:', '');
+      referral.medications.forEach((med: any) => {
+        addText(`• ${med.name}${med.dosage ? ` - ${med.dosage}` : ''}${med.frequency ? ` - ${med.frequency}` : ''}`, '', false, 10);
+      });
+    }
+    
+    if (referral.medicationSideEffects) addText('Side Effects:', referral.medicationSideEffects);
+    yPosition += 10;
+  }
+
+  // === EMERGENCY CONTACT ===
+  if (referral.emergencyName || referral.emergencyPhone || referral.emergencyEmail) {
+    addSectionHeader('EMERGENCY CONTACT');
+    if (referral.emergencyName) addText('Name:', referral.emergencyName);
+    if (referral.emergencyPhone) addText('Phone:', referral.emergencyPhone);
+    if (referral.emergencyEmail) addText('Email:', referral.emergencyEmail);
+    if (referral.emergencyAddress) addText('Address:', referral.emergencyAddress);
+    yPosition += 10;
+  }
+
+  // === INVOICE DETAILS ===
+  if (referral.invoiceName || referral.invoiceEmail || referral.invoicePhone) {
+    addSectionHeader('BILLING INFORMATION');
+    if (referral.invoiceName) addText('Invoice Name:', referral.invoiceName);
+    if (referral.invoiceEmail) addText('Invoice Email:', referral.invoiceEmail);
+    if (referral.invoicePhone) addText('Invoice Phone:', referral.invoicePhone);
+    if (referral.invoiceAddress) addText('Invoice Address:', referral.invoiceAddress);
+    yPosition += 10;
+  }
+
+  // === PROFESSIONAL ASSESSMENT ===
   if (referral.assessment) {
-    addText('ASSESSMENT', 14, true);
-    addText(`Decision: ${referral.assessment.decision?.toUpperCase()}`);
-    if (referral.assessment.organizationalCapacity) addText(`Organizational Capacity: ${referral.assessment.organizationalCapacity}`);
-    if (referral.assessment.skillsetCapacity) addText(`Skillset Capacity: ${referral.assessment.skillsetCapacity}`);
-    if (referral.assessment.fundingSufficient) addText(`Funding Sufficient: ${referral.assessment.fundingSufficient}`);
-    yPosition += 5;
+    addSectionHeader('PROFESSIONAL ASSESSMENT');
+    
+    // Decision - highlighted like invoice totals
+    checkPageBreak(30);
+    doc.setFillColor(referral.assessment.decision === 'proceed' ? COLORS.sageGreen : 
+                     referral.assessment.decision === 'decline' ? '#DC2626' : COLORS.warmGold);
+    doc.rect(margin, yPosition - 3, pageWidth - 2 * margin, 18, 'F');
+    
+    doc.setTextColor('#FFFFFF');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`ASSESSMENT DECISION: ${referral.assessment.decision?.toUpperCase()}`, margin + 5, yPosition + 8);
+    yPosition += 25;
+    
+    doc.setTextColor(COLORS.black);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+
+    // Assessment criteria
+    if (referral.assessment.organizationalCapacity) addText('Organizational Capacity:', referral.assessment.organizationalCapacity);
+    if (referral.assessment.skillsetCapacity) addText('Skillset Capacity:', referral.assessment.skillsetCapacity);
+    if (referral.assessment.fundingSufficient) addText('Funding Sufficient:', referral.assessment.fundingSufficient);
+    if (referral.assessment.restrictivePractice) addText('Restrictive Practice:', referral.assessment.restrictivePractice);
+    if (referral.assessment.manualHandling) addText('Manual Handling:', referral.assessment.manualHandling);
+    if (referral.assessment.medicationManagement) addText('Medication Management:', referral.assessment.medicationManagement);
+    
+    if (referral.assessment.declineReason) addText('Decline Reason:', referral.assessment.declineReason);
+    if (referral.assessment.referralPathway) addText('Referral Pathway:', referral.assessment.referralPathway);
+    if (referral.assessment.supportOverview && !referral.assessment.supportOverview.includes('http')) {
+      addText('Support Overview:', referral.assessment.supportOverview);
+    }
+    
+    yPosition += 10;
   }
 
-  // Status
-  addText('STATUS', 14, true);
-  addText(`Current Status: ${referral.status || 'Pending Review'}`);
-  addText(`Submitted: ${new Date(referral.submittedAt).toLocaleString()}`);
-  addText(`Report ID: REF-${referral.id}`);
+  // Add final footer
+  addFooter();
 }
 
 // DELETE /api/referrals/:id - Hard delete referral form (internal, auth required)
