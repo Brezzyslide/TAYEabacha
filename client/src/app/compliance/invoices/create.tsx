@@ -266,8 +266,8 @@ export default function CreateInvoice() {
                         <FormItem>
                           <FormLabel>Link to Client (Optional)</FormLabel>
                           <Select 
-                            value={field.value?.toString() || ""} 
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                            value={field.value?.toString() || "none"} 
+                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
                           >
                             <FormControl>
                               <SelectTrigger>
