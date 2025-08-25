@@ -64,6 +64,7 @@ const complianceNavigation = [
   { name: "Service Agreements", href: "/compliance/service-agreements", icon: FileCheck },
   { name: "NDIS Referral Links", href: "/compliance/referral-links", icon: ExternalLink },
   { name: "Referral Management", href: "/compliance/referral-management", icon: Eye },
+  { name: "NDIS Invoices", href: "/compliance/invoices", icon: FileText },
 ];
 
 const billingNavigation = [

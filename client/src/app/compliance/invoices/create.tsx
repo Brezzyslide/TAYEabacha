@@ -275,7 +275,7 @@ export default function CreateInvoice() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">No client linked</SelectItem>
+                              <SelectItem value="none">No client linked</SelectItem>
                               {clients.map((client: any) => (
                                 <SelectItem key={client.id} value={client.id.toString()}>
                                   {client.fullName || `${client.firstName} ${client.lastName}`}
