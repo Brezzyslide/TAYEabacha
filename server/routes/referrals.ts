@@ -530,131 +530,135 @@ router.get("/:id/pdf", async (req, res) => {
       return res.status(404).json({ error: "Referral not found" });
     }
 
-    // Generate PDF content (simplified for now)
-    const pdfContent = generateReferralPDF(referral);
+    // Generate proper PDF using jsPDF
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF();
+    
+    // Generate PDF content
+    generateReferralPDF(doc, referral);
+    
+    // Get PDF as buffer
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
     
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="referral-${req.params.id}.pdf"`);
-    res.send(pdfContent);
+    res.setHeader('Content-Disposition', `inline; filename="referral-${req.params.id}.pdf"`);
+    res.send(pdfBuffer);
   } catch (error) {
     console.error("PDF generation error:", error);
     res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 
-// Helper function to generate PDF (simplified placeholder)
-function generateReferralPDF(referral: any): Buffer {
-  // Generate a comprehensive PDF report
-  const content = `
-NDIS REFERRAL REPORT
-===================
+// Helper function to generate proper PDF using jsPDF
+function generateReferralPDF(doc: any, referral: any): void {
+  let yPosition = 20;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 20;
+  const lineHeight = 8;
 
-CLIENT INFORMATION
-------------------
-Name: ${referral.clientName}
-NDIS Number: ${referral.ndisNumber || 'Not provided'}
-Plan Period: ${referral.planStart ? new Date(referral.planStart).toLocaleDateString() : 'Not specified'} - ${referral.planEnd ? new Date(referral.planEnd).toLocaleDateString() : 'Ongoing'}
-Fund Management Type: ${referral.fundManagementType || 'Not specified'}
+  // Helper function to add text with page break
+  const addText = (text: string, fontSize: number = 12, isBold: boolean = false) => {
+    if (yPosition > pageHeight - 30) {
+      doc.addPage();
+      yPosition = 20;
+    }
+    doc.setFontSize(fontSize);
+    if (isBold) {
+      doc.setFont('helvetica', 'bold');
+    } else {
+      doc.setFont('helvetica', 'normal');
+    }
+    doc.text(text, margin, yPosition);
+    yPosition += lineHeight;
+  };
 
-FUND BALANCES
--------------
-Core Current Balance: ${referral.coreCurrentBalance || 'Not specified'}
-Core Funded Amount: ${referral.coreFundedAmount || 'Not specified'}
-SIL Current Balance: ${referral.silCurrentBalance || 'Not specified'}
-SIL Funded Amount: ${referral.silFundedAmount || 'Not specified'}
-Irregular SIL Current Balance: ${referral.irregularSilCurrentBalance || 'Not specified'}
-Irregular SIL Funded Amount: ${referral.irregularSilFundedAmount || 'Not specified'}
-Other Current Balance: ${referral.otherCurrentBalance || 'Not specified'}
-Other Funded Amount: ${referral.otherFundedAmount || 'Not specified'}
+  // Title
+  addText('NDIS REFERRAL REPORT', 18, true);
+  yPosition += 5;
 
-REFERRER INFORMATION
--------------------
-Name: ${referral.referrerName}
-Organization: ${referral.referrerOrg || 'Not specified'}
-Position: ${referral.referrerPosition || 'Not specified'}
-Contact: ${referral.referrerContact || 'Not specified'}
-Date Submitted: ${new Date(referral.submittedAt).toLocaleDateString()}
-Referral Date: ${referral.dateOfReferral ? new Date(referral.dateOfReferral).toLocaleDateString() : 'Not specified'}
-Client Status: ${referral.isNewClient ? 'New Client' : referral.isReturningClient ? 'Returning Client' : 'Not specified'}
+  // Client Information
+  addText('CLIENT INFORMATION', 14, true);
+  addText(`Name: ${referral.clientName}`);
+  if (referral.ndisNumber) addText(`NDIS Number: ${referral.ndisNumber}`);
+  if (referral.planStart || referral.planEnd) {
+    addText(`Plan Period: ${referral.planStart ? new Date(referral.planStart).toLocaleDateString() : 'Not specified'} - ${referral.planEnd ? new Date(referral.planEnd).toLocaleDateString() : 'Ongoing'}`);
+  }
+  if (referral.fundManagementType) addText(`Fund Management Type: ${referral.fundManagementType}`);
+  yPosition += 5;
 
-SUPPORT DETAILS
---------------
-Support Categories: ${referral.supportCategories?.join(', ') || 'None specified'}
-Plan Management: ${referral.planManagement?.join(', ') || 'None specified'}
-How We Support: ${referral.howWeSupport?.join(', ') || 'None specified'}
+  // Fund Balances
+  if (referral.coreCurrentBalance || referral.coreFundedAmount || referral.silCurrentBalance) {
+    addText('FUND BALANCES', 14, true);
+    if (referral.coreCurrentBalance) addText(`Core Current Balance: ${referral.coreCurrentBalance}`);
+    if (referral.coreFundedAmount) addText(`Core Funded Amount: ${referral.coreFundedAmount}`);
+    if (referral.silCurrentBalance) addText(`SIL Current Balance: ${referral.silCurrentBalance}`);
+    if (referral.silFundedAmount) addText(`SIL Funded Amount: ${referral.silFundedAmount}`);
+    if (referral.irregularSilCurrentBalance) addText(`Irregular SIL Current Balance: ${referral.irregularSilCurrentBalance}`);
+    if (referral.irregularSilFundedAmount) addText(`Irregular SIL Funded Amount: ${referral.irregularSilFundedAmount}`);
+    if (referral.otherCurrentBalance) addText(`Other Current Balance: ${referral.otherCurrentBalance}`);
+    if (referral.otherFundedAmount) addText(`Other Funded Amount: ${referral.otherFundedAmount}`);
+    yPosition += 5;
+  }
 
-PARTICIPANT INFORMATION
-----------------------
-Date of Birth: ${referral.dob ? new Date(referral.dob).toLocaleDateString() : 'Not provided'}
-Address: ${referral.address || 'Not provided'}
-Phone: ${referral.phone || 'Not provided'}
-About Participant: ${referral.aboutParticipant || 'Not provided'}
-Participant Strengths: ${referral.participantStrengths || 'Not provided'}
-Likes: ${referral.likes || 'Not provided'}
-Dislikes: ${referral.dislikes || 'Not provided'}
-NDIS Support as Funded: ${referral.ndisSupportAsFunded || 'Not provided'}
-Shift Days: ${referral.shiftDays || 'Not provided'}
-Shift Times: ${referral.shiftTimes || 'Not provided'}
-Preferred Gender: ${referral.preferredGender || 'No preference'}
-Required Skill Set: ${referral.requiredSkillSet || 'Not specified'}
+  // Referrer Information
+  addText('REFERRER INFORMATION', 14, true);
+  addText(`Name: ${referral.referrerName}`);
+  if (referral.referrerOrg) addText(`Organization: ${referral.referrerOrg}`);
+  if (referral.referrerPosition) addText(`Position: ${referral.referrerPosition}`);
+  if (referral.referrerContact) addText(`Contact: ${referral.referrerContact}`);
+  addText(`Date Submitted: ${new Date(referral.submittedAt).toLocaleDateString()}`);
+  if (referral.dateOfReferral) addText(`Referral Date: ${new Date(referral.dateOfReferral).toLocaleDateString()}`);
+  yPosition += 5;
 
-EMERGENCY CONTACT
------------------
-Name: ${referral.emergencyName || 'Not provided'}
-Phone: ${referral.emergencyPhone || 'Not provided'}
-Address: ${referral.emergencyAddress || 'Not provided'}
-Email: ${referral.emergencyEmail || 'Not provided'}
+  // Support Details
+  if (referral.supportCategories?.length || referral.howWeSupport?.length) {
+    addText('SUPPORT DETAILS', 14, true);
+    if (referral.supportCategories?.length) addText(`Support Categories: ${referral.supportCategories.join(', ')}`);
+    if (referral.howWeSupport?.length) addText(`How We Support: ${referral.howWeSupport.join(', ')}`);
+    yPosition += 5;
+  }
 
-MEDICAL INFORMATION
-------------------
-Medical Conditions: ${referral.medicalConditions || 'Not provided'}
-Medications: ${Array.isArray(referral.medications) && referral.medications.length > 0 
-  ? referral.medications.map((med: any) => `${med.name}${med.dosage ? ` - ${med.dosage}` : ''}${med.frequency ? ` - ${med.frequency}` : ''}`).join('\n') 
-  : 'None specified'}
-Medication Side Effects: ${referral.medicationSideEffects || 'None reported'}
+  // Behaviors of Concern
+  if (referral.behaviourType || referral.behaviourTriggers || referral.behaviourOverview) {
+    addText('BEHAVIOURS OF CONCERN', 14, true);
+    if (referral.behaviourType) addText(`Behaviour Types: ${referral.behaviourType}`);
+    if (referral.behaviourTriggers) {
+      const triggers = Array.isArray(referral.behaviourTriggers) ? referral.behaviourTriggers.join(', ') : referral.behaviourTriggers;
+      addText(`Behaviour Triggers: ${triggers}`);
+    }
+    if (referral.behaviourOverview) addText(`Behaviour Overview: ${referral.behaviourOverview}`);
+    yPosition += 5;
+  }
 
-BEHAVIOURS OF CONCERN
---------------------
-Behaviour Types: ${referral.behaviourType || 'Not specified'}
-Behaviour Triggers: ${Array.isArray(referral.behaviourTriggers) ? referral.behaviourTriggers.join(', ') : referral.behaviourTriggers || 'Not specified'}
-Behaviour Overview: ${referral.behaviourOverview || 'Not specified'}
+  // Medical Information
+  if (referral.medicalConditions || (referral.medications?.length > 0)) {
+    addText('MEDICAL INFORMATION', 14, true);
+    if (referral.medicalConditions) addText(`Medical Conditions: ${referral.medicalConditions}`);
+    if (Array.isArray(referral.medications) && referral.medications.length > 0) {
+      addText('Medications:');
+      referral.medications.forEach((med: any) => {
+        addText(`  • ${med.name}${med.dosage ? ` - ${med.dosage}` : ''}${med.frequency ? ` - ${med.frequency}` : ''}`);
+      });
+    }
+    if (referral.medicationSideEffects) addText(`Medication Side Effects: ${referral.medicationSideEffects}`);
+    yPosition += 5;
+  }
 
-${referral.behaviours && referral.behaviours.length > 0 ? `Legacy Behaviour Details:
-${referral.behaviours.map((b: any, i: number) => `
-${i + 1}. Behaviour: ${b.behaviour || 'Not specified'}
-   Trigger: ${b.trigger || 'Not specified'}
-   Management: ${b.management || 'Not specified'}`).join('\n')}` : ''}
+  // Assessment (if available)
+  if (referral.assessment) {
+    addText('ASSESSMENT', 14, true);
+    addText(`Decision: ${referral.assessment.decision?.toUpperCase()}`);
+    if (referral.assessment.organizationalCapacity) addText(`Organizational Capacity: ${referral.assessment.organizationalCapacity}`);
+    if (referral.assessment.skillsetCapacity) addText(`Skillset Capacity: ${referral.assessment.skillsetCapacity}`);
+    if (referral.assessment.fundingSufficient) addText(`Funding Sufficient: ${referral.assessment.fundingSufficient}`);
+    yPosition += 5;
+  }
 
-INVOICE DETAILS
---------------
-Invoice Name: ${referral.invoiceName || 'Not specified'}
-Invoice Email: ${referral.invoiceEmail || 'Not specified'}
-Invoice Phone: ${referral.invoicePhone || 'Not specified'}
-Invoice Address: ${referral.invoiceAddress || 'Not specified'}
-
-${referral.assessment ? `
-ASSESSMENT RESULTS
------------------
-Status: ${referral.status}
-Organizational Capacity: ${referral.assessment.organizationalCapacity}
-Skillset Capacity: ${referral.assessment.skillsetCapacity}
-Funding Sufficient: ${referral.assessment.fundingSufficient}
-Restrictive Practice: ${referral.assessment.restrictivePractice}
-Manual Handling: ${referral.assessment.manualHandling}
-Medication Management: ${referral.assessment.medicationManagement}
-
-Decision: ${referral.assessment.decision}
-${referral.assessment.declineReason ? `Decline Reason: ${referral.assessment.declineReason}` : ''}
-${referral.assessment.referralPathway ? `Referral Pathway: ${referral.assessment.referralPathway}` : ''}
-
-Support Overview: ${referral.assessment.supportOverview}
-` : ''}
-
-Generated on: ${new Date().toLocaleString()}
-Report ID: REF-${referral.id}
-  `;
-  
-  return Buffer.from(content, 'utf8');
+  // Status
+  addText('STATUS', 14, true);
+  addText(`Current Status: ${referral.status || 'Pending Review'}`);
+  addText(`Submitted: ${new Date(referral.submittedAt).toLocaleString()}`);
+  addText(`Report ID: REF-${referral.id}`);
 }
 
 // DELETE /api/referrals/:id - Hard delete referral form (internal, auth required)
