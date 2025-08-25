@@ -33,6 +33,7 @@ const serviceTypes = [
   "Personal Care",
   "Domestic Assistance", 
   "Community Participation",
+  "Supported Independent Living",
   "Transport",
   "Therapeutic Support",
   "Sleepover",
