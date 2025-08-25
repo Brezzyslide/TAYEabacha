@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal, index, unique, numeric } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -2152,6 +2152,195 @@ export type ServiceAgreementSignature = typeof serviceAgreementSignatures.$infer
 export type InsertServiceAgreementSignature = z.infer<typeof insertServiceAgreementSignatureSchema>;
 export type TenantTermsTemplate = typeof tenantTermsTemplates.$inferSelect;
 export type InsertTenantTermsTemplate = z.infer<typeof insertTenantTermsTemplateSchema>;
+
+// ===== INVOICE MODULE =====
+
+// Line items are tenant-scoped and price-editable in UI
+export const lineItems = pgTable("line_items", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  code: text("code").notNull(),          // e.g. 04_104_0125_6_1
+  label: text("label").notNull(),        // e.g. Community Access – Daytime
+  serviceType: text("service_type").notNull(), // "Community Access" | "SIL" | "Sleepover"
+  category: text("category").notNull(),   // Daytime | Evening | Active Night | Saturday | Sunday | Public Holiday | Sleepover
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Public holiday flags (optional, set per date)
+export const publicHolidays = pgTable("public_holidays", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  dateISO: text("date_iso").notNull(), // YYYY-MM-DD
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Provider bank details to render on invoice PDF
+export const providerBankDetails = pgTable("provider_bank_details", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  accountName: text("account_name").notNull(),
+  bsb: text("bsb").notNull(),
+  accountNumber: text("account_number").notNull(),
+  abn: text("abn").notNull(),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Invoice header (multi-line)
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  invoiceNumber: text("invoice_number").notNull(), // e.g. INV-000123
+  participantName: text("participant_name").notNull(),
+  clientId: integer("client_id").references(() => clients.id),
+  issueDate: timestamp("issue_date").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  status: text("status").default("Draft").notNull(), // Draft | Sent | Paid | Cancelled
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdByUserId: integer("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Invoice lines (each service delivered)
+export const invoiceLines = pgTable("invoice_lines", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  invoiceId: integer("invoice_id").notNull().references(() => invoices.id),
+  // Required fields from your spec
+  serviceType: text("service_type").notNull(),           // Community Access | SIL | Sleepover
+  description: text("description"),                      // free text notes
+  dayISO: text("day_iso").notNull(),                     // YYYY-MM-DD
+  startTime: text("start_time").notNull(),               // HH:mm
+  endTime: text("end_time").notNull(),                   // HH:mm
+  ratio: text("ratio").notNull(),                        // 1:1 | 2:1 | 1:2 | 1:3 | 1:4
+  category: text("category").notNull(),                  // derived by time/day
+  lineItemCode: text("line_item_code").notNull(),
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull(),   // fetched from lineItems
+  hours: decimal("hours", { precision: 8, scale: 2 }).notNull(),             // decimal hours
+  multiplier: decimal("multiplier", { precision: 6, scale: 3 }).notNull(),   // ratio factor
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),          // hours * basePrice * multiplier
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Invoice relations
+export const invoiceRelations = relations(invoices, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [invoices.tenantId],
+    references: [tenants.id],
+  }),
+  client: one(clients, {
+    fields: [invoices.clientId],
+    references: [clients.id],
+  }),
+  createdBy: one(users, {
+    fields: [invoices.createdByUserId],
+    references: [users.id],
+  }),
+  lines: many(invoiceLines),
+}));
+
+export const invoiceLineRelations = relations(invoiceLines, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceLines.invoiceId],
+    references: [invoices.id],
+  }),
+  tenant: one(tenants, {
+    fields: [invoiceLines.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const lineItemRelations = relations(lineItems, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [lineItems.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const publicHolidayRelations = relations(publicHolidays, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [publicHolidays.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const providerBankDetailRelations = relations(providerBankDetails, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [providerBankDetails.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+// Invoice Zod schemas
+export const insertLineItemSchema = createInsertSchema(lineItems).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  code: z.string().min(1, "Code is required"),
+  label: z.string().min(1, "Label is required"),
+  serviceType: z.enum(["Community Access", "SIL", "Sleepover"]),
+  category: z.enum(["Daytime", "Evening", "Active Night", "Saturday", "Sunday", "Public Holiday", "Sleepover"]),
+  price: z.string().or(z.number()).refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Price must be a positive number"),
+});
+
+export const insertPublicHolidaySchema = createInsertSchema(publicHolidays).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+  name: z.string().min(1, "Holiday name is required"),
+});
+
+export const insertProviderBankDetailsSchema = createInsertSchema(providerBankDetails).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  accountName: z.string().min(1, "Account name is required"),
+  bsb: z.string().regex(/^\d{3}-\d{3}$/, "BSB must be in XXX-XXX format"),
+  accountNumber: z.string().min(1, "Account number is required"),
+  abn: z.string().regex(/^\d{2} \d{3} \d{3} \d{3}$/, "ABN must be in XX XXX XXX XXX format"),
+});
+
+export const invoiceLineSchema = z.object({
+  serviceType: z.enum(["Community Access", "SIL", "Sleepover"]),
+  description: z.string().optional(),
+  dayISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time must be in HH:mm format"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "End time must be in HH:mm format"),
+  ratio: z.enum(["1:1", "2:1", "1:2", "1:3", "1:4"]),
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  participantName: z.string().min(1, "Participant name is required"),
+  invoiceNumber: z.string().min(1, "Invoice number is required"),
+  issueDate: z.date(),
+  dueDate: z.date(),
+  status: z.enum(["Draft", "Sent", "Paid", "Cancelled"]),
+  lines: z.array(invoiceLineSchema).min(1, "At least one line item is required"),
+});
+
+// Invoice types
+export type LineItem = typeof lineItems.$inferSelect;
+export type InsertLineItem = z.infer<typeof insertLineItemSchema>;
+export type PublicHoliday = typeof publicHolidays.$inferSelect;
+export type InsertPublicHoliday = z.infer<typeof insertPublicHolidaySchema>;
+export type ProviderBankDetails = typeof providerBankDetails.$inferSelect;
+export type InsertProviderBankDetails = z.infer<typeof insertProviderBankDetailsSchema>;
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type InvoiceLine = typeof invoiceLines.$inferSelect;
+export type InvoiceLineInput = z.infer<typeof invoiceLineSchema>;
 
 
 

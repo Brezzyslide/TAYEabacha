@@ -12937,5 +12937,522 @@ Maximum 400 words.`;
     }
   });
 
+  // ===== NDIS INVOICE MODULE API ROUTES =====
+
+  // NDIS Pricing Logic Functions
+  const RatioMap: Record<string, number> = {
+    "1:1": 1,
+    "2:1": 2,
+    "1:2": 0.5,
+    "1:3": 1/3,
+    "1:4": 0.25,
+  };
+
+  const WINDOWS = {
+    DAYTIME_START: 6,   // 06:00
+    DAYTIME_END: 20,    // 20:00
+    EVENING_START: 20,  // 20:00
+    EVENING_END: 24,    // 24:00
+    NIGHT_START: 0,     // 00:00
+    NIGHT_END: 6,       // 06:00
+  };
+
+  async function determineCategory(tenantId: number, serviceType: string, dayISO: string, startTime: string): Promise<string> {
+    if (serviceType === "Sleepover") return "Sleepover";
+
+    // Parse date and get day of week
+    const dateObj = new Date(dayISO + "T00:00:00");
+    const dow = dateObj.getDay(); // 0 Sunday .. 6 Saturday
+
+    // Check for public holiday override
+    const holiday = await storage.getPublicHoliday(dayISO, tenantId);
+    if (holiday) return "Public Holiday";
+    if (dow === 0) return "Sunday";
+    if (dow === 6) return "Saturday";
+
+    // Time-based categorization
+    const hour = parseInt(startTime.slice(0, 2), 10);
+    if (hour >= WINDOWS.DAYTIME_START && hour < WINDOWS.DAYTIME_END) return "Daytime";
+    if (hour >= WINDOWS.EVENING_START && hour < WINDOWS.EVENING_END) return "Evening";
+    return "Active Night"; // covers 00:00–06:00
+  }
+
+  function hoursBetween(start: string, end: string): number {
+    const parseTime = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    let startMinutes = parseTime(start);
+    let endMinutes = parseTime(end);
+    
+    // Handle overnight shifts
+    if (endMinutes <= startMinutes) {
+      endMinutes += 24 * 60; // Add 24 hours
+    }
+    
+    const diffMinutes = endMinutes - startMinutes;
+    return Math.round((diffMinutes / 60) * 100) / 100;
+  }
+
+  function round2(n: number): number {
+    return Math.round(n * 100) / 100;
+  }
+
+  // Line Items API
+  app.get("/api/line-items", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const items = await storage.getLineItems(req.user.tenantId);
+      res.json(items);
+    } catch (error) {
+      console.error("Failed to fetch line items:", error);
+      res.status(500).json({ message: "Failed to fetch line items" });
+    }
+  });
+
+  app.post("/api/line-items", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const { insertLineItemSchema } = await import("@shared/schema");
+      const itemData = insertLineItemSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+      });
+
+      const item = await storage.createLineItem(itemData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create",
+        resourceType: "line_item",
+        resourceId: item.id,
+        description: `Created line item: ${item.label}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Failed to create line item:", error);
+      res.status(500).json({ message: "Failed to create line item" });
+    }
+  });
+
+  app.put("/api/line-items/:id", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const itemId = parseInt(req.params.id);
+      const updated = await storage.updateLineItem(itemId, req.body, req.user.tenantId);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Line item not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update",
+        resourceType: "line_item",
+        resourceId: itemId,
+        description: `Updated line item: ${updated.label}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Failed to update line item:", error);
+      res.status(500).json({ message: "Failed to update line item" });
+    }
+  });
+
+  // Public Holidays API
+  app.get("/api/public-holidays", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const holidays = await storage.getPublicHolidays(req.user.tenantId);
+      res.json(holidays);
+    } catch (error) {
+      console.error("Failed to fetch public holidays:", error);
+      res.status(500).json({ message: "Failed to fetch public holidays" });
+    }
+  });
+
+  app.post("/api/public-holidays", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const { insertPublicHolidaySchema } = await import("@shared/schema");
+      const holidayData = insertPublicHolidaySchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+      });
+
+      const holiday = await storage.createPublicHoliday(holidayData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create",
+        resourceType: "public_holiday",
+        resourceId: holiday.id,
+        description: `Created public holiday: ${holiday.name} (${holiday.dateISO})`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.status(201).json(holiday);
+    } catch (error) {
+      console.error("Failed to create public holiday:", error);
+      res.status(500).json({ message: "Failed to create public holiday" });
+    }
+  });
+
+  // Provider Bank Details API
+  app.get("/api/provider-bank-details", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const details = await storage.getProviderBankDetails(req.user.tenantId);
+      res.json(details);
+    } catch (error) {
+      console.error("Failed to fetch bank details:", error);
+      res.status(500).json({ message: "Failed to fetch bank details" });
+    }
+  });
+
+  app.post("/api/provider-bank-details", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const { insertProviderBankDetailsSchema } = await import("@shared/schema");
+      const detailsData = insertProviderBankDetailsSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId,
+      });
+
+      const details = await storage.createProviderBankDetails(detailsData);
+      
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create",
+        resourceType: "provider_bank_details",
+        resourceId: details.id,
+        description: `Created provider bank details`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.status(201).json(details);
+    } catch (error) {
+      console.error("Failed to create bank details:", error);
+      res.status(500).json({ message: "Failed to create bank details" });
+    }
+  });
+
+  // Invoice Preview API (calculate totals before creating invoice)
+  app.post("/api/invoices/preview", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const { invoiceLineSchema } = await import("@shared/schema");
+      const { lines } = req.body;
+
+      if (!lines || !Array.isArray(lines) || lines.length === 0) {
+        return res.status(400).json({ message: "Lines array is required" });
+      }
+
+      const calculatedLines = [];
+      let subtotal = 0;
+
+      for (const lineInput of lines) {
+        // Validate line input
+        const validLine = invoiceLineSchema.parse(lineInput);
+        
+        // Determine category based on service, date, and time
+        const category = await determineCategory(
+          req.user.tenantId,
+          validLine.serviceType,
+          validLine.dayISO,
+          validLine.startTime
+        );
+
+        // Get line item for pricing
+        const lineItem = await storage.getLineItemByServiceAndCategory(
+          req.user.tenantId,
+          validLine.serviceType,
+          category
+        );
+
+        if (!lineItem) {
+          return res.status(400).json({
+            message: `No line item configured for ${validLine.serviceType} / ${category}. Please configure pricing first.`
+          });
+        }
+
+        // Calculate hours and amount
+        const hours = hoursBetween(validLine.startTime, validLine.endTime);
+        const multiplier = RatioMap[validLine.ratio];
+        const amount = round2(hours * Number(lineItem.price) * multiplier);
+
+        const calculatedLine = {
+          ...validLine,
+          category,
+          lineItemCode: lineItem.code,
+          basePrice: lineItem.price,
+          hours,
+          multiplier,
+          amount,
+        };
+
+        calculatedLines.push(calculatedLine);
+        subtotal += amount;
+      }
+
+      const total = round2(subtotal); // Add GST here if needed
+
+      res.json({
+        lines: calculatedLines,
+        subtotal: round2(subtotal),
+        total,
+      });
+    } catch (error) {
+      console.error("Failed to preview invoice:", error);
+      res.status(500).json({ message: "Failed to preview invoice" });
+    }
+  });
+
+  // Invoices API
+  app.get("/api/invoices", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const invoices = await storage.getInvoices(req.user.tenantId);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Failed to fetch invoices:", error);
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.get("/api/invoices/:id", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(invoiceId, req.user.tenantId);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // Get invoice lines
+      const lines = await storage.getInvoiceLines(invoiceId, req.user.tenantId);
+      
+      res.json({ ...invoice, lines });
+    } catch (error) {
+      console.error("Failed to fetch invoice:", error);
+      res.status(500).json({ message: "Failed to fetch invoice" });
+    }
+  });
+
+  app.post("/api/invoices", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const { invoiceLineSchema } = await import("@shared/schema");
+      const { participantName, clientId, issueDateISO, dueDateISO, notes, lines } = req.body;
+
+      if (!lines || !Array.isArray(lines) || lines.length === 0) {
+        return res.status(400).json({ message: "At least one line item is required" });
+      }
+
+      // Calculate lines first
+      const calculatedLines = [];
+      let subtotal = 0;
+
+      for (const lineInput of lines) {
+        const validLine = invoiceLineSchema.parse(lineInput);
+        const category = await determineCategory(req.user.tenantId, validLine.serviceType, validLine.dayISO, validLine.startTime);
+        const lineItem = await storage.getLineItemByServiceAndCategory(req.user.tenantId, validLine.serviceType, category);
+
+        if (!lineItem) {
+          return res.status(400).json({
+            message: `No line item configured for ${validLine.serviceType} / ${category}`
+          });
+        }
+
+        const hours = hoursBetween(validLine.startTime, validLine.endTime);
+        const multiplier = RatioMap[validLine.ratio];
+        const amount = round2(hours * Number(lineItem.price) * multiplier);
+
+        calculatedLines.push({
+          ...validLine,
+          tenantId: req.user.tenantId,
+          category,
+          lineItemCode: lineItem.code,
+          basePrice: lineItem.price,
+          hours,
+          multiplier,
+          amount,
+        });
+
+        subtotal += amount;
+      }
+
+      const total = round2(subtotal);
+
+      // Generate invoice number
+      const invoiceNumber = await storage.generateInvoiceNumber(req.user.tenantId);
+
+      // Create invoice
+      const invoiceData = {
+        tenantId: req.user.tenantId,
+        invoiceNumber,
+        participantName,
+        clientId: clientId || null,
+        issueDate: new Date(issueDateISO),
+        dueDate: new Date(dueDateISO),
+        status: "Draft" as const,
+        subtotal: subtotal.toString(),
+        total: total.toString(),
+        notes: notes || null,
+        createdByUserId: req.user.id,
+      };
+
+      const invoice = await storage.createInvoice(invoiceData);
+
+      // Create invoice lines
+      for (const line of calculatedLines) {
+        await storage.createInvoiceLine({
+          ...line,
+          invoiceId: invoice.id,
+        });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "create",
+        resourceType: "invoice",
+        resourceId: invoice.id,
+        description: `Created invoice ${invoice.invoiceNumber} for ${invoice.participantName}`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.status(201).json({ ...invoice, lines: calculatedLines });
+    } catch (error) {
+      console.error("Failed to create invoice:", error);
+      res.status(500).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  // Invoice PDF Generation
+  app.get("/api/invoices/:id/pdf", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(invoiceId, req.user.tenantId);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      const lines = await storage.getInvoiceLines(invoiceId, req.user.tenantId);
+      const bankDetails = await storage.getProviderBankDetails(req.user.tenantId);
+      const company = await storage.getCompanyByTenantId(req.user.tenantId);
+
+      // Generate PDF using jsPDF (similar to existing referral PDF generation)
+      const jsPDF = (await import('jspdf')).default;
+      const doc = new jsPDF();
+
+      // TUSK color palette
+      const deepNavy = '#2B4C7E';
+      const warmGold = '#D4AF37';
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setTextColor(deepNavy);
+      doc.text('INVOICE', 20, 30);
+      
+      // Company info
+      if (company) {
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(company.name, 120, 30);
+        if (company.businessAddress) {
+          doc.setFontSize(10);
+          doc.text(company.businessAddress, 120, 40);
+        }
+      }
+      
+      // Invoice details
+      doc.setFontSize(10);
+      doc.text(`Invoice Number: ${invoice.invoiceNumber}`, 20, 50);
+      doc.text(`Issue Date: ${new Date(invoice.issueDate).toLocaleDateString()}`, 20, 60);
+      doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`, 20, 70);
+      doc.text(`Participant: ${invoice.participantName}`, 20, 80);
+      
+      // Table header
+      let y = 100;
+      doc.setFillColor(deepNavy);
+      doc.rect(20, y, 170, 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.text('Date', 25, y + 7);
+      doc.text('Service', 50, y + 7);
+      doc.text('Time', 90, y + 7);
+      doc.text('Ratio', 115, y + 7);
+      doc.text('Hours', 135, y + 7);
+      doc.text('Rate', 155, y + 7);
+      doc.text('Amount', 175, y + 7);
+      
+      y += 15;
+      doc.setTextColor(0, 0, 0);
+      
+      // Invoice lines
+      for (const line of lines) {
+        doc.text(line.dayISO, 25, y);
+        doc.text(line.serviceType.substring(0, 15), 50, y);
+        doc.text(`${line.startTime}-${line.endTime}`, 90, y);
+        doc.text(line.ratio, 115, y);
+        doc.text(line.hours.toString(), 135, y);
+        doc.text(`$${Number(line.basePrice).toFixed(2)}`, 155, y);
+        doc.text(`$${Number(line.amount).toFixed(2)}`, 175, y);
+        y += 10;
+        
+        if (line.description) {
+          doc.setFontSize(8);
+          doc.setTextColor(100, 100, 100);
+          doc.text(line.description, 25, y);
+          doc.setFontSize(9);
+          doc.setTextColor(0, 0, 0);
+          y += 8;
+        }
+      }
+      
+      // Totals
+      y += 10;
+      doc.line(130, y, 190, y);
+      y += 10;
+      doc.setFontSize(11);
+      doc.text(`Subtotal: $${Number(invoice.subtotal).toFixed(2)}`, 130, y);
+      y += 10;
+      doc.setFontSize(12);
+      doc.setTextColor(deepNavy);
+      doc.text(`Total: $${Number(invoice.total).toFixed(2)}`, 130, y);
+      
+      // Bank details
+      if (bankDetails) {
+        y += 20;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Payment Details:', 20, y);
+        y += 10;
+        doc.text(`Account Name: ${bankDetails.accountName}`, 20, y);
+        y += 8;
+        doc.text(`BSB: ${bankDetails.bsb}`, 20, y);
+        y += 8;
+        doc.text(`Account Number: ${bankDetails.accountNumber}`, 20, y);
+        y += 8;
+        doc.text(`ABN: ${bankDetails.abn}`, 20, y);
+      }
+      
+      // Notes
+      if (invoice.notes) {
+        y += 15;
+        doc.setFontSize(10);
+        doc.text('Notes:', 20, y);
+        y += 8;
+        doc.setFontSize(9);
+        doc.text(invoice.notes, 20, y, { maxWidth: 170 });
+      }
+
+      const pdfBuffer = doc.output('arraybuffer');
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${invoice.invoiceNumber}.pdf"`);
+      res.send(Buffer.from(pdfBuffer));
+    } catch (error) {
+      console.error("Failed to generate invoice PDF:", error);
+      res.status(500).json({ message: "Failed to generate invoice PDF" });
+    }
+  });
+
   return server;
 }

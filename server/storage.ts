@@ -6,6 +6,7 @@ import {
   downloadableForms, completedMedicationAuthorityForms, evacuationDrills, billingConfiguration,
   serviceAgreements, serviceAgreementItems, serviceAgreementSignatures, tenantTermsTemplates,
   referralForms, referralSubmissions, referralLinks, referralAccessLog,
+  lineItems, publicHolidays, providerBankDetails, invoices, invoiceLines,
   type Company, type InsertCompany, type User, type InsertUser, type Client, type InsertClient, type Tenant, type InsertTenant,
   type FormTemplate, type InsertFormTemplate, type FormSubmission, type InsertFormSubmission,
   type Shift, type InsertShift, type StaffAvailability, type InsertStaffAvailability,
@@ -24,7 +25,9 @@ import {
   type EvacuationDrill, type InsertEvacuationDrill,
   type ServiceAgreement, type InsertServiceAgreement, type ServiceAgreementItem, type InsertServiceAgreementItem,
   type ServiceAgreementSignature, type InsertServiceAgreementSignature, type TenantTermsTemplate, type InsertTenantTermsTemplate,
-  type ReferralForm, type ReferralSubmission, type ReferralLink, type ReferralAccessLog
+  type ReferralForm, type ReferralSubmission, type ReferralLink, type ReferralAccessLog,
+  type LineItem, type InsertLineItem, type PublicHoliday, type InsertPublicHoliday,
+  type ProviderBankDetails, type InsertProviderBankDetails, type Invoice, type InvoiceLine, type InvoiceLineInput
 } from "@shared/schema";
 import { db, pool } from "./lib/dbClient";
 import { and, eq, desc, gte, lte, isNull, ne, or, count, sum, asc, sql, isNotNull, inArray, exists, like, ilike } from "drizzle-orm";
@@ -288,6 +291,39 @@ export interface IStorage {
   getDefaultTermsTemplate(companyId: string): Promise<TenantTermsTemplate | undefined>;
   createTenantTermsTemplate(template: InsertTenantTermsTemplate): Promise<TenantTermsTemplate>;
   updateTenantTermsTemplate(id: string, template: Partial<InsertTenantTermsTemplate>, companyId: string): Promise<TenantTermsTemplate | undefined>;
+
+  // NDIS Invoice Module
+  // Line Items
+  getLineItems(tenantId: number): Promise<LineItem[]>;
+  getLineItem(id: number, tenantId: number): Promise<LineItem | undefined>;
+  createLineItem(item: InsertLineItem): Promise<LineItem>;
+  updateLineItem(id: number, item: Partial<InsertLineItem>, tenantId: number): Promise<LineItem | undefined>;
+  deleteLineItem(id: number, tenantId: number): Promise<boolean>;
+  getLineItemByServiceAndCategory(tenantId: number, serviceType: string, category: string): Promise<LineItem | undefined>;
+
+  // Public Holidays
+  getPublicHolidays(tenantId: number): Promise<PublicHoliday[]>;
+  getPublicHoliday(dateISO: string, tenantId: number): Promise<PublicHoliday | undefined>;
+  createPublicHoliday(holiday: InsertPublicHoliday): Promise<PublicHoliday>;
+  deletePublicHoliday(id: number, tenantId: number): Promise<boolean>;
+
+  // Provider Bank Details
+  getProviderBankDetails(tenantId: number): Promise<ProviderBankDetails | undefined>;
+  createProviderBankDetails(details: InsertProviderBankDetails): Promise<ProviderBankDetails>;
+  updateProviderBankDetails(id: number, details: Partial<InsertProviderBankDetails>, tenantId: number): Promise<ProviderBankDetails | undefined>;
+
+  // Invoices
+  getInvoices(tenantId: number): Promise<Invoice[]>;
+  getInvoice(id: number, tenantId: number): Promise<Invoice | undefined>;
+  createInvoice(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Invoice>;
+  updateInvoice(id: number, invoice: Partial<Invoice>, tenantId: number): Promise<Invoice | undefined>;
+  deleteInvoice(id: number, tenantId: number): Promise<boolean>;
+  generateInvoiceNumber(tenantId: number): Promise<string>;
+
+  // Invoice Lines
+  getInvoiceLines(invoiceId: number, tenantId: number): Promise<InvoiceLine[]>;
+  createInvoiceLine(line: Omit<InvoiceLine, 'id' | 'createdAt'>): Promise<InvoiceLine>;
+  deleteInvoiceLines(invoiceId: number, tenantId: number): Promise<boolean>;
 
   // Session store
   sessionStore: any;
@@ -3395,6 +3431,191 @@ export class DatabaseStorage implements IStorage {
         currentUses: sql`${referralLinks.currentUses} + 1`
       })
       .where(eq(referralLinks.id, linkId));
+  }
+
+  // ===== INVOICE MODULE IMPLEMENTATION =====
+
+  // Line Items
+  async getLineItems(tenantId: number): Promise<LineItem[]> {
+    return await db.select().from(lineItems)
+      .where(and(eq(lineItems.tenantId, tenantId), eq(lineItems.isActive, true)))
+      .orderBy(asc(lineItems.serviceType), asc(lineItems.category));
+  }
+
+  async getLineItem(id: number, tenantId: number): Promise<LineItem | undefined> {
+    const [item] = await db.select().from(lineItems)
+      .where(and(eq(lineItems.id, id), eq(lineItems.tenantId, tenantId)));
+    return item || undefined;
+  }
+
+  async createLineItem(item: InsertLineItem): Promise<LineItem> {
+    const [created] = await db
+      .insert(lineItems)
+      .values(item)
+      .returning();
+    return created;
+  }
+
+  async updateLineItem(id: number, item: Partial<InsertLineItem>, tenantId: number): Promise<LineItem | undefined> {
+    const [updated] = await db
+      .update(lineItems)
+      .set(item)
+      .where(and(eq(lineItems.id, id), eq(lineItems.tenantId, tenantId)))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteLineItem(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .update(lineItems)
+      .set({ isActive: false })
+      .where(and(eq(lineItems.id, id), eq(lineItems.tenantId, tenantId)));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getLineItemByServiceAndCategory(tenantId: number, serviceType: string, category: string): Promise<LineItem | undefined> {
+    const [item] = await db.select().from(lineItems)
+      .where(and(
+        eq(lineItems.tenantId, tenantId),
+        eq(lineItems.serviceType, serviceType),
+        eq(lineItems.category, category),
+        eq(lineItems.isActive, true)
+      ));
+    return item || undefined;
+  }
+
+  // Public Holidays
+  async getPublicHolidays(tenantId: number): Promise<PublicHoliday[]> {
+    return await db.select().from(publicHolidays)
+      .where(eq(publicHolidays.tenantId, tenantId))
+      .orderBy(asc(publicHolidays.dateISO));
+  }
+
+  async getPublicHoliday(dateISO: string, tenantId: number): Promise<PublicHoliday | undefined> {
+    const [holiday] = await db.select().from(publicHolidays)
+      .where(and(eq(publicHolidays.dateISO, dateISO), eq(publicHolidays.tenantId, tenantId)));
+    return holiday || undefined;
+  }
+
+  async createPublicHoliday(holiday: InsertPublicHoliday): Promise<PublicHoliday> {
+    const [created] = await db
+      .insert(publicHolidays)
+      .values(holiday)
+      .returning();
+    return created;
+  }
+
+  async deletePublicHoliday(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(publicHolidays)
+      .where(and(eq(publicHolidays.id, id), eq(publicHolidays.tenantId, tenantId)));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Provider Bank Details
+  async getProviderBankDetails(tenantId: number): Promise<ProviderBankDetails | undefined> {
+    const [details] = await db.select().from(providerBankDetails)
+      .where(and(eq(providerBankDetails.tenantId, tenantId), eq(providerBankDetails.isActive, true)));
+    return details || undefined;
+  }
+
+  async createProviderBankDetails(details: InsertProviderBankDetails): Promise<ProviderBankDetails> {
+    const [created] = await db
+      .insert(providerBankDetails)
+      .values(details)
+      .returning();
+    return created;
+  }
+
+  async updateProviderBankDetails(id: number, details: Partial<InsertProviderBankDetails>, tenantId: number): Promise<ProviderBankDetails | undefined> {
+    const [updated] = await db
+      .update(providerBankDetails)
+      .set(details)
+      .where(and(eq(providerBankDetails.id, id), eq(providerBankDetails.tenantId, tenantId)))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Invoices
+  async getInvoices(tenantId: number): Promise<Invoice[]> {
+    return await db.select().from(invoices)
+      .where(eq(invoices.tenantId, tenantId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoice(id: number, tenantId: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)));
+    return invoice || undefined;
+  }
+
+  async createInvoice(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Invoice> {
+    const [created] = await db
+      .insert(invoices)
+      .values(invoice as any)
+      .returning();
+    return created;
+  }
+
+  async updateInvoice(id: number, invoice: Partial<Invoice>, tenantId: number): Promise<Invoice | undefined> {
+    const [updated] = await db
+      .update(invoices)
+      .set({ ...invoice, updatedAt: new Date() })
+      .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteInvoice(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.tenantId, tenantId)));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async generateInvoiceNumber(tenantId: number): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const prefix = `INV-${currentYear}`;
+    
+    // Get the highest invoice number for current year
+    const [lastInvoice] = await db.select()
+      .from(invoices)
+      .where(and(
+        eq(invoices.tenantId, tenantId),
+        like(invoices.invoiceNumber, `${prefix}%`)
+      ))
+      .orderBy(desc(invoices.invoiceNumber))
+      .limit(1);
+
+    let nextNumber = 1;
+    if (lastInvoice) {
+      const lastNumber = parseInt(lastInvoice.invoiceNumber.split('-').pop() || '0');
+      nextNumber = lastNumber + 1;
+    }
+
+    return `${prefix}-${nextNumber.toString().padStart(6, '0')}`;
+  }
+
+  // Invoice Lines
+  async getInvoiceLines(invoiceId: number, tenantId: number): Promise<InvoiceLine[]> {
+    return await db.select().from(invoiceLines)
+      .where(and(eq(invoiceLines.invoiceId, invoiceId), eq(invoiceLines.tenantId, tenantId)))
+      .orderBy(asc(invoiceLines.dayISO), asc(invoiceLines.startTime));
+  }
+
+  async createInvoiceLine(line: Omit<InvoiceLine, 'id' | 'createdAt'>): Promise<InvoiceLine> {
+    const [created] = await db
+      .insert(invoiceLines)
+      .values(line as any)
+      .returning();
+    return created;
+  }
+
+  async deleteInvoiceLines(invoiceId: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .delete(invoiceLines)
+      .where(and(eq(invoiceLines.invoiceId, invoiceId), eq(invoiceLines.tenantId, tenantId)));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

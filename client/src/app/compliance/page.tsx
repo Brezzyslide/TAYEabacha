@@ -96,6 +96,11 @@ export default function CompliancePage() {
     queryKey: ["/api/compliance/referral-links"],
   });
 
+  // Query for invoices
+  const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
+    queryKey: ["/api/invoices"],
+  });
+
   const getAgreementStatus = (agreement: any) => {
     const now = new Date();
     const startDate = new Date(agreement.startDate);
@@ -143,6 +148,17 @@ export default function CompliancePage() {
       status: "operational",
       lastUpdate: referralLinks.length > 0 ? referralLinks[0]?.createdAt : null,
       color: "purple"
+    },
+    {
+      id: "invoices",
+      title: "NDIS Invoices",
+      description: "Create and manage NDIS-compliant invoices with automated pricing",
+      icon: FileText,
+      count: Array.isArray(invoices) ? invoices.length : 0,
+      href: "/compliance/invoices",
+      status: "operational",
+      lastUpdate: Array.isArray(invoices) && invoices.length > 0 ? invoices[0]?.createdAt : null,
+      color: "orange"
     }
   ];
 
