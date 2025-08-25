@@ -789,13 +789,51 @@ function generateReferralPDF(doc: any, referral: any): void {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
 
-    // Assessment criteria
-    if (referral.assessment.organizationalCapacity) addText('Organizational Capacity:', referral.assessment.organizationalCapacity);
-    if (referral.assessment.skillsetCapacity) addText('Skillset Capacity:', referral.assessment.skillsetCapacity);
-    if (referral.assessment.fundingSufficient) addText('Funding Sufficient:', referral.assessment.fundingSufficient);
-    if (referral.assessment.restrictivePractice) addText('Restrictive Practice:', referral.assessment.restrictivePractice);
-    if (referral.assessment.manualHandling) addText('Manual Handling:', referral.assessment.manualHandling);
-    if (referral.assessment.medicationManagement) addText('Medication Management:', referral.assessment.medicationManagement);
+    // Assessment Criteria - Clear Yes/No Answers
+    addText('ASSESSMENT CRITERIA:', '', true);
+    yPosition += 5;
+    
+    // Helper function to add yes/no assessment item with visual formatting
+    const addAssessmentItem = (question: string, answer: string) => {
+      if (!answer) return;
+      
+      checkPageBreak();
+      
+      // Question
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.black);
+      doc.text(question, margin + 10, yPosition);
+      
+      // Answer with background color
+      const answerUpper = answer.toUpperCase();
+      const isYes = answerUpper === 'YES';
+      const answerWidth = 25;
+      const answerX = pageWidth - margin - answerWidth - 10;
+      
+      // Background rectangle for answer
+      doc.setFillColor(isYes ? COLORS.sageGreen : '#DC2626');
+      doc.rect(answerX, yPosition - 8, answerWidth, 12, 'F');
+      
+      // Answer text
+      doc.setTextColor('#FFFFFF');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(answerUpper, answerX + (answerWidth / 2), yPosition - 1, { align: 'center' });
+      
+      yPosition += 15;
+    };
+    
+    // Display all assessment criteria
+    addAssessmentItem('Does the organization have capacity to provide the support?', referral.assessment.organizationalCapacity);
+    addAssessmentItem('Do we have the required skillset to provide this support?', referral.assessment.skillsetCapacity);
+    addAssessmentItem('Is the funding sufficient to provide quality support?', referral.assessment.fundingSufficient);
+    addAssessmentItem('Does this referral involve restrictive practices?', referral.assessment.restrictivePractice);
+    addAssessmentItem('Does this referral require manual handling?', referral.assessment.manualHandling);
+    addAssessmentItem('Does this referral involve medication management?', referral.assessment.medicationManagement);
+    
+    yPosition += 5;
+    doc.setTextColor(COLORS.black);
     
     if (referral.assessment.declineReason) addText('Decline Reason:', referral.assessment.declineReason);
     if (referral.assessment.referralPathway) addText('Referral Pathway:', referral.assessment.referralPathway);
