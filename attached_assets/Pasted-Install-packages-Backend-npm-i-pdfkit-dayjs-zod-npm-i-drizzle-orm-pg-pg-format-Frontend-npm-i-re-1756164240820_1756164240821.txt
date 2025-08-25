@@ -1,0 +1,607 @@
+Install packages
+# Backend
+npm i pdfkit dayjs zod
+npm i drizzle-orm pg pg-format
+# Frontend
+npm i react-hook-form zod @hookform/resolvers jspdf
+
+1) Backend: schema (Drizzle)
+
+Create: backend/src/modules/invoice/model.ts
+
+import { pgTable, serial, varchar, timestamp, numeric, text, integer, boolean } from "drizzle-orm/pg-core";
+
+/** Line items are tenant-scoped and price-editable in UI */
+export const lineItems = pgTable("line_items", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id", { length: 36 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull(),          // e.g. 04_104_0125_6_1
+  label: varchar("label", { length: 255 }).notNull(),        // e.g. Community Access – Daytime
+  serviceType: varchar("service_type", { length: 64 }).notNull(), // "Community Access" | "SIL" | "Sleepover"
+  category: varchar("category", { length: 50 }).notNull(),   // Daytime | Evening | Active Night | Saturday | Sunday | Public Holiday | Sleepover
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+/** Public holiday flags (optional, set per date) */
+export const publicHolidays = pgTable("public_holidays", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id", { length: 36 }).notNull(),
+  dateISO: varchar("date_iso", { length: 10 }).notNull(), // YYYY-MM-DD
+  name: varchar("name", { length: 128 }).notNull(),
+});
+
+/** Provider bank details to render on invoice PDF */
+export const providerBankDetails = pgTable("provider_bank_details", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id", { length: 36 }).notNull(),
+  accountName: varchar("account_name", { length: 255 }).notNull(),
+  bsb: varchar("bsb", { length: 20 }).notNull(),
+  accountNumber: varchar("account_number", { length: 50 }).notNull(),
+  abn: varchar("abn", { length: 20 }).notNull(),
+  notes: text("notes"),
+});
+
+/** Invoice header (multi-line) */
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id", { length: 36 }).notNull(),
+  invoiceNumber: varchar("invoice_number", { length: 40 }).notNull(), // e.g. INV-000123
+  participantName: varchar("participant_name", { length: 255 }).notNull(),
+  issueDate: timestamp("issue_date").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  status: varchar("status", { length: 20 }).default("Draft").notNull(), // Draft | Sent | Paid | Cancelled
+  subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
+  total: numeric("total", { precision: 12, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdByUserId: varchar("created_by_user_id", { length: 36 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Invoice lines (each service delivered) */
+export const invoiceLines = pgTable("invoice_lines", {
+  id: serial("id").primaryKey(),
+  tenantId: varchar("tenant_id", { length: 36 }).notNull(),
+  invoiceId: integer("invoice_id").notNull(),
+  // Required fields from your spec
+  serviceType: varchar("service_type", { length: 64 }).notNull(),           // Community Access | SIL | Sleepover
+  description: text("description"),                                          // free text notes
+  dayISO: varchar("day_iso", { length: 10 }).notNull(),                      // YYYY-MM-DD
+  startTime: varchar("start_time", { length: 8 }).notNull(),                 // HH:mm
+  endTime: varchar("end_time", { length: 8 }).notNull(),                     // HH:mm
+  ratio: varchar("ratio", { length: 8 }).notNull(),                          // 1:1 | 2:1 | 1:2 | 1:3 | 1:4
+  category: varchar("category", { length: 50 }).notNull(),                   // derived by time/day
+  lineItemCode: varchar("line_item_code", { length: 50 }).notNull(),
+  basePrice: numeric("base_price", { precision: 10, scale: 2 }).notNull(),   // fetched from lineItems
+  hours: numeric("hours", { precision: 8, scale: 2 }).notNull(),             // decimal hours
+  multiplier: numeric("multiplier", { precision: 6, scale: 3 }).notNull(),   // ratio factor
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),          // hours * basePrice * multiplier
+});
+
+2) Backend: service logic
+
+Create: backend/src/modules/invoice/service.ts
+
+import dayjs from "dayjs";
+import { z } from "zod";
+import { lineItems, publicHolidays, invoices, invoiceLines, providerBankDetails } from "./model";
+// import your db/query helpers + RBAC helpers from your project
+// e.g. import { db } from "@/db"; import { requireRole } from "@/auth";
+
+export const RatioMap: Record<string, number> = {
+  "1:1": 1,
+  "2:1": 2,
+  "1:2": 0.5,
+  "1:3": 1/3,
+  "1:4": 0.25,
+};
+
+// Time windows per your spec
+const WINDOWS = {
+  DAYTIME_START: 6,   // 06:00
+  DAYTIME_END: 20,    // 20:00
+  EVENING_START: 20,  // 20:00
+  EVENING_END: 24,    // 24:00
+  NIGHT_START: 0,     // 00:00
+  NIGHT_END: 6,       // 06:00
+};
+
+type Category = "Daytime" | "Evening" | "Active Night" | "Saturday" | "Sunday" | "Public Holiday" | "Sleepover";
+
+/** Determine category by date + times + service type + PH/weekend overrides */
+export async function determineCategory(
+  tenantId: string,
+  serviceType: string,
+  dayISO: string,
+  startTime: string
+): Promise<Category> {
+  if (serviceType === "Sleepover") return "Sleepover";
+
+  const d = dayjs(dayISO, "YYYY-MM-DD");
+  const dow = d.day(); // 0 Sunday .. 6 Saturday
+
+  // public holiday override
+  const isPH = await isPublicHoliday(tenantId, dayISO);
+  if (isPH) return "Public Holiday";
+  if (dow === 0) return "Sunday";
+  if (dow === 6) return "Saturday";
+
+  // otherwise time-of-day
+  const hour = parseInt(startTime.slice(0, 2), 10);
+  if (hour >= WINDOWS.DAYTIME_START && hour < WINDOWS.DAYTIME_END) return "Daytime";
+  if (hour >= WINDOWS.EVENING_START && hour < WINDOWS.EVENING_END) return "Evening";
+  return "Active Night"; // covers 00:00–06:00
+}
+
+async function isPublicHoliday(tenantId: string, dayISO: string): Promise<boolean> {
+  // replace with real query
+  // const ph = await db.select().from(publicHolidays).where(...dayISO and tenantId...);
+  // return ph.length > 0;
+  return false; // default no PH until configured
+}
+
+/** Fetch line item (code + price) by serviceType + category */
+export async function getLineItem(tenantId: string, serviceType: string, category: Category) {
+  // const li = await db.query.lineItems.findFirst({ where: and(eq(lineItems.tenantId, tenantId), eq(lineItems.serviceType, serviceType), eq(lineItems.category, category), eq(lineItems.isActive, true))});
+  // if (!li) throw new Error(`No line item configured: ${serviceType} / ${category}`);
+  // return li;
+  return null as any; // replace with real query
+}
+
+/** Hours between two HH:mm strings (handles overnight safely) */
+export function hoursBetween(start: string, end: string): number {
+  const S = dayjs(start, "HH:mm");
+  let E = dayjs(end, "HH:mm");
+  if (E.isBefore(S)) E = E.add(1, "day");
+  const diff = E.diff(S, "minute");
+  return Math.round((diff / 60) * 100) / 100;
+}
+
+export const InvoiceLineSchema = z.object({
+  serviceType: z.enum(["Community Access", "SIL", "Sleepover"]),
+  description: z.string().optional(),
+  dayISO: z.string(),            // YYYY-MM-DD
+  startTime: z.string(),         // HH:mm
+  endTime: z.string(),           // HH:mm
+  ratio: z.enum(["1:1","2:1","1:2","1:3","1:4"]),
+});
+
+export async function buildCalculatedLine(tenantId: string, raw: z.infer<typeof InvoiceLineSchema>) {
+  const category = await determineCategory(tenantId, raw.serviceType, raw.dayISO, raw.startTime);
+  const li = await getLineItem(tenantId, raw.serviceType, category);
+  if (!li) throw new Error(`Missing line item for ${raw.serviceType} / ${category}`);
+
+  const hours = hoursBetween(raw.startTime, raw.endTime);
+  const multiplier = RatioMap[raw.ratio];
+  const amount = round2(hours * Number(li.price) * multiplier);
+
+  return {
+    tenantId,
+    serviceType: raw.serviceType,
+    description: raw.description ?? "",
+    dayISO: raw.dayISO,
+    startTime: raw.startTime,
+    endTime: raw.endTime,
+    ratio: raw.ratio,
+    category,
+    lineItemCode: li.code,
+    basePrice: li.price,
+    hours,
+    multiplier,
+    amount,
+  };
+}
+
+export function sumAmount(lines: Array<{ amount: number }>) {
+  return round2(lines.reduce((a, b) => a + Number(b.amount), 0));
+}
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
+
+3) Backend: controller + routes
+
+Create: backend/src/modules/invoice/controller.ts
+
+import { Request, Response } from "express";
+import PDFDocument from "pdfkit";
+import dayjs from "dayjs";
+import { z } from "zod";
+import { InvoiceLineSchema, buildCalculatedLine, sumAmount } from "./service";
+// import { db } from "@/db"; import { invoices, invoiceLines, providerBankDetails } from "./model";
+// import { requireRole, getSession } from "@/auth"; // use your RBAC
+
+const HeaderSchema = z.object({
+  participantName: z.string(),
+  issueDateISO: z.string(),   // YYYY-MM-DD
+  dueDateISO: z.string(),     // YYYY-MM-DD
+  notes: z.string().optional(),
+  invoiceNumber: z.string(),
+  lines: z.array(InvoiceLineSchema).min(1),
+});
+
+export const previewInvoice = async (req: Request, res: Response) => {
+  const tenantId = req.headers["x-tenant-id"] as string; // adapt to your tenancy extraction
+  // requireRole(req, ["Admin","Coordinator","ConsoleManager"]);
+
+  const parsed = HeaderSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  const calcLines = [];
+  for (const L of parsed.data.lines) {
+    const cl = await buildCalculatedLine(tenantId, L);
+    calcLines.push(cl);
+  }
+  const subtotal = sumAmount(calcLines);
+  const total = subtotal; // add GST if you need
+
+  return res.json({ lines: calcLines, subtotal, total });
+};
+
+export const createInvoice = async (req: Request, res: Response) => {
+  const tenantId = req.headers["x-tenant-id"] as string;
+  const userId = req.headers["x-user-id"] as string;
+
+  const parsed = HeaderSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+  // calculate again on server
+  const calcLines = [];
+  for (const L of parsed.data.lines) calcLines.push(await buildCalculatedLine(tenantId, L));
+  const subtotal = sumAmount(calcLines);
+  const total = subtotal;
+
+  // const [inv] = await db.insert(invoices).values({
+  //   tenantId,
+  //   invoiceNumber: parsed.data.invoiceNumber,
+  //   participantName: parsed.data.participantName,
+  //   issueDate: dayjs(parsed.data.issueDateISO, "YYYY-MM-DD").toDate(),
+  //   dueDate: dayjs(parsed.data.dueDateISO, "YYYY-MM-DD").toDate(),
+  //   status: "Draft",
+  //   subtotal,
+  //   total,
+  //   notes: parsed.data.notes ?? "",
+  //   createdByUserId: userId,
+  // }).returning();
+
+  // for (const line of calcLines) {
+  //   await db.insert(invoiceLines).values({ ...line, invoiceId: inv.id });
+  // }
+
+  // return res.json({ invoiceId: inv.id });
+
+  // Demo path if DB wiring pending:
+  return res.json({ invoiceId: 1, subtotal, total, lines: calcLines });
+};
+
+export const renderInvoicePDF = async (req: Request, res: Response) => {
+  const tenantId = req.headers["x-tenant-id"] as string;
+  const invoiceId = Number(req.params.id);
+
+  // const inv = await db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId))});
+  // const lines = await db.query.invoiceLines.findMany({ where: and(eq(invoiceLines.invoiceId, invoiceId), eq(invoiceLines.tenantId, tenantId))});
+  // const bank = await db.query.providerBankDetails.findFirst({ where: eq(providerBankDetails.tenantId, tenantId) });
+
+  // placeholder mocks until DB wired:
+  const inv = {
+    invoiceNumber: "INV-000123",
+    participantName: "Participant Name",
+    issueDate: new Date(),
+    dueDate: new Date(),
+    subtotal: 123.45,
+    total: 123.45,
+    notes: "Thanks for your business",
+  };
+  const lines = [{
+    serviceType: "Community Access", description: "Support shift",
+    dayISO: "2025-08-26", startTime: "09:00", endTime: "12:00", ratio: "1:1",
+    category: "Daytime", lineItemCode: "04_104_0125_6_1", basePrice: 65.00, hours: 3.00, multiplier: 1, amount: 195.00
+  }];
+  const bank = { accountName: "MH&R Holdings Pty Ltd", bsb: "063-000", accountNumber: "12345678", abn: "12 345 678 901", notes: "" };
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="${inv.invoiceNumber}.pdf"`);
+
+  const doc = new PDFDocument({ margin: 36 });
+  doc.pipe(res);
+
+  doc.fontSize(18).text("INVOICE", { align: "left" });
+  doc.moveDown(0.5);
+  doc.fontSize(10).text(`Invoice #: ${inv.invoiceNumber}`);
+  doc.text(`Issue Date: ${dayjs(inv.issueDate).format("DD MMM YYYY")}`);
+  doc.text(`Due Date: ${dayjs(inv.dueDate).format("DD MMM YYYY")}`);
+  doc.moveDown();
+
+  doc.fontSize(12).text(`Participant: ${inv.participantName}`);
+  doc.moveDown();
+
+  doc.fontSize(11).text("Lines");
+  doc.moveDown(0.25);
+  lines.forEach((L:any, i:number) => {
+    doc.text(`${i+1}. ${L.serviceType} — ${L.description ?? ""}`);
+    doc.text(`   ${L.dayISO} ${L.startTime}–${L.endTime}  •  ${L.category}  •  Ratio ${L.ratio}`);
+    doc.text(`   ${L.lineItemCode}  •  Hours ${L.hours}  •  Base $${Number(L.basePrice).toFixed(2)}  •  x${L.multiplier}  =  $${Number(L.amount).toFixed(2)}`);
+    doc.moveDown(0.25);
+  });
+
+  doc.moveDown();
+  doc.fontSize(12).text(`Subtotal: $${Number(inv.subtotal).toFixed(2)}`);
+  doc.fontSize(14).text(`Total: $${Number(inv.total).toFixed(2)}`);
+
+  doc.moveDown();
+  doc.fontSize(12).text("Provider Bank Details");
+  doc.fontSize(10).text(`Account Name: ${bank.accountName}`);
+  doc.text(`BSB: ${bank.bsb}`);
+  doc.text(`Account Number: ${bank.accountNumber}`);
+  doc.text(`ABN: ${bank.abn}`);
+  if (bank.notes) doc.text(bank.notes);
+
+  if (inv.notes) { doc.moveDown(); doc.fontSize(10).text(inv.notes); }
+
+  doc.end();
+};
+
+
+Create: backend/src/modules/invoice/routes.ts
+
+import { Router } from "express";
+import { previewInvoice, createInvoice, renderInvoicePDF } from "./controller";
+// import { requireAuth } from "@/auth";
+
+export const invoiceRouter = Router();
+
+// invoiceRouter.use(requireAuth);
+
+// Build totals without saving
+invoiceRouter.post("/preview", previewInvoice);
+
+// Create invoice + lines
+invoiceRouter.post("/", createInvoice);
+
+// Render PDF
+invoiceRouter.get("/:id/pdf", renderInvoicePDF);
+
+
+Wire this router under your API:
+app.use("/api/invoices", invoiceRouter);
+
+4) Backend: seed essential line items
+
+Create: backend/src/modules/invoice/seed.ts
+
+// Call this once per tenant to seed the minimal codes with blank prices (set via UI).
+// Community Access
+export const seedCommunityAccess = [
+  { code:"04_104_0125_6_1", label:"Community Access – Daytime", serviceType:"Community Access", category:"Daytime" },
+  { code:"04_103_0125_6_1", label:"Community Access – Evening", serviceType:"Community Access", category:"Evening" },
+  { code:"04_101_0125_6_1", label:"Community Access – Active Night", serviceType:"Community Access", category:"Active Night" },
+  { code:"04_105_0125_6_1", label:"Community Access – Saturday", serviceType:"Community Access", category:"Saturday" },
+  { code:"04_106_0125_6_1", label:"Community Access – Sunday", serviceType:"Community Access", category:"Sunday" },
+  { code:"04_102_0125_6_1", label:"Community Access – Public Holiday", serviceType:"Community Access", category:"Public Holiday" },
+];
+
+// SIL (standard)
+export const seedSIL = [
+  { code:"01_801_0115_1_1", label:"SIL – Weekday Daytime", serviceType:"SIL", category:"Daytime" },
+  { code:"01_802_0115_1_1", label:"SIL – Weekday Evening", serviceType:"SIL", category:"Evening" },
+  { code:"01_803_0115_1_1", label:"SIL – Weekday Active Night", serviceType:"SIL", category:"Active Night" },
+  { code:"01_804_0115_1_1", label:"SIL – Saturday", serviceType:"SIL", category:"Saturday" },
+  { code:"01_805_0115_1_1", label:"SIL – Sunday", serviceType:"SIL", category:"Sunday" },
+  { code:"01_806_0115_1_1", label:"SIL – Public Holiday", serviceType:"SIL", category:"Public Holiday" },
+];
+
+// Sleepover (flat)
+export const seedSleepover = [
+  { code:"01_799_0115_1_1", label:"SIL – Sleepover (flat)", serviceType:"Sleepover", category:"Sleepover" },
+];
+
+5) Frontend: pages
+
+Create: src/app/compliance/invoice/InvoiceList.tsx
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+
+export default function InvoiceList() {
+  const [items, setItems] = useState<any[]>([]);
+  useEffect(() => {
+    // fetch existing invoices
+    // fetch("/api/invoices").then(r=>r.json()).then(setItems);
+  }, []);
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Invoices</h2>
+        <a href="/compliance/invoice/new"><Button>Create Invoice</Button></a>
+      </div>
+      <div className="space-y-2">
+        {items.map((inv:any)=>(
+          <div key={inv.id} className="border rounded p-3 flex items-center justify-between">
+            <div>
+              <div className="font-medium">{inv.invoiceNumber}</div>
+              <div className="text-sm text-muted-foreground">{inv.participantName}</div>
+            </div>
+            <div className="space-x-2">
+              <a href={`/api/invoices/${inv.id}/pdf`} target="_blank"><Button variant="secondary">PDF</Button></a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+Create: src/app/compliance/invoice/NewInvoice.tsx
+
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+
+const LineSchema = z.object({
+  serviceType: z.enum(["Community Access","SIL","Sleepover"]),
+  description: z.string().optional(),
+  dayISO: z.string(),
+  startTime: z.string(),
+  endTime: z.string(),
+  ratio: z.enum(["1:1","2:1","1:2","1:3","1:4"]),
+});
+const FormSchema = z.object({
+  invoiceNumber: z.string(),
+  participantName: z.string(),
+  issueDateISO: z.string(),
+  dueDateISO: z.string(),
+  notes: z.string().optional(),
+  lines: z.array(LineSchema).min(1),
+});
+type FormData = z.infer<typeof FormSchema>;
+
+export default function NewInvoice() {
+  const [preview, setPreview] = useState<any>(null);
+  const form = useForm<FormData>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      invoiceNumber: "INV-000001",
+      participantName: "",
+      issueDateISO: "",
+      dueDateISO: "",
+      notes: "",
+      lines: [{
+        serviceType:"Community Access", description:"", dayISO:"", startTime:"06:00", endTime:"08:00", ratio:"1:1"
+      }]
+    }
+  });
+  const { fields, append, remove } = useFieldArray({ control: form.control, name: "lines" });
+
+  const doPreview = async () => {
+    const body = form.getValues();
+    const r = await fetch("/api/invoices/preview", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "x-tenant-id":"demo" },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    setPreview(j);
+  };
+
+  const doCreate = async () => {
+    const body = form.getValues();
+    const r = await fetch("/api/invoices", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "x-tenant-id":"demo", "x-user-id":"u1" },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if (j.invoiceId) window.location.href = "/compliance/invoice"; // back to list
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      <h2 className="text-xl font-semibold">New Invoice</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Input placeholder="Invoice Number" {...form.register("invoiceNumber")} />
+        <Input placeholder="Participant Name" {...form.register("participantName")} />
+        <Input type="date" placeholder="Issue Date" {...form.register("issueDateISO")} />
+        <Input type="date" placeholder="Due Date" {...form.register("dueDateISO")} />
+        <Textarea placeholder="Notes" className="md:col-span-3" {...form.register("notes")} />
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">Lines</h3>
+          <Button type="button" onClick={()=>append({ serviceType:"Community Access", description:"", dayISO:"", startTime:"06:00", endTime:"08:00", ratio:"1:1" })}>Add Line</Button>
+        </div>
+
+        {fields.map((f, idx) => (
+          <div key={f.id} className="border rounded p-3 grid grid-cols-1 md:grid-cols-6 gap-3">
+            <select className="border rounded p-2" {...form.register(`lines.${idx}.serviceType` as const)}>
+              <option>Community Access</option>
+              <option>SIL</option>
+              <option>Sleepover</option>
+            </select>
+            <Input type="date" {...form.register(`lines.${idx}.dayISO` as const)} />
+            <Input type="time" {...form.register(`lines.${idx}.startTime` as const)} />
+            <Input type="time" {...form.register(`lines.${idx}.endTime` as const)} />
+            <select className="border rounded p-2" {...form.register(`lines.${idx}.ratio` as const)}>
+              <option>1:1</option><option>2:1</option><option>1:2</option><option>1:3</option><option>1:4</option>
+            </select>
+            <Button type="button" variant="destructive" onClick={()=>remove(idx)}>Remove</Button>
+            <Textarea className="md:col-span-6" placeholder="Description (what was delivered)" {...form.register(`lines.${idx}.description` as const)} />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        <Button type="button" onClick={doPreview}>Preview Totals</Button>
+        <Button type="button" onClick={doCreate}>Save Invoice</Button>
+      </div>
+
+      {preview && (
+        <div className="border rounded p-3">
+          <div className="font-medium mb-2">Preview</div>
+          <div className="text-sm">Subtotal: ${preview.subtotal?.toFixed?.(2)} | Total: ${preview.total?.toFixed?.(2)}</div>
+          <div className="mt-2 space-y-1 text-sm">
+            {preview.lines?.map((L:any, i:number)=>(
+              <div key={i} className="border rounded p-2">
+                <div>{L.serviceType} • {L.category} • {L.lineItemCode}</div>
+                <div>{L.dayISO} {L.startTime}-{L.endTime} • Ratio {L.ratio} • Hours {L.hours} • Base ${Number(L.basePrice).toFixed(2)} • x{L.multiplier}</div>
+                <div className="font-medium">Amount: ${Number(L.amount).toFixed(2)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+Create route page: src/app/compliance/invoice/index.tsx
+Render your list component there, and add a route for /compliance/invoice/new to render NewInvoice.
+
+6) Frontend: simple price admin (edit line-item prices)
+
+Create: src/app/compliance/invoice/LineItemPrices.tsx
+
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+export default function LineItemPrices() {
+  const [rows, setRows] = useState<any[]>([]);
+
+  useEffect(()=>{ /* fetch("/api/line-items").then(r=>r.json()).then(setRows); */ },[]);
+
+  const save = async () => {
+    // await fetch("/api/line-items/bulk", { method:"PUT", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(rows) });
+    alert("Saved (demo)");
+  };
+
+  return (
+    <div className="p-4 space-y-3">
+      <h2 className="text-xl font-semibold">Line Item Prices</h2>
+      <div className="grid grid-cols-6 gap-2 text-sm font-medium">
+        <div>Code</div><div>Label</div><div>Service</div><div>Category</div><div>Price</div><div>Status</div>
+      </div>
+      {rows.map((r, i)=>(
+        <div key={r.id} className="grid grid-cols-6 gap-2 text-sm items-center">
+          <div>{r.code}</div>
+          <div>{r.label}</div>
+          <div>{r.serviceType}</div>
+          <div>{r.category}</div>
+          <Input value={r.price} onChange={e=>setRows(prev=>prev.map((p,idx)=>idx===i?{...p, price:e.target.value}:p))}/>
+          <div>{r.isActive? "Active":"Inactive"}</div>
+        </div>
+      ))}
+      <Button onClick={save}>Save</Button>
+    </div>
+  );
+}
