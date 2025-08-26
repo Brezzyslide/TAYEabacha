@@ -33,34 +33,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      // Use direct fetch to handle development server HTML response issue
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(credentials),
-        credentials: "include",
-      });
-      
-      // Check if we got HTML instead of JSON (development server issue)
-      const contentType = response.headers.get("content-type");
-      if (contentType?.includes("text/html")) {
-        // If HTML is returned, reload page and try again
-        throw new Error("Server returned HTML instead of JSON. This appears to be a development server configuration issue. Please try refreshing the page or restarting the server.");
+      // Development workaround: Try multiple times with different approaches
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Requested-With": "XMLHttpRequest", // Help distinguish from browser navigation
+            },
+            body: JSON.stringify(credentials),
+            credentials: "include",
+            cache: "no-cache",
+          });
+          
+          const contentType = response.headers.get("content-type");
+          
+          // If we got HTML instead of JSON, this is the Vite dev server issue
+          if (contentType?.includes("text/html") || !contentType?.includes("application/json")) {
+            if (attempt < 2) {
+              // Wait a bit and try again
+              await new Promise(resolve => setTimeout(resolve, 500));
+              continue;
+            } else {
+              // Last attempt failed - try a page reload approach
+              window.location.reload();
+              throw new Error("Login requires page reload due to development server configuration.");
+            }
+          }
+          
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || `Login failed with status ${response.status}`);
+          }
+          
+          return await response.json();
+        } catch (error) {
+          if (attempt === 2) {
+            throw error;
+          }
+          // Try again
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
-      
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      return await response.json();
     },
     onSuccess: (user: SelectUser) => {
       // 🔒 SECURITY: Clear all cached data on login to prevent stale data access
       queryClient.clear();
       queryClient.setQueryData(["/api/auth/user"], user);
+      
+      // Force a page reload to ensure clean session state
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
