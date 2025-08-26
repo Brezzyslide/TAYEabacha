@@ -33,8 +33,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      // Use direct fetch to handle development server HTML response issue
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+        credentials: "include",
+      });
+      
+      // Check if we got HTML instead of JSON (development server issue)
+      const contentType = response.headers.get("content-type");
+      if (contentType?.includes("text/html")) {
+        // If HTML is returned, reload page and try again
+        throw new Error("Server returned HTML instead of JSON. This appears to be a development server configuration issue. Please try refreshing the page or restarting the server.");
+      }
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.json();
     },
     onSuccess: (user: SelectUser) => {
       // 🔒 SECURITY: Clear all cached data on login to prevent stale data access
@@ -52,8 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.json();
     },
     onSuccess: (user: SelectUser) => {
       // 🔒 SECURITY: Clear all cached data on login to prevent stale data access
