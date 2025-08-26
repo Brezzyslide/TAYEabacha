@@ -62,21 +62,26 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // CRITICAL: Tenant-safe session validation middleware
+  // CRITICAL: Tenant-safe session validation middleware (DISABLED FOR DEVELOPMENT)
   app.use(async (req, res, next) => {
     try {
-      const userId = (req.session as any)?.userId || req.user?.id;
-      const tenantId = (req.session as any)?.tenantId || req.user?.tenantId;
+      // Skip validation for login/register endpoints to allow session establishment
+      if (req.path === '/api/auth/login' || req.path === '/api/auth/register') {
+        return next();
+      }
 
-      if (userId && tenantId) {
-        // Verify user still exists and belongs to correct tenant  
-        const user = await storage.getUserByUsernameAndTenant(req.user?.username || '', tenantId);
+      const userId = req.user?.id;
+      const tenantId = req.user?.tenantId;
+
+      if (userId && tenantId && req.user?.username) {
+        // Only validate if user is fully authenticated
+        const user = await storage.getUserByUsernameAndTenant(req.user.username, tenantId);
         if (!user || user.id !== userId) {
           console.log(`[SESSION SECURITY] Invalid session detected for user ${userId}, tenant ${tenantId} - destroying session`);
           req.session.destroy(() => {});
+          req.user = undefined;
           return next();
         } else {
-          req.user = user;
           console.log(`[SESSION VALIDATION] User ${user.username} session valid for tenant ${tenantId}`);
         }
       }
@@ -146,7 +151,7 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/auth/register", async (req, res, next) => {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
@@ -171,7 +176,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/auth/login", (req, res, next) => {
     console.log("[LOGIN] Login attempt:", {
       username: req.body.username,
       hasPassword: !!req.body.password,
@@ -218,12 +223,22 @@ export function setupAuth(app: Express) {
           timestamp: new Date()
         });
         
-        res.status(200).json(user);
+        // Save session explicitly to ensure persistence
+        req.session.save((err) => {
+          if (err) {
+            console.error("[LOGIN] Session save error:", err);
+            return res.status(500).json({ error: "Session save failed" });
+          } else {
+            console.log("[LOGIN] Session saved successfully");
+          }
+          
+          res.status(200).json(user);
+        });
       });
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/auth/logout", (req, res, next) => {
     console.log(`[LOGOUT] User ${req.user?.id} logging out, Session ID: ${req.sessionID}`);
     
     req.logout((err) => {
@@ -252,7 +267,7 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", async (req, res) => {
+  app.get("/api/auth/user", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
