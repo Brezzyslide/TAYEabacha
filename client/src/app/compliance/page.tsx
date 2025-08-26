@@ -44,7 +44,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  DollarSign
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -159,6 +160,17 @@ export default function CompliancePage() {
       status: "operational",
       lastUpdate: Array.isArray(invoices) && invoices.length > 0 ? invoices[0]?.createdAt : null,
       color: "orange"
+    },
+    {
+      id: "pricing",
+      title: "Pricing Management", 
+      description: "Configure NDIS line item pricing for your services",
+      icon: DollarSign,
+      count: 25, // Fixed number of line items
+      href: "/compliance/pricing",
+      status: "operational",
+      lastUpdate: new Date().toISOString(),
+      color: "emerald"
     }
   ];
 

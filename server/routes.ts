@@ -13061,6 +13061,57 @@ Maximum 400 words.`;
     }
   });
 
+  // Bulk update line item prices
+  app.post("/api/line-items/bulk-update", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
+    try {
+      const { updates } = req.body;
+      
+      if (!updates || !Array.isArray(updates) || updates.length === 0) {
+        return res.status(400).json({ message: "Updates array is required" });
+      }
+
+      const results = [];
+      let updateCount = 0;
+
+      for (const update of updates) {
+        const { id, price } = update;
+        
+        if (!id || typeof price !== 'number' || price < 0) {
+          console.warn(`Invalid update data:`, update);
+          continue;
+        }
+
+        try {
+          const updated = await storage.updateLineItem(id, { price }, req.user.tenantId);
+          if (updated) {
+            results.push(updated);
+            updateCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to update line item ${id}:`, error);
+        }
+      }
+
+      // Log the bulk update
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "update",
+        resourceType: "line_items",
+        resourceId: null,
+        description: `Bulk updated ${updateCount} line item prices`,
+        tenantId: req.user.tenantId,
+      });
+
+      res.json({ 
+        message: `Successfully updated ${updateCount} line item prices`,
+        updatedItems: results 
+      });
+    } catch (error) {
+      console.error("Failed to bulk update line items:", error);
+      res.status(500).json({ message: "Failed to bulk update line items" });
+    }
+  });
+
   // Public Holidays API
   app.get("/api/public-holidays", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
     try {

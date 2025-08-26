@@ -58,6 +58,7 @@ import ReferralManagementPage from "@/app/compliance/referral-management/index";
 import InvoicesIndex from "@/app/compliance/invoices/index";
 import CreateInvoice from "@/app/compliance/invoices/create";
 import ViewInvoice from "@/app/compliance/invoices/view/[id]";
+import PricingManagement from "@/app/compliance/pricing/index";
 import PublicSignPage from "@/pages/public-sign";
 import PublicReferralForm from "@/pages/PublicReferralForm";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -110,6 +111,7 @@ function Router() {
       <ProtectedRoute path="/compliance/invoices" component={InvoicesIndex} />
       <ProtectedRoute path="/compliance/invoices/create" component={CreateInvoice} />
       <ProtectedRoute path="/compliance/invoices/view/:id" component={ViewInvoice} />
+      <ProtectedRoute path="/compliance/pricing" component={PricingManagement} />
 
       <ProtectedRoute path="/forms" component={Forms} />
       <ProtectedRoute path="/reports" component={Reports} />
