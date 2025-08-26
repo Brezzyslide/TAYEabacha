@@ -155,7 +155,7 @@ export function setupAuth(app: Express) {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).send("Username already exists");
+        return res.status(400).json({ success: false, message: "Username already exists" });
       }
 
       const user = await storage.createUser({
@@ -192,7 +192,7 @@ export function setupAuth(app: Express) {
       
       if (!user) {
         console.log("[LOGIN] Authentication failed:", info);
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(401).json({ success: false, message: "Invalid credentials" });
       }
       
       req.login(user, async (loginErr) => {
@@ -206,7 +206,7 @@ export function setupAuth(app: Express) {
         if (!tenantVerification || tenantVerification.id !== user.id) {
           console.error(`[LOGIN SECURITY] TENANT MISMATCH: User ${user.username} failed tenant verification`);
           req.session.destroy(() => {});
-          return res.status(401).json({ error: "Authentication failed" });
+          return res.status(401).json({ success: false, message: "Authentication failed" });
         }
         
         console.log(`[LOGIN] ✅ Tenant verification passed for ${user.username} in tenant ${user.tenantId}`);
@@ -226,12 +226,12 @@ export function setupAuth(app: Express) {
         req.session.save((err) => {
           if (err) {
             console.error("[LOGIN] Session save error:", err);
-            return res.status(500).json({ error: "Session save failed" });
+            return res.status(500).json({ success: false, message: "Session save failed" });
           } else {
             console.log("[LOGIN] Session saved successfully");
           }
           
-          res.status(200).json(user);
+          res.status(200).json({ success: true, user });
         });
       });
     })(req, res, next);
