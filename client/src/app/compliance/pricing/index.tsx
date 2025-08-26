@@ -7,6 +7,22 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { hasPermission } from "@/lib/permissions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   DollarSign, 
   Save, 
@@ -17,7 +33,8 @@ import {
   Clock,
   Calendar,
   Users,
-  ArrowLeft
+  ArrowLeft,
+  Plus
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -46,6 +63,14 @@ export default function PricingManagement() {
   const [, setLocation] = useLocation();
   const [editingPrices, setEditingPrices] = useState<Record<number, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newLineItem, setNewLineItem] = useState({
+    code: "",
+    category: "",
+    serviceType: "",
+    unit: "hour",
+    price: ""
+  });
 
   // Check permissions
   if (!user || !hasPermission(user, "ACCESS_COMPLIANCE")) {
@@ -96,6 +121,41 @@ export default function PricingManagement() {
     onError: (error: any) => {
       toast({
         title: "Failed to update prices",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add new line item mutation
+  const addLineItemMutation = useMutation({
+    mutationFn: async (lineItem: any) => {
+      return await apiRequest("/api/line-items", {
+        method: "POST",
+        body: JSON.stringify({
+          ...lineItem,
+          price: parseFloat(lineItem.price)
+        }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Line item added successfully",
+        description: "New pricing item has been created.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/line-items"] });
+      setShowAddDialog(false);
+      setNewLineItem({
+        code: "",
+        category: "",
+        serviceType: "",
+        unit: "hour", 
+        price: ""
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add line item",
         description: error.message || "Please try again",
         variant: "destructive",
       });
@@ -235,6 +295,103 @@ export default function PricingManagement() {
             </Button>
           </div>
         )}
+        
+        {/* Add Price Button */}
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Line Item
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Line Item</DialogTitle>
+              <DialogDescription>
+                Create a new NDIS line item with pricing information.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">Service Code</Label>
+                  <Input
+                    id="code"
+                    placeholder="e.g., PC_DAY"
+                    value={newLineItem.code}
+                    onChange={(e) => setNewLineItem(prev => ({ ...prev, code: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    placeholder="e.g., Daytime"
+                    value={newLineItem.category}
+                    onChange={(e) => setNewLineItem(prev => ({ ...prev, category: e.target.value }))}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="serviceType">Service Type</Label>
+                <Select onValueChange={(value) => setNewLineItem(prev => ({ ...prev, serviceType: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Personal Care">Personal Care</SelectItem>
+                    <SelectItem value="Community Participation">Community Participation</SelectItem>
+                    <SelectItem value="Domestic Assistance">Domestic Assistance</SelectItem>
+                    <SelectItem value="Supported Independent Living">Supported Independent Living</SelectItem>
+                    <SelectItem value="Sleepover">Sleepover</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="unit">Unit</Label>
+                  <Select onValueChange={(value) => setNewLineItem(prev => ({ ...prev, unit: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hour">Hour</SelectItem>
+                      <SelectItem value="day">Day</SelectItem>
+                      <SelectItem value="night">Night</SelectItem>
+                      <SelectItem value="visit">Visit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price ($)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="68.50"
+                    value={newLineItem.price}
+                    onChange={(e) => setNewLineItem(prev => ({ ...prev, price: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => addLineItemMutation.mutate(newLineItem)}
+                disabled={!newLineItem.code || !newLineItem.serviceType || !newLineItem.price || addLineItemMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {addLineItemMutation.isPending ? "Adding..." : "Add Line Item"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Pricing Cards by Service Type */}
@@ -306,8 +463,15 @@ export default function PricingManagement() {
                 No pricing configured
               </h3>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Contact support to set up your NDIS line item pricing.
+                Click "Add Line Item" above to create your first NDIS pricing entry.
               </p>
+              <Button 
+                onClick={() => setShowAddDialog(true)}
+                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Your First Line Item
+              </Button>
             </div>
           </CardContent>
         </Card>
