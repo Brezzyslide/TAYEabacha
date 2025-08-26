@@ -219,8 +219,7 @@ export function setupAuth(app: Express) {
           action: 'login',
           resourceType: 'session',
           resourceId: user.id,
-          description: `User ${user.username} logged in successfully`,
-          timestamp: new Date()
+          description: `User ${user.username} logged in successfully`
         });
         
         // Save session explicitly to ensure persistence
