@@ -56,8 +56,7 @@ const invoiceLineSchema = z.object({
 });
 
 const formSchema = z.object({
-  participantName: z.string().min(1, "Participant name is required"),
-  clientId: z.coerce.number().optional(),
+  clientId: z.coerce.number().min(1, "Participant is required"),
   issueDateISO: z.string().min(1, "Issue date is required"),
   dueDateISO: z.string().min(1, "Due date is required"),
   notes: z.string().optional(),
@@ -113,7 +112,7 @@ export default function CreateInvoice() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      participantName: "",
+      clientId: undefined,
       issueDateISO: format(new Date(), "yyyy-MM-dd"),
       dueDateISO: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"), // 30 days from now
       notes: "",
@@ -259,35 +258,20 @@ export default function CreateInvoice() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <FormField
                       control={form.control}
-                      name="participantName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Participant Name *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter participant name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
                       name="clientId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Link to Client (Optional)</FormLabel>
+                          <FormLabel>Participant Name *</FormLabel>
                           <Select 
-                            value={field.value?.toString() || "none"} 
-                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
+                            value={field.value?.toString() || ""} 
+                            onValueChange={(value) => field.onChange(parseInt(value))}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select client" />
+                                <SelectValue placeholder="Select participant" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="none">No client linked</SelectItem>
                               {(clients as any[]).map((client: any) => (
                                 <SelectItem key={client.id} value={client.id.toString()}>
                                   {client.fullName || `${client.firstName} ${client.lastName}`}
