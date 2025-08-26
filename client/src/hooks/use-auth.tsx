@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      await apiRequest("/api/auth/logout", { method: "POST" });
     },
     onSuccess: () => {
       // 🔒 SECURITY: Clear all cached data on logout to prevent authorization bypass
