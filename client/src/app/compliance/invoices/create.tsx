@@ -46,6 +46,7 @@ const ratioOptions = [
 ];
 
 const invoiceLineSchema = z.object({
+  lineItemId: z.coerce.number().optional(),
   dayISO: z.string().min(1, "Date is required"),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
@@ -78,7 +79,7 @@ export default function CreateInvoice() {
   });
 
   // Check if user has access to create invoices
-  if (user && !hasPermission(user, "ACCESS_COMPLIANCE")) {
+  if (user && !hasPermission(user as any, "ACCESS_COMPLIANCE")) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="flex items-center gap-3 p-6 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -94,7 +95,7 @@ export default function CreateInvoice() {
         </div>
         <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
           <Shield className="h-3 w-3 mr-1" />
-          Your role: {user?.role || "Unknown"}
+          Your role: {(user as any)?.role || "Unknown"}
         </Badge>
       </div>
     );
@@ -102,6 +103,11 @@ export default function CreateInvoice() {
 
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
+  });
+
+  // Fetch line items from pricing management
+  const { data: lineItems = [] } = useQuery({
+    queryKey: ["/api/line-items"],
   });
 
   const form = useForm<FormData>({
@@ -112,6 +118,7 @@ export default function CreateInvoice() {
       dueDateISO: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"), // 30 days from now
       notes: "",
       lines: [{
+        lineItemId: undefined,
         dayISO: format(new Date(), "yyyy-MM-dd"),
         startTime: "09:00",
         endTime: "17:00",
@@ -197,6 +204,7 @@ export default function CreateInvoice() {
 
   const addLine = () => {
     append({
+      lineItemId: undefined,
       dayISO: format(new Date(), "yyyy-MM-dd"),
       startTime: "09:00",
       endTime: "17:00",
@@ -204,6 +212,15 @@ export default function CreateInvoice() {
       ratio: "1:1",
       description: "",
     });
+  };
+
+  const handleLineItemSelect = (index: number, lineItemId: string) => {
+    const selectedItem = (lineItems as any[]).find((item: any) => item.id.toString() === lineItemId);
+    if (selectedItem) {
+      form.setValue(`lines.${index}.lineItemId`, selectedItem.id);
+      form.setValue(`lines.${index}.serviceType`, selectedItem.serviceType);
+      form.setValue(`lines.${index}.description`, selectedItem.label);
+    }
   };
 
   return (
@@ -271,7 +288,7 @@ export default function CreateInvoice() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="none">No client linked</SelectItem>
-                              {clients.map((client: any) => (
+                              {(clients as any[]).map((client: any) => (
                                 <SelectItem key={client.id} value={client.id.toString()}>
                                   {client.fullName || `${client.firstName} ${client.lastName}`}
                                 </SelectItem>
@@ -371,6 +388,42 @@ export default function CreateInvoice() {
                       </div>
                       
                       <div className="grid gap-4">
+                        {/* Line Item Selection */}
+                        <FormField
+                          control={form.control}
+                          name={`lines.${index}.lineItemId`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Pre-configured Service Line</FormLabel>
+                              <Select 
+                                value={field.value?.toString() || ""} 
+                                onValueChange={(value) => handleLineItemSelect(index, value)}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select from pricing management (optional)" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {lineItems.map((item: any) => (
+                                    <SelectItem key={item.id} value={item.id.toString()}>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono text-xs bg-slate-100 px-1 rounded">ID:{item.id}</span>
+                                        <span>{item.label}</span>
+                                        <span className="text-slate-500">- ${item.price}/hr</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs">
+                                Choose from your configured pricing or fill in details manually below
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                         <div className="grid gap-4 md:grid-cols-3">
                           <FormField
                             control={form.control}
