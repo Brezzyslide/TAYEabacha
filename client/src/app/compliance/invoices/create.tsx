@@ -31,16 +31,10 @@ import {
 
 const serviceTypes = [
   "Personal Care",
-  "Domestic Assistance", 
-  "Community Participation",
+  "Community Participation", 
+  "Domestic Assistance",
   "Supported Independent Living",
-  "Transport",
-  "Therapeutic Support",
-  "Sleepover",
-  "Respite Care",
-  "Skill Development",
-  "Employment Support",
-  "Other"
+  "Sleepover"
 ];
 
 const ratioOptions = [

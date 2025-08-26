@@ -2285,7 +2285,7 @@ export const insertLineItemSchema = createInsertSchema(lineItems).omit({
 }).extend({
   code: z.string().min(1, "Code is required"),
   label: z.string().min(1, "Label is required"),
-  serviceType: z.enum(["Community Access", "SIL", "Sleepover"]),
+  serviceType: z.enum(["Personal Care", "Community Participation", "Domestic Assistance", "Supported Independent Living", "Sleepover"]),
   category: z.enum(["Daytime", "Evening", "Active Night", "Saturday", "Sunday", "Public Holiday", "Sleepover"]),
   price: z.string().or(z.number()).refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Price must be a positive number"),
 });
@@ -2309,7 +2309,7 @@ export const insertProviderBankDetailsSchema = createInsertSchema(providerBankDe
 });
 
 export const invoiceLineSchema = z.object({
-  serviceType: z.enum(["Community Access", "SIL", "Sleepover"]),
+  serviceType: z.enum(["Personal Care", "Community Participation", "Domestic Assistance", "Supported Independent Living", "Sleepover"]),
   description: z.string().optional(),
   dayISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time must be in HH:mm format"),
