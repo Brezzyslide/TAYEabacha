@@ -243,7 +243,7 @@ export function setupAuth(app: Express) {
     req.logout((err) => {
       if (err) {
         console.error("[LOGOUT] Error during logout:", err);
-        return res.status(500).json({ message: "Logout failed", error: err.message });
+        return res.status(500).json({ success: false, message: "Logout failed", error: err.message });
       }
       
       // Destroy session for complete logout
@@ -269,33 +269,13 @@ export function setupAuth(app: Express) {
           sameSite: 'lax'
         });
         
-        // Return JSON response
-        res.json({ message: "Logged out successfully" });
+        // Return JSON response with success flag
+        res.json({ success: true, message: "Logged out successfully" });
       });
     });
   });
 
-  app.get("/api/auth/user", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
-    try {
-      const user = req.user as any;
-      // Get company information for the user's tenant
-      const company = await storage.getCompanyByTenantId(user.tenantId);
-      
-      const userWithCompany = {
-        ...user,
-        companyName: company?.name || 'CareConnect'
-      };
-      
-      res.json(userWithCompany);
-    } catch (error) {
-      console.error('Error fetching user with company info:', error);
-      res.json(req.user);
-    }
-  });
-
-  // Add the /api/auth/user endpoint that the frontend expects
+  // Main /api/auth/user endpoint
   app.get("/api/auth/user", async (req, res) => {
     console.log("[AUTH] User endpoint called:", {
       isAuthenticated: req.isAuthenticated(),
@@ -306,7 +286,7 @@ export function setupAuth(app: Express) {
     
     if (!req.isAuthenticated()) {
       console.log("[AUTH] User not authenticated");
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ success: false, message: "Authentication required" });
     }
     
     try {
