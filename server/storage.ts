@@ -335,9 +335,8 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     try {
       // Use PostgreSQL session store for persistence
-      const PostgreSqlStore = PgSessionStore(session);
-      this.sessionStore = new PostgreSqlStore({
-        pool: this.db,
+      this.sessionStore = new PostgresSessionStore({
+        pool: pool,
         tableName: 'session',
         schemaName: 'public',
         createTableIfMissing: true,
