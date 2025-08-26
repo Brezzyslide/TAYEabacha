@@ -243,7 +243,7 @@ export function setupAuth(app: Express) {
     req.logout((err) => {
       if (err) {
         console.error("[LOGOUT] Error during logout:", err);
-        return next(err);
+        return res.status(500).json({ message: "Logout failed", error: err.message });
       }
       
       // Destroy session for complete logout
@@ -254,6 +254,7 @@ export function setupAuth(app: Express) {
           console.log("[LOGOUT] Session destroyed successfully");
         }
         
+        // Clear multiple possible cookie names
         res.clearCookie('needscareai.sid', {
           path: '/',
           httpOnly: true,
@@ -261,7 +262,15 @@ export function setupAuth(app: Express) {
           sameSite: 'lax'
         });
         
-        res.sendStatus(200);
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax'
+        });
+        
+        // Return JSON response
+        res.json({ message: "Logged out successfully" });
       });
     });
   });
