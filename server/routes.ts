@@ -243,7 +243,7 @@ async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
-// Middleware to ensure user is authenticated and has tenant access
+// 🔒 Enhanced Authentication Middleware - Robust Pattern Implementation
 function requireAuth(req: any, res: any, next: any) {
   console.log("[AUTH MIDDLEWARE] Checking authentication...");
   console.log("[AUTH MIDDLEWARE] Session ID:", req.sessionID);
@@ -252,7 +252,14 @@ function requireAuth(req: any, res: any, next: any) {
   
   if (!req.isAuthenticated()) {
     console.log("[AUTH MIDDLEWARE] Authentication failed - user not authenticated");
-    return res.status(401).json({ message: "Authentication required" });
+    // 🔒 NEVER redirect XHR to HTML - Always return JSON for API routes
+    return res.status(401).json({ success: false, message: "Authentication required" });
+  }
+  
+  // 🔒 Additional session validation for security
+  if (!req.user || !req.user.tenantId) {
+    console.log("[AUTH MIDDLEWARE] Invalid session data - missing tenant");
+    return res.status(401).json({ success: false, message: "Invalid session - please login again" });
   }
   
   console.log("[AUTH MIDDLEWARE] Authentication successful, proceeding...");
@@ -7258,16 +7265,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company API - Get company data for branding
+  // 🔒 Company API - Robust Authentication Pattern Implementation
   app.get("/api/company", requireAuth, async (req: any, res) => {
     try {
       const company = await storage.getCompanyByTenantId(req.user.tenantId);
       if (!company) {
-        return res.status(404).json({ message: "Company not found" });
+        return res.status(404).json({ success: false, message: "Company not found" });
       }
       res.json(company);
     } catch (error) {
       console.error("Company API error:", error);
-      res.status(500).json({ message: "Failed to fetch company data" });
+      res.status(500).json({ success: false, message: "Failed to fetch company data" });
+    }
+  });
+
+  // 🔒 Create Company Endpoint - Follows the robust authentication pattern
+  app.post("/api/company", requireAuth, async (req: any, res, next) => {
+    try {
+      console.log(`[COMPANY POST] Handling company creation request for user ${req.user.id} tenant ${req.user.tenantId}`);
+      
+      // Force JSON response headers early to prevent HTML override
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      
+      // Method validation
+      if (req.method !== 'POST') {
+        console.log(`[COMPANY POST] Method not allowed: ${req.method}`);
+        return res.status(405).end(JSON.stringify({ success: false, message: 'Method not allowed' }));
+      }
+
+      const { name, businessAddress, registrationNumber, primaryContactName, primaryContactEmail, primaryContactPhone } = req.body;
+      
+      // Input validation
+      if (!name) {
+        console.log(`[COMPANY POST] Validation failed: Missing name`);
+        return res.status(400).end(JSON.stringify({ success: false, message: 'Company name is required' }));
+      }
+
+      if (!primaryContactEmail) {
+        console.log(`[COMPANY POST] Validation failed: Missing email`);
+        return res.status(400).end(JSON.stringify({ success: false, message: 'Primary contact email is required' }));
+      }
+
+      // Check if company already exists for this tenant
+      const existingCompany = await storage.getCompanyByTenantId(req.user.tenantId);
+      if (existingCompany) {
+        console.log(`[COMPANY POST] Company already exists for tenant ${req.user.tenantId}`);
+        return res.status(409).end(JSON.stringify({ success: false, message: 'Company already exists for this tenant' }));
+      }
+
+      // Create company with tenant isolation - following InsertCompany schema
+      const companyData = {
+        name,
+        businessAddress: businessAddress || null,
+        registrationNumber: registrationNumber || null,
+        primaryContactName: primaryContactName || req.user.fullName || req.user.username || 'Administrator',
+        primaryContactEmail,
+        primaryContactPhone: primaryContactPhone || null,
+        customLogo: null
+      };
+
+      console.log(`[COMPANY POST] Data being passed to storage:`, JSON.stringify(companyData, null, 2));
+      console.log(`[COMPANY POST] User data available:`, { fullName: req.user.fullName, username: req.user.username });
+
+      const createdCompany = await storage.createCompany(companyData);
+      
+      console.log(`[COMPANY CREATION] Company '${name}' created for tenant ${req.user.tenantId} by user ${req.user.id}`);
+      
+      const response = JSON.stringify({ 
+        success: true, 
+        company: createdCompany,
+        message: 'Company created successfully'
+      });
+      
+      res.status(201).end(response);
+    } catch (error) {
+      console.error("Company creation error:", error);
+      res.status(500).end(JSON.stringify({ 
+        success: false, 
+        message: 'Company creation failed',
+        error: error.message 
+      }));
     }
   });
 

@@ -364,12 +364,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompany(insertCompany: InsertCompany): Promise<Company> {
+    console.log('[STORAGE] Creating company with data:', JSON.stringify(insertCompany, null, 2));
+    
+    // Ensure primaryContactName is not null
+    const companyToInsert = {
+      ...insertCompany,
+      id: crypto.randomUUID(),
+      primaryContactName: insertCompany.primaryContactName || 'Administrator'
+    };
+    
+    console.log('[STORAGE] Final data for insert:', JSON.stringify(companyToInsert, null, 2));
+    
     const [company] = await db
       .insert(companies)
-      .values({
-        ...insertCompany,
-        id: crypto.randomUUID()
-      })
+      .values(companyToInsert)
       .returning();
     return company;
   }

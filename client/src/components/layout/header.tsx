@@ -55,10 +55,10 @@ export default function Header() {
   };
 
   const userInitials = user.fullName
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+    ?.split(' ')
+    ?.map(n => n[0])
+    ?.join('')
+    ?.toUpperCase() || user.username?.slice(0, 2)?.toUpperCase() || 'U';
 
   return (
     <>

@@ -131,26 +131,36 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     console.error("[SECURITY] Enhanced security validation failed:", error);
   }
 
-  // Environment-aware error handling
+  // 🔒 JSON Error Handler - Must come after all API routes but before Vite
+  // This ensures ALL errors return JSON, never HTML
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    
-    // Development: Show detailed errors
     const message = err.message || "Internal Server Error";
-    console.error('[DEV ERROR]:', err);
-    res.status(status).json({ 
-      message,
+    
+    console.error('[API ERROR]:', {
+      error: err.message,
       stack: err.stack,
       url: req.url,
-      method: req.method
+      method: req.method,
+      user: req.user?.id || 'unauthenticated'
+    });
+    
+    // ✅ NEVER leak HTML - Always return JSON for API errors
+    res.status(status).json({
+      success: false,
+      message,
+      code: err.code || undefined,
+      details: err.details || undefined
     });
   });
 
-  // Add API route protection middleware to prevent Vite from intercepting API calls
-  app.use('/api/*', (req, res, next) => {
-    // This middleware ensures API routes are processed before Vite's wildcard handler
-    res.set('X-API-Route', 'true');
-    next();
+  // 🔒 404 Handler for Unknown API Routes - Must come before Vite
+  // This catches typos like /api/companies vs /api/company and returns JSON
+  app.use('/api', (req: Request, res: Response) => {
+    res.status(404).json({ 
+      success: false, 
+      message: `API endpoint not found: ${req.method} ${req.originalUrl}` 
+    });
   });
 
   // Environment-aware frontend setup
