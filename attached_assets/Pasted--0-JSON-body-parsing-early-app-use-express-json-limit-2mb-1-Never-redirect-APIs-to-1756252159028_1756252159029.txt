@@ -1,0 +1,69 @@
+// 0) JSON body parsing early
+app.use(express.json({ limit: '2mb' }));
+
+// 1) Never redirect APIs to HTML on auth failure
+function requireAuth(req, res, next) {
+  if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required' });
+  next();
+}
+
+// 2) API routes FIRST
+app.use('/api/auth', authRouter);
+app.use('/api/company', companyRouter); // or '/api/companies', pick one and be consistent
+
+// 3) JSON 404 for unknown API paths
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, message: `Not found: ${req.method} ${req.originalUrl}` });
+});
+
+// 4) Global JSON error handler (replaces Express’s HTML error page)
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  res.status(status).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    code: err.code,
+  });
+});
+
+// 5) Vite/static AFTER APIs; SPA fallback LAST
+app.use(viteMiddleware);
+app.use('*', (req, res) => sendIndexHtml(req, res));
+Frontend guardrails
+Make sure every call sends/accepts JSON and carries the cookie:
+
+ts
+Copy code
+async function api(path: string, opts: RequestInit = {}) {
+  const res = await fetch(path, {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts,
+  });
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    const text = await res.text();
+    throw new Error(`Expected JSON, got ${ct}. First 120: ${text.slice(0,120)}`);
+  }
+  return res.json();
+}
+
+// examples
+await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+await api('/api/company', { method: 'POST', body: JSON.stringify(payload) });
+(Using Axios? Set axios.defaults.withCredentials = true and Accept: application/json.)
+
+Route sanity (common trap)
+Ensure the frontend path matches the backend exactly: /api/company vs /api/companies, trailing slash, and POST vs GET.
+
+If the path is wrong, step “JSON 404 for /api” above guarantees a JSON error instead of HTML.
+
+Two curl tests to prove it
+bash
+Copy code
+# 1) Unauthed create: must return 401 JSON (no HTML)
+curl -i -X POST http://localhost:5000/api/company -H "Content-Type: application/json" -d '{"name":"X"}'
+
+# 2) Authed create: must return 201 JSON
+curl -i -c /tmp/sid.txt -X POST http://localhost:5000/api/auth/login -H "Content-Type: application/json" -d '{"username":"admin.healthcare","password":"admin2024"}'
+curl -i -b /tmp/sid.txt -X POST http://localhost:5000/api/company -H "Content-Type: application/json" -d '{"name":"X"}'
