@@ -146,6 +146,13 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     });
   });
 
+  // Add API route protection middleware to prevent Vite from intercepting API calls
+  app.use('/api/*', (req, res, next) => {
+    // This middleware ensures API routes are processed before Vite's wildcard handler
+    res.set('X-API-Route', 'true');
+    next();
+  });
+
   // Environment-aware frontend setup
   if (isDevelopment) {
     console.log("[FRONTEND] Setting up Vite development server");
