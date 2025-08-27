@@ -262,7 +262,7 @@ export function setupAuth(app: Express) {
           sameSite: 'lax'
         });
         
-        res.sendStatus(200);
+        res.status(200).json({ message: "Logged out successfully" });
       });
     });
   });
