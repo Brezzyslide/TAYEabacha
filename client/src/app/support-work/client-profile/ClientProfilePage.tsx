@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Home, AlertCircle } from "lucide-react";
+import { Loader2, ArrowLeft, Home, AlertCircle, Edit } from "lucide-react";
 import OverviewTab from "./tabs/overview";
 import MedicationsTab from "./tabs/medications";
 import CarePlansTab from "./tabs/care-plans";
@@ -28,6 +28,7 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
   const clientId = propClientId || routeClientId || (urlClientId !== 'client-profile' ? urlClientId : null);
   const companyId = propCompanyId || "1";
   const [activeTab, setActiveTab] = useState("overview");
+  const [, setLocation] = useLocation();
 
 
 
@@ -124,6 +125,14 @@ function ClientProfilePageInner({ clientId: propClientId, companyId: propCompany
               </p>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation(`/support-work/client-profile/edit/${clientId}`)}
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit Client
+              </Button>
               <Badge variant="outline">Active</Badge>
               {clientData.ndisNumber && <Badge variant="secondary">NDIS Client</Badge>}
             </div>

@@ -14,6 +14,7 @@ import { insertClientSchema, type InsertClient } from "@shared/schema";
 import { User, Calendar } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
@@ -28,6 +29,7 @@ const clientFormSchema = z.object({
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
   primaryDiagnosis: z.string().optional(),
+  careLevel: z.string().min(1, "Care level is required"),
   ndisGoals: z.string().optional(),
   likesPreferences: z.string().optional(),
   dislikesAversions: z.string().optional(),
@@ -59,11 +61,11 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
       emergencyContactName: "",
       emergencyContactPhone: "",
       primaryDiagnosis: "",
+      careLevel: "",
       ndisGoals: "",
       likesPreferences: "",
       dislikesAversions: "",
       allergiesMedicalAlerts: "",
-
       isActive: true,
     },
   });
@@ -115,6 +117,7 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
         emergencyContactName: data.emergencyContactName || null,
         emergencyContactPhone: data.emergencyContactPhone || null,
         primaryDiagnosis: data.primaryDiagnosis || null,
+        careLevel: data.careLevel,
         ndisGoals: data.ndisGoals || null,
         likesPreferences: data.likesPreferences || null,
         dislikesAversions: data.dislikesAversions || null,
@@ -269,19 +272,45 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="primaryDiagnosis"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Diagnosis</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter primary diagnosis" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="primaryDiagnosis"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Diagnosis</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter primary diagnosis" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="careLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Care Level *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select care level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Low to Moderate">Low to Moderate</SelectItem>
+                          <SelectItem value="Complex">Complex</SelectItem>
+                          <SelectItem value="Multiple and Complex Need">Multiple and Complex Need</SelectItem>
+                          <SelectItem value="Forensic Disability">Forensic Disability</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </CardContent>
           </Card>
 
