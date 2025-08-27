@@ -4,6 +4,9 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
+// Perform environment sanity check immediately after loading env variables
+import { env, performEnvironmentSanityCheck } from './env';
+
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
@@ -17,32 +20,15 @@ import fs from 'fs';
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 console.log(`[ENV] Starting CareConnect in ${isDevelopment ? 'DEVELOPMENT' : 'PRODUCTION'} mode`);
-console.log(`[ENV] Node environment: ${process.env.NODE_ENV}`);
+console.log(`[ENV] Node environment: ${env.NODE_ENV}`);
 console.log(`[ENV] Replit ID: ${process.env.REPL_ID || 'undefined'}`);
 
-// Basic configuration
+// Basic configuration using validated environment
 const cfg = {
   APP_BASE_URL: process.env.APP_BASE_URL || 'http://localhost:5000',
   CORS_ORIGINS: process.env.CORS_ORIGINS,
-  NODE_ENV: process.env.NODE_ENV || 'development'
+  NODE_ENV: env.NODE_ENV
 };
-
-if (isDevelopment) {
-  console.log('[DEV] Continuing in development mode...');
-} else {
-  console.log('[PROD] Running in production mode...');
-}
-
-console.log('[ENV] Environment variables loaded via dotenv');
-console.log('[ENV] GMAIL_EMAIL now set to:', process.env.GMAIL_EMAIL);
-console.log('[ENV] GMAIL_APP_PASSWORD length:', process.env.GMAIL_APP_PASSWORD?.length || 0);
-
-// Force environment logging for debugging
-console.log('[ENV] FINAL CHECK:');
-console.log('[ENV] GMAIL_EMAIL:', process.env.GMAIL_EMAIL);
-console.log('[ENV] GMAIL_APP_PASSWORD_SET:', !!process.env.GMAIL_APP_PASSWORD);
-console.log('[ENV] GMAIL_APP_PASSWORD_LENGTH:', process.env.GMAIL_APP_PASSWORD?.length || 0);
-console.log('[ENV] DATABASE_URL:', process.env.DATABASE_URL?.replace(/:[^:]*@/, ':***@'));
 
 // Initialize email service and database AFTER environment is loaded
 import "./lib/email-service";
