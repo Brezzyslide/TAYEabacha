@@ -131,35 +131,18 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     console.error("[SECURITY] Enhanced security validation failed:", error);
   }
 
-  // 🔒 JSON Error Handler - Must come after all API routes but before Vite
-  // This ensures ALL errors return JSON, never HTML
+  // Environment-aware error handling
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
     
-    console.error('[API ERROR]:', {
-      error: err.message,
+    // Development: Show detailed errors
+    const message = err.message || "Internal Server Error";
+    console.error('[DEV ERROR]:', err);
+    res.status(status).json({ 
+      message,
       stack: err.stack,
       url: req.url,
-      method: req.method,
-      user: req.user?.id || 'unauthenticated'
-    });
-    
-    // ✅ NEVER leak HTML - Always return JSON for API errors
-    res.status(status).json({
-      success: false,
-      message,
-      code: err.code || undefined,
-      details: err.details || undefined
-    });
-  });
-
-  // 🔒 404 Handler for Unknown API Routes - Must come before Vite
-  // This catches typos like /api/companies vs /api/company and returns JSON
-  app.use('/api', (req: Request, res: Response) => {
-    res.status(404).json({ 
-      success: false, 
-      message: `API endpoint not found: ${req.method} ${req.originalUrl}` 
+      method: req.method
     });
   });
 

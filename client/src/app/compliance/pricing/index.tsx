@@ -7,22 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { hasPermission } from "@/lib/permissions";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { 
   DollarSign, 
   Save, 
@@ -33,8 +17,7 @@ import {
   Clock,
   Calendar,
   Users,
-  ArrowLeft,
-  Plus
+  ArrowLeft
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -63,14 +46,6 @@ export default function PricingManagement() {
   const [, setLocation] = useLocation();
   const [editingPrices, setEditingPrices] = useState<Record<number, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newLineItem, setNewLineItem] = useState({
-    code: "",
-    label: "",
-    serviceType: "",
-    category: "",
-    price: ""
-  });
 
   // Check permissions
   if (!user || !hasPermission(user, "ACCESS_COMPLIANCE")) {
@@ -121,41 +96,6 @@ export default function PricingManagement() {
     onError: (error: any) => {
       toast({
         title: "Failed to update prices",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Add new line item mutation
-  const addLineItemMutation = useMutation({
-    mutationFn: async (lineItem: any) => {
-      return await apiRequest("/api/line-items", {
-        method: "POST",
-        body: JSON.stringify({
-          ...lineItem,
-          price: parseFloat(lineItem.price)
-        }),
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Line item added successfully",
-        description: "New pricing item has been created.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/line-items"] });
-      setShowAddDialog(false);
-      setNewLineItem({
-        code: "",
-        label: "",
-        serviceType: "",
-        category: "",
-        price: ""
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to add line item",
         description: error.message || "Please try again",
         variant: "destructive",
       });
@@ -244,8 +184,14 @@ export default function PricingManagement() {
     );
   }
 
-  // Sort line items by ID for consistent display
-  const sortedItems = (lineItems || []).sort((a: any, b: any) => a.id - b.id);
+  // Group line items by service type
+  const groupedItems = (lineItems || []).reduce((acc: any, item: any) => {
+    if (!acc[item.serviceType]) {
+      acc[item.serviceType] = [];
+    }
+    acc[item.serviceType].push(item);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6">
@@ -289,174 +235,66 @@ export default function PricingManagement() {
             </Button>
           </div>
         )}
-        
-        {/* Add Price Button */}
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Line Item
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Line Item</DialogTitle>
-              <DialogDescription>
-                Create a new NDIS line item with pricing information.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">NDIS Service Code</Label>
-                <Input
-                  id="code"
-                  placeholder="e.g., 04_104_0125_6_1"
-                  value={newLineItem.code}
-                  onChange={(e) => setNewLineItem(prev => ({ ...prev, code: e.target.value }))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="label">Service Description</Label>
-                <Input
-                  id="label"
-                  placeholder="e.g., Community Access – Daytime"
-                  value={newLineItem.label}
-                  onChange={(e) => setNewLineItem(prev => ({ ...prev, label: e.target.value }))}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="serviceType">Service Type</Label>
-                  <Select onValueChange={(value) => setNewLineItem(prev => ({ ...prev, serviceType: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Personal Care">Personal Care</SelectItem>
-                      <SelectItem value="Community Participation">Community Participation</SelectItem>
-                      <SelectItem value="Domestic Assistance">Domestic Assistance</SelectItem>
-                      <SelectItem value="Supported Independent Living">Supported Independent Living</SelectItem>
-                      <SelectItem value="Sleepover">Sleepover</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Time Category</Label>
-                  <Select onValueChange={(value) => setNewLineItem(prev => ({ ...prev, category: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Daytime">Daytime</SelectItem>
-                      <SelectItem value="Evening">Evening</SelectItem>
-                      <SelectItem value="Active Night">Active Night</SelectItem>
-                      <SelectItem value="Saturday">Saturday</SelectItem>
-                      <SelectItem value="Sunday">Sunday</SelectItem>
-                      <SelectItem value="Public Holiday">Public Holiday</SelectItem>
-                      <SelectItem value="Sleepover">Sleepover</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="price">Price per Hour ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="68.50"
-                  value={newLineItem.price}
-                  onChange={(e) => setNewLineItem(prev => ({ ...prev, price: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => addLineItemMutation.mutate(newLineItem)}
-                disabled={!newLineItem.code || !newLineItem.label || !newLineItem.serviceType || !newLineItem.category || !newLineItem.price || addLineItemMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {addLineItemMutation.isPending ? "Adding..." : "Add Line Item"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
-      {/* Individual Line Item Pricing */}
-      <div className="space-y-4">
-        {sortedItems.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <DollarSign className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-                <span>Line Item Pricing</span>
-                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                  {sortedItems.length} item{sortedItems.length !== 1 ? 's' : ''}
-                </Badge>
-              </CardTitle>
-              <CardDescription>
-                Set individual prices for each NDIS line item by ID number
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {sortedItems.map((item: any) => {
-                  const currentPrice = editingPrices[item.id] !== undefined 
-                    ? editingPrices[item.id] 
-                    : item.price.toString();
-                  
-                  const IconComponent = categoryIcons[item.category] || Clock;
-                  
-                  return (
-                    <div 
-                      key={item.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 dark:bg-slate-800"
-                    >
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4 text-slate-500" />
-                          <span className="text-sm font-mono text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded">
-                            ID: {item.id}
-                          </span>
-                        </div>
+      {/* Pricing Cards by Service Type */}
+      <div className="space-y-6">
+        {Object.entries(groupedItems || {}).map(([serviceType, items]: [string, any]) => {
+          const IconComponent = categoryIcons[items[0]?.category] || DollarSign;
+          
+          return (
+            <Card key={serviceType}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <IconComponent className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+                  <span>{serviceType}</span>
+                  <Badge className={serviceTypeColors[serviceType] || "bg-slate-100 text-slate-800"}>
+                    {items.length} rate{items.length !== 1 ? 's' : ''}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Manage pricing for all {serviceType.toLowerCase()} service categories
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {items.map((item: any) => {
+                    const currentPrice = editingPrices[item.id] !== undefined 
+                      ? editingPrices[item.id] 
+                      : item.price.toString();
+                    
+                    return (
+                      <div 
+                        key={item.id} 
+                        className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 dark:bg-slate-800"
+                      >
                         <div className="flex-1">
                           <div className="font-medium text-slate-900 dark:text-slate-100">
-                            {item.label}
+                            {item.category}
                           </div>
                           <div className="text-sm text-slate-600 dark:text-slate-400">
-                            {item.code} • {item.serviceType} • {item.category}
+                            {item.code} • {item.unit}
                           </div>
                         </div>
-                        <Badge className={serviceTypeColors[item.serviceType] || "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200"}>
-                          {item.serviceType}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">$</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={currentPrice}
+                            onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                            className="w-24 text-right"
+                          />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">$</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={currentPrice}
-                          onChange={(e) => handlePriceChange(item.id, e.target.value)}
-                          className="w-24 text-right"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {(!lineItems || lineItems.length === 0) && (
@@ -468,15 +306,8 @@ export default function PricingManagement() {
                 No pricing configured
               </h3>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Click "Add Line Item" above to create your first NDIS pricing entry.
+                Contact support to set up your NDIS line item pricing.
               </p>
-              <Button 
-                onClick={() => setShowAddDialog(true)}
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Your First Line Item
-              </Button>
             </div>
           </CardContent>
         </Card>

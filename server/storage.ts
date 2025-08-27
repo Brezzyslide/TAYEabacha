@@ -335,8 +335,9 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     try {
       // Use PostgreSQL session store for persistence
-      this.sessionStore = new PostgresSessionStore({
-        pool: pool,
+      const PostgreSqlStore = PgSessionStore(session);
+      this.sessionStore = new PostgreSqlStore({
+        pool: this.db,
         tableName: 'session',
         schemaName: 'public',
         createTableIfMissing: true,
@@ -364,20 +365,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompany(insertCompany: InsertCompany): Promise<Company> {
-    console.log('[STORAGE] Creating company with data:', JSON.stringify(insertCompany, null, 2));
-    
-    // Ensure primaryContactName is not null
-    const companyToInsert = {
-      ...insertCompany,
-      id: crypto.randomUUID(),
-      primaryContactName: insertCompany.primaryContactName || 'Administrator'
-    };
-    
-    console.log('[STORAGE] Final data for insert:', JSON.stringify(companyToInsert, null, 2));
-    
     const [company] = await db
       .insert(companies)
-      .values(companyToInsert)
+      .values({
+        ...insertCompany,
+        id: crypto.randomUUID()
+      })
       .returning();
     return company;
   }

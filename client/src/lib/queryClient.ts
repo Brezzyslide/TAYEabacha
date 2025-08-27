@@ -28,13 +28,6 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  
-  // Check if response is HTML instead of JSON (development server issue)
-  const contentType = res.headers.get("content-type");
-  if (contentType?.includes("text/html")) {
-    throw new Error("Server returned HTML instead of JSON. This appears to be a development server configuration issue. Please try refreshing the page or restarting the server.");
-  }
-  
   return res.json();
 }
 
