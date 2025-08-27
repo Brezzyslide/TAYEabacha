@@ -8,26 +8,33 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
+  method: string,
   url: string,
-  options: {
-    method?: string;
-    body?: string;
-    headers?: Record<string, string>;
-  } = {}
+  data?: any
 ): Promise<any> {
-  const { method = "GET", body, headers = {} } = options;
-  
   const res = await fetch(url, {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...headers,
     },
-    body,
+    body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
+  if (!res.ok) {
+    // Try to get error message from response
+    let errorMessage = `${res.status}: ${res.statusText}`;
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      // If response is not JSON, use the status text
+      const text = await res.text();
+      errorMessage = text || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+  
   return res.json();
 }
 
