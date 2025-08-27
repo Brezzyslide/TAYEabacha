@@ -35,8 +35,10 @@ export default function Clients() {
 
   const createClientMutation = useMutation({
     mutationFn: async (data: ClientFormData) => {
-      const res = await apiRequest("POST", "/api/clients", data);
-      return await res.json();
+      return await apiRequest("/api/clients", { 
+        method: "POST", 
+        body: JSON.stringify(data) 
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
@@ -58,8 +60,10 @@ export default function Clients() {
 
   const updateClientMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ClientFormData> }) => {
-      const res = await apiRequest("PUT", `/api/clients/${id}`, data);
-      return await res.json();
+      return await apiRequest(`/api/clients/${id}`, { 
+        method: "PUT", 
+        body: JSON.stringify(data) 
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
@@ -82,7 +86,7 @@ export default function Clients() {
 
   const deleteClientMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/clients/${id}`);
+      return await apiRequest(`/api/clients/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
