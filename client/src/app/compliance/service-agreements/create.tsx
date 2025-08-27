@@ -66,8 +66,7 @@ export default function CreateServiceAgreement() {
   const createMutation = useMutation({
     mutationFn: async (data: { agreement: Partial<ServiceAgreement>; items: ServiceAgreementItem[] }) => {
       // First create the agreement
-      const response = await apiRequest('POST', '/api/compliance/service-agreements', data.agreement);
-      const agreement = await response.json() as ServiceAgreement;
+      const agreement = await apiRequest('POST', '/api/compliance/service-agreements', data.agreement) as ServiceAgreement;
       
       console.log('[FRONTEND] Agreement created:', agreement);
       console.log('[FRONTEND] Agreement ID:', agreement.id);

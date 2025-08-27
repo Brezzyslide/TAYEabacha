@@ -102,8 +102,7 @@ export default function AddMedicationPlanModal({
   // Create medication plan mutation
   const createPlanMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", "/api/medication-plans", data);
-      return response.json();
+      return await apiRequest("POST", "/api/medication-plans", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/medication-plans"] });

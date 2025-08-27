@@ -20,19 +20,13 @@ export default function EmergencyCleanup() {
 
     setIsExecuting(true);
     try {
-      const response = await apiRequest("POST", "/api/emergency/cleanup-demo-data", {});
-      
-      if (response.ok) {
-        const result = await response.json();
-        setCleanupResult(result);
-        toast({
-          title: "Cleanup Completed",
-          description: "Production demo data has been successfully removed",
-        });
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Cleanup failed");
-      }
+      const result = await apiRequest("POST", "/api/emergency/cleanup-demo-data", {});
+      setCleanupResult(result);
+      toast({
+        title: "Cleanup Completed",
+        description: "Production demo data has been successfully removed",
+      });
+
     } catch (error: any) {
       toast({
         title: "Cleanup Failed",
@@ -47,19 +41,13 @@ export default function EmergencyCleanup() {
   const verifyCleanup = async () => {
     setIsVerifying(true);
     try {
-      const response = await apiRequest("GET", "/api/emergency/verify-cleanup", {});
-      
-      if (response.ok) {
-        const result = await response.json();
-        setVerificationResult(result);
-        toast({
-          title: "Verification Complete",
-          description: result.message,
-        });
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Verification failed");
-      }
+      const result = await apiRequest("GET", "/api/emergency/verify-cleanup", {});
+      setVerificationResult(result);
+      toast({
+        title: "Verification Complete",
+        description: result.message,
+      });
+
     } catch (error: any) {
       toast({
         title: "Verification Failed",

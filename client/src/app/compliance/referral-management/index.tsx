@@ -110,8 +110,7 @@ export default function ReferralManagementPage() {
   // Assessment submission mutation
   const assessmentMutation = useMutation({
     mutationFn: async (data: AssessmentData & { referralId: string }) => {
-      const response = await apiRequest("POST", `/api/referrals/${data.referralId}/assessment`, data);
-      return response.json();
+      return await apiRequest("POST", `/api/referrals/${data.referralId}/assessment`, data);
     },
     onSuccess: () => {
       toast({
@@ -185,8 +184,7 @@ export default function ReferralManagementPage() {
   // Delete referral mutation
   const deleteReferralMutation = useMutation({
     mutationFn: async (referralId: string) => {
-      const response = await apiRequest("DELETE", `/api/referrals/${referralId}`);
-      return response.json();
+      return await apiRequest("DELETE", `/api/referrals/${referralId}`);
     },
     onSuccess: () => {
       toast({
