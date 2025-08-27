@@ -33,10 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      return await apiRequest("/api/login", {
-        method: "POST",
-        body: JSON.stringify(credentials),
-      });
+      return await apiRequest("POST", "/api/login", credentials);
     },
     onSuccess: (user: SelectUser) => {
       // 🔒 SECURITY: Clear all cached data on login to prevent stale data access
@@ -54,10 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      return await apiRequest("/api/register", {
-        method: "POST",
-        body: JSON.stringify(credentials),
-      });
+      return await apiRequest("POST", "/api/register", credentials);
     },
     onSuccess: (user: SelectUser) => {
       // 🔒 SECURITY: Clear all cached data on login to prevent stale data access
@@ -75,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("/api/logout", { method: "POST" });
+      await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
       // 🔒 SECURITY: Clear all cached data on logout to prevent authorization bypass
