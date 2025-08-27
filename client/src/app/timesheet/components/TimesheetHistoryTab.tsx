@@ -99,10 +99,7 @@ export default function TimesheetHistoryTab() {
   // Individual timesheet PDF export
   const exportTimesheetMutation = useMutation({
     mutationFn: async (timesheetId: number) => {
-      const response = await fetch(`/api/admin/timesheets/${timesheetId}/export-pdf`);
-      if (!response.ok) throw new Error("Failed to export timesheet");
-      
-      const data = await response.json();
+      const data = await apiRequest("GET", `/api/admin/timesheets/${timesheetId}/export-pdf`);
       
       // Import jsPDF dynamically
       const { jsPDF } = await import('jspdf');
@@ -219,10 +216,7 @@ export default function TimesheetHistoryTab() {
       if (filters.status && filters.status !== 'all') params.append('status', filters.status);
       if (filters.dateRange) params.append('dateRange', filters.dateRange);
       
-      const response = await fetch(`/api/admin/timesheets/bulk-export?${params}`);
-      if (!response.ok) throw new Error("Failed to export timesheets");
-      
-      const data = await response.json();
+      const data = await apiRequest("GET", `/api/admin/timesheets/bulk-export?${params}`);
       
       // Generate CSV format for bulk export
       const csvContent = [

@@ -62,13 +62,7 @@ const InvoiceViewer: React.FC<InvoiceViewerProps> = ({ companyId }) => {
       const url = companyId 
         ? `/api/invoices/current/${companyId}`
         : '/api/invoices/current';
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch current invoice');
-      }
-      
-      const data = await response.json();
+      const data = await apiRequest("GET", url);
       
       // Convert date strings to Date objects
       return {

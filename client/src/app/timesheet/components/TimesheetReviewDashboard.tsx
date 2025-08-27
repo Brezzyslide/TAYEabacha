@@ -115,10 +115,7 @@ export default function TimesheetReviewDashboard() {
   // Export individual timesheet as PDF
   const exportTimesheetMutation = useMutation({
     mutationFn: async (timesheetId: number) => {
-      const response = await fetch(`/api/admin/timesheets/${timesheetId}/export-pdf`);
-      if (!response.ok) throw new Error("Failed to export timesheet");
-      
-      const data = await response.json();
+      const data = await apiRequest("GET", `/api/admin/timesheets/${timesheetId}/export-pdf`);
       
       // Import jsPDF dynamically
       const { jsPDF } = await import('jspdf');

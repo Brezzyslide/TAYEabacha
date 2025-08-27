@@ -77,8 +77,7 @@ export default function CaseNoteDashboard() {
   // Update case note mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await apiRequest(`/api/case-notes/${id}`, "PATCH", data);
-      return response;
+      return await apiRequest("PATCH", `/api/case-notes/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/case-notes"] });
@@ -101,8 +100,7 @@ export default function CaseNoteDashboard() {
   // Delete case note mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/case-notes/${id}`, "DELETE");
-      return response;
+      return await apiRequest("DELETE", `/api/case-notes/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/case-notes"] });

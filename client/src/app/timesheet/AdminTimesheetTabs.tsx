@@ -487,14 +487,7 @@ export default function AdminTimesheetTabs() {
   // Create Manual Entry mutation for Current Period
   const createManualEntry = useMutation({
     mutationFn: async (entryData: any) => {
-      const response = await fetch('/api/admin/timesheet-entries/manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(entryData),
-      });
-      if (!response.ok) throw new Error('Failed to create manual entry');
-      return response.json();
+      return await apiRequest("POST", '/api/admin/timesheet-entries/manual', entryData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
@@ -509,14 +502,7 @@ export default function AdminTimesheetTabs() {
   // Edit Current Period Entry mutation
   const editCurrentEntry = useMutation({
     mutationFn: async ({ entryId, updates }: { entryId: number; updates: any }) => {
-      const response = await fetch(`/api/admin/timesheet-entries/${entryId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error('Failed to update entry');
-      return response.json();
+      return await apiRequest("PATCH", `/api/admin/timesheet-entries/${entryId}`, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
@@ -532,13 +518,8 @@ export default function AdminTimesheetTabs() {
   // Load timesheet entries for editing
   const loadTimesheetEntries = async (timesheetId: number) => {
     try {
-      const response = await fetch(`/api/admin/timesheet-entries/${timesheetId}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const entries = await response.json();
-        setCurrentTimesheetEntries(entries);
-      }
+      const entries = await apiRequest("GET", `/api/admin/timesheet-entries/${timesheetId}`);
+      setCurrentTimesheetEntries(entries);
     } catch (error) {
       console.error('Failed to load timesheet entries:', error);
     }
@@ -1481,15 +1462,10 @@ export default function AdminTimesheetTabs() {
                                   onClick={async () => {
                                     if (confirm('Delete this manual entry?')) {
                                       try {
-                                        const response = await fetch(`/api/admin/timesheet-entries/${entry.id}`, {
-                                          method: 'DELETE',
-                                          credentials: 'include'
-                                        });
-                                        if (response.ok) {
-                                          await loadTimesheetEntries(selectedTimesheet!.id);
-                                          queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
-                                          toast({ title: "Entry deleted successfully" });
-                                        }
+                                        await apiRequest("DELETE", `/api/admin/timesheet-entries/${entry.id}`);
+                                        await loadTimesheetEntries(selectedTimesheet!.id);
+                                        queryClient.invalidateQueries({ queryKey: ["/api/admin/timesheets/current"] });
+                                        toast({ title: "Entry deleted successfully" });
                                       } catch (error) {
                                         toast({ title: "Failed to delete entry", variant: "destructive" });
                                       }

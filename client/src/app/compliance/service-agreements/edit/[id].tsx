@@ -22,9 +22,7 @@ export default function EditServiceAgreement() {
   const { data: agreement, isLoading } = useQuery({
     queryKey: ["/api/compliance/service-agreements", id],
     queryFn: async () => {
-      const response = await fetch(`/api/compliance/service-agreements/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch agreement');
-      return response.json();
+      return await apiRequest("GET", `/api/compliance/service-agreements/${id}`);
     },
     enabled: !!id,
   });

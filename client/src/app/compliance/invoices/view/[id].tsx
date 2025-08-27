@@ -61,11 +61,7 @@ export default function ViewInvoice() {
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: ["/api/invoices", id],
     queryFn: async () => {
-      const response = await fetch(`/api/invoices/${id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch invoice');
-      }
-      return response.json();
+      return await apiRequest("GET", `/api/invoices/${id}`);
     },
     enabled: !!id,
   });

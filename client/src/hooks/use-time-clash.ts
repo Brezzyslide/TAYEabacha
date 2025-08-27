@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface TimeClash {
   id: number;
@@ -27,24 +28,12 @@ export function useTimeClashCheck() {
 
   const checkTimeClash = useMutation({
     mutationFn: async (params: TimeClashCheckParams): Promise<TimeClashResult> => {
-      const response = await fetch('/api/shifts/check-clash', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: params.userId,
-          startTime: typeof params.startTime === 'string' ? params.startTime : params.startTime.toISOString(),
-          endTime: typeof params.endTime === 'string' ? params.endTime : params.endTime.toISOString(),
-          excludeShiftId: params.excludeShiftId,
-        }),
+      return await apiRequest('POST', '/api/shifts/check-clash', {
+        userId: params.userId,
+        startTime: typeof params.startTime === 'string' ? params.startTime : params.startTime.toISOString(),
+        endTime: typeof params.endTime === 'string' ? params.endTime : params.endTime.toISOString(),
+        excludeShiftId: params.excludeShiftId,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to check time clashes');
-      }
-
-      return response.json();
     },
     onSuccess: (result) => {
       setClashResult(result);
