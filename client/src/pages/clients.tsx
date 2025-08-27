@@ -35,22 +35,29 @@ export default function Clients() {
 
   const createClientMutation = useMutation({
     mutationFn: async (data: ClientFormData) => {
-      const res = await apiRequest("POST", "/api/clients", data);
-      return await res.json();
+      return await apiRequest("POST", "/api/clients", data);
     },
-    onSuccess: () => {
+    onSuccess: (newClient) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setIsDialogOpen(false);
       form.reset();
       toast({
-        title: "Success",
-        description: "Client created successfully",
+        title: "🎉 Client Created Successfully!",
+        description: `${newClient.firstName} ${newClient.lastName} has been added with ID: ${newClient.clientId}`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      let errorMessage = "Failed to create client";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
-        title: "Error",
-        description: error.message,
+        title: "❌ Client Creation Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -58,23 +65,30 @@ export default function Clients() {
 
   const updateClientMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ClientFormData> }) => {
-      const res = await apiRequest("PUT", `/api/clients/${id}`, data);
-      return await res.json();
+      return await apiRequest("PUT", `/api/clients/${id}`, data);
     },
-    onSuccess: () => {
+    onSuccess: (updatedClient) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       setIsDialogOpen(false);
       setEditingClient(null);
       form.reset();
       toast({
-        title: "Success",
-        description: "Client updated successfully",
+        title: "✅ Client Updated Successfully!",
+        description: `${updatedClient.firstName} ${updatedClient.lastName}'s information has been saved`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      let errorMessage = "Failed to update client";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
-        title: "Error",
-        description: error.message,
+        title: "❌ Client Update Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     },

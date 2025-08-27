@@ -73,15 +73,14 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
   const createClientMutation = useMutation({
     mutationFn: async (data: any) => {
       // Server will add tenantId and createdBy from auth context
-      const response = await apiRequest("POST", "/api/clients", data);
-      return response.json();
+      return await apiRequest("POST", "/api/clients", data);
     },
     onSuccess: (newClient) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       form.reset(); // Reset the form after successful creation
       toast({
-        title: "Success",
-        description: "Client created successfully",
+        title: "🎉 Client Created Successfully!",
+        description: `${newClient.firstName} ${newClient.lastName} has been added to your client list with ID: ${newClient.clientId}`,
       });
       
       // Redirect to the new client's profile page
@@ -91,9 +90,19 @@ export default function SimpleCreateClientForm({ onSuccess, onCancel }: SimpleCr
     },
     onError: (error: any) => {
       console.error("Client creation error:", error);
+      
+      // Parse the error to get the actual message from the backend
+      let errorMessage = "Failed to create client";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
-        title: "Error",
-        description: error?.message || "Failed to create client",
+        title: "❌ Client Creation Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     },

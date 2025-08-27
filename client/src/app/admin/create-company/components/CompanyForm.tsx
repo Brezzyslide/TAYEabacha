@@ -45,8 +45,7 @@ export default function CompanyForm() {
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: CreateCompanyFormData) => {
-      const response = await apiRequest("POST", "/api/admin/create-company", data);
-      return response.json();
+      return await apiRequest("POST", "/api/admin/create-company", data);
     },
     onSuccess: (data) => {
       console.table([
@@ -60,16 +59,25 @@ export default function CompanyForm() {
       ]);
       
       toast({
-        title: "Company Created Successfully",
-        description: `${data.company.name} has been registered with ID: ${data.company.id}`,
+        title: "🎉 Company Created Successfully!",
+        description: `${data.company.name} has been registered. Admin account created for ${data.admin.email}. You can now log in with the new company credentials.`,
       });
       
       setLocation("/admin/company-summary");
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      // Parse the error to get the actual message from the backend
+      let errorMessage = "Failed to create company";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
-        title: "Failed to Create Company",
-        description: error.message,
+        title: "❌ Company Creation Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     },
