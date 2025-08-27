@@ -675,6 +675,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       } = req.body;
 
+      // Check if user with this email already exists
+      try {
+        const existingUser = await storage.getUserByUsername(primaryContactEmail);
+        if (existingUser) {
+          return res.status(400).json({ 
+            error: "A user with this email already exists. Please use a different email address." 
+          });
+        }
+      } catch (error) {
+        // User doesn't exist, which is what we want - continue
+      }
+
       // Create company with UUID
       const company = await storage.createCompany({
         name: companyName,
