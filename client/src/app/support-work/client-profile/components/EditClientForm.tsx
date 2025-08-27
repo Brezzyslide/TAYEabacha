@@ -96,9 +96,8 @@ export default function EditClientForm() {
   }, [clientData, form]);
 
   const updateClientMutation = useMutation({
-    mutationFn: async (data: InsertClient) => {
-      const response = await apiRequest("PUT", `/api/clients/${clientId}`, data);
-      return response.json();
+    mutationFn: async (data: any) => {
+      return await apiRequest("PUT", `/api/clients/${clientId}`, data);
     },
     onSuccess: (updatedClient) => {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
@@ -131,15 +130,15 @@ export default function EditClientForm() {
         lastName: data.lastName,
         ndisNumber: data.ndisNumber,
         dateOfBirth: data.dateOfBirth,
-        address: data.address,
-        emergencyContactName: data.emergencyContactName,
-        emergencyContactPhone: data.emergencyContactPhone,
-        ndisGoals: data.ndisGoals,
-        likesPreferences: data.likesPreferences,
-        dislikesAversions: data.dislikesAversions,
-        allergiesMedicalAlerts: data.allergiesMedicalAlerts,
-        primaryDiagnosis: data.primaryDiagnosis,
-        careLevel: data.careLevel,
+        address: data.address || null,
+        emergencyContactName: data.emergencyContactName || null,
+        emergencyContactPhone: data.emergencyContactPhone || null,
+        ndisGoals: data.ndisGoals || null,
+        likesPreferences: data.likesPreferences || null,
+        dislikesAversions: data.dislikesAversions || null,
+        allergiesMedicalAlerts: data.allergiesMedicalAlerts || null,
+        primaryDiagnosis: data.primaryDiagnosis || null,
+        careLevel: data.careLevel || null,
         isActive: data.isActive
       };
       
