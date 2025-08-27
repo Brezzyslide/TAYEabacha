@@ -81,9 +81,10 @@ export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
 
   // Fetch notifications
-  const { data: notifications = [] } = useQuery<Notification[]>({
+  const { data: notifications = [], error: notificationsError } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
     refetchInterval: 30000, // Refetch every 30 seconds
+    enabled: true, // Always try to fetch
   });
 
   // Fetch unread count
@@ -97,7 +98,7 @@ export default function NotificationDropdown() {
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId: number) =>
-      apiRequest("POST", `/api/notifications/${notificationId}/read`),
+      apiRequest(`/api/notifications/${notificationId}/read`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
@@ -113,7 +114,7 @@ export default function NotificationDropdown() {
 
   // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/notifications/mark-all-read"),
+    mutationFn: () => apiRequest("/api/notifications/mark-all-read", { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
@@ -134,7 +135,7 @@ export default function NotificationDropdown() {
   // Delete notification mutation
   const deleteNotificationMutation = useMutation({
     mutationFn: (notificationId: number) =>
-      apiRequest("DELETE", `/api/notifications/${notificationId}`),
+      apiRequest(`/api/notifications/${notificationId}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
@@ -229,13 +230,13 @@ export default function NotificationDropdown() {
         <DropdownMenuSeparator />
         
         <ScrollArea className="max-h-80">
-          {notifications.length === 0 ? (
+          {!notifications || notifications.length === 0 ? (
             <div className="p-6 text-center">
               <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">No notifications</p>
             </div>
           ) : (
-            notifications.map((notification) => (
+            (notifications || []).map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
                 className={`p-3 cursor-pointer hover:bg-accent/50 border-l-4 ${

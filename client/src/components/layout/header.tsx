@@ -16,7 +16,7 @@ import {
 import MobileSidebar from "./mobile-sidebar";
 import CompanyLogo from "@/components/ui/company-logo";
 import { AccessibilitySettings } from "@/components/accessibility-settings";
-import NotificationDropdown from "@/components/notifications/NotificationDropdown";
+// import NotificationDropdown from "@/components/notifications/NotificationDropdown";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
@@ -138,7 +138,7 @@ export default function Header() {
           <AccessibilitySettings />
           
           {/* Notifications - Real-time system */}
-          <NotificationDropdown />
+          {/* <NotificationDropdown /> */}
           
           {/* User Menu - Professional styling */}
           <DropdownMenu>
