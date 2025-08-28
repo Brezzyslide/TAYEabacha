@@ -115,16 +115,8 @@ export default function IncidentDashboard() {
     queryFn: async () => {
       console.log("[INCIDENT DASHBOARD] Fetching incident reports...");
       try {
-        const response = await apiRequest("GET", "/api/incident-reports");
-        console.log("[INCIDENT DASHBOARD] Response status:", response.status);
-        console.log("[INCIDENT DASHBOARD] Response headers:", Object.fromEntries(response.headers.entries()));
-        
-        if (!response.ok) {
-          console.error("[INCIDENT DASHBOARD] Response not OK:", response.statusText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
+        const data = await apiRequest("GET", "/api/incident-reports");
+        console.log("[INCIDENT DASHBOARD] Response status:", null);
         console.log("[INCIDENT DASHBOARD] Raw response data:", data);
         console.log("[INCIDENT DASHBOARD] Data type:", typeof data);
         console.log("[INCIDENT DASHBOARD] Is array:", Array.isArray(data));
