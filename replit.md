@@ -6,6 +6,12 @@ CareConnect is a comprehensive, multi-tenant healthcare facility management plat
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+**August 28, 2025:**
+- ✅ **ViewIncidentModal Date Bug Fixed**: Resolved "Invalid time value" errors in incident management module by adding safe date formatting helper `formatSafeDate()` and updating property mappings to match API response structure
+- ✅ **TypeScript Interface Updates**: Fixed property access patterns - updated from nested `report` structure to direct property access, corrected field names (`clientFirstName/clientLastName` → `clientName`, `staffFullName` → `reporterName`, `details` → `notes`)
+- ✅ **Authentication & Security Verified**: JWT_SECRET and PASSWORD_PEPPER properly configured, client access restrictions working correctly (SupportWorkers can only see assigned client data)
+
 ## System Architecture
 CareConnect is built with a modern web stack:
 -   **Frontend:** React 18, TypeScript, Tailwind CSS with shadcn/ui for UI, TanStack Query for data, Wouter for routing, and Vite for building.

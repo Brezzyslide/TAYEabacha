@@ -4,28 +4,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertTriangle, Clock, User, MapPin, Phone, FileText, Target, Zap, Users, CheckCircle, ExternalLink, Download } from "lucide-react";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
+// Safe date formatting helper
+const formatSafeDate = (dateString: string | null | undefined, formatStr: string = "PPP 'at' p"): string => {
+  if (!dateString) return "Invalid date";
+  
+  try {
+    const date = new Date(dateString);
+    if (!isValid(date)) return "Invalid date";
+    return format(date, formatStr);
+  } catch (error) {
+    console.warn("Date formatting error:", error, "for date:", dateString);
+    return "Invalid date";
+  }
+};
+
 interface IncidentReport {
-  report: {
-    id: number;
-    incidentId: string;
-    dateTime: string;
-    location: string;
-    witnessName?: string;
-    witnessPhone?: string;
-    types: string[];
-    isNDISReportable: boolean;
-    triggers: Array<{ label: string; notes?: string }>;
-    intensityRating: number;
-    staffResponses: Array<{ label: string; notes?: string }>;
-    description: string;
-    externalRef?: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  };
+  id: number;
+  incidentId: string;
+  dateTime: string;
+  location: string;
+  witnessName?: string;
+  witnessPhone?: string;
+  types: string[];
+  isNDISReportable: boolean;
+  triggers: Array<{ label: string; notes?: string }>;
+  intensityRating: number;
+  staffResponses: Array<{ label: string; notes?: string }>;
+  description: string;
+  externalRef?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  clientName?: string;
+  reporterName?: string;
   closure?: {
     id: number;
     closureDate: string;
@@ -39,17 +53,6 @@ interface IncidentReport {
     followUpDate?: string;
     status: string;
     createdAt: string;
-  };
-  client: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    clientId: string;
-  };
-  staff: {
-    id: number;
-    firstName: string;
-    lastName: string;
   };
 }
 
@@ -179,8 +182,8 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <User className="h-4 w-4" />
                     Client
                   </div>
-                  <p className="font-medium">{incident.clientFirstName} {incident.clientLastName}</p>
-                  <p className="text-sm text-muted-foreground">ID: {incident.clientIdNumber}</p>
+                  <p className="font-medium">{incident.clientName || "Unknown client"}</p>
+                  <p className="text-sm text-muted-foreground">ID: Unknown</p>
                 </div>
                 
                 <div className="space-y-1">
@@ -188,7 +191,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <Users className="h-4 w-4" />
                     Reporting Staff
                   </div>
-                  <p className="font-medium">{incident.staffFullName}</p>
+                  <p className="font-medium">{incident.reporterName || "Unknown staff"}</p>
                 </div>
 
                 <div className="space-y-1">
@@ -196,7 +199,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <Clock className="h-4 w-4" />
                     Date & Time
                   </div>
-                  <p className="font-medium">{format(new Date(incident.dateTime), "PPP 'at' p")}</p>
+                  <p className="font-medium">{formatSafeDate(incident.dateTime)}</p>
                 </div>
 
                 <div className="space-y-1">
@@ -285,10 +288,10 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <div key={index} className="border rounded-lg p-3">
                       <div className="space-y-2">
                         <Badge variant="outline">{trigger.label}</Badge>
-                        {trigger.details && (
+                        {trigger.notes && (
                           <div className="bg-muted/30 p-2 rounded text-sm">
-                            <p className="font-medium text-muted-foreground mb-1">Details:</p>
-                            <p className="whitespace-pre-wrap">{trigger.details}</p>
+                            <p className="font-medium text-muted-foreground mb-1">Notes:</p>
+                            <p className="whitespace-pre-wrap">{trigger.notes}</p>
                           </div>
                         )}
                       </div>
@@ -314,10 +317,10 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <div key={index} className="border rounded-lg p-3">
                       <div className="space-y-2">
                         <Badge variant="outline">{response.label}</Badge>
-                        {response.details && (
+                        {response.notes && (
                           <div className="bg-muted/30 p-2 rounded text-sm">
-                            <p className="font-medium text-muted-foreground mb-1">Details:</p>
-                            <p className="whitespace-pre-wrap">{response.details}</p>
+                            <p className="font-medium text-muted-foreground mb-1">Notes:</p>
+                            <p className="whitespace-pre-wrap">{response.notes}</p>
                           </div>
                         )}
                       </div>
@@ -341,7 +344,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Closure Date</p>
-                    <p className="font-medium">{format(new Date(incident.closure.closureDate), "PPP 'at' p")}</p>
+                    <p className="font-medium">{formatSafeDate(incident.closure.closureDate)}</p>
                   </div>
 
                   <div className="space-y-1">
@@ -352,7 +355,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                   {incident.closure.followUpDate && (
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Follow-up Date</p>
-                      <p className="font-medium">{format(new Date(incident.closure.followUpDate), "PPP")}</p>
+                      <p className="font-medium">{formatSafeDate(incident.closure.followUpDate, "PPP")}</p>
                     </div>
                   )}
 
@@ -455,7 +458,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                   <div className="flex-1">
                     <p className="font-medium">Incident Occurred</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(incident.dateTime), "PPP 'at' p")}
+                      {formatSafeDate(incident.dateTime)}
                     </p>
                   </div>
                 </div>
@@ -465,7 +468,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                   <div className="flex-1">
                     <p className="font-medium">Report Created</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(incident.createdAt), "PPP 'at' p")}
+                      {formatSafeDate(incident.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -476,7 +479,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <div className="flex-1">
                       <p className="font-medium">Report Updated</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(incident.updatedAt), "PPP 'at' p")}
+                        {formatSafeDate(incident.updatedAt)}
                       </p>
                     </div>
                   </div>
@@ -488,7 +491,7 @@ export function ViewIncidentModal({ open, onOpenChange, incident }: ViewIncident
                     <div className="flex-1">
                       <p className="font-medium">Incident Closed</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(incident.closure.closureDate), "PPP 'at' p")}
+                        {formatSafeDate(incident.closure.closureDate)}
                       </p>
                     </div>
                   </div>
