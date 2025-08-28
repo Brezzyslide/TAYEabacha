@@ -45,6 +45,10 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
   const [description, setDescription] = useState(shift.description || "");
   const [showClashWarning, setShowClashWarning] = useState(false);
   
+  // Budget-related fields from shift creation form
+  const [fundingCategory, setFundingCategory] = useState(shift.fundingCategory || "");
+  const [staffRatio, setStaffRatio] = useState(shift.staffRatio || "");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
@@ -78,6 +82,8 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         description,
+        fundingCategory: fundingCategory || undefined,
+        staffRatio: staffRatio || undefined,
         editType, // Include edit type in request
       };
 
@@ -314,6 +320,39 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
               />
+            </div>
+          </div>
+
+          {/* Budget Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">Funding Category</label>
+              <Select value={fundingCategory} onValueChange={setFundingCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select funding category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SIL">SIL (Supported Independent Living)</SelectItem>
+                  <SelectItem value="CommunityAccess">Community Access</SelectItem>
+                  <SelectItem value="CapacityBuilding">Capacity Building</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Staff Ratio</label>
+              <Select value={staffRatio} onValueChange={setStaffRatio}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select staff ratio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1:1">1:1 (1 staff to 1 client)</SelectItem>
+                  <SelectItem value="1:2">1:2 (1 staff to 2 clients)</SelectItem>
+                  <SelectItem value="1:3">1:3 (1 staff to 3 clients)</SelectItem>
+                  <SelectItem value="1:4">1:4 (1 staff to 4 clients)</SelectItem>
+                  <SelectItem value="2:1">2:1 (2 staff to 1 client)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
