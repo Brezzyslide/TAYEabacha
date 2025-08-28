@@ -101,8 +101,7 @@ export default function CreateAllocationModal({
       
       console.log("[CreateAllocationModal] API Request:", { method, url, payload: requestPayload });
       
-      const response = await apiRequest(method, url, requestPayload);
-      const result = await response.json();
+      const result = await apiRequest(method, url, requestPayload);
       
       console.log("[CreateAllocationModal] API Response:", result);
       return result;
