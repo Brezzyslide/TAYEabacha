@@ -6230,7 +6230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/incident-closures", requireAuth, requireRole(["admin", "coordinator", "consolemanager"]), async (req: any, res) => {
+  app.post("/api/incident-closures", requireAuth, requireRole(["Admin", "TeamLeader", "Coordinator", "ConsoleManager"]), async (req: any, res) => {
     try {
       console.log(`[INCIDENT CLOSURE] Processing closure request for incident: ${req.body.incidentId}`);
       
@@ -6276,7 +6276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/incident-closures/:incidentId", requireAuth, requireRole(["admin", "coordinator", "consolemanager"]), async (req: any, res) => {
+  app.put("/api/incident-closures/:incidentId", requireAuth, requireRole(["Admin", "TeamLeader", "Coordinator", "ConsoleManager"]), async (req: any, res) => {
     try {
       const incidentId = req.params.incidentId;
       const tenantId = req.user?.tenantId || 1;
