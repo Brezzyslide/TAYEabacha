@@ -4,6 +4,10 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
+// Verify critical secrets are present and strong
+import { verifySecrets } from './secretsCheck';
+verifySecrets();
+
 // Perform environment sanity check immediately after loading env variables
 import { env, performEnvironmentSanityCheck } from './env';
 
