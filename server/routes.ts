@@ -5917,9 +5917,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdf.setFont('helvetica', 'bold');
           pdf.text(`• ${trigger.label}`, margin, currentY);
           currentY += 6;
-          if (trigger.notes) {
+          if (trigger.details) {
             pdf.setFont('helvetica', 'normal');
-            const noteLines = pdf.splitTextToSize(trigger.notes, contentWidth - 10);
+            const noteLines = pdf.splitTextToSize(trigger.details, contentWidth - 10);
             noteLines.forEach((line: string) => {
               if (currentY + 6 > pageHeight - 30) {
                 pdf.addPage();
@@ -5953,9 +5953,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdf.setFont('helvetica', 'bold');
           pdf.text(`• ${response.label}`, margin, currentY);
           currentY += 6;
-          if (response.notes) {
+          if (response.details) {
             pdf.setFont('helvetica', 'normal');
-            const noteLines = pdf.splitTextToSize(response.notes, contentWidth - 10);
+            const noteLines = pdf.splitTextToSize(response.details, contentWidth - 10);
             noteLines.forEach((line: string) => {
               if (currentY + 6 > pageHeight - 30) {
                 pdf.addPage();
