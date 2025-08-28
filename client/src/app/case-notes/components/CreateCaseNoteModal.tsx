@@ -201,9 +201,7 @@ export default function CreateCaseNoteModal({
     queryKey: ["/api/shifts-by-client-staff", selectedClientId, user?.id],
     queryFn: async () => {
       console.log(`[CASE NOTE] Fetching shifts for client ${selectedClientId}, staff ${user?.id}`);
-      const response = await fetch(`/api/shifts-by-client-staff?clientId=${selectedClientId}&staffId=${user?.id}`);
-      if (!response.ok) throw new Error('Failed to fetch shifts');
-      const shifts = await response.json();
+      const shifts = await apiRequest("GET", `/api/shifts-by-client-staff?clientId=${selectedClientId}&staffId=${user?.id}`);
       console.log(`[CASE NOTE] Received ${shifts.length} shifts:`, shifts);
       return shifts;
     },
@@ -214,9 +212,7 @@ export default function CreateCaseNoteModal({
   const { data: existingCaseNotes = [] } = useQuery<CaseNote[]>({
     queryKey: ["/api/case-notes", { clientId: selectedClientId, staffId: user?.id }],
     queryFn: async () => {
-      const response = await fetch(`/api/case-notes?clientId=${selectedClientId}&staffId=${user?.id}`);
-      if (!response.ok) throw new Error('Failed to fetch case notes');
-      return response.json();
+      return await apiRequest("GET", `/api/case-notes?clientId=${selectedClientId}&staffId=${user?.id}`);
     },
     enabled: !!selectedClientId && !!user?.id,
   });
@@ -458,13 +454,7 @@ export default function CreateCaseNoteModal({
 
   const spellCheckMutation = useMutation({
     mutationFn: async (content: string) => {
-      const response = await fetch("/api/spellcheck-gpt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
-      if (!response.ok) throw new Error('Spell check failed');
-      return response.json();
+      return await apiRequest("POST", "/api/spellcheck-gpt", { content });
     },
     onSuccess: (data: { original: string; corrected: string }) => {
       setSpellCheckResult(data);

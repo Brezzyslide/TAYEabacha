@@ -131,7 +131,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         const seriesId = `series-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
         const promises = shifts.map(async (shift) => {
-          const response = await apiRequest("POST", "/api/shifts", {
+          return await apiRequest("POST", "/api/shifts", {
             ...shift,
             isRecurring: true,
             seriesId: seriesId,
@@ -142,7 +142,6 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
             shiftEndTime: data.shiftEndTime,
             tenantId: user.tenantId,
           });
-          return response.json();
         });
         return Promise.all(promises);
       } else {
@@ -158,8 +157,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
           isRecurring: false,
           tenantId: user.tenantId,
         };
-        const response = await apiRequest("POST", "/api/shifts", shiftData);
-        return response.json();
+        return await apiRequest("POST", "/api/shifts", shiftData);
       }
     },
     onSuccess: async (data) => {

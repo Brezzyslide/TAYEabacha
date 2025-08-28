@@ -110,11 +110,7 @@ export default function RecordAdministrationModal({
   const { data: medicationPlans = [] } = useQuery({
     queryKey: ["/api/clients", clientId, "medication-plans"],
     queryFn: async () => {
-      const response = await fetch(`/api/clients/${clientId}/medication-plans`, {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch medication plans");
-      return response.json();
+      return await apiRequest("GET", `/api/clients/${clientId}/medication-plans`);
     },
     enabled: isOpen && !!clientId,
   });
