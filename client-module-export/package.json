@@ -1,0 +1,47 @@
+{
+  "name": "client-creation-module",
+  "version": "1.0.0",
+  "description": "React TypeScript client creation form for healthcare management systems",
+  "main": "components/CreateClientForm.tsx",
+  "keywords": [
+    "react",
+    "typescript",
+    "form",
+    "healthcare",
+    "client-management",
+    "ndis"
+  ],
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-hook-form": "^7.45.0",
+    "@hookform/resolvers": "^3.1.0",
+    "zod": "^3.21.0",
+    "@tanstack/react-query": "^4.29.0",
+    "date-fns": "^2.30.0",
+    "wouter": "^2.11.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "files": [
+    "components/",
+    "types/",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/client-creation-module.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
+  }
+}
