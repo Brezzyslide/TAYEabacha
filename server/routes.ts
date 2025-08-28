@@ -5884,8 +5884,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pdf.text('Description', margin, currentY);
         currentY += 10;
         
+        // Professional description formatting
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(45, 55, 72); // Dark gray for better readability
         const descriptionLines = pdf.splitTextToSize(incident.description, contentWidth - 10);
         descriptionLines.forEach((line: string) => {
           if (currentY + 6 > pageHeight - 30) {
@@ -5895,6 +5897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pdf.text(line, margin, currentY);
           currentY += 6;
         });
+        pdf.setTextColor(0, 0, 0); // Reset to black
       }
       
       // Triggers Section
@@ -5906,30 +5909,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pdf.text('Triggers', margin, currentY);
         currentY += 10;
         
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
         triggers.forEach((trigger: any) => {
           if (currentY + 20 > pageHeight - 30) {
             pdf.addPage();
             currentY = 30;
           }
           
+          // Bullet point with label - professional formatting
+          pdf.setFontSize(10);
           pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(37, 99, 235); // Professional blue color for labels
           pdf.text(`• ${trigger.label}`, margin, currentY);
-          currentY += 6;
+          currentY += 8;
+          
           if (trigger.details) {
+            // Details with professional styling
             pdf.setFont('helvetica', 'normal');
-            const noteLines = pdf.splitTextToSize(trigger.details, contentWidth - 10);
+            pdf.setFontSize(10);
+            pdf.setTextColor(45, 55, 72); // Dark gray for better readability
+            const noteLines = pdf.splitTextToSize(trigger.details, contentWidth - 20);
             noteLines.forEach((line: string) => {
               if (currentY + 6 > pageHeight - 30) {
                 pdf.addPage();
                 currentY = 30;
               }
-              pdf.text(line, margin + 10, currentY);
+              pdf.text(line, margin + 15, currentY);
               currentY += 6;
             });
           }
-          currentY += 3; // Add spacing between triggers
+          currentY += 8; // Professional spacing between sections
+          pdf.setTextColor(0, 0, 0); // Reset to black for next section
         });
       }
       
@@ -5942,29 +5951,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pdf.text('Staff Responses', margin, currentY);
         currentY += 10;
         
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
         staffResponses.forEach((response: any) => {
           if (currentY + 20 > pageHeight - 30) {
             pdf.addPage();
             currentY = 30;
           }
           
+          // Bullet point with label - professional formatting
+          pdf.setFontSize(10);
           pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(37, 99, 235); // Professional blue color for labels
           pdf.text(`• ${response.label}`, margin, currentY);
-          currentY += 6;
+          currentY += 8;
+          
           if (response.details) {
+            // Details with professional styling
             pdf.setFont('helvetica', 'normal');
-            const noteLines = pdf.splitTextToSize(response.details, contentWidth - 10);
+            pdf.setFontSize(10);
+            pdf.setTextColor(45, 55, 72); // Dark gray for better readability
+            const noteLines = pdf.splitTextToSize(response.details, contentWidth - 20);
             noteLines.forEach((line: string) => {
               if (currentY + 6 > pageHeight - 30) {
                 pdf.addPage();
                 currentY = 30;
               }
-              pdf.text(line, margin + 15, currentY);
+              pdf.text(line, margin + 20, currentY);
               currentY += 6;
             });
           }
+          currentY += 8; // Professional spacing between sections
+          pdf.setTextColor(0, 0, 0); // Reset to black for next section
         });
       }
       

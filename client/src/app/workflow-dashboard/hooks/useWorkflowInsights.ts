@@ -38,9 +38,6 @@ export function useWorkflowInsights() {
     });
 
     // 3. Medications actually due today (based on medication plans, not submitted records)
-    console.log('[MEDICATION ANALYTICS] Medication plans:', medicationPlans);
-    console.log('[MEDICATION ANALYTICS] Medication records:', medicationRecords);
-    
     // Get unique medication plans that have doses due today but not yet administered
     const medicationsDueToday = (medicationPlans as any[]).filter((plan: any) => {
       const todayString = format(today, 'yyyy-MM-dd');
@@ -55,8 +52,6 @@ export function useWorkflowInsights() {
       // A medication is "due" if it's active and has fewer records than expected doses per day
       // For now, assume 1 dose per day if no specific schedule (can be enhanced later)
       const expectedDosesPerDay = 1; // This could be enhanced to read from plan.frequency or similar
-      
-      console.log(`[MEDICATION ANALYTICS] Plan ${plan.id} (${plan.medicationName}): ${recordsToday.length} records today, expected: ${expectedDosesPerDay}`);
       
       return recordsToday.length < expectedDosesPerDay;
     }).length;
