@@ -4015,7 +4015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Individual observation PDF export
+  // Individual observation PDF export with multi-page support
   app.get("/api/observations/:id/pdf", requireAuth, async (req: any, res) => {
     try {
       const observationId = parseInt(req.params.id);
@@ -4039,35 +4039,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pageHeight = 210;
       const margin = 20;
       const contentWidth = pageWidth - (margin * 2);
+      const footerHeight = 20;
+      const headerHeight = 50;
+      const availableHeight = pageHeight - headerHeight - footerHeight;
       
-      // Add centered header (first page only)
-      pdf.setFillColor(37, 99, 235); // Professional blue
-      pdf.rect(margin, 10, contentWidth, 40, 'F');
+      // Function to add header to pages
+      const addHeader = (pageNumber) => {
+        pdf.setFillColor(37, 99, 235); // Professional blue
+        pdf.rect(margin, 10, contentWidth, 40, 'F');
+        
+        // Add accent bar
+        pdf.setFillColor(59, 130, 246);
+        pdf.rect(margin, 10, contentWidth, 8, 'F');
+        
+        // Add company name and title (white text)
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(22);
+        pdf.setFont('helvetica', 'bold');
+        const title = 'Hourly Observation Report';
+        const titleWidth = pdf.getTextWidth(title);
+        pdf.text(title, (pageWidth - titleWidth) / 2, 30);
+        
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'normal');
+        const companyText = companyName;
+        const companyWidth = pdf.getTextWidth(companyText);
+        pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
+        
+        // Page number indicator (only if multiple pages)
+        if (pageNumber > 1) {
+          pdf.setFontSize(10);
+          pdf.text(`Page ${pageNumber}`, pageWidth - margin - 30, 25);
+        }
+        
+        // Reset text color to black for content
+        pdf.setTextColor(0, 0, 0);
+      };
       
-      // Add accent bar
-      pdf.setFillColor(59, 130, 246);
-      pdf.rect(margin, 10, contentWidth, 8, 'F');
+      // Function to add footer to pages
+      const addFooter = (pageNumber, totalPages) => {
+        const footerY = pageHeight - 15;
+        pdf.setFontSize(8);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName}`, margin, footerY);
+        pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - margin - 40, footerY);
+      };
       
-      // Add company name and title (white text)
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(22);
-      pdf.setFont('helvetica', 'bold');
-      const title = 'Hourly Observation Report';
-      const titleWidth = pdf.getTextWidth(title);
-      pdf.text(title, (pageWidth - titleWidth) / 2, 30);
+      // Function to check if we need a new page
+      const checkPageBreak = (requiredSpace) => {
+        if (currentY + requiredSpace > pageHeight - footerHeight) {
+          pdf.addPage();
+          addHeader(pdf.getNumberOfPages());
+          currentY = headerHeight + 20;
+          return true;
+        }
+        return false;
+      };
       
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'normal');
-      const companyText = companyName;
-      const companyWidth = pdf.getTextWidth(companyText);
-      pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
-      
-      // Reset text color to black for content
-      pdf.setTextColor(0, 0, 0);
-      
-      let currentY = 70;
+      // Add first page header
+      addHeader(1);
+      let currentY = headerHeight + 20;
       
       // Observation Information Section
+      checkPageBreak(50);
       pdf.setFillColor(37, 99, 235);
       pdf.rect(margin, currentY, contentWidth, 8, 'F');
       pdf.setTextColor(255, 255, 255);
@@ -4093,16 +4127,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       observationDetails.forEach(([label, value]) => {
+        checkPageBreak(10);
         pdf.setFont('helvetica', 'bold');
         pdf.text(label, margin, currentY);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(value, margin + 50, currentY);
-        currentY += 8;
+        
+        // Handle long text with word wrapping
+        const wrappedText = pdf.splitTextToSize(value, contentWidth - 60);
+        pdf.text(wrappedText, margin + 50, currentY);
+        
+        // Adjust currentY based on wrapped text
+        const lineCount = Array.isArray(wrappedText) ? wrappedText.length : 1;
+        currentY += Math.max(8, lineCount * 5);
       });
       
       // Observation Content
       if (observation.observationType === 'behaviour') {
         // Star Chart Assessment
+        checkPageBreak(60);
         currentY += 10;
         pdf.setFillColor(37, 99, 235);
         pdf.rect(margin, currentY, contentWidth, 8, 'F');
@@ -4122,11 +4164,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         starChartItems.forEach(([label, text, rating]) => {
           if (text) {
+            // Calculate required space for this section
+            const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
+            const splitText = pdf.splitTextToSize(cleanText, contentWidth - 10);
+            const textLines = Array.isArray(splitText) ? splitText.length : 1;
+            const sectionHeight = Math.max(30, 15 + (textLines * 5));
+            
+            // Check if we need a new page
+            checkPageBreak(sectionHeight + 10);
+            
             // Create a section box for each star chart item
             pdf.setFillColor(248, 250, 252); // Light gray background
-            pdf.rect(margin, currentY - 2, contentWidth, 25, 'F');
+            pdf.rect(margin, currentY - 2, contentWidth, sectionHeight, 'F');
             pdf.setDrawColor(229, 231, 235); // Border
-            pdf.rect(margin, currentY - 2, contentWidth, 25, 'S');
+            pdf.rect(margin, currentY - 2, contentWidth, sectionHeight, 'S');
             
             // Label header
             pdf.setFillColor(37, 99, 235);
@@ -4141,22 +4192,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pdf.setFont('helvetica', 'normal');
             pdf.setFontSize(9);
             
-            // Clean and format text
-            const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
-            const splitText = pdf.splitTextToSize(cleanText, contentWidth - 10);
+            // Add text with proper line spacing
             pdf.text(splitText, margin + 3, currentY + 12);
             
             // Rating in bottom right
             pdf.setFont('helvetica', 'bold');
             pdf.setFontSize(8);
-            pdf.text(`★ ${rating}/5`, margin + contentWidth - 30, currentY + 20);
+            pdf.text(`★ ${rating}/5`, margin + contentWidth - 30, currentY + sectionHeight - 5);
             
-            currentY += 30;
+            currentY += sectionHeight + 5;
           }
         });
       } else {
         // ADL Observation
         if (observation.notes) {
+          checkPageBreak(60);
           currentY += 10;
           pdf.setFillColor(37, 99, 235);
           pdf.rect(margin, currentY, contentWidth, 8, 'F');
@@ -4168,16 +4218,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentY += 15;
 
           pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(10);
+          
+          // Split notes with proper wrapping and page breaks
           const splitNotes = pdf.splitTextToSize(observation.notes, contentWidth);
-          pdf.text(splitNotes, margin, currentY);
+          const notesLines = Array.isArray(splitNotes) ? splitNotes : [splitNotes];
+          
+          notesLines.forEach((line, index) => {
+            checkPageBreak(8);
+            pdf.text(line, margin, currentY);
+            currentY += 6;
+          });
         }
       }
 
-      // Add footer on all pages
-      const footerY = pageHeight - 15;
-      pdf.setFontSize(8);
-      pdf.setTextColor(128, 128, 128);
-      pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName}`, margin, footerY);
+      // Add additional sections if there's more content
+      if (observation.createdAt) {
+        checkPageBreak(40);
+        currentY += 15;
+        pdf.setFillColor(37, 99, 235);
+        pdf.rect(margin, currentY, contentWidth, 8, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Additional Information', margin + 5, currentY + 6);
+        pdf.setTextColor(0, 0, 0);
+        currentY += 15;
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Record Created: ${new Date(observation.createdAt).toLocaleString('en-AU')}`, margin, currentY);
+        currentY += 8;
+        
+        if (observation.updatedAt && observation.updatedAt !== observation.createdAt) {
+          pdf.text(`Last Updated: ${new Date(observation.updatedAt).toLocaleString('en-AU')}`, margin, currentY);
+        }
+      }
+
+      // Add footers to all pages
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        addFooter(i, totalPages);
+      }
       
       // Return PDF as binary buffer for proper download
       const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
@@ -4191,7 +4274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk observations PDF export
+  // Bulk observations PDF export with multi-page support
   app.post("/api/observations/export/pdf", requireAuth, async (req: any, res) => {
     try {
       console.log("[OBSERVATIONS PDF EXPORT] Starting bulk PDF export...");
@@ -4230,35 +4313,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pageHeight = 210;
       const margin = 20;
       const contentWidth = pageWidth - (margin * 2);
+      const footerHeight = 20;
+      const headerHeight = 50;
+      const availableHeight = pageHeight - headerHeight - footerHeight;
       
-      // Add centered header (first page only)
-      pdf.setFillColor(37, 99, 235); // Professional blue
-      pdf.rect(margin, 10, contentWidth, 40, 'F');
+      // Function to add header to pages
+      const addHeader = (pageNumber) => {
+        pdf.setFillColor(37, 99, 235); // Professional blue
+        pdf.rect(margin, 10, contentWidth, 40, 'F');
+        
+        // Add accent bar
+        pdf.setFillColor(59, 130, 246);
+        pdf.rect(margin, 10, contentWidth, 8, 'F');
+        
+        // Add company name and title (white text)
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(22);
+        pdf.setFont('helvetica', 'bold');
+        const title = 'Hourly Observations Export';
+        const titleWidth = pdf.getTextWidth(title);
+        pdf.text(title, (pageWidth - titleWidth) / 2, 30);
+        
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'normal');
+        const companyText = companyName;
+        const companyWidth = pdf.getTextWidth(companyText);
+        pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
+        
+        // Page number indicator (only if multiple pages)
+        if (pageNumber > 1) {
+          pdf.setFontSize(10);
+          pdf.text(`Page ${pageNumber}`, pageWidth - margin - 30, 25);
+        }
+        
+        // Reset text color to black for content
+        pdf.setTextColor(0, 0, 0);
+      };
       
-      // Add accent bar
-      pdf.setFillColor(59, 130, 246);
-      pdf.rect(margin, 10, contentWidth, 8, 'F');
+      // Function to add footer to pages
+      const addFooter = (pageNumber, totalPages) => {
+        const footerY = pageHeight - 15;
+        pdf.setFontSize(8);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName}`, margin, footerY);
+        pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - margin - 40, footerY);
+      };
       
-      // Add company name and title (white text)
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(22);
-      pdf.setFont('helvetica', 'bold');
-      const title = 'Hourly Observations Export';
-      const titleWidth = pdf.getTextWidth(title);
-      pdf.text(title, (pageWidth - titleWidth) / 2, 30);
+      // Function to check if we need a new page
+      const checkPageBreak = (requiredSpace) => {
+        if (currentY + requiredSpace > pageHeight - footerHeight) {
+          pdf.addPage();
+          addHeader(pdf.getNumberOfPages());
+          currentY = headerHeight + 20;
+          return true;
+        }
+        return false;
+      };
       
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'normal');
-      const companyText = companyName;
-      const companyWidth = pdf.getTextWidth(companyText);
-      pdf.text(companyText, (pageWidth - companyWidth) / 2, 42);
-      
-      // Reset text color to black for content
-      pdf.setTextColor(0, 0, 0);
-      
-      let currentY = 70;
+      // Add first page header
+      addHeader(1);
+      let currentY = headerHeight + 20;
 
       // Export Summary
+      checkPageBreak(80);
       pdf.setFillColor(37, 99, 235);
       pdf.rect(margin, currentY, contentWidth, 8, 'F');
       pdf.setTextColor(255, 255, 255);
@@ -4285,6 +4402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       summaryDetails.forEach(([label, value]) => {
+        checkPageBreak(10);
         pdf.setFont('helvetica', 'bold');
         pdf.text(label, margin, currentY);
         pdf.setFont('helvetica', 'normal');
@@ -4301,53 +4419,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {});
 
-      // Observations Table
+      // Detailed Observations Section
+      checkPageBreak(50);
       pdf.setFillColor(37, 99, 235);
       pdf.rect(margin, currentY, contentWidth, 8, 'F');
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Observations Details', margin + 5, currentY + 6);
+      pdf.text('Detailed Observations', margin + 5, currentY + 6);
       pdf.setTextColor(0, 0, 0);
-      currentY += 15;
+      currentY += 20;
 
-      // Table headers
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Date/Time', margin, currentY);
-      pdf.text('Client', margin + 45, currentY);
-      pdf.text('Type', margin + 90, currentY);
-      pdf.text('Details', margin + 120, currentY);
-      currentY += 8;
-
-      // Table content
-      pdf.setFont('helvetica', 'normal');
+      // Process each observation with detailed content
       observations.forEach((obs: any, index: number) => {
-        if (currentY > pageHeight - 40) {
-          pdf.addPage();
-          currentY = 30;
-        }
-
         const client = clientMap[obs.clientId];
         const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown';
         
-        pdf.text(new Date(obs.timestamp).toLocaleDateString('en-AU'), margin, currentY);
-        pdf.text(clientName, margin + 45, currentY);
-        pdf.text(obs.observationType, margin + 90, currentY);
+        // Calculate space needed for this observation
+        let estimatedHeight = 50; // Base height
+        if (obs.observationType === 'behaviour') {
+          // Add space for star chart sections
+          if (obs.settings) estimatedHeight += 30;
+          if (obs.time) estimatedHeight += 30;
+          if (obs.antecedents) estimatedHeight += 30;
+          if (obs.response) estimatedHeight += 30;
+        } else if (obs.notes) {
+          // Add space for notes
+          const notesLines = pdf.splitTextToSize(obs.notes, contentWidth - 20);
+          estimatedHeight += (Array.isArray(notesLines) ? notesLines.length : 1) * 6 + 20;
+        }
         
-        // Truncate details for table view
-        const details = obs.notes || obs.settings || 'No details';
-        const truncatedDetails = details.length > 40 ? details.substring(0, 37) + '...' : details;
-        pdf.text(truncatedDetails, margin + 120, currentY);
+        // Check if we need a new page for this observation
+        checkPageBreak(estimatedHeight);
         
-        currentY += 8;
+        // Observation header
+        pdf.setFillColor(248, 250, 252);
+        pdf.rect(margin, currentY - 5, contentWidth, 25, 'F');
+        pdf.setDrawColor(229, 231, 235);
+        pdf.rect(margin, currentY - 5, contentWidth, 25, 'S');
+        
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`Observation #${obs.id} - ${clientName}`, margin + 5, currentY + 5);
+        
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`${new Date(obs.timestamp).toLocaleString('en-AU')} | Type: ${obs.observationType}`, margin + 5, currentY + 12);
+        
+        currentY += 30;
+        
+        // Observation content
+        if (obs.observationType === 'behaviour') {
+          // Star Chart Assessment sections
+          const starChartItems = [
+            ['Settings:', obs.settings, obs.settingsRating],
+            ['Time:', obs.time, obs.timeRating],
+            ['Antecedents:', obs.antecedents, obs.antecedentsRating],
+            ['Response:', obs.response, obs.responseRating]
+          ];
+
+          starChartItems.forEach(([label, text, rating]) => {
+            if (text) {
+              // Calculate required space for this section
+              const cleanText = String(text || '').replace(/\s+/g, ' ').trim();
+              const splitText = pdf.splitTextToSize(cleanText, contentWidth - 20);
+              const textLines = Array.isArray(splitText) ? splitText.length : 1;
+              const sectionHeight = Math.max(25, 15 + (textLines * 5));
+              
+              checkPageBreak(sectionHeight + 10);
+              
+              // Section box
+              pdf.setFillColor(255, 255, 255);
+              pdf.rect(margin + 10, currentY - 2, contentWidth - 20, sectionHeight, 'F');
+              pdf.setDrawColor(229, 231, 235);
+              pdf.rect(margin + 10, currentY - 2, contentWidth - 20, sectionHeight, 'S');
+              
+              // Section header
+              pdf.setFillColor(37, 99, 235);
+              pdf.rect(margin + 10, currentY - 2, contentWidth - 20, 8, 'F');
+              pdf.setTextColor(255, 255, 255);
+              pdf.setFontSize(9);
+              pdf.setFont('helvetica', 'bold');
+              pdf.text(label, margin + 13, currentY + 4);
+              
+              // Content
+              pdf.setTextColor(0, 0, 0);
+              pdf.setFont('helvetica', 'normal');
+              pdf.setFontSize(8);
+              pdf.text(splitText, margin + 13, currentY + 12);
+              
+              // Rating
+              pdf.setFont('helvetica', 'bold');
+              pdf.text(`★ ${rating}/5`, margin + contentWidth - 35, currentY + sectionHeight - 5);
+              
+              currentY += sectionHeight + 5;
+            }
+          });
+        } else if (obs.notes) {
+          // ADL Observation notes
+          checkPageBreak(40);
+          pdf.setFillColor(255, 255, 255);
+          pdf.rect(margin + 10, currentY - 2, contentWidth - 20, 25, 'F');
+          pdf.setDrawColor(229, 231, 235);
+          pdf.rect(margin + 10, currentY - 2, contentWidth - 20, 25, 'S');
+          
+          pdf.setFillColor(37, 99, 235);
+          pdf.rect(margin + 10, currentY - 2, contentWidth - 20, 8, 'F');
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Observation Notes:', margin + 13, currentY + 4);
+          
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(8);
+          
+          const splitNotes = pdf.splitTextToSize(obs.notes, contentWidth - 30);
+          const notesLines = Array.isArray(splitNotes) ? splitNotes : [splitNotes];
+          
+          let noteY = currentY + 12;
+          notesLines.forEach((line) => {
+            checkPageBreak(8);
+            pdf.text(line, margin + 13, noteY);
+            noteY += 5;
+          });
+          
+          currentY = noteY + 10;
+        }
+        
+        currentY += 15; // Space between observations
       });
 
-      // Add footer on all pages
-      const footerY = pageHeight - 15;
-      pdf.setFontSize(8);
-      pdf.setTextColor(128, 128, 128);
-      pdf.text(`Generated on ${new Date().toLocaleDateString('en-AU')} | ${companyName} | Page ${pdf.internal.getNumberOfPages()}`, margin, footerY);
+      // Add footers to all pages
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        addFooter(i, totalPages);
+      }
       
       console.log("[OBSERVATIONS PDF EXPORT] Generating PDF output...");
       const pdfOutput = pdf.output('datauristring');
