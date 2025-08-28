@@ -92,10 +92,7 @@ export function CreateIncidentModal({ open, onOpenChange, onSuccess, defaultClie
 
   const { data: clients = [] } = useQuery({
     queryKey: ["/api/clients"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/clients");
-      return await response.json();
-    },
+    queryFn: () => apiRequest("GET", "/api/clients"),
   });
 
   const createIncidentMutation = useMutation({
