@@ -7928,58 +7928,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check for time clashes when assigning users to shifts
   app.post("/api/shifts/check-clash", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const { userId, startTime, endTime, excludeShiftId } = req.body;
+      const { userId, clientId, startTime, endTime, excludeShiftId, checkStaff = true, checkClient = true } = req.body;
       
-      console.log(`[TIME CLASH CHECK] Checking for clashes - User: ${userId}, Time: ${startTime} to ${endTime}`);
+      console.log(`[TIME CLASH CHECK] Checking for clashes - User: ${userId}, Client: ${clientId}, Time: ${startTime} to ${endTime}`);
+      console.log(`[TIME CLASH CHECK] Check flags - Staff: ${checkStaff}, Client: ${checkClient}`);
       
-      if (!userId || !startTime || !endTime) {
-        return res.status(400).json({ message: "Missing required parameters" });
+      if (!startTime || !endTime) {
+        return res.status(400).json({ message: "Missing required time parameters" });
+      }
+      
+      if (!checkStaff && !checkClient) {
+        return res.status(400).json({ message: "Must check at least staff or client conflicts" });
       }
       
       // Convert string dates to Date objects
       const shiftStart = new Date(startTime);
       const shiftEnd = new Date(endTime);
       
-      // Get all shifts for the user in the same tenant
-      const userShifts = await storage.getShiftsByUser(userId, req.user.tenantId);
+      let staffClashes = [];
+      let clientClashes = [];
       
-      // Filter for overlapping shifts (excluding the current shift being edited)
-      const overlappingShifts = userShifts.filter(shift => {
-        if (excludeShiftId && shift.id === excludeShiftId) return false;
-        if (!shift.startTime || !shift.endTime) return false;
-        if (shift.status === 'cancelled' || shift.status === 'completed') return false;
+      // Check for staff conflicts
+      if (checkStaff && userId) {
+        console.log(`[TIME CLASH CHECK] Checking staff conflicts for user ${userId}`);
+        const userShifts = await storage.getShiftsByUser(userId, req.user.tenantId);
         
-        const existingStart = new Date(shift.startTime);
-        const existingEnd = new Date(shift.endTime);
+        const overlappingUserShifts = userShifts.filter(shift => {
+          if (excludeShiftId && shift.id === excludeShiftId) return false;
+          if (!shift.startTime || !shift.endTime) return false;
+          if (shift.status === 'cancelled' || shift.status === 'completed') return false;
+          
+          const existingStart = new Date(shift.startTime);
+          const existingEnd = new Date(shift.endTime);
+          
+          // Check for any overlap
+          return (shiftStart < existingEnd && shiftEnd > existingStart);
+        });
         
-        // Check for any overlap
-        return (shiftStart < existingEnd && shiftEnd > existingStart);
-      });
-      
-      console.log(`[TIME CLASH CHECK] Found ${overlappingShifts.length} overlapping shifts`);
-      
-      if (overlappingShifts.length > 0) {
-        const clashDetails = overlappingShifts.map(shift => ({
+        // Get staff name for better messaging
+        const staff = await storage.getUser(userId);
+        const staffName = staff ? `${staff.firstName || ''} ${staff.lastName || ''}`.trim() : 'Staff member';
+        
+        staffClashes = overlappingUserShifts.map(shift => ({
           id: shift.id,
-          title: shift.title,
+          title: shift.title || 'Shift',
           startTime: shift.startTime,
           endTime: shift.endTime,
-          status: shift.status
+          status: shift.status,
+          staffName,
+          conflictType: 'staff'
         }));
         
-        console.log(`[TIME CLASH CHECK] Clash details:`, clashDetails);
-        
-        return res.json({
-          hasClash: true,
-          message: `User has ${overlappingShifts.length} overlapping shift${overlappingShifts.length > 1 ? 's' : ''}`,
-          clashes: clashDetails
-        });
+        console.log(`[TIME CLASH CHECK] Found ${staffClashes.length} staff conflicts`);
       }
       
-      res.json({ hasClash: false, message: "No time clashes found" });
-    } catch (error: any) {
+      // Check for client conflicts
+      if (checkClient && clientId) {
+        console.log(`[TIME CLASH CHECK] Checking client conflicts for client ${clientId}`);
+        const clientShifts = await storage.getShiftsByClient(clientId, req.user.tenantId);
+        
+        const overlappingClientShifts = clientShifts.filter(shift => {
+          if (excludeShiftId && shift.id === excludeShiftId) return false;
+          if (!shift.startTime || !shift.endTime) return false;
+          if (shift.status === 'cancelled' || shift.status === 'completed') return false;
+          
+          const existingStart = new Date(shift.startTime);
+          const existingEnd = new Date(shift.endTime);
+          
+          // Check for any overlap
+          return (shiftStart < existingEnd && shiftEnd > existingStart);
+        });
+        
+        // Get client name for better messaging
+        const client = await storage.getClient(clientId, req.user.tenantId);
+        const clientName = client ? `${client.firstName || ''} ${client.lastName || ''}`.trim() : 'Client';
+        
+        clientClashes = overlappingClientShifts.map(shift => ({
+          id: shift.id,
+          title: shift.title || 'Shift',
+          startTime: shift.startTime,
+          endTime: shift.endTime,
+          status: shift.status,
+          clientName,
+          conflictType: 'client'
+        }));
+        
+        console.log(`[TIME CLASH CHECK] Found ${clientClashes.length} client conflicts`);
+      }
+      
+      const totalConflicts = staffClashes.length + clientClashes.length;
+      const hasClash = totalConflicts > 0;
+      
+      let message = "No time conflicts found";
+      if (hasClash) {
+        const conflictMessages = [];
+        if (staffClashes.length > 0) {
+          conflictMessages.push(`${staffClashes.length} staff conflict(s)`);
+        }
+        if (clientClashes.length > 0) {
+          conflictMessages.push(`${clientClashes.length} client conflict(s)`);
+        }
+        message = `Found ${conflictMessages.join(' and ')}`;
+      }
+      
+      res.json({
+        hasClash,
+        message,
+        staffClashes,
+        clientClashes,
+        totalConflicts
+      });
+    } catch (error) {
       console.error("[TIME CLASH CHECK] Error:", error);
-      res.status(500).json({ message: "Failed to check for time clashes", error: error.message });
+      res.status(500).json({ message: "Failed to check time conflicts" });
     }
   });
 

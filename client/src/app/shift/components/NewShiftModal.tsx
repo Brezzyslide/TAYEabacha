@@ -393,7 +393,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   };
 
   const checkForTimeClashes = async (data: ShiftFormData) => {
-    if (!data.userId) return false; // No user assigned, no clash to check
+    if (!data.userId && !data.clientId) return false; // No user or client assigned, no clash to check
     
     let startTime: Date, endTime: Date;
     
@@ -418,32 +418,47 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       endTime = data.endDateTime;
     }
     
+    console.log('[TIME CLASH] Checking conflicts for:', {
+      userId: data.userId,
+      clientId: data.clientId,
+      checkStaff: !!data.userId,
+      checkClient: !!data.clientId,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString()
+    });
+    
     checkTimeClash({
       userId: data.userId,
+      clientId: data.clientId,
       startTime,
-      endTime
+      endTime,
+      checkStaff: !!data.userId,
+      checkClient: !!data.clientId,
     });
   };
 
   const onSubmit = async (data: ShiftFormData) => {
-    // Check for time clashes first if user is assigned and we haven't shown warning yet
-    if (data.userId && !showClashWarning) {
+    // Check for time clashes first if user or client is assigned and we haven't shown warning yet
+    if ((data.userId || data.clientId) && !showClashWarning) {
       await checkForTimeClashes(data);
       
       // Check the result after a short delay to allow the mutation to complete
       setTimeout(() => {
         if (clashResult?.hasClash) {
+          console.log('[SHIFT FORM] Conflicts detected, showing warning:', clashResult);
           setShowClashWarning(true);
           return;
         } else {
           // No clash, proceed with creation
+          console.log('[SHIFT FORM] No conflicts, proceeding with creation');
           createShiftMutation.mutate(data);
         }
       }, 500);
       return;
     }
     
-    // Either no user assigned, warning already shown, or user chose to proceed
+    // Either no user/client assigned, warning already shown, or user chose to proceed
+    console.log('[SHIFT FORM] Submitting without clash check or after warning approval');
     createShiftMutation.mutate(data);
     setShowClashWarning(false); // Reset warning state
   };
@@ -1144,8 +1159,11 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
             {/* Time Clash Warning */}
             {showClashWarning && clashResult?.hasClash && (
               <TimeClashWarning
-                clashes={clashResult.clashes || []}
+                staffClashes={clashResult.staffClashes || []}
+                clientClashes={clashResult.clientClashes || []}
+                clashes={clashResult.clashes || []} // Legacy support
                 userName={users?.find((u: any) => u.id === form.getValues('userId'))?.username}
+                clientName={clients?.find((c: any) => c.id === form.getValues('clientId'))?.fullName}
                 onProceed={handleProceedWithClash}
                 onCancel={handleCancelDueToClash}
                 showActions={true}
