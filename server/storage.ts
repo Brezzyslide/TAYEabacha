@@ -720,6 +720,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(shifts.startTime));
   }
 
+  async getShiftsByClient(clientId: number, tenantId: number): Promise<Shift[]> {
+    return await db.select().from(shifts)
+      .where(and(eq(shifts.clientId, clientId), eq(shifts.tenantId, tenantId)))
+      .orderBy(desc(shifts.startTime));
+  }
+
   async getShiftsBySeries(seriesId: string, tenantId: number): Promise<Shift[]> {
     return await db.select().from(shifts)
       .where(and(
