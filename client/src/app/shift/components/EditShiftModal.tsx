@@ -140,9 +140,11 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
         method: "DELETE",
       });
       if (!response.ok) {
-        throw new Error("Failed to delete shift");
+        const errorData = await response.json().catch(() => ({ message: "Failed to delete shift" }));
+        throw new Error(errorData.message || "Failed to delete shift");
       }
-      return response.json();
+      // DELETE returns 204 No Content, don't try to parse JSON
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
@@ -226,6 +228,8 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
   };
 
   const handleDelete = () => {
+    if (deleteShiftMutation.isPending) return; // Prevent double-clicks
+    
     if (confirm("Are you sure you want to delete this shift? This action cannot be undone.")) {
       deleteShiftMutation.mutate();
     }
