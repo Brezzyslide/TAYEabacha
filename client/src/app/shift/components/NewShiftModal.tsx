@@ -219,19 +219,13 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
 
   // Watch for clash result changes and handle accordingly
   useEffect(() => {
-    console.log('[NEW SHIFT DEBUG] useEffect triggered:', { 
-      clashResult: clashResult?.hasClash, 
-      preservedFormDataKeys: Object.keys(preservedFormData).length,
-      showClashWarning
-    });
-    
     if (clashResult !== null && Object.keys(preservedFormData).length > 0) {
       console.log('[SHIFT FORM] Clash result updated:', clashResult);
       if (clashResult.hasClash) {
         console.log('[SHIFT FORM] Conflicts detected, showing warning');
         setShowClashWarning(true);
       } else {
-        console.log('[SHIFT FORM] No conflicts detected (or clash detection unavailable), proceeding with creation');
+        console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
         createShiftMutation.mutate(preservedFormData);
         setPreservedFormData({});
       }
@@ -461,7 +455,6 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     });
     
     // Store form data for potential use after clash check
-    console.log('[NEW SHIFT DEBUG] Preserving form data:', data);
     setPreservedFormData(data);
     
     checkTimeClash({
