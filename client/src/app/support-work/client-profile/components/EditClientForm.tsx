@@ -21,6 +21,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
+// Updated calendar component to match CreateClientForm style
 export default function EditClientForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
