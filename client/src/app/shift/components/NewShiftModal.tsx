@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -88,6 +88,21 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
+
+  // Watch for clash result changes and handle accordingly
+  useEffect(() => {
+    if (clashResult !== null && Object.keys(preservedFormData).length > 0) {
+      console.log('[SHIFT FORM] Clash result updated:', clashResult);
+      if (clashResult.hasClash) {
+        console.log('[SHIFT FORM] Conflicts detected, showing warning');
+        setShowClashWarning(true);
+      } else {
+        console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
+        createShiftMutation.mutate(preservedFormData);
+        setPreservedFormData({});
+      }
+    }
+  }, [clashResult, preservedFormData, createShiftMutation]);
 
   const form = useForm<ShiftFormData>({
     resolver: zodResolver(shiftFormSchema),
@@ -393,12 +408,20 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   };
 
   const checkForTimeClashes = async (data: ShiftFormData) => {
-    if (!data.userId && !data.clientId) return false; // No user or client assigned, no clash to check
+    if (!data.userId && !data.clientId) {
+      console.log('[TIME CLASH] No user or client assigned, proceeding directly');
+      createShiftMutation.mutate(data);
+      return;
+    }
     
     let startTime: Date, endTime: Date;
     
     if (data.isRecurring) {
-      if (!data.shiftStartDate || !data.shiftStartTime || !data.shiftEndTime) return false;
+      if (!data.shiftStartDate || !data.shiftStartTime || !data.shiftEndTime) {
+        console.log('[TIME CLASH] Missing recurring shift time data, proceeding directly');
+        createShiftMutation.mutate(data);
+        return;
+      }
       
       const startDate = new Date(data.shiftStartDate);
       const [startHours, startMinutes] = data.shiftStartTime.split(':').map(Number);
@@ -413,7 +436,11 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       }
       endTime.setHours(endHours, endMinutes, 0, 0);
     } else {
-      if (!data.startDateTime || !data.endDateTime) return false;
+      if (!data.startDateTime || !data.endDateTime) {
+        console.log('[TIME CLASH] Missing single shift time data, proceeding directly');
+        createShiftMutation.mutate(data);
+        return;
+      }
       startTime = data.startDateTime;
       endTime = data.endDateTime;
     }
@@ -426,6 +453,9 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString()
     });
+    
+    // Store form data for potential use after clash check
+    setPreservedFormData(data);
     
     checkTimeClash({
       userId: data.userId,
@@ -440,21 +470,9 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const onSubmit = async (data: ShiftFormData) => {
     // Check for time clashes first if user or client is assigned and we haven't shown warning yet
     if ((data.userId || data.clientId) && !showClashWarning) {
+      console.log('[SHIFT FORM] Starting clash check process');
       await checkForTimeClashes(data);
-      
-      // Check the result after a short delay to allow the mutation to complete
-      setTimeout(() => {
-        if (clashResult?.hasClash) {
-          console.log('[SHIFT FORM] Conflicts detected, showing warning:', clashResult);
-          setShowClashWarning(true);
-          return;
-        } else {
-          // No clash, proceed with creation
-          console.log('[SHIFT FORM] No conflicts, proceeding with creation');
-          createShiftMutation.mutate(data);
-        }
-      }, 500);
-      return;
+      return; // Let the checkTimeClash mutation handle the next steps
     }
     
     // Either no user/client assigned, warning already shown, or user chose to proceed
@@ -1162,8 +1180,8 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
                 staffClashes={clashResult.staffClashes || []}
                 clientClashes={clashResult.clientClashes || []}
                 clashes={clashResult.clashes || []} // Legacy support
-                userName={users?.find((u: any) => u.id === form.getValues('userId'))?.username}
-                clientName={clients?.find((c: any) => c.id === form.getValues('clientId'))?.fullName}
+                userName={(users as any[])?.find((u: any) => u.id === form.getValues('userId'))?.username}
+                clientName={(clients as any[])?.find((c: any) => c.id === form.getValues('clientId'))?.fullName}
                 onProceed={handleProceedWithClash}
                 onCancel={handleCancelDueToClash}
                 showActions={true}

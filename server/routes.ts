@@ -7926,7 +7926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check for time clashes when assigning users to shifts
-  app.post("/api/shifts/check-clash", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+  app.post("/api/shifts/check-clash", requireAuth, async (req: any, res) => {
     try {
       const { userId, clientId, startTime, endTime, excludeShiftId, checkStaff = true, checkClient = true } = req.body;
       

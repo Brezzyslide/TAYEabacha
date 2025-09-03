@@ -16,6 +16,7 @@ interface TimeClash {
 interface TimeClashResult {
   hasClash: boolean;
   message: string;
+  clashes?: TimeClash[]; // Legacy support
   staffClashes?: TimeClash[];
   clientClashes?: TimeClash[];
   totalConflicts?: number;
@@ -37,7 +38,7 @@ export function useTimeClashCheck() {
   const checkTimeClash = useMutation({
     mutationFn: async (params: TimeClashCheckParams): Promise<TimeClashResult> => {
       console.log('[TIME CLASH] Checking for conflicts:', params);
-      return await apiRequest('POST', '/api/shifts/check-clash', {
+      const result = await apiRequest('POST', '/api/shifts/check-clash', {
         userId: params.userId,
         clientId: params.clientId,
         startTime: typeof params.startTime === 'string' ? params.startTime : params.startTime.toISOString(),
@@ -46,8 +47,11 @@ export function useTimeClashCheck() {
         checkStaff: params.checkStaff ?? true,
         checkClient: params.checkClient ?? true,
       });
+      console.log('[TIME CLASH] API Response:', result);
+      return result;
     },
     onSuccess: (result) => {
+      console.log('[TIME CLASH] Mutation success, setting result:', result);
       setClashResult(result);
     },
     onError: (error) => {
