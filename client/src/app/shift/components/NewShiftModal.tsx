@@ -225,7 +225,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         console.log('[SHIFT FORM] Conflicts detected, showing warning');
         setShowClashWarning(true);
       } else {
-        console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
+        console.log('[SHIFT FORM] No conflicts detected (or clash detection unavailable), proceeding with creation');
         createShiftMutation.mutate(preservedFormData);
         setPreservedFormData({});
       }
