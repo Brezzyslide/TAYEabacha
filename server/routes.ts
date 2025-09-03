@@ -6972,9 +6972,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       };
       
+      console.log("NDIS Pricing creation request:", pricingData);
       const pricing = await storage.createNdisPricing(pricingData);
+      console.log("NDIS Pricing created successfully:", pricing);
       res.json(pricing);
     } catch (error: any) {
+      console.error("NDIS Pricing creation error:", error);
+      console.error("Failed pricing data:", req.body);
       res.status(500).json({ message: "Failed to create NDIS pricing", error: error.message });
     }
   });
