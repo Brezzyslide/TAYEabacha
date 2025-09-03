@@ -6979,6 +6979,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/ndis-pricing/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const pricingId = parseInt(req.params.id);
+      const pricing = await storage.updateNdisPricing(pricingId, req.body, req.user.tenantId);
+      
+      if (!pricing) {
+        return res.status(404).json({ message: "NDIS pricing not found" });
+      }
+      
+      res.json(pricing);
+    } catch (error: any) {
+      console.error("NDIS Pricing update error:", error);
+      res.status(500).json({ message: "Failed to update NDIS pricing", error: error.message });
+    }
+  });
+
   // NDIS Budget endpoints - TeamLeader+ can view, Admin+ can edit
   app.get("/api/ndis-budgets", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
