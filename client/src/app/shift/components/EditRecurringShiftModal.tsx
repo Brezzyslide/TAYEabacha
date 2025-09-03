@@ -180,6 +180,58 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
     },
   });
 
+  // Delete recurring shifts mutation
+  const deleteRecurringShiftMutation = useMutation({
+    mutationFn: async (deleteType: "future" | "series") => {
+      console.log(`[RECURRING DELETE] Deleting ${deleteType} shifts for series:`, shift.seriesId);
+      
+      // Use the series endpoint with delete action
+      return await apiRequest("DELETE", `/api/shifts/series/${shift.seriesId}`, {
+        deleteType: deleteType, // "future" or "series"
+        fromShiftId: deleteType === "future" ? shift.id : undefined
+      });
+    },
+    onSuccess: (data, deleteType) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      const deletedCount = Array.isArray(data) ? data.length : (typeof data === 'object' && data && 'deleted' in data) ? data.deleted : 0;
+      toast({
+        title: "Shifts Deleted",
+        description: deleteType === "series" 
+          ? `Successfully deleted entire recurring shift series (${deletedCount} shifts).`
+          : `Successfully deleted future recurring shifts (${deletedCount} shifts).`,
+      });
+      onClose();
+    },
+    onError: (error: Error) => {
+      console.error("[RECURRING DELETE ERROR] Full error:", error);
+      toast({
+        title: "Failed to Delete Shifts",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteFuture = () => {
+    if (deleteRecurringShiftMutation.isPending) return;
+    
+    const message = editType === "future" 
+      ? "Are you sure you want to delete all future shifts in this series? This action cannot be undone."
+      : "Are you sure you want to delete this shift and all future shifts in the series? This action cannot be undone.";
+      
+    if (confirm(message)) {
+      deleteRecurringShiftMutation.mutate("future");
+    }
+  };
+
+  const handleDeleteSeries = () => {
+    if (deleteRecurringShiftMutation.isPending) return;
+    
+    if (confirm("Are you sure you want to delete the entire recurring shift series? This will delete ALL shifts in the series and cannot be undone.")) {
+      deleteRecurringShiftMutation.mutate("series");
+    }
+  };
+
   const generateRecurringShifts = (data: RecurringShiftFormData): any[] => {
     const shifts: any[] = [];
     
@@ -635,20 +687,64 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={updateRecurringShiftMutation.isPending || selectedWeekdays.length === 0}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {updateRecurringShiftMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Update Recurring Shifts
-              </Button>
+            <div className="flex flex-col gap-4">
+              {/* Delete Options */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-red-800 mb-3">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="font-medium">Delete Options</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeleteFuture}
+                    disabled={deleteRecurringShiftMutation.isPending}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    {deleteRecurringShiftMutation.isPending && deleteRecurringShiftMutation.variables === "future" && (
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    )}
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Delete Future Shifts
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeleteSeries}
+                    disabled={deleteRecurringShiftMutation.isPending}
+                  >
+                    {deleteRecurringShiftMutation.isPending && deleteRecurringShiftMutation.variables === "series" && (
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    )}
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Delete Entire Series
+                  </Button>
+                </div>
+                <p className="text-red-600 text-xs mt-2">
+                  <strong>Delete Future:</strong> Removes this shift and all future shifts in the series. 
+                  <strong>Delete Series:</strong> Removes ALL shifts in this recurring series.
+                </p>
+              </div>
+
+              {/* Main Action Buttons */}
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateRecurringShiftMutation.isPending || selectedWeekdays.length === 0 || deleteRecurringShiftMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {updateRecurringShiftMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Update Recurring Shifts
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

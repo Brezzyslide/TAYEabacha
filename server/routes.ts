@@ -2133,6 +2133,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete recurring shift series or future shifts
+  app.delete("/api/shifts/series/:seriesId", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
+    console.log("[SERIES DELETE] Starting recurring shift series deletion");
+    
+    try {
+      const seriesId = req.params.seriesId;
+      const { deleteType, fromShiftId } = req.body;
+      
+      console.log(`[SERIES DELETE] User ${req.user.id} (${req.user.role}) deleting ${deleteType} for series ${seriesId}`);
+      console.log(`[SERIES DELETE] FromShiftId: ${fromShiftId}`);
+      
+      // Get all shifts in the series
+      const seriesShifts = await storage.getShiftsBySeries(seriesId, req.user.tenantId);
+      
+      if (!seriesShifts || seriesShifts.length === 0) {
+        console.log(`[SERIES DELETE] No shifts found for series ${seriesId}`);
+        return res.status(404).json({ message: "Shift series not found" });
+      }
+      
+      console.log(`[SERIES DELETE] Found ${seriesShifts.length} shifts in series`);
+      
+      // Determine which shifts to delete
+      let shiftsToDelete = seriesShifts;
+      
+      if (deleteType === "future" && fromShiftId) {
+        // Get the fromShift to get its date
+        const fromShift = seriesShifts.find(s => s.id === fromShiftId);
+        if (fromShift && fromShift.startTime) {
+          const cutoffDate = new Date(fromShift.startTime);
+          // Include the clicked shift and all future shifts 
+          shiftsToDelete = seriesShifts.filter(shift => {
+            if (!shift.startTime) return false;
+            const shiftDate = new Date(shift.startTime);
+            return shiftDate >= cutoffDate;
+          });
+          console.log(`[SERIES DELETE] Deleting ${shiftsToDelete.length} future shifts from ${cutoffDate}`);
+        }
+      } else {
+        console.log(`[SERIES DELETE] Deleting entire series (${shiftsToDelete.length} shifts)`);
+      }
+      
+      const deletedShifts = [];
+      
+      // Delete each shift
+      for (const shift of shiftsToDelete) {
+        try {
+          console.log(`[SERIES DELETE] Deleting shift ${shift.id}`);
+          const deleted = await storage.deleteShift(shift.id, req.user.tenantId);
+          if (deleted) {
+            deletedShifts.push(shift.id);
+          }
+        } catch (shiftError) {
+          console.error(`[SERIES DELETE] Failed to delete shift ${shift.id}:`, shiftError);
+          // Continue with other shifts even if one fails
+        }
+      }
+      
+      console.log(`[SERIES DELETE] Successfully deleted ${deletedShifts.length} shifts`);
+      
+      // Log activity for deletion
+      if (deletedShifts.length > 0) {
+        const deleteTypeDescription = deleteType === "future" ? "future shifts" : "entire series";
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: deleteType === "future" ? "delete_future_shifts" : "delete_shift_series",
+          resourceType: "shift",
+          resourceId: deletedShifts[0],
+          description: `Deleted recurring shift ${deleteTypeDescription} "${seriesId}" (${deletedShifts.length} shifts)`,
+          tenantId: req.user.tenantId,
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        deleted: deletedShifts.length, 
+        shiftIds: deletedShifts
+      });
+      
+    } catch (error) {
+      console.error("[SERIES DELETE] Error deleting shift series:", error);
+      console.error("[SERIES DELETE] Error stack:", error.stack);
+      res.status(500).json({ 
+        message: "Failed to delete recurring shifts", 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // Approve shift request
   app.post("/api/shifts/:id/approve", requireAuth, requireRole(["Admin", "Coordinator"]), async (req: any, res) => {
     try {
