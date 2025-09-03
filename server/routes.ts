@@ -6995,6 +6995,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/ndis-pricing/:id", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const pricingId = parseInt(req.params.id);
+      const success = await storage.deleteNdisPricing(pricingId, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "NDIS pricing not found" });
+      }
+      
+      res.json({ message: "NDIS pricing deleted successfully" });
+    } catch (error: any) {
+      console.error("NDIS Pricing delete error:", error);
+      res.status(500).json({ message: "Failed to delete NDIS pricing", error: error.message });
+    }
+  });
+
   // NDIS Budget endpoints - TeamLeader+ can view, Admin+ can edit
   app.get("/api/ndis-budgets", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
