@@ -191,6 +191,24 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
     const endDateTime = new Date(selectedDate);
     endDateTime.setHours(parseInt(endHours), parseInt(endMinutes));
     
+    console.log('[EDIT CLASH DEBUG] Form times:', { startTime, endTime });
+    console.log('[EDIT CLASH DEBUG] Calculated times:', { 
+      start: startDateTime.toISOString(), 
+      end: endDateTime.toISOString() 
+    });
+    
+    // Validate that end time is after start time
+    if (endDateTime <= startDateTime) {
+      console.log('[EDIT CLASH DEBUG] Invalid time range - end time must be after start time');
+      toast({
+        title: "Invalid Time Range",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      });
+      setPendingSubmit(false);
+      return false;
+    }
+    
     checkTimeClash({
       userId: parseInt(userId),
       startTime: startDateTime,
