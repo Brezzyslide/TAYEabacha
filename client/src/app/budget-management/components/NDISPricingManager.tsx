@@ -138,7 +138,7 @@ export default function NDISPricingManager() {
   };
 
   // Auto-populate pricing ratios based on 1:1 rate
-  const autoPopulatePricing = (baseRate: number, shiftType: string) => {
+  const autoPopulatePricing = async (baseRate: number, shiftType: string) => {
     const ratioMultipliers = {
       "1:2": 0.50, // Half price for 1 staff : 2 clients
       "1:3": 0.33, // One-third price for 1 staff : 3 clients  
@@ -155,22 +155,37 @@ export default function NDISPricingManager() {
       };
     });
 
-    // Create all ratio pricing entries
-    mutations.forEach(async (pricingData) => {
-      try {
-        await apiRequest("POST", "/api/ndis-pricing", pricingData);
-      } catch (error) {
-        console.error(`Failed to create ${pricingData.ratio} pricing:`, error);
-      }
-    });
+    try {
+      // Create all ratio pricing entries in parallel and wait for all to complete
+      await Promise.all(
+        mutations.map(async (pricingData) => {
+          try {
+            console.log(`Creating ${pricingData.ratio} pricing:`, pricingData);
+            const result = await apiRequest("POST", "/api/ndis-pricing", pricingData);
+            console.log(`Successfully created ${pricingData.ratio} pricing:`, result);
+            return result;
+          } catch (error) {
+            console.error(`Failed to create ${pricingData.ratio} pricing:`, error);
+            throw error;
+          }
+        })
+      );
 
-    // Refresh the pricing data
-    queryClient.invalidateQueries({ queryKey: ["/api/ndis-pricing"] });
-    
-    toast({
-      title: "Auto-populated pricing ratios",
-      description: `Created pricing for all ratios based on 1:1 rate of $${baseRate}`,
-    });
+      // Refresh the pricing data after all entries are created
+      queryClient.invalidateQueries({ queryKey: ["/api/ndis-pricing"] });
+      
+      toast({
+        title: "Auto-populated pricing ratios",
+        description: `Created pricing for all ratios based on 1:1 rate of $${baseRate}`,
+      });
+    } catch (error) {
+      console.error("Failed to auto-populate pricing:", error);
+      toast({
+        title: "Error auto-populating pricing",
+        description: "Some pricing ratios could not be created. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Group pricing data by shift type and ratio for better organization
