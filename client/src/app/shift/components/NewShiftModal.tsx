@@ -89,21 +89,6 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const queryClient = useQueryClient();
   const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
 
-  // Watch for clash result changes and handle accordingly
-  useEffect(() => {
-    if (clashResult !== null && Object.keys(preservedFormData).length > 0) {
-      console.log('[SHIFT FORM] Clash result updated:', clashResult);
-      if (clashResult.hasClash) {
-        console.log('[SHIFT FORM] Conflicts detected, showing warning');
-        setShowClashWarning(true);
-      } else {
-        console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
-        createShiftMutation.mutate(preservedFormData);
-        setPreservedFormData({});
-      }
-    }
-  }, [clashResult, preservedFormData, createShiftMutation]);
-
   const form = useForm<ShiftFormData>({
     resolver: zodResolver(shiftFormSchema),
     defaultValues: {
@@ -231,6 +216,21 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       });
     },
   });
+
+  // Watch for clash result changes and handle accordingly
+  useEffect(() => {
+    if (clashResult !== null && Object.keys(preservedFormData).length > 0) {
+      console.log('[SHIFT FORM] Clash result updated:', clashResult);
+      if (clashResult.hasClash) {
+        console.log('[SHIFT FORM] Conflicts detected, showing warning');
+        setShowClashWarning(true);
+      } else {
+        console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
+        createShiftMutation.mutate(preservedFormData);
+        setPreservedFormData({});
+      }
+    }
+  }, [clashResult, preservedFormData, createShiftMutation]);
 
   const generateRecurringShifts = (data: ShiftFormData): any[] => {
     const shifts: any[] = [];
