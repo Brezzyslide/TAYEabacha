@@ -420,35 +420,7 @@ export default function IncidentDashboard() {
         </div>
       </div>
 
-      {/* Debug Information for Production Issues */}
-      {incidents.length === 0 && !isLoading && !error && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <CardTitle className="text-yellow-800">Debug Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-yellow-700">No incidents found. This could indicate:</p>
-            <ul className="text-sm text-yellow-600 list-disc list-inside space-y-1">
-              <li>No incidents have been created yet</li>
-              <li>Data fetch successful but returned empty array</li>
-              <li>Environment-specific filtering issue (AWS vs Replit)</li>
-              <li>Database connectivity or tenant isolation issue</li>
-              <li>Cache invalidation problem in production</li>
-            </ul>
-            <div className="text-xs text-yellow-600 mt-2 p-2 bg-yellow-100 rounded">
-              <strong>Environment:</strong> {window.location.hostname.includes('replit') ? 'Replit Development' : 'AWS Production'}
-              <br />
-              <strong>User Agent:</strong> {navigator.userAgent.slice(0, 50)}...
-            </div>
-            <div className="mt-4">
-              <Button onClick={() => refetch()} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Force Refresh
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
