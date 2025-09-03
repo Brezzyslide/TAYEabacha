@@ -1,12 +1,30 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, CheckCircle, ArrowLeft } from "lucide-react";
+import { Building2, Users, CheckCircle, ArrowLeft, LogOut, LogIn } from "lucide-react";
 import { useLocation } from "wouter";
 import Header from "@/components/layout/header";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CompanySummaryPage() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const handleLogoutAndRedirect = async () => {
+    try {
+      await apiRequest("POST", "/api/logout");
+      toast({
+        title: "Logged out",
+        description: "You've been logged out. Please log in with the new company admin credentials.",
+      });
+      setLocation("/auth");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Force redirect anyway
+      setLocation("/auth");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,12 +34,11 @@ export default function CompanySummaryPage() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <Button 
-                variant="outline" 
-                onClick={() => setLocation("/")}
-                className="flex items-center space-x-2"
+                onClick={handleLogoutAndRedirect}
+                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
               >
-                <Building2 className="w-4 h-4" />
-                <span>Go to Dashboard</span>
+                <LogIn className="w-4 h-4" />
+                <span>Login to New Company</span>
               </Button>
               <Button 
                 variant="ghost" 
@@ -146,12 +163,16 @@ export default function CompanySummaryPage() {
             </div>
 
             <div className="mt-6 pt-6 border-t">
-              <Button 
-                onClick={() => setLocation("/auth")}
-                className="w-full"
-              >
-                Go to Login Page
-              </Button>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Ready to get started?</h4>
+                <p className="text-sm text-blue-800 mb-3">
+                  Click "Login to New Company" above to logout as ConsoleManager and redirect to the login page. 
+                  Then use the admin email and password you just created to access your new company's dashboard.
+                </p>
+                <p className="text-xs text-blue-700">
+                  Note: Your new company starts with a clean slate - no demo data. You'll need to set up everything according to your needs.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
