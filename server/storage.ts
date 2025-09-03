@@ -1734,6 +1734,17 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount! > 0;
   }
 
+  async deleteNdisPricingByShiftType(shiftType: string, tenantId: number): Promise<boolean> {
+    const result = await db.update(ndisPricing)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(ndisPricing.shiftType, shiftType),
+        eq(ndisPricing.tenantId, tenantId),
+        eq(ndisPricing.isActive, true)
+      ));
+    return result.rowCount! > 0;
+  }
+
   async getNdisPricingByTypeAndRatio(shiftType: string, ratio: string, tenantId: number): Promise<NdisPricing | undefined> {
     const [pricing] = await db.select().from(ndisPricing)
       .where(and(

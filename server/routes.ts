@@ -7011,6 +7011,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/ndis-pricing/shift-type/:shiftType", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
+    try {
+      const shiftType = req.params.shiftType;
+      const success = await storage.deleteNdisPricingByShiftType(shiftType, req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "No NDIS pricing found for this shift type" });
+      }
+      
+      res.json({ message: `All ${shiftType} pricing entries deleted successfully` });
+    } catch (error: any) {
+      console.error("NDIS Pricing shift type delete error:", error);
+      res.status(500).json({ message: "Failed to delete shift type pricing", error: error.message });
+    }
+  });
+
   // NDIS Budget endpoints - TeamLeader+ can view, Admin+ can edit
   app.get("/api/ndis-budgets", requireAuth, requireRole(["TeamLeader", "Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {

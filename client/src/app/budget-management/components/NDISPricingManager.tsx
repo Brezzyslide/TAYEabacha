@@ -96,6 +96,27 @@ export default function NDISPricingManager() {
     },
   });
 
+  // Delete all pricing entries for a specific shift type
+  const deleteShiftTypeMutation = useMutation({
+    mutationFn: async (shiftType: string) => {
+      return apiRequest("DELETE", `/api/ndis-pricing/shift-type/${shiftType}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ndis-pricing"] });
+      toast({
+        title: "Shift pricing deleted successfully",
+        description: "All pricing entries for this shift type have been removed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error deleting shift pricing",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEdit = (pricing: NdisPricing) => {
     setEditingPricing(pricing);
     form.reset({
@@ -420,12 +441,8 @@ export default function NDISPricingManager() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => {
-                                    const firstPricing = ratios
-                                      .map(ratio => organizedPricing[`${shiftType}-${ratio}`])
-                                      .find(p => p);
-                                    if (firstPricing) deleteMutation.mutate(firstPricing.id);
-                                  }}
+                                  onClick={() => deleteShiftTypeMutation.mutate(shiftType)}
+                                  title={`Delete all ${shiftType} pricing entries`}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
