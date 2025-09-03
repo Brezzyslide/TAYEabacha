@@ -1932,6 +1932,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updatedStartTime.setHours(newDateTime.getHours(), newDateTime.getMinutes(), 0, 0);
             
             shiftUpdateData.startTime = updatedStartTime;
+            
+            // Also update the template time fields for recurring shifts
+            shiftUpdateData.shiftStartTime = `${String(newDateTime.getHours()).padStart(2, '0')}:${String(newDateTime.getMinutes()).padStart(2, '0')}`;
           }
           
           // If end time is being updated, calculate new endTime for this shift
@@ -1944,6 +1947,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updatedEndTime.setHours(newEndDateTime.getHours(), newEndDateTime.getMinutes(), 0, 0);
             
             shiftUpdateData.endTime = updatedEndTime;
+            
+            // Also update the template time fields for recurring shifts
+            shiftUpdateData.shiftEndTime = `${String(newEndDateTime.getHours()).padStart(2, '0')}:${String(newEndDateTime.getMinutes()).padStart(2, '0')}`;
           }
           
           // Remove editType and updateType from the data sent to storage
