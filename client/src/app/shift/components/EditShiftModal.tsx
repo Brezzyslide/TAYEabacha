@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
@@ -44,6 +44,7 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
   );
   const [description, setDescription] = useState(shift.description || "");
   const [showClashWarning, setShowClashWarning] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   
   // Budget-related fields from shift creation form
   const [fundingCategory, setFundingCategory] = useState(shift.fundingCategory || "");
@@ -52,6 +53,21 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
+
+  // Watch for clash result changes and handle accordingly
+  useEffect(() => {
+    if (clashResult !== null && pendingSubmit) {
+      console.log('[EDIT SHIFT] Clash result updated:', clashResult);
+      if (clashResult.hasClash) {
+        console.log('[EDIT SHIFT] Conflicts detected, showing warning');
+        setShowClashWarning(true);
+      } else {
+        console.log('[EDIT SHIFT] No conflicts detected, proceeding with update');
+        updateShiftMutation.mutate();
+      }
+      setPendingSubmit(false);
+    }
+  }, [clashResult, pendingSubmit, updateShiftMutation]);
 
   // Fetch clients
   const { data: clients = [] } = useQuery<Client[]>({
@@ -195,25 +211,16 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
     }
     
     // Check for time clashes first if user is assigned and we haven't shown warning yet
-    if (userId !== "unassigned" && !showClashWarning) {
+    if (userId !== "unassigned" && !showClashWarning && !pendingSubmit) {
+      setPendingSubmit(true);
       await checkForTimeClashes();
-      
-      // Check the result after a short delay to allow the mutation to complete
-      setTimeout(() => {
-        if (clashResult?.hasClash) {
-          setShowClashWarning(true);
-          return;
-        } else {
-          // No clash, proceed with update
-          updateShiftMutation.mutate();
-        }
-      }, 500);
       return;
     }
     
     // Either no user assigned, warning already shown, or user chose to proceed
     updateShiftMutation.mutate();
     setShowClashWarning(false); // Reset warning state
+    setPendingSubmit(false);
   };
 
   const handleProceedWithClash = () => {
