@@ -1540,9 +1540,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/shifts/:id", requireAuth, requireRole(["Coordinator", "Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
       const shiftId = parseInt(req.params.id);
+      console.log(`[SHIFT DELETE] User ${req.user.username} attempting to delete shift ${shiftId} for tenant ${req.user.tenantId}`);
+      
       const deleted = await storage.deleteShift(shiftId, req.user.tenantId);
       
       if (!deleted) {
+        console.log(`[SHIFT DELETE] Shift ${shiftId} not found for tenant ${req.user.tenantId}`);
         return res.status(404).json({ message: "Shift not found" });
       }
       
@@ -1556,9 +1559,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       });
       
+      console.log(`[SHIFT DELETE] Successfully deleted shift ${shiftId} for tenant ${req.user.tenantId}`);
       res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete shift" });
+    } catch (error: any) {
+      console.error(`[SHIFT DELETE] Error deleting shift ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to delete shift", error: error.message });
     }
   });
 
