@@ -45,7 +45,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import { useTimeClashCheck } from "@/hooks/use-time-clash";
-import TimeClashWarning from "@/components/ui/time-clash-warning";
+import TimeClashDialog from "@/components/ui/time-clash-dialog";
 
 const shiftFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -494,8 +494,27 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <>
+      {/* Time Clash Warning Dialog - Appears on top */}
+      <TimeClashDialog
+        open={showClashWarning && clashResult?.hasClash === true}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowClashWarning(false);
+            clearClashResult();
+          }
+        }}
+        staffClashes={clashResult?.staffClashes || []}
+        clientClashes={clashResult?.clientClashes || []}
+        clashes={clashResult?.clashes || []} // Legacy support
+        userName={(users as any[])?.find((u: any) => u.id === form.getValues('userId'))?.username}
+        clientName={(clients as any[])?.find((c: any) => c.id === form.getValues('clientId'))?.fullName}
+        onProceed={handleProceedWithClash}
+        onCancel={handleCancelDueToClash}
+      />
+
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Shift</DialogTitle>
           <DialogDescription>
@@ -1174,19 +1193,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
               )}
             </div>
 
-            {/* Time Clash Warning */}
-            {showClashWarning && clashResult?.hasClash && (
-              <TimeClashWarning
-                staffClashes={clashResult.staffClashes || []}
-                clientClashes={clashResult.clientClashes || []}
-                clashes={clashResult.clashes || []} // Legacy support
-                userName={(users as any[])?.find((u: any) => u.id === form.getValues('userId'))?.username}
-                clientName={(clients as any[])?.find((c: any) => c.id === form.getValues('clientId'))?.fullName}
-                onProceed={handleProceedWithClash}
-                onCancel={handleCancelDueToClash}
-                showActions={true}
-              />
-            )}
+
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-2">
@@ -1222,5 +1229,6 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
         </Form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

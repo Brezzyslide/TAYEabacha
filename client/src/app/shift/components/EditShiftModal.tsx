@@ -23,7 +23,7 @@ import { CalendarIcon, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useTimeClashCheck } from "@/hooks/use-time-clash";
-import TimeClashWarning from "@/components/ui/time-clash-warning";
+import TimeClashDialog from "@/components/ui/time-clash-dialog";
 import type { Shift, Client, User } from "@shared/schema";
 
 interface EditShiftModalProps {
@@ -260,7 +260,26 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      {/* Time Clash Warning Dialog - Appears on top */}
+      <TimeClashDialog
+        open={showClashWarning && clashResult?.hasClash === true}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowClashWarning(false);
+            clearClashResult();
+          }
+        }}
+        staffClashes={clashResult?.staffClashes || []}
+        clientClashes={clashResult?.clientClashes || []}
+        clashes={clashResult?.clashes || []} // Legacy support
+        userName={users.find((u: any) => u.id.toString() === userId)?.fullName || users.find((u: any) => u.id.toString() === userId)?.username}
+        clientName={clients.find((c: any) => c.id.toString() === clientId)?.fullName}
+        onProceed={handleProceedWithClash}
+        onCancel={handleCancelDueToClash}
+      />
+
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -413,16 +432,7 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
             />
           </div>
 
-          {/* Time Clash Warning */}
-          {showClashWarning && clashResult?.hasClash && (
-            <TimeClashWarning
-              clashes={clashResult.clashes || []}
-              userName={users.find((u: any) => u.id.toString() === userId)?.fullName || users.find((u: any) => u.id.toString() === userId)?.username}
-              onProceed={handleProceedWithClash}
-              onCancel={handleCancelDueToClash}
-              showActions={true}
-            />
-          )}
+
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -457,5 +467,6 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
