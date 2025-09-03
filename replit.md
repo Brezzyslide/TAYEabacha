@@ -7,6 +7,11 @@ CareConnect is a comprehensive, multi-tenant healthcare facility management plat
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**September 3, 2025:**
+- ✅ **Recurring Shift Delete Options**: Added "Delete Future Shifts" and "Delete Entire Series" functionality to recurring shift edit modal with proper backend DELETE endpoint at `/api/shifts/series/:seriesId`
+- ✅ **Recurring Shift Time Issue Fixed**: Resolved time display inconsistencies by synchronizing both actual timestamps and template time fields when editing recurring shifts
+- ✅ **Enhanced User Interface**: Added clear confirmation dialogs, loading states, and explanations for all delete operations with proper permission checking
+
 **August 28, 2025:**
 - ✅ **ViewIncidentModal Date Bug Fixed**: Resolved "Invalid time value" errors in incident management module by adding safe date formatting helper `formatSafeDate()` and updating property mappings to match API response structure
 - ✅ **TypeScript Interface Updates**: Fixed property access patterns - updated from nested `report` structure to direct property access, corrected field names (`clientFirstName/clientLastName` → `clientName`, `staffFullName` → `reporterName`, `details` → `notes`)
