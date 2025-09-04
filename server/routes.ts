@@ -8767,7 +8767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get historical timesheets for admin view
   app.get("/api/admin/timesheets/history", requireAuth, requireRole(["Admin", "ConsoleManager"]), async (req: any, res) => {
     try {
-      const timesheets = await storage.getAdminTimesheets(req.user.tenantId, ['draft', 'submitted', 'approved', 'rejected', 'paid']);
+      const timesheets = await storage.getAdminTimesheets(req.user.tenantId, ['approved', 'rejected', 'paid']);
       res.json(timesheets);
     } catch (error: any) {
       console.error("Get admin timesheet history error:", error);

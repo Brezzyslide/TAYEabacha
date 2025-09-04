@@ -104,95 +104,191 @@ export default function TimesheetHistoryTab() {
       // Import jsPDF dynamically
       const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.width;
+      const pageHeight = pdf.internal.pageSize.height;
       
-      // Company header
-      pdf.setFontSize(18);
-      pdf.setFont("helvetica", "bold");
-      pdf.text(data.company?.name || 'Company Name', 20, 25);
+      // TUSK-inspired color palette
+      const COLORS = {
+        deepNavy: [43, 75, 115],    // Deep Navy RGB
+        warmGold: [212, 175, 55],    // Warm Gold RGB
+        sageGreen: [135, 169, 107],  // Sage Green RGB
+        cream: [245, 245, 220],      // Cream RGB
+        lightGray: [248, 249, 250],
+        darkGray: [107, 114, 128],
+        black: [31, 41, 55]
+      };
+      
+      // Set background color (light cream)
+      pdf.setFillColor(...COLORS.cream);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      
+      // Header Section - Deep Navy background
+      pdf.setFillColor(...COLORS.deepNavy);
+      pdf.rect(0, 0, pageWidth, 45, 'F');
+      
+      // Company name centered in header
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(data.company?.name || 'Company Name', pageWidth / 2, 20, { align: 'center' });
+      
+      pdf.setFontSize(14);
+      pdf.text('TIMESHEET REPORT', pageWidth / 2, 30, { align: 'center' });
       
       pdf.setFontSize(10);
-      pdf.setFont("helvetica", "normal");
-      if (data.company?.businessAddress) {
-        const addressLines = data.company.businessAddress.split('\n');
-        addressLines.forEach((line: string, index: number) => {
-          pdf.text(line, 20, 35 + (index * 5));
-        });
-      }
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Payroll Document', pageWidth / 2, 38, { align: 'center' });
       
-      // Timesheet title
-      pdf.setFontSize(16);
-      pdf.setFont("helvetica", "bold");
-      pdf.text("TIMESHEET REPORT", 20, 65);
+      let yPosition = 60;
       
-      // Employee details
-      pdf.setFontSize(12);
-      pdf.setFont("helvetica", "normal");
-      pdf.text(`Staff Member: ${data.timesheet.userName}`, 20, 80);
-      pdf.text(`Email: ${data.timesheet.userEmail}`, 20, 90);
-      pdf.text(`Employment Type: ${data.timesheet.employmentType}`, 20, 100);
-      pdf.text(`Pay Level: ${data.timesheet.payLevel}.${data.timesheet.payPoint}`, 20, 110);
+      // Reset text color for body content
+      pdf.setTextColor(...COLORS.black);
       
-      // Pay period
-      pdf.text(`Pay Period: ${data.timesheet.payPeriodStart} to ${data.timesheet.payPeriodEnd}`, 20, 125);
-      pdf.text(`Status: ${data.timesheet.status.toUpperCase()}`, 20, 135);
+      // Employee Information Section
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Employee Information', 20, yPosition);
+      yPosition += 12;
       
-      // Summary totals
-      pdf.setFont("helvetica", "bold");
-      pdf.text("SUMMARY", 20, 155);
-      pdf.setFont("helvetica", "normal");
-      pdf.text(`Total Hours: ${data.timesheet.totalHours}`, 20, 165);
-      pdf.text(`Gross Pay: $${data.timesheet.totalEarnings}`, 20, 175);
-      pdf.text(`Tax: $${data.timesheet.totalTax}`, 20, 185);
-      pdf.text(`Net Pay: $${data.timesheet.netPay}`, 20, 195);
+      // Two-column layout for employee details
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
       
-      // Entries table header
-      let yPos = 215;
-      pdf.setFont("helvetica", "bold");
-      pdf.text("SHIFT DETAILS", 20, yPos);
-      yPos += 15;
+      const leftColumn = [
+        `Staff Member: ${data.timesheet.userName}`,
+        `Email: ${data.timesheet.userEmail}`,
+        `Employment Type: ${data.timesheet.employmentType}`,
+        `Pay Level: ${data.timesheet.payLevel}.${data.timesheet.payPoint}`
+      ];
       
-      // Table headers
-      pdf.setFontSize(9);
-      pdf.text("Date", 20, yPos);
-      pdf.text("Start", 50, yPos);
-      pdf.text("End", 75, yPos);
-      pdf.text("Break", 95, yPos);
-      pdf.text("Hours", 115, yPos);
-      pdf.text("Rate", 135, yPos);
-      pdf.text("Gross", 155, yPos);
-      pdf.text("Client", 175, yPos);
+      const rightColumn = [
+        `Pay Period: ${format(new Date(data.timesheet.payPeriodStart), 'dd/MM/yyyy')} - ${format(new Date(data.timesheet.payPeriodEnd), 'dd/MM/yyyy')}`,
+        `Status: ${data.timesheet.status.toUpperCase()}`,
+        `Total Hours: ${data.timesheet.totalHours}h`,
+        `Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
+      ];
       
-      yPos += 5;
-      pdf.line(20, yPos, 190, yPos); // Header line
-      yPos += 10;
-      
-      // Table data
-      pdf.setFont("helvetica", "normal");
-      data.entries.forEach((entry: any) => {
-        if (yPos > 270) { // New page if needed
-          pdf.addPage();
-          yPos = 30;
-        }
-        
-        pdf.text(entry.entryDate, 20, yPos);
-        pdf.text(entry.startTime, 50, yPos);
-        pdf.text(entry.endTime, 75, yPos);
-        pdf.text(`${entry.breakMinutes}m`, 95, yPos);
-        pdf.text(`${entry.totalHours}h`, 115, yPos);
-        pdf.text(`$${entry.hourlyRate}`, 135, yPos);
-        pdf.text(`$${entry.grossPay}`, 155, yPos);
-        pdf.text(entry.clientName || 'N/A', 175, yPos);
-        
-        yPos += 10;
+      // Left column
+      leftColumn.forEach((line, index) => {
+        pdf.text(line, 20, yPosition + (index * 6));
       });
       
-      // Footer
-      pdf.setFontSize(8);
-      pdf.text(`Exported by: ${data.exportedBy}`, 20, 280);
-      pdf.text(`Export Date: ${new Date(data.exportedAt).toLocaleDateString()}`, 120, 280);
+      // Right column
+      rightColumn.forEach((line, index) => {
+        pdf.text(line, 110, yPosition + (index * 6));
+      });
       
-      // Save the PDF
-      pdf.save(`timesheet-${data.timesheet.userName}-${data.timesheet.payPeriodStart}.pdf`);
+      yPosition += 35;
+      
+      // Financial Summary Section with background
+      pdf.setFillColor(...COLORS.lightGray);
+      pdf.rect(15, yPosition - 5, pageWidth - 30, 30, 'F');
+      
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Financial Summary', 20, yPosition + 5);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Gross Pay: $${data.timesheet.totalEarnings}`, 20, yPosition + 15);
+      pdf.text(`Tax Withheld: $${data.timesheet.totalTax}`, 110, yPosition + 15);
+      
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Net Pay: $${data.timesheet.netPay}`, 20, yPosition + 25);
+      
+      yPosition += 45;
+      
+      // Shift Details Table
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.text('Shift Details', 20, yPosition);
+      yPosition += 15;
+      
+      if (data.entries && data.entries.length > 0) {
+        // Table header with background
+        pdf.setFillColor(...COLORS.lightGray);
+        pdf.rect(15, yPosition - 8, pageWidth - 30, 12, 'F');
+        
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Date', 20, yPosition);
+        pdf.text('Start Time', 50, yPosition);
+        pdf.text('End Time', 80, yPosition);
+        pdf.text('Break', 110, yPosition);
+        pdf.text('Hours', 130, yPosition);
+        pdf.text('Rate', 150, yPosition);
+        pdf.text('Gross', 170, yPosition);
+        
+        yPosition += 15;
+        
+        // Table data with alternating rows
+        pdf.setFont('helvetica', 'normal');
+        data.entries.forEach((entry: any, index: number) => {
+          // Check for page break
+          if (yPosition > pageHeight - 40) {
+            pdf.addPage();
+            pdf.setFillColor(...COLORS.cream);
+            pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+            
+            // Add header to new page
+            pdf.setFillColor(...COLORS.deepNavy);
+            pdf.rect(0, 0, pageWidth, 25, 'F');
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(14);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('TIMESHEET REPORT (continued)', pageWidth / 2, 15, { align: 'center' });
+            
+            yPosition = 40;
+            pdf.setTextColor(...COLORS.black);
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'normal');
+          }
+          
+          // Alternate row background
+          if (index % 2 === 1) {
+            pdf.setFillColor(250, 250, 250);
+            pdf.rect(15, yPosition - 6, pageWidth - 30, 10, 'F');
+          }
+          
+          pdf.text(format(new Date(entry.entryDate), 'dd/MM'), 20, yPosition);
+          pdf.text(format(new Date(entry.startTime), 'HH:mm'), 50, yPosition);
+          pdf.text(format(new Date(entry.endTime), 'HH:mm'), 80, yPosition);
+          pdf.text(`${entry.breakMinutes}m`, 110, yPosition);
+          pdf.text(`${entry.totalHours}h`, 130, yPosition);
+          pdf.text(`$${parseFloat(entry.hourlyRate).toFixed(2)}`, 150, yPosition);
+          pdf.text(`$${parseFloat(entry.grossPay).toFixed(2)}`, 170, yPosition);
+          
+          // Add client name on next line if available
+          if (entry.clientName) {
+            pdf.setFontSize(8);
+            pdf.setTextColor(...COLORS.darkGray);
+            pdf.text(`Client: ${entry.clientName}`, 20, yPosition + 5);
+            pdf.setFontSize(9);
+            pdf.setTextColor(...COLORS.black);
+            yPosition += 5;
+          }
+          
+          yPosition += 12;
+        });
+      } else {
+        pdf.setFont('helvetica', 'italic');
+        pdf.text('No shift entries found for this timesheet.', 20, yPosition);
+        yPosition += 15;
+      }
+      
+      // Professional footer
+      const footerY = pageHeight - 15;
+      pdf.setFillColor(...COLORS.deepNavy);
+      pdf.rect(0, footerY - 5, pageWidth, 20, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Generated by ${data.exportedBy} on ${format(new Date(data.exportedAt), 'dd/MM/yyyy HH:mm')} - CareConnect Timesheet System`, pageWidth / 2, footerY + 5, { align: 'center' });
+      
+      // Save the PDF with formatted filename
+      const filename = `timesheet-${data.timesheet.userName.replace(/\s+/g, '-')}-${format(new Date(data.timesheet.payPeriodStart), 'yyyy-MM-dd')}.pdf`;
+      pdf.save(filename);
     },
     onSuccess: () => {
       toast({
