@@ -227,10 +227,12 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       } else {
         console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
         createShiftMutation.mutate(preservedFormData);
-        setPreservedFormData({});
+        setPreservedFormData({}); // Clear preserved data to prevent duplicate creation
+        setShowClashWarning(false); // Reset warning state
+        clearClashResult(); // Clear clash result to prevent re-triggering
       }
     }
-  }, [clashResult, preservedFormData, createShiftMutation]);
+  }, [clashResult, preservedFormData, createShiftMutation, clearClashResult]);
 
   const generateRecurringShifts = (data: ShiftFormData): any[] => {
     const shifts: any[] = [];
@@ -469,28 +471,35 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
 
   const onSubmit = async (data: ShiftFormData) => {
     // Check for time clashes first if user or client is assigned and we haven't shown warning yet
-    if ((data.userId || data.clientId) && !showClashWarning) {
+    if ((data.userId || data.clientId) && !showClashWarning && Object.keys(preservedFormData).length === 0) {
       console.log('[SHIFT FORM] Starting clash check process');
       await checkForTimeClashes(data);
       return; // Let the checkTimeClash mutation handle the next steps
     }
     
-    // Either no user/client assigned, warning already shown, or user chose to proceed
-    console.log('[SHIFT FORM] Submitting without clash check or after warning approval');
-    createShiftMutation.mutate(data);
-    setShowClashWarning(false); // Reset warning state
+    // Only proceed if we're not waiting for a clash check result or preserved data processing
+    if (Object.keys(preservedFormData).length === 0) {
+      console.log('[SHIFT FORM] Submitting without clash check or after warning approval');
+      createShiftMutation.mutate(data);
+      setShowClashWarning(false); // Reset warning state
+    } else {
+      console.log('[SHIFT FORM] Preserving form data during clash check - skipping direct submission');
+    }
   };
 
   const handleProceedWithClash = () => {
-    const formData = form.getValues();
+    // Use preserved form data if available, otherwise get current form values
+    const formData = Object.keys(preservedFormData).length > 0 ? preservedFormData : form.getValues();
     createShiftMutation.mutate(formData);
     setShowClashWarning(false);
     clearClashResult();
+    setPreservedFormData({}); // Clear preserved data after creation
   };
 
   const handleCancelDueToClash = () => {
     setShowClashWarning(false);
     clearClashResult();
+    setPreservedFormData({}); // Clear preserved data when user cancels
   };
 
   return (
