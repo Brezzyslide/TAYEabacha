@@ -27,20 +27,18 @@ interface IncidentReport {
   dateTime: string;
   description: string;
   clientId: number;
-  staffId: number;
+  userId: number; // Fixed: should be userId not staffId
   types: string[];
   status: string;
-  clientFirstName: string;
-  clientLastName: string;
-  staffUsername: string;
-  staffFullName: string;
-  intensityRating: number;
-  location: string;
-  triggers: Array<{ label: string; notes?: string }>;
-  staffResponses: Array<{ label: string; notes?: string }>;
+  clientName: string; // Fixed: API returns single clientName field
+  reporterName: string; // Fixed: API returns reporterName field
+  intensityRating?: number;
+  location?: string;
+  triggers?: Array<{ label: string; notes?: string }>;
+  staffResponses?: Array<{ label: string; notes?: string }>;
   witnessName?: string;
   witnessPhone?: string;
-  isNDISReportable: boolean;
+  isNDISReportable?: boolean;
   externalRef?: string;
   tenantId: number;
   createdAt: string;
@@ -130,7 +128,7 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
 
   // Filter incidents based on search and filters
   const filteredIncidents = incidents.filter((incident: IncidentReport) => {
-    const reporterName = incident.staffFullName || incident.staffUsername || '';
+    const reporterName = incident.reporterName || '';
     const matchesSearch = !searchTerm || 
       incident.incidentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incident.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -529,15 +527,15 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm mb-4">{incident.description}</p>
-                    {incident.closure && (
+                    {incident.closureId && incident.closureDate && (
                       <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                         <div className="flex items-center gap-2 mb-2">
                           <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="font-medium text-green-800">Closed on {format(new Date(incident.closure.closureDate), 'MMM dd, yyyy')}</span>
+                          <span className="font-medium text-green-800">Closed on {format(new Date(incident.closureDate), 'MMM dd, yyyy')}</span>
                         </div>
                         <div className="text-sm text-green-700 space-y-1">
-                          <div><strong>Hazard:</strong> {incident.closure.hazard}</div>
-                          <div><strong>Review Type:</strong> {incident.closure.reviewType}</div>
+                          {incident.hazard && <div><strong>Hazard:</strong> {incident.hazard}</div>}
+                          {incident.reviewType && <div><strong>Review Type:</strong> {incident.reviewType}</div>}
                         </div>
                       </div>
                     )}
@@ -566,7 +564,17 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
         <ViewIncidentModal
           open={showViewModal}
           onOpenChange={setShowViewModal}
-          incident={selectedIncident}
+          incident={{
+            ...selectedIncident,
+            // Convert fields to match modal expectations
+            clientFirstName: selectedIncident.clientName?.split(' ')[0] || '',
+            clientLastName: selectedIncident.clientName?.split(' ').slice(1).join(' ') || '',
+            clientIdNumber: selectedIncident.clientId?.toString() || '',
+            staffFullName: selectedIncident.reporterName || '',
+            staffUsername: selectedIncident.reporterName || '',
+            staffId: selectedIncident.userId,
+            location: selectedIncident.location || ''
+          } as any}
         />
       )}
 
@@ -574,7 +582,17 @@ export default function IncidentsTab({ clientId, companyId }: IncidentsTabProps)
         <CloseIncidentModal
           open={showCloseModal}
           onOpenChange={setShowCloseModal}
-          incident={selectedIncident}
+          incident={{
+            ...selectedIncident,
+            // Convert fields to match modal expectations
+            clientFirstName: selectedIncident.clientName?.split(' ')[0] || '',
+            clientLastName: selectedIncident.clientName?.split(' ').slice(1).join(' ') || '',
+            clientIdNumber: selectedIncident.clientId?.toString() || '',
+            staffFullName: selectedIncident.reporterName || '',
+            staffUsername: selectedIncident.reporterName || '',
+            staffId: selectedIncident.userId,
+            location: selectedIncident.location || ''
+          } as any}
           onSuccess={() => {
             setShowCloseModal(false);
             queryClient.invalidateQueries({ queryKey: ["/api/incident-reports", { clientId }] });
