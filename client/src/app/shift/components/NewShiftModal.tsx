@@ -80,6 +80,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const [endConditionType, setEndConditionType] = useState<"occurrences" | "endDate">("occurrences");
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
   const [showClashWarning, setShowClashWarning] = useState(false);
+  const [isCreatingShift, setIsCreatingShift] = useState(false);
   
   // Preserve form data across modal sessions
   const [preservedFormData, setPreservedFormData] = useState<Partial<ShiftFormData>>({});
@@ -161,6 +162,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       }
     },
     onSuccess: async (data) => {
+      setIsCreatingShift(false); // Reset creation flag
       const count = Array.isArray(data) ? data.length : 1;
       toast({
         title: "Shifts Created",
@@ -208,6 +210,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       clearClashResult();
     },
     onError: (error: Error) => {
+      setIsCreatingShift(false); // Reset creation flag on error
       console.error("[SHIFT CREATE ERROR] Full error:", error);
       toast({
         title: "Failed to Create Shift",
@@ -219,20 +222,21 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
 
   // Watch for clash result changes and handle accordingly
   useEffect(() => {
-    if (clashResult !== null && Object.keys(preservedFormData).length > 0) {
+    if (clashResult !== null && Object.keys(preservedFormData).length > 0 && !isCreatingShift) {
       console.log('[SHIFT FORM] Clash result updated:', clashResult);
       if (clashResult.hasClash) {
         console.log('[SHIFT FORM] Conflicts detected, showing warning');
         setShowClashWarning(true);
       } else {
         console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
+        setIsCreatingShift(true); // Prevent duplicate creation
         createShiftMutation.mutate(preservedFormData);
         setPreservedFormData({}); // Clear preserved data to prevent duplicate creation
         setShowClashWarning(false); // Reset warning state
         clearClashResult(); // Clear clash result to prevent re-triggering
       }
     }
-  }, [clashResult, preservedFormData, createShiftMutation, clearClashResult]);
+  }, [clashResult, preservedFormData, createShiftMutation, clearClashResult, isCreatingShift]);
 
   const generateRecurringShifts = (data: ShiftFormData): any[] => {
     const shifts: any[] = [];
@@ -488,8 +492,10 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   };
 
   const handleProceedWithClash = () => {
+    if (isCreatingShift) return; // Prevent duplicate creation
     // Use preserved form data if available, otherwise get current form values
     const formData = Object.keys(preservedFormData).length > 0 ? preservedFormData : form.getValues();
+    setIsCreatingShift(true); // Set creation flag
     createShiftMutation.mutate(formData);
     setShowClashWarning(false);
     clearClashResult();
