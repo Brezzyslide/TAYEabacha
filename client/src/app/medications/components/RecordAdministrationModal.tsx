@@ -106,6 +106,42 @@ export default function RecordAdministrationModal({
     queryFn: () => fetch('/api/auth/user', { credentials: 'include' }).then(res => res.json())
   });
 
+  // Helper function to normalize timeOfDay values to expected enums
+  const normalizeTimeOfDay = (timeValue: string): "Morning" | "Afternoon" | "Night" => {
+    if (!timeValue) return "Morning";
+    
+    const lowerValue = timeValue.toLowerCase();
+    
+    // Check for morning indicators
+    if (lowerValue.includes("morning") || 
+        lowerValue.includes("am") || 
+        lowerValue.includes("a.m") ||
+        lowerValue.includes("6") ||
+        lowerValue.includes("7") ||
+        lowerValue.includes("8") ||
+        lowerValue.includes("9") ||
+        lowerValue.includes("10") ||
+        (lowerValue.includes("11") && !lowerValue.includes("pm"))) {
+      return "Morning";
+    }
+    
+    // Check for night indicators
+    if (lowerValue.includes("night") || 
+        lowerValue.includes("evening") ||
+        lowerValue.includes("bedtime") ||
+        (lowerValue.includes("pm") && 
+         (lowerValue.includes("8") || 
+          lowerValue.includes("9") || 
+          lowerValue.includes("10") || 
+          lowerValue.includes("11") || 
+          lowerValue.includes("12")))) {
+      return "Night";
+    }
+    
+    // Everything else defaults to Afternoon
+    return "Afternoon";
+  };
+
   // Fetch active medication plans for this client (if no specific plan provided)
   const { data: medicationPlans = [] } = useQuery({
     queryKey: ["/api/clients", clientId, "medication-plans"],
@@ -120,7 +156,7 @@ export default function RecordAdministrationModal({
     defaultValues: {
       medicationPlanId: medicationPlan?.id || 0,
       clientId: medicationPlan?.clientId || clientId || 0,
-      timeOfDay: (medicationPlan?.timeOfDay as "Morning" | "Afternoon" | "Night") || "Morning",
+      timeOfDay: medicationPlan?.timeOfDay ? normalizeTimeOfDay(medicationPlan.timeOfDay) : "Morning",
       status: "Administered",
       route: (medicationPlan?.route as "Oral" | "Injection" | "Topical" | "Other") || "Oral",
       dateTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
@@ -339,7 +375,9 @@ export default function RecordAdministrationModal({
                         form.setValue("medicationName", selectedPlan.medicationName);
                         form.setValue("route", selectedPlan.route as "Oral" | "Injection" | "Topical" | "Other");
                         if (selectedPlan.timeOfDay) {
-                          form.setValue("timeOfDay", selectedPlan.timeOfDay as "Morning" | "Afternoon" | "Night");
+                          // Normalize the timeOfDay value to ensure it matches our enum
+                          const normalizedTimeOfDay = normalizeTimeOfDay(selectedPlan.timeOfDay);
+                          form.setValue("timeOfDay", normalizedTimeOfDay);
                         }
                       }
                     }}
