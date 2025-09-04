@@ -5914,7 +5914,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userRole === "supportworker") {
         // SupportWorkers can only see incidents for their assigned clients
         reports = await storage.getIncidentReportsForSupportWorker(req.user.id, tenantId);
-        console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} accessing ${reports.length} incident reports for assigned clients only`);
+        
+        // Filter by clientId if provided
+        if (clientId) {
+          reports = reports.filter((report: any) => report.clientId === clientId);
+          console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} accessing ${reports.length} incident reports for client ${clientId} only`);
+        } else {
+          console.log(`🔒 [SECURITY] SupportWorker ${req.user.username} accessing ${reports.length} incident reports for assigned clients only`);
+        }
       } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
         // Management roles can see all incidents
         console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing incident reports`);
