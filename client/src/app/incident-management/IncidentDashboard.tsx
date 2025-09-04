@@ -69,7 +69,17 @@ interface IncidentReport {
   };
 }
 
-export default function IncidentDashboard() {
+interface IncidentDashboardProps {
+  clientId?: number; // Optional client ID to filter incidents
+  title?: string; // Optional custom title
+  showStats?: boolean; // Show/hide stats cards (default: true)
+}
+
+export default function IncidentDashboard({ 
+  clientId, 
+  title = "Incident Management Dashboard",
+  showStats = true 
+}: IncidentDashboardProps = {}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -111,11 +121,12 @@ export default function IncidentDashboard() {
   };
 
   const { data: incidents = [], isLoading, error, refetch } = useQuery({
-    queryKey: ["/api/incident-reports"],
+    queryKey: clientId ? ["/api/incident-reports", { clientId }] : ["/api/incident-reports"],
     queryFn: async () => {
-      console.log("[INCIDENT DASHBOARD] Fetching incident reports...");
+      console.log("[INCIDENT DASHBOARD] Fetching incident reports...", clientId ? `for client ${clientId}` : "all");
       try {
-        const data = await apiRequest("GET", "/api/incident-reports");
+        const url = clientId ? `/api/incident-reports?clientId=${clientId}` : "/api/incident-reports";
+        const data = await apiRequest("GET", url);
         console.log("[INCIDENT DASHBOARD] Response status:", null);
         console.log("[INCIDENT DASHBOARD] Raw response data:", data);
         console.log("[INCIDENT DASHBOARD] Data type:", typeof data);
@@ -393,7 +404,7 @@ export default function IncidentDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Incident Management</h1>
+          <h1 className="text-3xl font-bold">{title}</h1>
           <p className="text-muted-foreground">Comprehensive incident reporting and closure tracking</p>
         </div>
         <div className="flex items-center gap-3">
@@ -423,6 +434,7 @@ export default function IncidentDashboard() {
 
 
       {/* Statistics Cards */}
+      {showStats && (
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -465,6 +477,7 @@ export default function IncidentDashboard() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Filters and Search */}
       <div className="flex flex-col sm:flex-row gap-4">
