@@ -43,7 +43,7 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
     
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${timesheet.staffName}`, 20, 60);
-    doc.text(`Employee ID: ${timesheet.staffId}`, 20, 68);
+    doc.text(`Employee ID: ${timesheet.userId || timesheet.staffId || 'N/A'}`, 20, 68);
     doc.text(`Pay Period: ${format(new Date(timesheet.payPeriodStart), 'dd/MM/yyyy')} - ${format(new Date(timesheet.payPeriodEnd), 'dd/MM/yyyy')}`, 20, 76);
     doc.text(`Pay Date: ${format(new Date(), 'dd/MM/yyyy')}`, 20, 84);
     
@@ -109,7 +109,9 @@ export async function generatePayslipPDF(timesheet: any, tenantId: number): Prom
     doc.rect(20, yPos, 170, 25, 'F');
     
     const totalTax = parseFloat(timesheet.totalTax || "0");
-    const netPay = parseFloat(timesheet.netPay || "0");
+    const totalSuper = parseFloat(timesheet.totalSuper || "0");
+    // Calculate net pay properly: Gross - (Tax + Super)
+    const netPay = totalEarnings - totalTax - totalSuper;
     
     doc.setFont('helvetica', 'normal');
     doc.text('Gross Pay:', 25, yPos + 8);
