@@ -1294,6 +1294,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await updateStaffHourAllocation(shift.id, shift.userId, req.user.tenantId, 'allocate');
       }
       
+      // Notify staff about new shift assignment
+      if (shift.userId && (shift.status === 'assigned' || shift.status === 'approved')) {
+        await NotificationService.notifyStaffAboutShiftAssignment(
+          shift.userId,
+          req.user.tenantId,
+          shift.title,
+          shift.startTime || new Date(),
+          shift.id
+        );
+      }
+      
       // Log activity
       await storage.createActivityLog({
         userId: req.user.id,
@@ -1514,6 +1525,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (timesheetError) {
           console.error(`[SMART TIMESHEET ERROR] Failed to create smart timesheet entry for shift ${shiftId}:`, timesheetError);
           // Don't fail the shift update if timesheet processing fails, but log the error
+        }
+
+        // Notify staff about due case note after shift completion
+        if (updatedShift.userId) {
+          try {
+            const client = await storage.getClient(updatedShift.clientId, req.user.tenantId);
+            const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown Client';
+            
+            await NotificationService.notifyAboutDueCaseNotes(
+              updatedShift.userId,
+              req.user.tenantId,
+              clientName,
+              shiftId
+            );
+            console.log(`[CASE NOTE NOTIFICATION] Sent case note due notification for shift ${shiftId}`);
+          } catch (notificationError) {
+            console.error(`[CASE NOTE NOTIFICATION ERROR] Failed to send case note due notification for shift ${shiftId}:`, notificationError);
+          }
         }
       }
       
@@ -2320,6 +2349,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, req.user.tenantId);
       
       console.log(`[REJECT SHIFT] Updated shift status to: ${updatedShift?.status}`);
+
+      // Notify available staff about the newly available shift
+      try {
+        await NotificationService.notifyAboutAvailableShift(
+          req.user.tenantId,
+          shift.title,
+          shift.startTime || new Date(),
+          shiftId
+        );
+        console.log(`[AVAILABLE SHIFT NOTIFICATION] Sent notification for rejected shift ${shiftId}`);
+      } catch (notificationError) {
+        console.error(`[AVAILABLE SHIFT NOTIFICATION ERROR] Failed to notify about available shift ${shiftId}:`, notificationError);
+      }
       
       // Log activity
       if (storage.createActivityLog) {
@@ -5616,6 +5658,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const message = await storage.createStaffMessage(messageData);
       
+      // Notify recipient about new message
+      if (message.recipientId && message.recipientId !== req.user.id) {
+        try {
+          const senderName = req.user.fullName || req.user.username || 'System User';
+          await NotificationService.notifyAboutNewMessage(
+            message.recipientId,
+            req.user.tenantId,
+            senderName,
+            message.id
+          );
+          console.log(`[MESSAGE NOTIFICATION] Sent new message notification to user ${message.recipientId}`);
+        } catch (notificationError) {
+          console.error(`[MESSAGE NOTIFICATION ERROR] Failed to send new message notification:`, notificationError);
+        }
+      }
+      
       // Log activity
       await storage.createActivityLog({
         userId: req.user.id,
@@ -6026,6 +6084,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Determine severity based on intensity rating
           const severity = reportData.intensityRating >= 8 ? 'High' : 
                           reportData.intensityRating >= 5 ? 'Medium' : 'Low';
+
+          // Trigger admin closure notification for high severity incidents
+          if (reportData.intensityRating >= 8) {
+            try {
+              await NotificationService.notifyAdminsAboutIncidentClosure(
+                req.user.tenantId,
+                `High Severity: ${clientName}`,
+                report.id
+              );
+              console.log(`[INCIDENT CLOSURE NOTIFICATION] Sent notification for high severity incident ${report.incidentId}`);
+            } catch (notificationError) {
+              console.error(`[INCIDENT CLOSURE NOTIFICATION ERROR] Failed to send incident closure notification for ${report.incidentId}:`, notificationError);
+            }
+          }
 
           const emailSent = await sendIncidentReportNotification(
             adminEmails,
@@ -7861,6 +7933,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Deallocate hours when shift is cancelled
         await updateStaffHourAllocation(shiftId, req.user.id, req.user.tenantId, 'deallocate');
 
+        // Notify available staff about the newly available shift
+        try {
+          await NotificationService.notifyAboutAvailableShift(
+            req.user.tenantId,
+            shift.title,
+            shift.startTime || new Date(),
+            shiftId
+          );
+          console.log(`[AVAILABLE SHIFT NOTIFICATION] Sent notification for cancelled shift ${shiftId}`);
+        } catch (notificationError) {
+          console.error(`[AVAILABLE SHIFT NOTIFICATION ERROR] Failed to notify about available shift ${shiftId}:`, notificationError);
+        }
+
         // Log the cancellation
         await storage.createShiftCancellation({
           shiftId,
@@ -7919,6 +8004,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `Requested cancellation for shift: ${shift.title} (${hoursNotice} hours notice)`,
           tenantId: req.user.tenantId,
         });
+
+        // Notify admins about the cancellation request
+        await NotificationService.notifyAdminsAboutCancellationRequest(
+          req.user.tenantId,
+          req.user.fullName || req.user.username,
+          shift.title,
+          shiftId
+        );
 
         res.json({ 
           message: "Cancellation request submitted for admin approval", 
@@ -8169,6 +8262,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: null, 
           status: "unassigned" 
         }, req.user.tenantId);
+
+        // Notify available staff about the newly available shift
+        try {
+          await NotificationService.notifyAboutAvailableShift(
+            req.user.tenantId,
+            request.shiftTitle,
+            request.shiftStartTime || new Date(),
+            request.shiftId
+          );
+          console.log(`[AVAILABLE SHIFT NOTIFICATION] Sent notification for approved cancellation shift ${request.shiftId}`);
+        } catch (notificationError) {
+          console.error(`[AVAILABLE SHIFT NOTIFICATION ERROR] Failed to notify about available shift ${request.shiftId}:`, notificationError);
+        }
 
         // Log the approved cancellation
         await storage.createShiftCancellation({
