@@ -779,14 +779,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Session invalid - please login again" });
       }
       
+      // Check if archived clients are requested
+      const { archived } = req.query;
+      const showArchived = archived === 'true';
+      
       // CRITICAL DEBUG: Check which database we're connected to
       try {
         const dbCheck = await db.execute(sql`SELECT current_database() as db_name`);
         console.log('🧠 [DB CONNECTION CHECK] Connected to database:', (dbCheck.rows[0] as any).db_name);
-        
-        // Check if archived clients are requested
-        const { archived } = req.query;
-        const showArchived = archived === 'true';
         
         // CRITICAL DEBUG: Count actual clients in database for this tenant before API call
         const dbClientCount = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE tenant_id = ${req.user.tenantId} AND is_active = ${showArchived ? 'false' : 'true'}`);
