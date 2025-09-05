@@ -784,8 +784,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const dbCheck = await db.execute(sql`SELECT current_database() as db_name`);
         console.log('🧠 [DB CONNECTION CHECK] Connected to database:', (dbCheck.rows[0] as any).db_name);
         
+        // Check if archived clients are requested
+        const { archived } = req.query;
+        const showArchived = archived === 'true';
+        
         // CRITICAL DEBUG: Count actual clients in database for this tenant before API call
-        const dbClientCount = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE tenant_id = ${req.user.tenantId} AND is_active = true`);
+        const dbClientCount = await db.execute(sql`SELECT COUNT(*) as count FROM clients WHERE tenant_id = ${req.user.tenantId} AND is_active = ${showArchived ? 'false' : 'true'}`);
         console.log(`🔍 [DB RAW COUNT] Direct database shows ${(dbClientCount.rows[0] as any).count} clients for tenant ${req.user.tenantId}`);
       } catch (dbError) {
         console.error('❌ [DB DEBUG ERROR]:', dbError);
@@ -833,7 +837,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Double-check: Get all clients first, then strictly filter
-        const allClients = await storage.getClients(req.user.tenantId);
+        const allClients = showArchived 
+          ? await storage.getAllClients(req.user.tenantId, true)
+          : await storage.getClients(req.user.tenantId);
         console.log(`[SECURITY DEBUG] Total clients in tenant ${req.user.tenantId}: ${allClients.length}`);
         
         clients = allClients.filter(client => {
@@ -861,8 +867,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
       } else if (userRole === "teamleader" || userRole === "coordinator" || userRole === "admin" || userRole === "consolemanager") {
         // Management roles can see all clients in their tenant
-        clients = await storage.getClients(req.user.tenantId);
-        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing all ${clients.length} clients for tenant ${req.user.tenantId}`);
+        clients = showArchived 
+          ? await storage.getAllClients(req.user.tenantId, true)
+          : await storage.getClients(req.user.tenantId);
+        console.log(`[MANAGEMENT ACCESS] ${userRole} ${req.user.username} accessing all ${clients.length} ${showArchived ? 'archived' : 'active'} clients for tenant ${req.user.tenantId}`);
       } else {
         // Unknown/invalid role - deny access
         console.log(`🚨 [SECURITY ALERT] Unknown role "${req.user.role}" for user ${req.user.username} - denying access`);
@@ -1030,6 +1038,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete client" });
+    }
+  });
+
+  // Restore archived client
+  app.put("/api/clients/:id/restore", requireAuth, async (req: any, res) => {
+    try {
+      const success = await storage.restoreClient(parseInt(req.params.id), req.user.tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Client not found or could not be restored" });
+      }
+      
+      // Log activity
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "restore",
+        resourceType: "client",
+        resourceId: parseInt(req.params.id),
+        description: `Restored archived client`,
+        tenantId: req.user.tenantId,
+      });
+      
+      res.status(200).json({ message: "Client restored successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to restore client" });
     }
   });
 

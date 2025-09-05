@@ -70,6 +70,8 @@ export interface IStorage {
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: Partial<InsertClient>, tenantId: number): Promise<Client | undefined>;
   deleteClient(id: number, tenantId: number): Promise<boolean>;
+  getAllClients(tenantId: number, showArchived?: boolean): Promise<Client[]>;
+  restoreClient(id: number, tenantId: number): Promise<boolean>;
 
   // Form Templates
   getFormTemplates(tenantId: number): Promise<FormTemplate[]>;
@@ -509,6 +511,23 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(clients)
       .where(and(eq(clients.tenantId, tenantId), eq(clients.isActive, true)))
       .orderBy(desc(clients.createdAt));
+  }
+
+  async getAllClients(tenantId: number, showArchived: boolean = false): Promise<Client[]> {
+    return await db.select().from(clients)
+      .where(and(
+        eq(clients.tenantId, tenantId), 
+        eq(clients.isActive, showArchived ? false : true)
+      ))
+      .orderBy(desc(clients.createdAt));
+  }
+
+  async restoreClient(id: number, tenantId: number): Promise<boolean> {
+    const result = await db
+      .update(clients)
+      .set({ isActive: true, updatedAt: new Date() })
+      .where(and(eq(clients.id, id), eq(clients.tenantId, tenantId)));
+    return (result.rowCount || 0) > 0;
   }
 
   async getClient(id: number, tenantId: number): Promise<Client | undefined> {

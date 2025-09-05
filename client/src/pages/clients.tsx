@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,10 +27,12 @@ export default function Clients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const { toast } = useToast();
 
   const { data: clients, isLoading } = useQuery<Client[]>({
-    queryKey: ["/api/clients"],
+    queryKey: ["/api/clients", { archived: showArchived }],
+    queryFn: () => apiRequest("GET", `/api/clients${showArchived ? '?archived=true' : ''}`),
   });
 
   const createClientMutation = useMutation({
@@ -102,7 +104,27 @@ export default function Clients() {
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
         title: "Success",
-        description: "Client deleted successfully",
+        description: "Client archived successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const restoreClientMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("PUT", `/api/clients/${id}/restore`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Success",
+        description: "Client restored successfully",
       });
     },
     onError: (error: Error) => {
@@ -151,8 +173,14 @@ export default function Clients() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this client?")) {
+    if (confirm("Are you sure you want to archive this client? All associated data will be hidden.")) {
       deleteClientMutation.mutate(id);
+    }
+  };
+
+  const handleRestore = (id: number) => {
+    if (confirm("Are you sure you want to restore this client? All associated data will become visible again.")) {
+      restoreClientMutation.mutate(id);
     }
   };
 
@@ -318,14 +346,23 @@ export default function Clients() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Client Database</CardTitle>
-                  <div className="flex items-center space-x-2">
-                    <Search className="h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search clients..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-64"
-                    />
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Search className="h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search clients..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-64"
+                      />
+                    </div>
+                    <Button
+                      variant={showArchived ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowArchived(!showArchived)}
+                    >
+                      {showArchived ? 'Show Active' : 'Show Archived'}
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -382,21 +419,37 @@ export default function Clients() {
                                 <Eye className="h-4 w-4 mr-1" />
                                 View Profile
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(client)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(client.id)}
-                                disabled={deleteClientMutation.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {!showArchived ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(client)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDelete(client.id)}
+                                    disabled={deleteClientMutation.isPending}
+                                    title="Archive Client"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRestore(client.id)}
+                                  disabled={restoreClientMutation.isPending}
+                                  title="Restore Client"
+                                  className="text-green-600 hover:text-green-700"
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
