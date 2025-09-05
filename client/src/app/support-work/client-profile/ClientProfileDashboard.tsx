@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Search, Grid, List, Filter, Users, UserPlus } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Search, Grid, List, Filter, Users, UserPlus, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Eye, Edit, Archive } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { hasPermission, isAdmin } from "@/lib/auth";
 import { Client } from "@shared/schema";
@@ -24,13 +28,15 @@ export default function ClientProfileDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [, setLocation] = useLocation();
-  
+  const { toast } = useToast();
   const { user } = useAuth();
 
   // Fetch clients based on user role and permissions
   const { data: clients, isLoading, error } = useQuery<Client[]>({
-    queryKey: ["/api/clients"],
+    queryKey: ["/api/clients", { archived: showArchived }],
+    queryFn: () => apiRequest("GET", `/api/clients${showArchived ? '?archived=true' : ''}`),
     enabled: !!user,
   });
 
@@ -83,9 +89,56 @@ export default function ClientProfileDashboard() {
     setLocation(`/clients?edit=${client.id}`);
   };
 
+  const archiveClientMutation = useMutation({
+    mutationFn: async (clientId: number) => {
+      return await apiRequest("DELETE", `/api/clients/${clientId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Client archived",
+        description: "Client has been archived successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to archive client",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const restoreClientMutation = useMutation({
+    mutationFn: async (clientId: number) => {
+      return await apiRequest("PUT", `/api/clients/${clientId}/restore`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Client restored",
+        description: "Client has been restored successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to restore client",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleArchive = (clientId: number) => {
-    console.log("Archive client:", clientId);
-    // TODO: Implement archive functionality
+    if (confirm("Are you sure you want to archive this client? All associated data will be hidden.")) {
+      archiveClientMutation.mutate(clientId);
+    }
+  };
+
+  const handleRestore = (clientId: number) => {
+    if (confirm("Are you sure you want to restore this client? All associated data will become visible again.")) {
+      restoreClientMutation.mutate(clientId);
+    }
   };
 
   const formatDate = (date: Date | string | null) => {
@@ -159,31 +212,45 @@ export default function ClientProfileDashboard() {
               <div className="flex items-center mt-2 space-x-2">
                 <Filter className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">
-                  {filteredClients.length} of {clients?.length || 0} clients
+                  {filteredClients.length} of {clients?.length || 0} {showArchived ? 'archived' : 'active'} clients
                 </span>
               </div>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700">View:</span>
-              <div className="flex items-center border rounded-md">
-                <Toggle
-                  pressed={viewMode === "card"}
-                  onPressedChange={() => setViewMode("card")}
-                  className="rounded-r-none border-r"
-                  size="sm"
-                >
-                  <Grid className="h-4 w-4" />
-                </Toggle>
-                <Toggle
-                  pressed={viewMode === "list"}
-                  onPressedChange={() => setViewMode("list")}
-                  className="rounded-l-none"
-                  size="sm"
-                >
-                  <List className="h-4 w-4" />
-                </Toggle>
+            <div className="flex items-center space-x-6">
+              {/* Archive Toggle */}
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-archived"
+                  checked={showArchived}
+                  onCheckedChange={setShowArchived}
+                />
+                <Label htmlFor="show-archived" className="text-sm font-medium">
+                  Show Archived Clients
+                </Label>
+              </div>
+              
+              {/* View Mode Toggle */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">View:</span>
+                <div className="flex items-center border rounded-md">
+                  <Toggle
+                    pressed={viewMode === "card"}
+                    onPressedChange={() => setViewMode("card")}
+                    className="rounded-r-none border-r"
+                    size="sm"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Toggle>
+                  <Toggle
+                    pressed={viewMode === "list"}
+                    onPressedChange={() => setViewMode("list")}
+                    className="rounded-l-none"
+                    size="sm"
+                  >
+                    <List className="h-4 w-4" />
+                  </Toggle>
+                </div>
               </div>
             </div>
           </div>
@@ -228,6 +295,8 @@ export default function ClientProfileDashboard() {
               onQuickView={handleQuickView}
               onEdit={handleEdit}
               onArchive={handleArchive}
+              onRestore={handleRestore}
+              showArchived={showArchived}
             />
           ))}
         </div>
@@ -293,16 +362,29 @@ export default function ClientProfileDashboard() {
                             </DropdownMenuItem>
                           )}
                           {canArchiveClients && (
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleArchive(client.id);
-                              }}
-                              className="text-red-600"
-                            >
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive
-                            </DropdownMenuItem>
+                            !showArchived ? (
+                              <DropdownMenuItem 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleArchive(client.id);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Archive className="mr-2 h-4 w-4" />
+                                Archive
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRestore(client.id);
+                                }}
+                                className="text-green-600"
+                              >
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                Restore
+                              </DropdownMenuItem>
+                            )
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>

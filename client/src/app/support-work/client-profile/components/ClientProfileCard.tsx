@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Eye, Edit, Archive, User, Calendar, Hash } from "lucide-react";
+import { MoreVertical, Eye, Edit, Archive, User, Calendar, Hash, RotateCcw } from "lucide-react";
 import { Client } from "@shared/schema";
 import { usePermission } from "@/components/auth/PermissionGuard";
 import { useLocation, Link } from "wouter";
@@ -13,9 +13,11 @@ interface ClientProfileCardProps {
   onQuickView: (client: Client) => void;
   onEdit: (client: Client) => void;
   onArchive: (clientId: number) => void;
+  onRestore?: (clientId: number) => void;
+  showArchived?: boolean;
 }
 
-export function ClientProfileCard({ client, onQuickView, onEdit, onArchive }: ClientProfileCardProps) {
+export function ClientProfileCard({ client, onQuickView, onEdit, onArchive, onRestore, showArchived }: ClientProfileCardProps) {
   const [, setLocation] = useLocation();
   const canEdit = usePermission("clients", "edit");
   const canArchive = usePermission("clients", "delete");
@@ -89,13 +91,25 @@ export function ClientProfileCard({ client, onQuickView, onEdit, onArchive }: Cl
                 </DropdownMenuItem>
               )}
               {canArchive && (
-                <DropdownMenuItem 
-                  onClick={() => onArchive(client.id)}
-                  className="text-red-600"
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive
-                </DropdownMenuItem>
+                !showArchived ? (
+                  <DropdownMenuItem 
+                    onClick={() => onArchive(client.id)}
+                    className="text-red-600"
+                  >
+                    <Archive className="mr-2 h-4 w-4" />
+                    Archive
+                  </DropdownMenuItem>
+                ) : (
+                  onRestore && (
+                    <DropdownMenuItem 
+                      onClick={() => onRestore(client.id)}
+                      className="text-green-600"
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Restore
+                    </DropdownMenuItem>
+                  )
+                )
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -115,9 +129,9 @@ export function ClientProfileCard({ client, onQuickView, onEdit, onArchive }: Cl
             </div>
           )}
           
-          {client.phone && (
+          {client.emergencyContactPhone && (
             <div className="text-sm text-gray-600">
-              <span className="font-medium">Phone:</span> {client.phone}
+              <span className="font-medium">Emergency Contact:</span> {client.emergencyContactPhone}
             </div>
           )}
           
