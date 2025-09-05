@@ -596,7 +596,7 @@ export default function StaffTimesheetView() {
                                 View
                               </Button>
                               
-                              {(timesheet.status === 'approved' || timesheet.status === 'paid') && (
+                              {(timesheet.status === 'approved' || timesheet.status === 'paid' || timesheet.approvedAt) && (
                                 <Button
                                   size="sm"
                                   onClick={() => downloadPayslipMutation.mutate(timesheet.id)}
