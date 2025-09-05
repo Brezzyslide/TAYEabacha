@@ -596,17 +596,25 @@ export default function StaffTimesheetView() {
                                 View
                               </Button>
                               
-                              {(timesheet.status === 'approved' || timesheet.status === 'paid' || timesheet.approvedAt) && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => downloadPayslipMutation.mutate(timesheet.id)}
-                                  disabled={downloadPayslipMutation.isPending}
-                                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                                >
-                                  <Download className="h-4 w-4" />
-                                  {downloadPayslipMutation.isPending ? 'Downloading...' : 'Payslip'}
-                                </Button>
-                              )}
+                              {/* Show payslip button for ALL timesheets - staff can download records of any work performed */}
+                              <Button
+                                size="sm"
+                                onClick={() => downloadPayslipMutation.mutate(timesheet.id)}
+                                disabled={downloadPayslipMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                {downloadPayslipMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Payslip
+                                  </>
+                                )}
+                              </Button>
                             </div>
                           </div>
                         </CardContent>
