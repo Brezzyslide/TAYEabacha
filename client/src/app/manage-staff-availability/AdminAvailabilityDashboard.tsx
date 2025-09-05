@@ -66,7 +66,7 @@ export default function AdminAvailabilityDashboard() {
   // Archive availability mutation
   const archiveAvailabilityMutation = useMutation({
     mutationFn: async (availabilityId: number) => {
-      return await apiRequest(`/api/staff-availability/${availabilityId}/archive`, "POST");
+      return await apiRequest("POST", `/api/staff-availability/${availabilityId}/archive`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/manage-staff-availability"] });
@@ -87,7 +87,7 @@ export default function AdminAvailabilityDashboard() {
   // Override availability mutation
   const overrideAvailabilityMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return await apiRequest(`/api/staff-availability/${id}/override`, "PUT", data);
+      return await apiRequest("PUT", `/api/staff-availability/${id}/override`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/manage-staff-availability"] });
