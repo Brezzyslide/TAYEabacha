@@ -88,13 +88,21 @@ export default function AvailabilityEditor() {
   // Submit availability mutation
   const submitAvailabilityMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("POST", "/api/staff-availability", data);
+      // Check if updating existing availability or creating new one
+      if (currentAvailability) {
+        return await apiRequest("PUT", `/api/staff-availability/${currentAvailability.id}`, data);
+      } else {
+        return await apiRequest("POST", "/api/staff-availability", data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff-availability"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/staff-availability/current"] });
       toast({
-        title: "Availability Submitted",
-        description: "Your availability has been sent to management for review.",
+        title: currentAvailability ? "Availability Updated" : "Availability Submitted",
+        description: currentAvailability 
+          ? "Your availability has been updated successfully."
+          : "Your availability has been sent to management for review.",
       });
       resetForm();
     },
