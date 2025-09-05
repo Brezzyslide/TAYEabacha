@@ -35,6 +35,17 @@ export async function apiRequest(
     throw new Error(errorMessage);
   }
   
+  // Handle 204 No Content responses (common for DELETE requests)
+  if (res.status === 204) {
+    return { success: true };
+  }
+
+  // Handle responses with no content
+  const contentType = res.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    return { success: true };
+  }
+  
   return res.json();
 }
 
