@@ -98,7 +98,7 @@ export default function NotificationDropdown() {
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId: number) =>
-      apiRequest(`/api/notifications/${notificationId}/read`, { method: "POST" }),
+      apiRequest("POST", `/api/notifications/${notificationId}/read`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
@@ -114,7 +114,7 @@ export default function NotificationDropdown() {
 
   // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
-    mutationFn: () => apiRequest("/api/notifications/mark-all-read", { method: "POST" }),
+    mutationFn: () => apiRequest("POST", "/api/notifications/mark-all-read"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
@@ -135,7 +135,7 @@ export default function NotificationDropdown() {
   // Delete notification mutation
   const deleteNotificationMutation = useMutation({
     mutationFn: (notificationId: number) =>
-      apiRequest(`/api/notifications/${notificationId}`, { method: "DELETE" }),
+      apiRequest("DELETE", `/api/notifications/${notificationId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
