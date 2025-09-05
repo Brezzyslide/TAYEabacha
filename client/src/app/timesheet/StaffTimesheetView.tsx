@@ -216,12 +216,7 @@ export default function StaffTimesheetView() {
   // Download payslip mutation
   const downloadPayslipMutation = useMutation({
     mutationFn: async (timesheetId: number) => {
-      const response = await fetch(`/api/payslips/${timesheetId}/pdf`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch(`/api/payslips/${timesheetId}/pdf`);
       
       if (!response.ok) {
         throw new Error('Failed to generate payslip');
