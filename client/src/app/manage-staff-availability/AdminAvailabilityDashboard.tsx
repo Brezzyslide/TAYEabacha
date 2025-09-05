@@ -63,22 +63,30 @@ export default function AdminAvailabilityDashboard() {
     },
   });
 
-  // Archive availability mutation
+  // Archive/Restore availability mutation
   const archiveAvailabilityMutation = useMutation({
     mutationFn: async (availabilityId: number) => {
-      return await apiRequest("POST", `/api/staff-availability/${availabilityId}/archive`);
+      if (showArchived) {
+        // If viewing archived items, this should restore
+        return await apiRequest("POST", `/api/staff-availability/${availabilityId}/restore`);
+      } else {
+        // If viewing active items, this should archive
+        return await apiRequest("POST", `/api/staff-availability/${availabilityId}/archive`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/manage-staff-availability"] });
       toast({
-        title: "Availability Archived",
-        description: "Staff availability has been archived successfully.",
+        title: showArchived ? "Availability Restored" : "Availability Archived", 
+        description: showArchived 
+          ? "Staff availability has been restored successfully."
+          : "Staff availability has been archived successfully.",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to archive availability.",
+        description: error.message || `Failed to ${showArchived ? "restore" : "archive"} availability.`,
         variant: "destructive",
       });
     },

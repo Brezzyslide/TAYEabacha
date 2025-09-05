@@ -2718,6 +2718,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Restore availability
+  app.post("/api/staff-availability/:id/restore", requireAuth, requireRole(["Admin", "TeamLeader"]), async (req: any, res) => {
+    try {
+      const availabilityId = parseInt(req.params.id);
+      const availability = await storage.restoreStaffAvailability(availabilityId, req.user.tenantId);
+      
+      if (!availability) {
+        return res.status(404).json({ message: "Staff availability not found" });
+      }
+
+      await storage.createActivityLog({
+        userId: req.user.id,
+        action: "restore_availability",
+        resourceType: "staff_availability",
+        resourceId: availabilityId,
+        description: "Restored staff availability",
+        tenantId: req.user.tenantId,
+      });
+
+      res.json(availability);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to restore availability" });
+    }
+  });
+
   // Override availability
   app.put("/api/staff-availability/:id/override", requireAuth, requireRole(["Admin", "TeamLeader"]), async (req: any, res) => {
     try {

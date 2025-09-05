@@ -106,6 +106,7 @@ export interface IStorage {
   getAllStaffAvailabilities(tenantId: number): Promise<any[]>;
   updateStaffAvailabilityApproval(id: number, isApproved: boolean, tenantId: number): Promise<StaffAvailability | undefined>;
   archiveStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined>;
+  restoreStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined>;
   getAvailabilityConflicts(tenantId: number): Promise<any[]>;
 
   // Case Notes
@@ -892,6 +893,17 @@ export class DatabaseStorage implements IStorage {
   async archiveStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined> {
     const [availability] = await db.update(staffAvailability)
       .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(staffAvailability.id, id),
+        eq(staffAvailability.tenantId, tenantId)
+      ))
+      .returning();
+    return availability;
+  }
+
+  async restoreStaffAvailability(id: number, tenantId: number): Promise<StaffAvailability | undefined> {
+    const [availability] = await db.update(staffAvailability)
+      .set({ isActive: true, updatedAt: new Date() })
       .where(and(
         eq(staffAvailability.id, id),
         eq(staffAvailability.tenantId, tenantId)
