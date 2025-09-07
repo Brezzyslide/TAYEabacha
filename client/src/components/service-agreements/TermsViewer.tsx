@@ -26,6 +26,7 @@ interface TermsViewerProps {
   onCustomTermsChange: (terms: string) => void;
   isAccepted: boolean;
   onAcceptedChange: (accepted: boolean) => void;
+  clientId?: number;
 }
 
 interface TermsTemplate {
@@ -40,13 +41,25 @@ export default function TermsViewer({
   onCustomTermsChange,
   isAccepted,
   onAcceptedChange,
+  clientId,
 }: TermsViewerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showCustomTerms, setShowCustomTerms] = useState(false);
 
-  // Fetch terms template from API
+  // Fetch terms template from API with optional clientId for auto-population
   const { data: termsTemplate, isLoading: termsLoading } = useQuery<TermsTemplate>({
-    queryKey: ["/api/terms-templates/default"],
+    queryKey: ["/api/terms-templates/default", clientId || null],
+    queryFn: async () => {
+      const url = clientId 
+        ? `/api/terms-templates/default?clientId=${clientId}`
+        : '/api/terms-templates/default';
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch terms template');
+      }
+      return response.json();
+    },
     retry: false,
   });
 

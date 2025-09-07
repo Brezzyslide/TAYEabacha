@@ -58,9 +58,20 @@ export default function AgreementForm({
     queryKey: ["/api/company"],
   });
 
-  // Fetch default terms template for tenant
+  // Fetch default terms template for tenant with clientId for auto-population
   const { data: defaultTerms } = useQuery({
-    queryKey: ["/api/terms-templates/default"],
+    queryKey: ["/api/terms-templates/default", agreementData.clientId || null],
+    queryFn: async () => {
+      const url = agreementData.clientId 
+        ? `/api/terms-templates/default?clientId=${agreementData.clientId}`
+        : '/api/terms-templates/default';
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch terms template');
+      }
+      return response.json();
+    },
     enabled: mode === "create",
   });
 
@@ -396,6 +407,7 @@ export default function AgreementForm({
             onCustomTermsChange={(terms) => handleFieldChange("customTerms", terms)}
             isAccepted={isAccepted}
             onAcceptedChange={onAcceptedChange}
+            clientId={agreementData.clientId}
           />
         </CardContent>
       </Card>
