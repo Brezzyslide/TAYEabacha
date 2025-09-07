@@ -1327,29 +1327,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await updateStaffHourAllocation(shift.id, shift.userId, req.user.tenantId, 'allocate');
       }
       
-      // Notify staff about new shift assignment
-      if (shift.userId && (shift.status === 'assigned' || shift.status === 'approved')) {
-        await NotificationService.notifyStaffAboutShiftAssignment(
-          shift.userId,
-          req.user.tenantId,
-          shift.title,
-          shift.startTime || new Date(),
-          shift.id
-        );
-      }
-      
-      // Log activity
-      await storage.createActivityLog({
-        userId: req.user.id,
-        action: "create_shift",
-        resourceType: "shift",
-        resourceId: shift.id,
-        description: `Created shift${shiftData.seriesId ? ' (recurring series)' : ''}`,
-        tenantId: req.user.tenantId,
-      });
-      
+      // Send response immediately after successful creation
       console.log("[SHIFT CREATE] ===== SHIFT CREATION COMPLETE =====");
       res.status(201).json(shift);
+      
+      // Handle post-creation tasks asynchronously (non-blocking)
+      try {
+        // Notify staff about new shift assignment
+        if (shift.userId && (shift.status === 'assigned' || shift.status === 'approved')) {
+          await NotificationService.notifyStaffAboutShiftAssignment(
+            shift.userId,
+            req.user.tenantId,
+            shift.title,
+            shift.startTime || new Date(),
+            shift.id
+          );
+          console.log("[SHIFT CREATE] ✅ Notification sent successfully");
+        }
+        
+        // Log activity
+        await storage.createActivityLog({
+          userId: req.user.id,
+          action: "create_shift",
+          resourceType: "shift",
+          resourceId: shift.id,
+          description: `Created shift${shiftData.seriesId ? ' (recurring series)' : ''}`,
+          tenantId: req.user.tenantId,
+        });
+        console.log("[SHIFT CREATE] ✅ Activity log created successfully");
+      } catch (postError) {
+        console.warn("[SHIFT CREATE] ⚠️ Post-creation task failed (non-blocking):", postError);
+      }
     } catch (error) {
       console.error("[SHIFT CREATE] ❌ ERROR creating shift:", error);
       console.error("[SHIFT CREATE] Request body:", req.body);
