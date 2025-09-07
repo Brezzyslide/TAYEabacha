@@ -1,0 +1,177 @@
+/**
+ * Service Agreement Terms & Conditions – Full Version
+ * Multi-tenant + participant-aware version for CareConnect CRM
+ */
+
+export const serviceAgreementTerms = `
+# NDIS Service Agreement
+
+## 1. The NDIS and This Service Agreement
+This Service Agreement is made for the purpose of providing supports to **{{participant.name}}** under their NDIS plan. 
+You and **{{company.name}}** agree that this Agreement aligns with the aims and policies of the NDIS — especially its goal of giving participants more choice and control over supports that help achieve their goals and participate in the community.
+
+---
+
+## 2. Scope of Supports
+{{company.name}} agrees to provide supports as set out in the attached Schedule of Supports, consistent with the participant's current NDIS plan. 
+All prices are GST inclusive (if applicable). Additional non-NDIS funded expenses (transport, tickets, meals, etc.) will be listed separately in the Schedule and are the participant's responsibility.
+
+---
+
+## 3. Delivery of Supports
+- Supports will be delivered in line with NDIS Practice Standards.
+- Qualified and trained staff will be allocated.
+- A service booking will be created or amended on the NDIA portal within 48 hours of signing this agreement.
+
+---
+
+## 4. Provider Responsibilities
+{{company.name}} will:
+1. Deliver agreed supports safely, on time, and in compliance with relevant laws (NDIS Act 2013, Australian Consumer Law).
+2. Treat the participant with dignity, respect, and involve them in all decisions about supports.
+3. Keep scheduled appointments or provide at least 48 hours' notice for changes.
+4. Review supports at least every 6 months.
+5. Listen to feedback, resolve issues promptly, and continually improve services.
+6. Keep participant information secure and request consent before sharing (unless legally required).
+7. Maintain accurate records of supports delivered and amounts charged.
+8. Provide access to service delivery statements through the participant's profile or myplace portal.
+9. Clearly explain the cancellation policy and complaint procedure.
+
+---
+
+## 5. Participant / Representative Responsibilities
+By signing, the participant/representative agrees to:
+- Communicate support needs and preferences clearly.
+- Provide a copy of the current NDIS plan to enable appropriate service planning.
+- Treat staff with courtesy and respect.
+- Give 48 hours' notice for cancellations or changes (otherwise cancellation policy applies).
+- Inform {{company.name}} of changes to contact details or NDIS plan status promptly.
+- Pay invoices within **7 working days** of issue (if self-managed or plan-nominee managed).
+- Give 28 days' notice to change or end this agreement.
+
+---
+
+## 6. Continuity of Support
+{{company.name}} will make all reasonable efforts to ensure uninterrupted delivery of supports:
+- **Staff Absence:** Arrange replacement workers where possible and brief them on participant needs.
+- **Provider Interruption:** Notify participant immediately, assist in sourcing alternate providers, and securely hand over plans and records.
+- **Transition Planning:** Prepare a transition plan for permanent cessation of services.
+- **Critical Risk:** Escalate urgent risks to emergency services, family, or guardian to ensure no gap in duty of care.
+
+---
+
+## 7. Payment Terms
+Supports are billed after delivery and after participant confirmation. 
+Standard payment window: **7 working days** from invoice issue date.
+
+- **NDIA-managed:** Claims made directly via NDIA.
+- **Self-managed:** Invoice issued to participant for payment within 7 working days.
+- **Plan-nominee:** Invoice issued to nominee, payable within 7 working days.
+- **Plan-managed:** Invoice sent to plan manager, payable within 7 working days.
+
+Establishment fees may be claimed where allowed by NDIS rules.
+
+---
+
+## 8. Pricing and Adjustments
+- Prices follow current NDIS Pricing Arrangements and Price Limits.
+- Participants will be notified in writing before any price changes take effect.
+
+---
+
+## 9. Cancellations
+- More than 48 hours' notice → no fee, service rescheduled.
+- Less than 48 hours' notice → 90–100% of scheduled service fee (per NDIS guide).
+- No-show → charged at 100% of scheduled service.
+
+If {{company.name}} cancels, 48-hour notice will be given where possible and services rescheduled.
+
+---
+
+## 10. Disaster Management & Emergency Planning
+{{company.name}} maintains a Disaster Management Plan covering:
+- **Preparation:** Fire drills, evacuation procedures, staff training.
+- **Evacuation:** Support participants to safety, notify next of kin, follow emergency procedures.
+- **Post-Event:** Provide welfare checks, resume services, replace essential items like medications/equipment.
+- **Shelter Arrangements:** Arrange temporary accommodation if required.
+- **Evacuation Audit:** Review and improve procedures after each event.
+
+---
+
+## 11. Mealtime Management (If Applicable)
+Where mealtime assistance is part of the plan:
+- Risks such as dysphagia, allergies, or positioning are recorded.
+- Staff follow the participant's Mealtime Plan (stored under Care Plans).
+- Reviewed regularly and updated when health status changes.
+
+---
+
+## 12. Feedback, Complaints, and Disputes
+Participants may lodge complaints by phone, email, or in writing. 
+Unless alternative contacts are specified, use the provider's details:
+
+- **Phone:** {{company.contactPhone}}
+- **Email:** {{company.contactEmail}}
+- **Post:** {{company.contactAddress}}
+
+If unresolved internally, complaints can be escalated to:
+- **NDIS Quality & Safeguards Commission:** 1800 035 544 or www.ndiscommission.gov.au
+- **NDIA:** 1800 800 110 or www.ndis.gov.au
+
+---
+
+## 13. Privacy and Confidentiality
+Personal information is handled under the **Privacy Act 1988** and stored securely with tenant isolation.
+
+---
+
+## 14. Changes to this Agreement
+Any changes will be discussed, agreed, and recorded in writing, signed and dated by both parties.
+
+---
+
+## 15. Termination
+Either party may end this agreement with 28 days' notice. 
+Immediate termination may occur where there is serious risk to safety or persistent non-payment.
+
+---
+
+## 16. GST
+Supports provided under this Agreement are GST-free where classified as reasonable and necessary supports under the NDIS Act.
+
+---
+
+## 17. Signatures and Acceptance
+Digital signatures from both parties complete this agreement. 
+Date-stamped copies are stored securely for compliance and audit.
+`;
+
+// Template variable replacement function
+export interface TemplateVariables {
+  participant: {
+    name: string;
+    ndisNumber: string;
+  };
+  company: {
+    name: string;
+    contactPhone: string;
+    contactEmail: string;
+    contactAddress: string;
+  };
+}
+
+export function processServiceAgreementTemplate(variables: TemplateVariables): string {
+  let processedTerms = serviceAgreementTerms;
+  
+  // Replace participant variables
+  processedTerms = processedTerms.replace(/\{\{participant\.name\}\}/g, variables.participant.name);
+  processedTerms = processedTerms.replace(/\{\{participant\.ndisNumber\}\}/g, variables.participant.ndisNumber);
+  
+  // Replace company variables
+  processedTerms = processedTerms.replace(/\{\{company\.name\}\}/g, variables.company.name);
+  processedTerms = processedTerms.replace(/\{\{company\.contactPhone\}\}/g, variables.company.contactPhone);
+  processedTerms = processedTerms.replace(/\{\{company\.contactEmail\}\}/g, variables.company.contactEmail);
+  processedTerms = processedTerms.replace(/\{\{company\.contactAddress\}\}/g, variables.company.contactAddress);
+  
+  return processedTerms;
+}
