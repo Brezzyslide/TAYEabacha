@@ -222,7 +222,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
 
   // Watch for clash result changes and handle accordingly
   useEffect(() => {
-    if (clashResult !== null && Object.keys(preservedFormData).length > 0 && !isCreatingShift) {
+    if (clashResult !== null && Object.keys(preservedFormData).length > 0 && !isCreatingShift && !createShiftMutation.isPending) {
       console.log('[SHIFT FORM] Clash result updated:', clashResult);
       if (clashResult.hasClash) {
         console.log('[SHIFT FORM] Conflicts detected, showing warning');
@@ -415,8 +415,14 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
 
   const checkForTimeClashes = async (data: ShiftFormData) => {
     if (!data.userId && !data.clientId) {
-      console.log('[TIME CLASH] No user or client assigned, proceeding directly');
-      createShiftMutation.mutate(data);
+      console.log('[TIME CLASH] No user or client assigned, skipping clash check');
+      setPreservedFormData(data);
+      setShowClashWarning(false);
+      clearClashResult();
+      // Let useEffect handle creation with null clash result
+      setTimeout(() => {
+        setClashResult({ hasClash: false, message: "No clash check needed", staffClashes: [], clientClashes: [], totalConflicts: 0 });
+      }, 0);
       return;
     }
     
@@ -424,8 +430,14 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     
     if (data.isRecurring) {
       if (!data.shiftStartDate || !data.shiftStartTime || !data.shiftEndTime) {
-        console.log('[TIME CLASH] Missing recurring shift time data, proceeding directly');
-        createShiftMutation.mutate(data);
+        console.log('[TIME CLASH] Missing recurring shift time data, skipping clash check');
+        setPreservedFormData(data);
+        setShowClashWarning(false);
+        clearClashResult();
+        // Let useEffect handle creation with null clash result
+        setTimeout(() => {
+          setClashResult({ hasClash: false, message: "No clash check needed", staffClashes: [], clientClashes: [], totalConflicts: 0 });
+        }, 0);
         return;
       }
       
