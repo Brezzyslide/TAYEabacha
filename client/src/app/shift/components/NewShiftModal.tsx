@@ -88,7 +88,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { checkTimeClash, isChecking, clashResult, clearClashResult } = useTimeClashCheck();
+  const { checkTimeClash, isChecking, clashResult, clearClashResult, setClashResult } = useTimeClashCheck();
 
   const form = useForm<ShiftFormData>({
     resolver: zodResolver(shiftFormSchema),
@@ -230,7 +230,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
       } else {
         console.log('[SHIFT FORM] No conflicts detected, proceeding with creation');
         setIsCreatingShift(true); // Prevent duplicate creation
-        createShiftMutation.mutate(preservedFormData);
+        createShiftMutation.mutate(preservedFormData as ShiftFormData);
         setPreservedFormData({}); // Clear preserved data to prevent duplicate creation
         setShowClashWarning(false); // Reset warning state
         clearClashResult(); // Clear clash result to prevent re-triggering
@@ -508,7 +508,7 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
     // Use preserved form data if available, otherwise get current form values
     const formData = Object.keys(preservedFormData).length > 0 ? preservedFormData : form.getValues();
     setIsCreatingShift(true); // Set creation flag
-    createShiftMutation.mutate(formData);
+    createShiftMutation.mutate(formData as ShiftFormData);
     setShowClashWarning(false);
     clearClashResult();
     setPreservedFormData({}); // Clear preserved data after creation

@@ -75,6 +75,7 @@ export function useTimeClashCheck() {
     checkTimeClash: checkTimeClash.mutate,
     isChecking: checkTimeClash.isPending,
     clashResult,
+    setClashResult,
     clearClashResult,
     error: checkTimeClash.error,
   };
