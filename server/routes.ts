@@ -13518,8 +13518,65 @@ Maximum 400 words.`;
         return res.status(400).json({ message: "Company ID not found" });
       }
       
+      // Get clientId from query params for variable replacement
+      const clientId = req.query.clientId ? parseInt(req.query.clientId as string) : null;
+      
       const template = await storage.getDefaultTermsTemplate(companyId);
-      res.json(template);
+      
+      // If we have a clientId, process template variables
+      if (template && clientId) {
+        // Import the template processing functions
+        const { processServiceAgreementTemplate, serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
+        
+        // Fetch company data
+        const companyData = await storage.getCompanyByTenantId(req.user.tenantId);
+        
+        // Fetch client/participant data
+        const clientData = await storage.getClient(clientId, req.user.tenantId);
+        
+        if (companyData && clientData) {
+          // Use the comprehensive NDIS template and process variables
+          const processedBody = processServiceAgreementTemplate({
+            participant: {
+              name: clientData.fullName || `${clientData.firstName} ${clientData.lastName}`,
+              ndisNumber: clientData.ndisNumber || 'Not specified'
+            },
+            company: {
+              name: companyData.name,
+              contactPhone: companyData.primaryContactPhone || 'Not specified',
+              contactEmail: companyData.primaryContactEmail || 'Not specified', 
+              contactAddress: companyData.businessAddress || 'Not specified'
+            }
+          });
+          
+          // Return processed template
+          const processedTemplate = {
+            ...template,
+            body: processedBody,
+            title: "NDIS Service Agreement - Auto-Populated",
+            isProcessed: true
+          };
+          
+          console.log(`[TERMS TEMPLATE] Processed template for client ${clientData.fullName} and company ${companyData.name}`);
+          return res.json(processedTemplate);
+        } else {
+          console.warn(`[TERMS TEMPLATE] Could not fetch data - Company: ${!!companyData}, Client: ${!!clientData}`);
+        }
+      }
+      
+      // If no processing needed or data missing, return default template with comprehensive content
+      if (template) {
+        // Import and use the comprehensive template as default
+        const { serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
+        const enhancedTemplate = {
+          ...template,
+          body: serviceAgreementTerms,
+          title: "NDIS Service Agreement - Template"
+        };
+        res.json(enhancedTemplate);
+      } else {
+        res.json(template);
+      }
     } catch (error: any) {
       console.error("Get default terms template error:", error);
       res.status(500).json({ message: "Failed to get default terms template" });
