@@ -13521,65 +13521,83 @@ Maximum 400 words.`;
       // Get clientId from query params for variable replacement
       const clientId = req.query.clientId ? parseInt(req.query.clientId as string) : null;
       
-      const template = await storage.getDefaultTermsTemplate(companyId);
+      // Always import the comprehensive NDIS template
+      const { processServiceAgreementTemplate, serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
       
-      // If we have a clientId, process template variables
-      if (template && clientId) {
-        // Import the template processing functions
-        const { processServiceAgreementTemplate, serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
-        
-        // Fetch company data
-        const companyData = await storage.getCompanyByTenantId(req.user.tenantId);
-        
-        // Fetch client/participant data
-        const clientData = await storage.getClient(clientId, req.user.tenantId);
-        
-        if (companyData && clientData) {
-          // Use the comprehensive NDIS template and process variables
-          const processedBody = processServiceAgreementTemplate({
-            participant: {
-              name: clientData.fullName || `${clientData.firstName} ${clientData.lastName}`,
-              ndisNumber: clientData.ndisNumber || 'Not specified'
-            },
-            company: {
-              name: companyData.name,
-              contactPhone: companyData.primaryContactPhone || 'Not specified',
-              contactEmail: companyData.primaryContactEmail || 'Not specified', 
-              contactAddress: companyData.businessAddress || 'Not specified'
-            }
-          });
+      // If we have a clientId, process template variables with real data
+      if (clientId) {
+        try {
+          // Fetch company data
+          const companyData = await storage.getCompanyByTenantId(req.user.tenantId);
           
-          // Return processed template
-          const processedTemplate = {
-            ...template,
-            body: processedBody,
-            title: "NDIS Service Agreement - Auto-Populated",
-            isProcessed: true
-          };
+          // Fetch client/participant data
+          const clientData = await storage.getClient(clientId, req.user.tenantId);
           
-          console.log(`[TERMS TEMPLATE] Processed template for client ${clientData.fullName} and company ${companyData.name}`);
-          return res.json(processedTemplate);
-        } else {
-          console.warn(`[TERMS TEMPLATE] Could not fetch data - Company: ${!!companyData}, Client: ${!!clientData}`);
+          if (companyData && clientData) {
+            // Process variables with real data
+            const processedBody = processServiceAgreementTemplate({
+              participant: {
+                name: clientData.fullName || `${clientData.firstName} ${clientData.lastName}`,
+                ndisNumber: clientData.ndisNumber || 'Not specified'
+              },
+              company: {
+                name: companyData.name,
+                contactPhone: companyData.primaryContactPhone || 'Not specified',
+                contactEmail: companyData.primaryContactEmail || 'Not specified', 
+                contactAddress: companyData.businessAddress || 'Not specified'
+              }
+            });
+            
+            // Return processed template
+            const processedTemplate = {
+              id: "auto-populated",
+              title: "NDIS Service Agreement - Auto-Populated",
+              body: processedBody,
+              isDefault: true,
+              isProcessed: true
+            };
+            
+            console.log(`[TERMS TEMPLATE] ✅ Processed template for client ${clientData.fullName} and company ${companyData.name}`);
+            return res.json(processedTemplate);
+          } else {
+            console.warn(`[TERMS TEMPLATE] ⚠️ Could not fetch data - Company: ${!!companyData}, Client: ${!!clientData}`);
+          }
+        } catch (fetchError: any) {
+          console.warn(`[TERMS TEMPLATE] ⚠️ Error fetching client/company data:`, fetchError.message);
         }
       }
       
-      // If no processing needed or data missing, return default template with comprehensive content
-      if (template) {
-        // Import and use the comprehensive template as default
-        const { serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
-        const enhancedTemplate = {
-          ...template,
-          body: serviceAgreementTerms,
-          title: "NDIS Service Agreement - Template"
-        };
-        res.json(enhancedTemplate);
-      } else {
-        res.json(template);
-      }
+      // Fallback: Return template with placeholder variables for manual replacement
+      const defaultTemplate = {
+        id: "default-template",
+        title: "NDIS Service Agreement - Template",
+        body: serviceAgreementTerms,
+        isDefault: true,
+        isProcessed: false
+      };
+      
+      console.log(`[TERMS TEMPLATE] ✅ Returning default template with placeholders`);
+      res.json(defaultTemplate);
+      
     } catch (error: any) {
       console.error("Get default terms template error:", error);
-      res.status(500).json({ message: "Failed to get default terms template" });
+      
+      // Final fallback - return a basic template structure
+      try {
+        const { serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
+        const fallbackTemplate = {
+          id: "fallback",
+          title: "NDIS Service Agreement - Basic Template",
+          body: serviceAgreementTerms,
+          isDefault: true,
+          isProcessed: false
+        };
+        console.log(`[TERMS TEMPLATE] 🔄 Using fallback template due to error`);
+        res.json(fallbackTemplate);
+      } catch (fallbackError: any) {
+        console.error("Fallback template error:", fallbackError);
+        res.status(500).json({ message: "Failed to get default terms template" });
+      }
     }
   });
 
