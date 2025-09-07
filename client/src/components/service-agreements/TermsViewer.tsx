@@ -47,20 +47,28 @@ export default function TermsViewer({
   const [showCustomTerms, setShowCustomTerms] = useState(false);
 
   // Fetch terms template from API with optional clientId for auto-population
-  const { data: termsTemplate, isLoading: termsLoading } = useQuery<TermsTemplate>({
+  const { data: termsTemplate, isLoading: termsLoading, error: termsError } = useQuery<TermsTemplate>({
     queryKey: ["/api/terms-templates/default", clientId || null],
     queryFn: async () => {
       const url = clientId 
         ? `/api/terms-templates/default?clientId=${clientId}`
         : '/api/terms-templates/default';
       
+      console.log(`[TERMS VIEWER] Fetching terms from: ${url}`);
+      
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error('Failed to fetch terms template');
+        console.error(`[TERMS VIEWER] API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch terms template: ${response.status}`);
       }
-      return response.json();
+      
+      const data = await response.json();
+      console.log(`[TERMS VIEWER] Received template:`, data);
+      return data;
     },
     retry: false,
+    // Always enable the query - don't wait for clientId
+    enabled: true,
   });
 
   // Parse the terms content into sections with proper formatting
@@ -243,6 +251,17 @@ export default function TermsViewer({
                   </div>
                 ) : termsTemplate ? (
                   <>
+                    <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                        ✅ NDIS Service Agreement Template Loaded
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        {(termsTemplate as any)?.isProcessed ? 
+                          "Auto-populated with your company and participant data" : 
+                          "Template ready with placeholder variables"
+                        }
+                      </p>
+                    </div>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
                       This agreement includes comprehensive NDIS-compliant terms covering:
                     </p>

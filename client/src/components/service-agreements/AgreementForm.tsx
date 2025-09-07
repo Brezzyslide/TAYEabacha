@@ -59,20 +59,27 @@ export default function AgreementForm({
   });
 
   // Fetch default terms template for tenant with clientId for auto-population
-  const { data: defaultTerms } = useQuery({
+  const { data: defaultTerms, isLoading: termsLoading, error: termsError } = useQuery({
     queryKey: ["/api/terms-templates/default", agreementData.clientId || null],
     queryFn: async () => {
       const url = agreementData.clientId 
         ? `/api/terms-templates/default?clientId=${agreementData.clientId}`
         : '/api/terms-templates/default';
       
+      console.log(`[AGREEMENT FORM] Fetching terms from: ${url}`);
+      
       const response = await fetch(url);
       if (!response.ok) {
+        console.error(`[AGREEMENT FORM] API error: ${response.status} ${response.statusText}`);
         throw new Error('Failed to fetch terms template');
       }
-      return response.json();
+      
+      const data = await response.json();
+      console.log(`[AGREEMENT FORM] Received terms template:`, data);
+      return data;
     },
     enabled: mode === "create",
+    retry: false,
   });
 
   const handleFieldChange = useCallback((field: string, value: any) => {

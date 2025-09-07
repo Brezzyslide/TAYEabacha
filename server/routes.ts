@@ -13522,7 +13522,7 @@ Maximum 400 words.`;
       const clientId = req.query.clientId ? parseInt(req.query.clientId as string) : null;
       
       // Always import the comprehensive NDIS template
-      const { processServiceAgreementTemplate, serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
+      const { processServiceAgreementTemplate, serviceAgreementTerms } = await import('./shared/serviceAgreementTemplate');
       
       // If we have a clientId, process template variables with real data
       if (clientId) {
@@ -13584,7 +13584,7 @@ Maximum 400 words.`;
       
       // Final fallback - return a basic template structure
       try {
-        const { serviceAgreementTerms } = await import('../shared/serviceAgreementTemplate');
+        const { serviceAgreementTerms } = await import('./shared/serviceAgreementTemplate');
         const fallbackTemplate = {
           id: "fallback",
           title: "NDIS Service Agreement - Basic Template",
