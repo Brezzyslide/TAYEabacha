@@ -414,6 +414,14 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   };
 
   const checkForTimeClashes = async (data: ShiftFormData) => {
+    // For recurring shifts, skip clash check and proceed directly
+    if (data.isRecurring) {
+      console.log('[TIME CLASH] Recurring shift - proceeding without clash check');
+      setIsCreatingShift(true);
+      createShiftMutation.mutate(data);
+      return;
+    }
+    
     if (!data.userId && !data.clientId) {
       console.log('[TIME CLASH] No user or client assigned, skipping clash check');
       setPreservedFormData(data);
@@ -486,6 +494,14 @@ export default function NewShiftModal({ open, onOpenChange }: NewShiftModalProps
   };
 
   const onSubmit = async (data: ShiftFormData) => {
+    // For recurring shifts, skip clash check and submit directly
+    if (data.isRecurring) {
+      console.log('[SHIFT FORM] Recurring shift - submitting directly');
+      setIsCreatingShift(true);
+      createShiftMutation.mutate(data);
+      return;
+    }
+    
     // Check for time clashes first if user or client is assigned and we haven't shown warning yet
     if ((data.userId || data.clientId) && !showClashWarning && Object.keys(preservedFormData).length === 0) {
       console.log('[SHIFT FORM] Starting clash check process');
