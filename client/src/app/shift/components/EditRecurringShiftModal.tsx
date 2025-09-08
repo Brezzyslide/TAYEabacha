@@ -144,8 +144,11 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
       
       console.log("[RECURRING EDIT] Updating existing recurring shifts in series:", shift.seriesId, data);
       
+      const url = `/api/shifts/series/${shift.seriesId}/edit-existing`;
+      console.log("[RECURRING EDIT] Making API request to:", url);
+      
       // Send update request to edit existing shifts in place
-      return await apiRequest("PUT", `/api/shifts/series/${shift.seriesId}/edit-existing`, {
+      return await apiRequest("PUT", url, {
         updateData: {
           title: data.title,
           shiftStartTime: data.shiftStartTime,
