@@ -2149,16 +2149,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`[SERIES EDIT-EXISTING] Current day: ${currentDayNumber}, Target day: ${targetDayName} (${targetDayNumber})`);
               
               if (targetDayNumber !== currentDayNumber) {
-                // Calculate the closest target day from the original date
+                // Calculate the closest target day (prefer same week, then previous week)
                 let daysToAdd = targetDayNumber - currentDayNumber;
                 
-                // If target day is in the past this week, move to next week
-                if (daysToAdd < 0) {
-                  daysToAdd += 7;
-                }
+                // Move to the target day in the same week if possible
+                // If target day is later in the week, move forward
+                // If target day is earlier in the week, move backward
+                // This ensures Friday→Tuesday goes to Tuesday of same week (backward)
                 
                 targetDate = new Date(originalShiftDate);
                 targetDate.setUTCDate(targetDate.getUTCDate() + daysToAdd);
+                console.log(`[SERIES EDIT-EXISTING] Days to add: ${daysToAdd}`);
                 console.log(`[SERIES EDIT-EXISTING] Recalculated date for shift ${shift.id}: ${targetDate.toISOString()}`);
               }
             }
