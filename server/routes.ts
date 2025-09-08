@@ -2070,9 +2070,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Edit existing recurring shifts in place (preserves all shifts, only modifies their properties)
   app.put("/api/shifts/series/:seriesId/edit-existing", requireAuth, async (req: any, res) => {
+    console.log("[SERIES EDIT-EXISTING] ========== ENDPOINT HIT ==========");
     console.log("[SERIES EDIT-EXISTING] Starting in-place recurring shift edit");
     
     try {
+      console.log("[SERIES EDIT-EXISTING] Request body:", JSON.stringify(req.body, null, 2));
+      console.log("[SERIES EDIT-EXISTING] Request params:", req.params);
       const seriesId = req.params.seriesId;
       const { updateData, editType, fromShiftId } = req.body;
       
