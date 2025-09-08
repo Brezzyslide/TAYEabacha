@@ -2201,9 +2201,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         count: updatedShifts.length 
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("[SERIES EDIT-EXISTING] Error updating shift series:", error);
-      console.error("[SERIES EDIT-EXISTING] Error stack:", error.stack);
+      console.error("[SERIES EDIT-EXISTING] Error stack:", error?.stack);
       res.status(500).json({ 
         message: "Failed to edit recurring shifts in place", 
         error: error instanceof Error ? error.message : 'Unknown error' 
