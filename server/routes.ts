@@ -2132,30 +2132,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Handle time updates (preserve original date, update times)
           if (updateData.shiftStartTime || updateData.shiftEndTime) {
             const originalShiftDate = new Date(shift.startTime);
+            console.log(`[SERIES EDIT-EXISTING] Original shift ${shift.id} date: ${originalShiftDate.toISOString()}`);
+            
+            // Preserve the original date components (year, month, day) in UTC
+            const year = originalShiftDate.getUTCFullYear();
+            const month = originalShiftDate.getUTCMonth();
+            const day = originalShiftDate.getUTCDate();
             
             if (updateData.shiftStartTime) {
               const [startHours, startMinutes] = updateData.shiftStartTime.split(':').map(Number);
-              const newStartTime = new Date(originalShiftDate);
-              newStartTime.setHours(startHours, startMinutes, 0, 0);
+              // Create new date preserving the original day but with new time
+              const newStartTime = new Date(Date.UTC(year, month, day, startHours, startMinutes, 0, 0));
               shiftUpdateData.startTime = newStartTime;
               shiftUpdateData.shiftStartTime = updateData.shiftStartTime;
+              console.log(`[SERIES EDIT-EXISTING] New start time for shift ${shift.id}: ${newStartTime.toISOString()}`);
             }
             
             if (updateData.shiftEndTime) {
               const [endHours, endMinutes] = updateData.shiftEndTime.split(':').map(Number);
-              const newEndTime = new Date(originalShiftDate);
-              newEndTime.setHours(endHours, endMinutes, 0, 0);
+              // Create new end date, initially on the same day
+              let newEndTime = new Date(Date.UTC(year, month, day, endHours, endMinutes, 0, 0));
               
               // Handle overnight shifts
               if (updateData.shiftStartTime) {
                 const [startHours] = updateData.shiftStartTime.split(':').map(Number);
                 if (endHours < startHours || (endHours === startHours && endMinutes <= parseInt(updateData.shiftStartTime.split(':')[1]))) {
-                  newEndTime.setDate(newEndTime.getDate() + 1);
+                  newEndTime = new Date(Date.UTC(year, month, day + 1, endHours, endMinutes, 0, 0));
                 }
               }
               
               shiftUpdateData.endTime = newEndTime;
               shiftUpdateData.shiftEndTime = updateData.shiftEndTime;
+              console.log(`[SERIES EDIT-EXISTING] New end time for shift ${shift.id}: ${newEndTime.toISOString()}`);
             }
           }
           
