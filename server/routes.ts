@@ -2141,7 +2141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Check if we need to recalculate the date due to day-of-week change
             if (updateData.selectedWeekdays && updateData.selectedWeekdays.length > 0) {
-              const dayMap = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+              const dayMap: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
               const targetDayName = updateData.selectedWeekdays[0]; // Get first selected day
               const targetDayNumber = dayMap[targetDayName];
               const currentDayNumber = originalShiftDate.getUTCDay();
@@ -2222,7 +2222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (updatedShift) {
             updatedShifts.push(updatedShift);
           }
-        } catch (shiftError) {
+        } catch (shiftError: any) {
           console.error(`[SERIES EDIT-EXISTING] Failed to update shift ${shift.id}:`, shiftError);
           // Continue with other shifts even if one fails
         }
