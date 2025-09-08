@@ -2132,23 +2132,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (updateData.recurrenceType) shiftUpdateData.recurringPattern = updateData.recurrenceType;
           if (updateData.selectedWeekdays) shiftUpdateData.recurringDays = updateData.selectedWeekdays;
           
-          // Handle time updates (preserve original date, update times)
-          if (updateData.shiftStartTime || updateData.shiftEndTime) {
+          // Handle time and date updates 
+          if (updateData.shiftStartTime || updateData.shiftEndTime || updateData.selectedWeekdays) {
             const originalShiftDate = new Date(shift.startTime);
             console.log(`[SERIES EDIT-EXISTING] Original shift ${shift.id} date: ${originalShiftDate.toISOString()}`);
             
-            // Preserve the original date components (year, month, day) in UTC
-            const year = originalShiftDate.getUTCFullYear();
-            const month = originalShiftDate.getUTCMonth();
-            const day = originalShiftDate.getUTCDate();
+            let targetDate = new Date(originalShiftDate);
+            
+            // Check if we need to recalculate the date due to day-of-week change
+            if (updateData.selectedWeekdays && updateData.selectedWeekdays.length > 0) {
+              const dayMap = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+              const targetDayName = updateData.selectedWeekdays[0]; // Get first selected day
+              const targetDayNumber = dayMap[targetDayName];
+              const currentDayNumber = originalShiftDate.getUTCDay();
+              
+              console.log(`[SERIES EDIT-EXISTING] Current day: ${currentDayNumber}, Target day: ${targetDayName} (${targetDayNumber})`);
+              
+              if (targetDayNumber !== currentDayNumber) {
+                // Calculate the closest target day from the original date
+                let daysToAdd = targetDayNumber - currentDayNumber;
+                
+                // If target day is in the past this week, move to next week
+                if (daysToAdd < 0) {
+                  daysToAdd += 7;
+                }
+                
+                targetDate = new Date(originalShiftDate);
+                targetDate.setUTCDate(targetDate.getUTCDate() + daysToAdd);
+                console.log(`[SERIES EDIT-EXISTING] Recalculated date for shift ${shift.id}: ${targetDate.toISOString()}`);
+              }
+            }
+            
+            // Get date components from target date
+            const year = targetDate.getUTCFullYear();
+            const month = targetDate.getUTCMonth();
+            const day = targetDate.getUTCDate();
             
             if (updateData.shiftStartTime) {
               const [startHours, startMinutes] = updateData.shiftStartTime.split(':').map(Number);
-              // Create new date preserving the original day but with new time
+              // Create new date with target day and new time
               const newStartTime = new Date(Date.UTC(year, month, day, startHours, startMinutes, 0, 0));
               shiftUpdateData.startTime = newStartTime;
               shiftUpdateData.shiftStartTime = updateData.shiftStartTime;
               console.log(`[SERIES EDIT-EXISTING] New start time for shift ${shift.id}: ${newStartTime.toISOString()}`);
+            } else if (updateData.selectedWeekdays) {
+              // Day changed but time didn't - preserve original time on new day
+              const originalTime = new Date(shift.startTime);
+              const newStartTime = new Date(Date.UTC(year, month, day, originalTime.getUTCHours(), originalTime.getUTCMinutes(), 0, 0));
+              shiftUpdateData.startTime = newStartTime;
+              console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} to new day, same time: ${newStartTime.toISOString()}`);
             }
             
             if (updateData.shiftEndTime) {
@@ -2167,6 +2199,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
               shiftUpdateData.endTime = newEndTime;
               shiftUpdateData.shiftEndTime = updateData.shiftEndTime;
               console.log(`[SERIES EDIT-EXISTING] New end time for shift ${shift.id}: ${newEndTime.toISOString()}`);
+            } else if (updateData.selectedWeekdays) {
+              // Day changed but end time didn't - preserve original end time on new day
+              const originalEndTime = new Date(shift.endTime);
+              let newEndTime = new Date(Date.UTC(year, month, day, originalEndTime.getUTCHours(), originalEndTime.getUTCMinutes(), 0, 0));
+              
+              // Check if original shift was overnight
+              const originalStart = new Date(shift.startTime);
+              if (originalEndTime.getUTCDate() !== originalStart.getUTCDate()) {
+                newEndTime = new Date(Date.UTC(year, month, day + 1, originalEndTime.getUTCHours(), originalEndTime.getUTCMinutes(), 0, 0));
+              }
+              
+              shiftUpdateData.endTime = newEndTime;
+              console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} end time to new day: ${newEndTime.toISOString()}`);
             }
           }
           
