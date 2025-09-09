@@ -1554,11 +1554,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'createdAt', 'updatedAt', 'scheduledStartTime', 'scheduledEndTime'
       ];
       
-      // Keep Australian times as strings - NO UTC conversion
+      // Convert ISO strings to Date objects for schema validation
       timestampFields.forEach(field => {
         if (processedUpdateData[field] && typeof processedUpdateData[field] === 'string') {
-          console.log(`[SHIFT UPDATE] ✅ KEEPING AUSTRALIAN TIME ${field}: ${processedUpdateData[field]}`);
-          // Keep as string - no Date conversion to avoid UTC
+          console.log(`[SHIFT UPDATE] ✅ CONVERTING ${field}: ${processedUpdateData[field]}`);
+          processedUpdateData[field] = new Date(processedUpdateData[field]);
         }
       });
       
