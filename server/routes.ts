@@ -2312,7 +2312,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const seriesId = req.params.seriesId;
-      const { deleteType, fromShiftId } = req.body;
+      // Read from query parameters to avoid DELETE body parsing issues
+      const deleteType = req.query.deleteType as string;
+      const fromShiftId = req.query.fromShiftId ? parseInt(req.query.fromShiftId as string) : undefined;
       
       console.log(`[SERIES DELETE] User ${req.user.id} (${req.user.role}) deleting ${deleteType} for series ${seriesId}`);
       console.log(`[SERIES DELETE] FromShiftId: ${fromShiftId}`);
