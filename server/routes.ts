@@ -1301,12 +1301,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("[SHIFT CREATE] Request body:", JSON.stringify(req.body, null, 2));
     
     try {
-      // Convert string dates to Date objects before validation
+      // Keep Australian times as strings - NO UTC conversion
       const processedBody = {
         ...req.body,
-        startTime: req.body.startTime ? new Date(req.body.startTime) : undefined,
-        endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
-        shiftStartDate: req.body.shiftStartDate ? new Date(req.body.shiftStartDate) : undefined,
+        startTime: req.body.startTime || undefined,
+        endTime: req.body.endTime || undefined,
+        shiftStartDate: req.body.shiftStartDate || undefined,
         tenantId: req.user.tenantId,
       };
       
@@ -1496,17 +1496,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'createdAt', 'updatedAt', 'scheduledStartTime', 'scheduledEndTime'
       ];
       
-      // Convert ALL timestamp fields to Date objects
+      // Keep Australian times as strings - NO UTC conversion
       timestampFields.forEach(field => {
         if (processedUpdateData[field] && typeof processedUpdateData[field] === 'string') {
-          console.log(`[SHIFT UPDATE] ✅ CONVERTING ${field} from: ${processedUpdateData[field]}`);
-          try {
-            processedUpdateData[field] = new Date(processedUpdateData[field]);
-            console.log(`[SHIFT UPDATE] ✅ ${field} converted to: ${processedUpdateData[field]}`);
-          } catch (error) {
-            console.error(`[SHIFT UPDATE] ❌ Failed to convert ${field}:`, error);
-            delete processedUpdateData[field]; // Remove invalid date field
-          }
+          console.log(`[SHIFT UPDATE] ✅ KEEPING AUSTRALIAN TIME ${field}: ${processedUpdateData[field]}`);
+          // Keep as string - no Date conversion to avoid UTC
         }
       });
       
