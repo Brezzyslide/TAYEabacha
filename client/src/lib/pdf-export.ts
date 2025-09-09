@@ -17,20 +17,35 @@ export interface PDFSection {
   type?: 'text' | 'list' | 'table' | 'html' | 'behaviour_support' | 'about_me' | 'goals_outcomes' | 'adl_support' | 'communication_support' | 'structure_routine' | 'disaster_management' | 'mealtime_management';
 }
 
+// TUSK-inspired color palette from replit.md (matching invoice styling)
+const COLORS = {
+  deepNavy: '#2B4C7E',     // Deep Navy
+  warmGold: '#D4AF37',     // Warm Gold
+  sageGreen: '#87A96B',    // Sage Green
+  cream: '#F5F5DC',        // Cream
+  lightGray: '#F8F9FA',
+  darkGray: '#6B7280',
+  black: '#1F2937'
+};
+
 export class PDFExportUtility {
   private pdf: jsPDF;
   private currentY: number = 0;
-  private pageHeight: number = 210; // A4 landscape height in mm
-  private pageWidth: number = 297; // A4 landscape width in mm
-  private margin: number = 10; // 1cm margins as requested
+  private pageHeight: number = 210; // A4 portrait height in mm
+  private pageWidth: number = 297; // A4 portrait width in mm (switch to portrait for readability)
+  private margin: number = 15; // Slightly larger margins for professional look
   private contentWidth: number;
-  private headerHeight: number = 40;
-  private footerHeight: number = 15;
+  private headerHeight: number = 50; // Taller header like invoice
+  private footerHeight: number = 20;
   private headerAdded: boolean = false;
 
   constructor() {
-    this.pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
+    this.pdf = new jsPDF('p', 'mm', 'a4'); // 'p' for portrait (like invoices)
     this.contentWidth = this.pageWidth - (this.margin * 2);
+    
+    // Set cream background for professional look
+    this.pdf.setFillColor(COLORS.cream);
+    this.pdf.rect(0, 0, this.pageWidth, this.pageHeight, 'F');
   }
 
   async generateStructuredPDF(options: PDFExportOptions, sections: PDFSection[]): Promise<void> {
@@ -51,51 +66,42 @@ export class PDFExportUtility {
     // Ensure we're on the first page
     this.pdf.setPage(1);
     
-    // Professional gradient-style header background
-    this.pdf.setFillColor(37, 99, 235); // Professional blue
-    this.pdf.rect(this.margin, 10, this.contentWidth, this.headerHeight, 'F');
-    
-    // Add subtle accent bar at bottom of header
-    this.pdf.setFillColor(59, 130, 246); // Lighter blue accent
-    this.pdf.rect(this.margin, 10 + this.headerHeight - 5, this.contentWidth, 5, 'F');
+    // Header Section - Deep Navy background (matching invoice style)
+    this.pdf.setFillColor(COLORS.deepNavy);
+    this.pdf.rect(0, 0, this.pageWidth, this.headerHeight, 'F');
 
-    // Company name with white text - CENTERED
-    this.pdf.setFontSize(18);
+    // Company Logo/Name - NeedCareAI+ (matching invoice)
+    this.pdf.setTextColor('#FFFFFF');
+    this.pdf.setFontSize(20);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setTextColor(255, 255, 255);
-    const companyNameWidth = this.pdf.getTextWidth(options.companyName);
-    const companyNameX = (this.pageWidth - companyNameWidth) / 2;
-    this.pdf.text(options.companyName, companyNameX, 23);
+    this.pdf.text('NeedCareAI+', this.margin, 20);
     
-    // Document title - CENTERED
-    this.pdf.setFontSize(11);
-    this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setTextColor(219, 234, 254); // Light blue text
-    const titleWidth = this.pdf.getTextWidth(options.title);
-    const titleX = (this.pageWidth - titleWidth) / 2;
-    this.pdf.text(options.title, titleX, 31);
-    
-    // Staff and dates with better positioning and alignment
     this.pdf.setFontSize(9);
-    this.pdf.setTextColor(191, 219, 254); // Very light blue
-    
-    // Left side: Staff and submission date
-    this.pdf.text(`Staff: ${options.staffName}`, this.margin + 8, 38);
-    this.pdf.text(`Submission Date: ${options.submissionDate}`, this.margin + 8, 43);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.text('Advanced Workforce Management Platform', this.margin, 27);
+    this.pdf.text('Multi-Tenant Healthcare Solutions', this.margin, 32);
 
-    // Right side: Export timestamp with proper alignment
-    const now = new Date();
-    const exportTime = now.toLocaleString('en-AU', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-    const exportText = `Exported: ${exportTime}`;
-    const exportTextWidth = this.pdf.getTextWidth(exportText);
-    this.pdf.text(exportText, this.pageWidth - this.margin - exportTextWidth - 5, 38);
+    // Document title and company name - Right aligned
+    this.pdf.setFontSize(16);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.text(`CARE SUPPORT PLAN`, this.pageWidth - this.margin, 20, { align: 'right' });
+    
+    this.pdf.setFontSize(12);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.text(options.companyName, this.pageWidth - this.margin, 28, { align: 'right' });
+
+    // Plan ID and export date - Right aligned
+    this.pdf.setFontSize(9);
+    if (options.planId) {
+      this.pdf.text(`Plan ID: ${options.planId}`, this.pageWidth - this.margin, 35, { align: 'right' });
+    }
+    
+    const exportDate = new Date().toLocaleDateString('en-AU');
+    this.pdf.text(`Generated: ${exportDate}`, this.pageWidth - this.margin, 42, { align: 'right' });
+
+    // Staff information - Left aligned
+    this.pdf.text(`Staff: ${options.staffName}`, this.margin, 42);
+    this.pdf.text(`Submission: ${options.submissionDate}`, this.margin, 47);
     
     this.headerAdded = true;
   }
@@ -110,24 +116,24 @@ export class PDFExportUtility {
       
       this.pdf.setFontSize(8);
       this.pdf.setFont('helvetica', 'normal');
-      this.pdf.setTextColor(100, 100, 100);
+      this.pdf.setTextColor(COLORS.darkGray);
       
       const now = new Date();
-      const timestamp = now.toISOString().split('T')[0] + ' ' + 
-                       now.toTimeString().split(' ')[0].substring(0, 5);
+      const timestamp = now.toLocaleDateString('en-AU') + ' ' + 
+                       now.toLocaleTimeString('en-AU', { hour12: false, hour: '2-digit', minute: '2-digit' });
       
-      // Header format: Company Name | Exported: {date} | Page {X} of {Y}
-      const headerText = `${options.companyName} | Exported: ${timestamp} | Page ${i} of ${pageCount}`;
-      const headerWidth = this.pdf.getTextWidth(headerText);
-      const headerX = (this.pageWidth - headerWidth) / 2;
-      this.pdf.text(headerText, headerX, footerY + 8);
+      // Professional footer format (matching invoice style)
+      const footerText = `${options.companyName} | Generated: ${timestamp} | Page ${i} of ${pageCount}`;
+      const footerWidth = this.pdf.getTextWidth(footerText);
+      const footerX = (this.pageWidth - footerWidth) / 2;
+      this.pdf.text(footerText, footerX, footerY + 10);
       
-      // Footer format: Staff: {email} | Plan ID: {plan_id}
+      // Staff and Plan ID info
       if (options.planId) {
-        const footerText = `Staff: ${options.staffName} | Plan ID: ${options.planId}`;
-        const footerWidth = this.pdf.getTextWidth(footerText);
-        const footerX = (this.pageWidth - footerWidth) / 2;
-        this.pdf.text(footerText, footerX, footerY + 12);
+        const staffText = `Staff: ${options.staffName} | Plan ID: ${options.planId}`;
+        const staffWidth = this.pdf.getTextWidth(staffText);
+        const staffX = (this.pageWidth - staffWidth) / 2;
+        this.pdf.text(staffText, staffX, footerY + 16);
       }
     }
   }
@@ -135,19 +141,23 @@ export class PDFExportUtility {
   private addSection(section: PDFSection): void {
     this.checkPageBreak(25);
 
-    // Professional section header with background
-    this.pdf.setFillColor(37, 99, 235); // Professional blue
-    this.pdf.rect(this.margin, this.currentY - 4, this.contentWidth, 16, 'F');
+    // Professional section header with TUSK styling (Deep Navy like invoice)
+    this.pdf.setFillColor(COLORS.deepNavy);
+    this.pdf.rect(this.margin, this.currentY - 4, this.contentWidth, 18, 'F');
+    
+    // Add warm gold accent bar at bottom of section header
+    this.pdf.setFillColor(COLORS.warmGold);
+    this.pdf.rect(this.margin, this.currentY + 10, this.contentWidth, 3, 'F');
     
     this.pdf.setFontSize(14);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setTextColor(255, 255, 255); // White text on blue background
+    this.pdf.setTextColor(255, 255, 255); // White text on navy background
     this.pdf.text(section.title, this.margin + 5, this.currentY + 6);
-    this.currentY += 18;
+    this.currentY += 22;
 
     this.pdf.setFontSize(10);
     this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setTextColor(0, 0, 0); // Reset to black text
+    this.pdf.setTextColor(COLORS.black); // Reset to dark text
 
     if (section.type === 'list' && Array.isArray(section.content)) {
       this.addList(section.content);
