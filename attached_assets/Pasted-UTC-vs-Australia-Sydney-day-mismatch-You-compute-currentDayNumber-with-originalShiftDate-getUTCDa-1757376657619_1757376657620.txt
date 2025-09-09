@@ -1,0 +1,145 @@
+UTC vs Australia/Sydney (day mismatch)
+
+You compute currentDayNumber with originalShiftDate.getUTCDay().
+
+But your users pick “Sunday” in local time.
+
+If a shift is 00:30 AEST, its UTC day might still be Saturday.
+
+Result: “move to Sunday” gets calculated from Saturday (UTC) → lands on the wrong calendar day locally.
+
+Fix: convert to Australia/Sydney before reading the weekday.
+
+import { convertToAustralianTime } from "@/lib/timezone";
+
+const localDate = convertToAustralianTime(originalShiftDate);
+const currentDayNumber = localDate.getDay(); // 0..6 in local time
+
+
+No modulo wrap when moving days
+
+Code: daysToAdd = targetDayNumber - currentDayNumber;
+
+If target < current (e.g., target Sunday(0), current Tuesday(2)), you get -2 days, which hops backwards, not to the next Sunday.
+
+Fix: always hop forward to the next occurrence:
+
+const daysToAdd = (targetDayNumber - currentDayNumber + 7) % 7;
+
+
+If you want “this week if still ahead, otherwise next week”, that modulo is essential.
+
+Date moved, but times rebuilt with the old Y/M/D
+
+You set targetDate correctly, but when you rebuild startTime/endTime you use year, month, day from the original date, not targetDate.
+
+That quietly snaps the shift back to the old day.
+
+Fix: always derive Y/M/D from targetDate (in local) when building new UTC timestamps.
+
+const y = targetLocal.getFullYear();
+const m = targetLocal.getMonth();
+const d = targetLocal.getDate();
+
+const newStartLocal = new Date(y, m, d, startHours, startMinutes, 0, 0);
+// then convert newStartLocal to UTC for storage:
+const newStartUTC = new Date(Date.UTC(
+  newStartLocal.getFullYear(),
+  newStartLocal.getMonth(),
+  newStartLocal.getDate(),
+  newStartLocal.getHours(),
+  newStartLocal.getMinutes(),
+  0, 0
+));
+
+
+DST boundary quirks
+
+Around the AEST↔AEDT change, “02:30” may not exist or may repeat.
+
+If you compute in UTC first, the local day can shift unexpectedly.
+
+Fix:
+
+Always compute in local first, then convert to UTC to store.
+
+Add DST boundary tests (late March / early October).
+
+Only using the first weekday
+
+Your code uses selectedWeekdays[0]. If a user ticks multiple days, the first day’s math may “pull” all occurrences, making it look like Sunday turned into some other ticked day.
+
+Fix: if multiple days are allowed, generate placements for each selected weekday per recurrence window. If only one day is allowed, enforce it in the UI.
+
+Cut-line logic with UTC
+
+For “this and future”, you pick cutoffDate = new Date(fromShift.startTime) (UTC).
+
+If the clicked shift’s local day ≠ its UTC day, the filter can grab the wrong set of “future” items.
+
+Fix: compare using local midnight boundaries:
+
+const clickedLocal = convertToAustralianTime(fromShift.startTime);
+const cutoffLocalStartOfMinute = new Date(
+  clickedLocal.getFullYear(), clickedLocal.getMonth(), clickedLocal.getDate(),
+  clickedLocal.getHours(), clickedLocal.getMinutes(), 0, 0
+);
+const cutoffUTC = new Date(Date.UTC(
+  cutoffLocalStartOfMinute.getFullYear(),
+  cutoffLocalStartOfMinute.getMonth(),
+  cutoffLocalStartOfMinute.getDate(),
+  cutoffLocalStartOfMinute.getHours(),
+  cutoffLocalStartOfMinute.getMinutes(), 0, 0
+));
+
+const shiftsToEdit = seriesShifts.filter(s => new Date(s.startTime) >= cutoffUTC);
+
+A safer day-change recipe (drop-in pattern)
+
+Use this whenever changing the weekday:
+
+const dayMap = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+
+function moveToNextLocalWeekday(originalUtc: Date, targetDayName: string, startHHMM: string, endHHMM?: string) {
+  // 1) Work in LOCAL first
+  const local = convertToAustralianTime(originalUtc);
+  const current = local.getDay(); // local weekday 0..6
+  const target = dayMap[targetDayName];
+
+  const addDays = (target - current + 7) % 7; // always forward
+  const targetLocal = new Date(
+    local.getFullYear(), local.getMonth(), local.getDate() + addDays, 0, 0, 0, 0
+  );
+
+  // 2) Apply start time in LOCAL
+  const [sh, sm] = startHHMM.split(":").map(Number);
+  const startLocal = new Date(
+    targetLocal.getFullYear(), targetLocal.getMonth(), targetLocal.getDate(), sh, sm, 0, 0
+  );
+
+  // 3) Build end time in LOCAL (handle overnight)
+  let endLocal: Date | undefined;
+  if (endHHMM) {
+    const [eh, em] = endHHMM.split(":").map(Number);
+    endLocal = new Date(
+      targetLocal.getFullYear(), targetLocal.getMonth(), targetLocal.getDate(), eh, em, 0, 0
+    );
+    if (eh < sh || (eh === sh && em < sm)) {
+      endLocal.setDate(endLocal.getDate() + 1); // overnight
+    }
+  }
+
+  // 4) Convert both to UTC for storage
+  const startUTC = new Date(Date.UTC(
+    startLocal.getFullYear(), startLocal.getMonth(), startLocal.getDate(),
+    startLocal.getHours(), startLocal.getMinutes(), 0, 0
+  ));
+  const endUTC = endLocal
+    ? new Date(Date.UTC(
+        endLocal.getFullYear(), endLocal.getMonth(), endLocal.getDate(),
+        endLocal.getHours(), endLocal.getMinutes(), 0, 0
+      ))
+    : undefined;
+
+  return { startUTC, endUTC };
+}
