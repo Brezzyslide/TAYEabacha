@@ -2132,134 +2132,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (updateData.recurrenceType) shiftUpdateData.recurringPattern = updateData.recurrenceType;
           if (updateData.selectedWeekdays) shiftUpdateData.recurringDays = updateData.selectedWeekdays;
           
-          // Handle time and date updates with proper timezone awareness
-          if (updateData.shiftStartTime || updateData.shiftEndTime || updateData.selectedWeekdays) {
+          // Handle time updates ONLY for fields that actually changed
+          
+          // Handle day-of-week changes FIRST (affects dates)
+          let targetDate = new Date(shift.startTime); // Default to original date
+          let needsDateRecalculation = false;
+          
+          if (updateData.selectedWeekdays && updateData.selectedWeekdays.length > 0) {
             const originalShiftDate = new Date(shift.startTime);
-            console.log(`[SERIES EDIT-EXISTING] Original shift ${shift.id} date: ${originalShiftDate.toISOString()}`);
+            console.log(`[SERIES EDIT-EXISTING] Day change - Original shift ${shift.id} date: ${originalShiftDate.toISOString()}`);
             
-            let targetDate = new Date(originalShiftDate);
+            const dayMap: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+            const targetDayName = updateData.selectedWeekdays[0]; // Get first selected day
+            const targetDayNumber = dayMap[targetDayName];
             
-            // Check if we need to recalculate the date due to day-of-week change
-            if (updateData.selectedWeekdays && updateData.selectedWeekdays.length > 0) {
-              const dayMap: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
-              const targetDayName = updateData.selectedWeekdays[0]; // Get first selected day
-              const targetDayNumber = dayMap[targetDayName];
+            // Use Australian local time to get correct day
+            const localShiftDate = new Date(originalShiftDate.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+            const currentDayNumber = localShiftDate.getDay(); // 0..6 in local time
+            
+            console.log(`[SERIES EDIT-EXISTING] Local shift date: ${localShiftDate.toISOString()}`);
+            console.log(`[SERIES EDIT-EXISTING] Current day (local): ${currentDayNumber}, Target day: ${targetDayName} (${targetDayNumber})`);
+            
+            if (targetDayNumber !== currentDayNumber) {
+              needsDateRecalculation = true;
+              // Move forward to next occurrence 
+              const daysToAdd = (targetDayNumber - currentDayNumber + 7) % 7;
               
-              // FIXED: Use Australian local time instead of UTC to get correct day
-              const localShiftDate = new Date(originalShiftDate.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-              const currentDayNumber = localShiftDate.getDay(); // 0..6 in local time
+              // Work in local time first
+              const local = new Date(originalShiftDate.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+              targetDate = new Date(
+                local.getFullYear(), 
+                local.getMonth(), 
+                local.getDate() + daysToAdd, 
+                0, 0, 0, 0
+              );
               
-              console.log(`[SERIES EDIT-EXISTING] Local shift date: ${localShiftDate.toISOString()}`);
-              console.log(`[SERIES EDIT-EXISTING] Current day (local): ${currentDayNumber}, Target day: ${targetDayName} (${targetDayNumber})`);
-              
-              if (targetDayNumber !== currentDayNumber) {
-                // FIXED: Always move forward to next occurrence with modulo wrap
-                const daysToAdd = (targetDayNumber - currentDayNumber + 7) % 7;
-                
-                // Work in local time first
-                const local = new Date(originalShiftDate.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-                targetDate = new Date(
-                  local.getFullYear(), 
-                  local.getMonth(), 
-                  local.getDate() + daysToAdd, 
-                  0, 0, 0, 0
-                );
-                
-                console.log(`[SERIES EDIT-EXISTING] Days to add: ${daysToAdd}`);
-                console.log(`[SERIES EDIT-EXISTING] Target local date for shift ${shift.id}: ${targetDate.toISOString()}`);
-              }
+              console.log(`[SERIES EDIT-EXISTING] Days to add: ${daysToAdd}`);
+              console.log(`[SERIES EDIT-EXISTING] Target local date for shift ${shift.id}: ${targetDate.toISOString()}`);
             }
+          }
+          
+          // Get date components for time calculations
+          const workingDate = needsDateRecalculation ? 
+            new Date(targetDate.toLocaleString('en-US', { timeZone: 'Australia/Sydney' })) :
+            new Date(new Date(shift.startTime).toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+          const year = workingDate.getFullYear();
+          const month = workingDate.getMonth();
+          const day = workingDate.getDate();
+          
+          console.log(`[SERIES EDIT-EXISTING] Working date components: ${year}-${month+1}-${day}`);
+          
+          // Handle START TIME changes (only if explicitly changed)
+          if (updateData.shiftStartTime) {
+            const [startHours, startMinutes] = updateData.shiftStartTime.split(':').map(Number);
+            const newStartLocal = new Date(year, month, day, startHours, startMinutes, 0, 0);
+            const newStartUTC = new Date(Date.UTC(
+              newStartLocal.getFullYear(),
+              newStartLocal.getMonth(), 
+              newStartLocal.getDate(),
+              newStartLocal.getHours(),
+              newStartLocal.getMinutes(),
+              0, 0
+            ));
+            shiftUpdateData.startTime = newStartUTC;
+            shiftUpdateData.shiftStartTime = updateData.shiftStartTime;
+            console.log(`[SERIES EDIT-EXISTING] Updated start time for shift ${shift.id}: ${newStartUTC.toISOString()}`);
+          } else if (needsDateRecalculation) {
+            // Day changed but start time didn't - preserve original time on new day
+            const originalTime = new Date(shift.startTime);
+            const originalLocal = new Date(originalTime.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+            const newStartLocal = new Date(year, month, day, originalLocal.getHours(), originalLocal.getMinutes(), 0, 0);
+            const newStartUTC = new Date(Date.UTC(
+              newStartLocal.getFullYear(),
+              newStartLocal.getMonth(),
+              newStartLocal.getDate(), 
+              newStartLocal.getHours(),
+              newStartLocal.getMinutes(),
+              0, 0
+            ));
+            shiftUpdateData.startTime = newStartUTC;
+            console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} to new day, preserved start time: ${newStartUTC.toISOString()}`);
+          }
+          
+          // Handle END TIME changes (only if explicitly changed)
+          if (updateData.shiftEndTime) {
+            const [endHours, endMinutes] = updateData.shiftEndTime.split(':').map(Number);
+            let newEndLocal = new Date(year, month, day, endHours, endMinutes, 0, 0);
             
-            // FIXED: Get date components from target LOCAL date, not UTC
-            const targetLocal = new Date(targetDate.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-            const year = targetLocal.getFullYear();
-            const month = targetLocal.getMonth();
-            const day = targetLocal.getDate();
-            
-            console.log(`[SERIES EDIT-EXISTING] Target local date components: ${year}-${month+1}-${day}`);
-            
+            // Handle overnight shifts - check against current or updated start time
+            let startHours;
             if (updateData.shiftStartTime) {
-              const [startHours, startMinutes] = updateData.shiftStartTime.split(':').map(Number);
-              // Create in local time first, then convert to UTC for storage
-              const newStartLocal = new Date(year, month, day, startHours, startMinutes, 0, 0);
-              const newStartUTC = new Date(Date.UTC(
-                newStartLocal.getFullYear(),
-                newStartLocal.getMonth(), 
-                newStartLocal.getDate(),
-                newStartLocal.getHours(),
-                newStartLocal.getMinutes(),
-                0, 0
-              ));
-              shiftUpdateData.startTime = newStartUTC;
-              shiftUpdateData.shiftStartTime = updateData.shiftStartTime;
-              console.log(`[SERIES EDIT-EXISTING] New start time for shift ${shift.id}: ${newStartUTC.toISOString()}`);
-            } else if (updateData.selectedWeekdays) {
-              // Day changed but time didn't - preserve original time on new day
-              const originalTime = new Date(shift.startTime);
-              const originalLocal = new Date(originalTime.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-              const newStartLocal = new Date(year, month, day, originalLocal.getHours(), originalLocal.getMinutes(), 0, 0);
-              const newStartUTC = new Date(Date.UTC(
-                newStartLocal.getFullYear(),
-                newStartLocal.getMonth(),
-                newStartLocal.getDate(), 
-                newStartLocal.getHours(),
-                newStartLocal.getMinutes(),
-                0, 0
-              ));
-              shiftUpdateData.startTime = newStartUTC;
-              console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} to new day, same time: ${newStartUTC.toISOString()}`);
+              startHours = parseInt(updateData.shiftStartTime.split(':')[0]);
+            } else {
+              const currentStartLocal = new Date(new Date(shift.startTime).toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+              startHours = currentStartLocal.getHours();
             }
             
-            if (updateData.shiftEndTime) {
-              const [endHours, endMinutes] = updateData.shiftEndTime.split(':').map(Number);
-              // Create in local time first
-              let newEndLocal = new Date(year, month, day, endHours, endMinutes, 0, 0);
-              
-              // Handle overnight shifts
-              if (updateData.shiftStartTime) {
-                const [startHours] = updateData.shiftStartTime.split(':').map(Number);
-                if (endHours < startHours || (endHours === startHours && endMinutes <= parseInt(updateData.shiftStartTime.split(':')[1]))) {
-                  newEndLocal = new Date(year, month, day + 1, endHours, endMinutes, 0, 0);
-                }
-              }
-              
-              // Convert to UTC for storage
-              const newEndUTC = new Date(Date.UTC(
-                newEndLocal.getFullYear(),
-                newEndLocal.getMonth(),
-                newEndLocal.getDate(),
-                newEndLocal.getHours(),
-                newEndLocal.getMinutes(),
-                0, 0
-              ));
-              shiftUpdateData.endTime = newEndUTC;
-              shiftUpdateData.shiftEndTime = updateData.shiftEndTime;
-              console.log(`[SERIES EDIT-EXISTING] New end time for shift ${shift.id}: ${newEndUTC.toISOString()}`);
-            } else if (updateData.selectedWeekdays) {
-              // Day changed but end time didn't - preserve original end time on new day
-              const originalEndTime = new Date(shift.endTime);
-              const originalEndLocal = new Date(originalEndTime.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-              let newEndLocal = new Date(year, month, day, originalEndLocal.getHours(), originalEndLocal.getMinutes(), 0, 0);
-              
-              // Check if original shift was overnight (in local time)
-              const originalStartTime = new Date(shift.startTime);
-              const originalStartLocal = new Date(originalStartTime.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-              if (originalEndLocal.getDate() !== originalStartLocal.getDate()) {
-                newEndLocal = new Date(year, month, day + 1, originalEndLocal.getHours(), originalEndLocal.getMinutes(), 0, 0);
-              }
-              
-              // Convert to UTC for storage
-              const newEndUTC = new Date(Date.UTC(
-                newEndLocal.getFullYear(),
-                newEndLocal.getMonth(),
-                newEndLocal.getDate(),
-                newEndLocal.getHours(),
-                newEndLocal.getMinutes(),
-                0, 0
-              ));
-              shiftUpdateData.endTime = newEndUTC;
-              console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} end time to new day: ${newEndUTC.toISOString()}`);
+            if (endHours < startHours || (endHours === startHours && endMinutes <= parseInt((updateData.shiftStartTime || shift.shiftStartTime || '00:00').split(':')[1]))) {
+              newEndLocal = new Date(year, month, day + 1, endHours, endMinutes, 0, 0);
             }
+            
+            const newEndUTC = new Date(Date.UTC(
+              newEndLocal.getFullYear(),
+              newEndLocal.getMonth(),
+              newEndLocal.getDate(),
+              newEndLocal.getHours(),
+              newEndLocal.getMinutes(),
+              0, 0
+            ));
+            shiftUpdateData.endTime = newEndUTC;
+            shiftUpdateData.shiftEndTime = updateData.shiftEndTime;
+            console.log(`[SERIES EDIT-EXISTING] Updated end time for shift ${shift.id}: ${newEndUTC.toISOString()}`);
+          } else if (needsDateRecalculation) {
+            // Day changed but end time didn't - preserve original time on new day
+            const originalEndTime = new Date(shift.endTime);
+            const originalEndLocal = new Date(originalEndTime.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+            let newEndLocal = new Date(year, month, day, originalEndLocal.getHours(), originalEndLocal.getMinutes(), 0, 0);
+            
+            // Check if original shift was overnight (in local time)
+            const originalStartTime = new Date(shift.startTime);
+            const originalStartLocal = new Date(originalStartTime.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+            if (originalEndLocal.getDate() !== originalStartLocal.getDate()) {
+              newEndLocal = new Date(year, month, day + 1, originalEndLocal.getHours(), originalEndLocal.getMinutes(), 0, 0);
+            }
+            
+            // Convert to UTC for storage
+            const newEndUTC = new Date(Date.UTC(
+              newEndLocal.getFullYear(),
+              newEndLocal.getMonth(),
+              newEndLocal.getDate(),
+              newEndLocal.getHours(),
+              newEndLocal.getMinutes(),
+              0, 0
+            ));
+            shiftUpdateData.endTime = newEndUTC;
+            console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} end time to new day: ${newEndUTC.toISOString()}`);
           }
           
           console.log(`[SERIES EDIT-EXISTING] Updating shift ${shift.id} with:`, shiftUpdateData);
