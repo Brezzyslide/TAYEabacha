@@ -56,6 +56,10 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// Add timezone middleware to capture client timezone
+import { timezoneMiddleware } from './middleware/timezone';
+app.use(timezoneMiddleware);
+
 // Basic health check for development
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
