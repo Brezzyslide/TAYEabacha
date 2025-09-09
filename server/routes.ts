@@ -1342,9 +1342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         processedBody = {
           ...processedBody,
-          startTime: startUtc.toISOString(),
-          endTime: endUtc.toISOString(),
-          shiftStartDate: req.body.shiftStartDate || undefined,
+          startTime: startUtc,
+          endTime: endUtc,
+          shiftStartDate: req.body.shiftStartDate ? new Date(req.body.shiftStartDate) : undefined,
         };
         
         console.log(`[SHIFT CREATE] Converted times - Start: ${startUtc.toISOString()}, End: ${endUtc.toISOString()}`);
@@ -1352,9 +1352,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For single shifts, use existing logic
         processedBody = {
           ...processedBody,
-          startTime: req.body.startTime || undefined,
-          endTime: req.body.endTime || undefined,
-          shiftStartDate: req.body.shiftStartDate || undefined,
+          startTime: req.body.startTime ? new Date(req.body.startTime) : undefined,
+          endTime: req.body.endTime ? new Date(req.body.endTime) : undefined,
+          shiftStartDate: req.body.shiftStartDate ? new Date(req.body.shiftStartDate) : undefined,
         };
       }
       
