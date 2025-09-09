@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar, Clock, User } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, addYears, subYears, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays, addWeeks, subWeeks } from "date-fns";
 import { type Shift } from "@shared/schema";
 import ShiftStatusTag from "./ShiftStatusTag";
+import { formatAustralianTimeForInput } from "@/lib/timezone";
 
 interface ShiftCalendarViewProps {
   shifts: Shift[];
@@ -295,7 +296,7 @@ export default function ShiftCalendarView({ shifts, filterPeriod, onShiftClick, 
                             <div className="flex items-center gap-1 text-[10px] opacity-90 mt-0.5">
                               <Clock className="h-2.5 w-2.5" />
                               <span>
-                                {shift.startTime ? format(new Date(shift.startTime), 'HH:mm') : 'TBD'}
+                                {shift.startTime ? formatAustralianTimeForInput(shift.startTime) : 'TBD'}
                               </span>
                             </div>
                             
