@@ -87,7 +87,7 @@ export function BehaviourSectionRefactored() {
       };
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
-      return { strategyType, content: await response.json() };
+      return { strategyType, content: response };
     },
     onSuccess: ({ strategyType, content }) => {
       const generatedContent = content.generatedContent || content.content || "";
@@ -155,7 +155,7 @@ Write about universal de-escalation principles, communication techniques, enviro
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
 
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       const content = responseData.generatedContent || responseData.content || "";
@@ -211,7 +211,7 @@ Write about positive reinforcement strategies, environmental design for success,
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
 
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       const content = responseData.generatedContent || responseData.content || "";

@@ -197,7 +197,7 @@ export function BehaviourSectionComplete({ data, updateData, selectedClient, pla
         targetField,
         existingContent
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";
