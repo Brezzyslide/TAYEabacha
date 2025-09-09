@@ -183,6 +183,30 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
     },
   });
 
+  // Delete single shift mutation (for "edit this shift only" mode)
+  const deleteSingleShiftMutation = useMutation({
+    mutationFn: async () => {
+      console.log(`[SINGLE DELETE] Deleting individual shift:`, shift.id);
+      return await apiRequest("DELETE", `/api/shifts/${shift.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+      toast({
+        title: "Shift Deleted",
+        description: "Successfully deleted the individual shift.",
+      });
+      onClose();
+    },
+    onError: (error: Error) => {
+      console.error("[SINGLE DELETE ERROR] Full error:", error);
+      toast({
+        title: "Failed to Delete Shift",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete recurring shifts mutation
   const deleteRecurringShiftMutation = useMutation({
     mutationFn: async (deleteType: "future" | "series") => {
@@ -214,6 +238,14 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
       });
     },
   });
+
+  const handleDeleteSingle = () => {
+    if (deleteSingleShiftMutation.isPending) return;
+    
+    if (confirm("Are you sure you want to delete this shift only? This action cannot be undone.")) {
+      deleteSingleShiftMutation.mutate();
+    }
+  };
 
   const handleDeleteFuture = () => {
     if (deleteRecurringShiftMutation.isPending) return;
@@ -698,12 +730,29 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
                   <span className="font-medium">Delete Options</span>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
+                  {/* Only show "Delete This Shift Only" when editing individual shift */}
+                  {editType === "future" && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteSingle}
+                      disabled={deleteSingleShiftMutation.isPending || deleteRecurringShiftMutation.isPending}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {deleteSingleShiftMutation.isPending && (
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      )}
+                      <Trash2 className="mr-2 h-3 w-3" />
+                      Delete This Shift Only
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="destructive"
                     size="sm"
                     onClick={handleDeleteFuture}
-                    disabled={deleteRecurringShiftMutation.isPending}
+                    disabled={deleteRecurringShiftMutation.isPending || deleteSingleShiftMutation.isPending}
                     className="bg-orange-600 hover:bg-orange-700"
                   >
                     {deleteRecurringShiftMutation.isPending && deleteRecurringShiftMutation.variables === "future" && (
@@ -717,7 +766,7 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
                     variant="destructive"
                     size="sm"
                     onClick={handleDeleteSeries}
-                    disabled={deleteRecurringShiftMutation.isPending}
+                    disabled={deleteRecurringShiftMutation.isPending || deleteSingleShiftMutation.isPending}
                   >
                     {deleteRecurringShiftMutation.isPending && deleteRecurringShiftMutation.variables === "series" && (
                       <Loader2 className="mr-2 h-3 w-3 animate-spin" />
@@ -727,6 +776,11 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
                   </Button>
                 </div>
                 <p className="text-red-600 text-xs mt-2">
+                  {editType === "future" && (
+                    <>
+                      <strong>Delete This Shift Only:</strong> Removes only this specific shift from the series. 
+                    </>
+                  )}
                   <strong>Delete Future:</strong> Removes this shift and all future shifts in the series. 
                   <strong>Delete Series:</strong> Removes ALL shifts in this recurring series.
                 </p>
