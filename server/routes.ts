@@ -1497,6 +1497,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add request logging middleware for debugging
+  app.use("/api/shifts/:id", (req, res, next) => {
+    console.log(`[REQUEST DEBUG] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}`);
+    next();
+  });
+
   app.put("/api/shifts/:id", requireAuth, async (req: any, res) => {
     console.log("[SHIFT UPDATE] ✅ ROUTE ENTERED - Starting shift update process");
     
