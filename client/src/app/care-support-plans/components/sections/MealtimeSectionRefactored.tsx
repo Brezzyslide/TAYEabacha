@@ -153,7 +153,7 @@ export function MealtimeSectionRefactored() {
         fieldType: targetField
       });
 
-      const responseData = await response.json();
+      const responseData = response;
       const generatedText = responseData.content || "";
 
       // Update the generated content in mealtimeData for preview
@@ -239,7 +239,7 @@ export function MealtimeSectionRefactored() {
         fieldType: targetField
       });
 
-      const responseData = await response.json();
+      const responseData = response;
       const generatedText = responseData.content || "";
 
       // Update the generated content in mealtimeData for preview

@@ -121,7 +121,7 @@ export function CommunicationSection({ data, onChange, selectedClient, planData 
         targetField,
         existingContent: { ...existingContent, ...progressContext }
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       const generatedText = responseData.generatedContent || "";

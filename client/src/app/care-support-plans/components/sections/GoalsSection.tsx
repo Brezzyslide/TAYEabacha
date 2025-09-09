@@ -87,7 +87,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
         maxWords: 400,
         previousSections: data
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       console.log("Goals AI Response:", responseData);
@@ -146,7 +146,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       console.log("[GOALS DEBUG] About to send request to backend with clientName:", payload.clientName);
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       console.log("NDIS Goals AI Response:", responseData);
@@ -184,7 +184,7 @@ export function GoalsSection({ data, updateData, clients }: GoalsSectionProps) {
       console.log("[GOALS DEBUG] Enhanced aspirations payload:", payload);
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       console.log("Personal Aspirations AI Response:", responseData);

@@ -97,7 +97,7 @@ export function AboutMeSection({ data, updateData, clients }: AboutMeSectionProp
         maxWords: 300,
         previousSections: data
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       const generatedText = responseData.generatedContent || "";

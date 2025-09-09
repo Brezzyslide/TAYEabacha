@@ -64,7 +64,7 @@ export function ADLSection({ data, updateData, onChange, selectedClient, planDat
         maxWords: 200,
         previousSections: planData
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData) => {
       const generatedText = responseData.generatedContent || "";
