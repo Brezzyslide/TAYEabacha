@@ -212,11 +212,16 @@ export default function EditRecurringShiftModal({ isOpen, onClose, shift, editTy
     mutationFn: async (deleteType: "future" | "series") => {
       console.log(`[RECURRING DELETE] Deleting ${deleteType} shifts for series:`, shift.seriesId);
       
-      // Use the series endpoint with delete action
-      return await apiRequest("DELETE", `/api/shifts/series/${shift.seriesId}`, {
-        deleteType: deleteType, // "future" or "series"
-        fromShiftId: deleteType === "future" ? shift.id : undefined
+      // Use query parameters to avoid DELETE body parsing issues
+      const queryParams = new URLSearchParams({
+        deleteType: deleteType
       });
+      
+      if (deleteType === "future") {
+        queryParams.append("fromShiftId", shift.id.toString());
+      }
+      
+      return await apiRequest("DELETE", `/api/shifts/series/${shift.seriesId}?${queryParams.toString()}`);
     },
     onSuccess: (data, deleteType) => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
