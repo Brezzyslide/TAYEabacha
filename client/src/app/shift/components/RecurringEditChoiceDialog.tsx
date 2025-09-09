@@ -5,6 +5,16 @@ import { Calendar, CalendarDays, Clock, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { type Shift } from "@shared/schema";
 
+// Helper function to format template time (HH:mm) to display format (h:mm a)
+function formatTemplateTime(timeString: string | null): string {
+  if (!timeString) return "TBD";
+  
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return format(date, "h:mm a");
+}
+
 interface RecurringEditChoiceDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -50,11 +60,7 @@ export default function RecurringEditChoiceDialog({
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Clock className="h-4 w-4" />
                   <span>
-                    {format(new Date(shift.startTime), "h:mm a")} - {
-                      shift.endTime ? 
-                      format(new Date(shift.endTime), "h:mm a") : 
-                      "TBD"
-                    }
+                    {formatTemplateTime(shift.shiftStartTime)} - {formatTemplateTime(shift.shiftEndTime)}
                   </span>
                 </div>
                 {shift.recurringPattern && (
