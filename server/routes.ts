@@ -1361,10 +1361,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("[SHIFT CREATE] ❌ ERROR creating shift:", error);
-      console.error("[SHIFT CREATE] Request body:", req.body);
+      console.error("[SHIFT CREATE] Request body:", JSON.stringify(req.body, null, 2));
+      console.error("[SHIFT CREATE] Processed body:", JSON.stringify({
+        ...req.body,
+        startTime: req.body.startTime || undefined,
+        endTime: req.body.endTime || undefined,
+        shiftStartDate: req.body.shiftStartDate || undefined,
+        tenantId: req.user.tenantId,
+      }, null, 2));
+      
       if (error instanceof z.ZodError) {
-        console.error("[SHIFT CREATE] Zod validation errors:", error.errors);
-        return res.status(400).json({ message: "Invalid shift data", errors: error.errors });
+        console.error("[SHIFT CREATE] ❌ Zod validation errors:", JSON.stringify(error.errors, null, 2));
+        const detailedErrors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        return res.status(400).json({ 
+          message: `Invalid shift data: ${detailedErrors}`, 
+          errors: error.errors,
+          receivedData: req.body
+        });
       }
       res.status(500).json({ message: "Failed to create shift", error: error instanceof Error ? error.message : 'Unknown error' });
     }
