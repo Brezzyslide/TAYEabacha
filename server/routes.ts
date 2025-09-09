@@ -1311,43 +1311,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: req.user.tenantId,
       };
       
-      // For recurring shifts, convert time components to proper UTC timestamps
-      if (req.body.isRecurring && req.body.shiftStartDate && req.body.shiftStartTime && req.body.shiftEndTime) {
-        console.log("[SHIFT CREATE] Processing recurring shift time conversion");
-        
-        const shiftDate = new Date(req.body.shiftStartDate);
-        const [startHours, startMinutes] = req.body.shiftStartTime.split(':').map(Number);
-        const [endHours, endMinutes] = req.body.shiftEndTime.split(':').map(Number);
-        
-        // Convert to UTC using timezone utilities
-        const startUtc = fromLocalPartsToUtc({
-          year: shiftDate.getFullYear(),
-          month: shiftDate.getMonth(),
-          day: shiftDate.getDate(),
-          hour: startHours,
-          minute: startMinutes
-        }, zone);
-        
-        // Create candidate end time (same day first)
-        const endUtcCandidate = fromLocalPartsToUtc({
-          year: shiftDate.getFullYear(),
-          month: shiftDate.getMonth(),
-          day: shiftDate.getDate(),
-          hour: endHours,
-          minute: endMinutes
-        }, zone);
-        
-        // Use timezone-aware overnight normalization
-        const endUtc = normalizeEndLocal(startUtc, endUtcCandidate, zone);
-        
-        processedBody = {
-          ...processedBody,
-          startTime: startUtc,
-          endTime: endUtc,
-          shiftStartDate: req.body.shiftStartDate ? new Date(req.body.shiftStartDate) : undefined,
-        };
-        
-        console.log(`[SHIFT CREATE] Converted times - Start: ${startUtc.toISOString()}, End: ${endUtc.toISOString()}`);
+      // For recurring shifts, check if individual shift times are already provided
+      if (req.body.isRecurring) {
+        if (req.body.startTime && req.body.endTime) {
+          // Individual shift already has proper start/end times from frontend generation
+          console.log("[SHIFT CREATE] Recurring shift with individual times - using provided timestamps");
+          processedBody.startTime = new Date(req.body.startTime);
+          processedBody.endTime = new Date(req.body.endTime);
+          if (req.body.shiftStartDate) processedBody.shiftStartDate = new Date(req.body.shiftStartDate);
+          console.log(`[SHIFT CREATE] Using provided times - Start: ${processedBody.startTime.toISOString()}, End: ${processedBody.endTime.toISOString()}`);
+        } else if (req.body.shiftStartDate && req.body.shiftStartTime && req.body.shiftEndTime) {
+          // Legacy recurring shift creation using template values
+          console.log("[SHIFT CREATE] Recurring shift with template values - converting to timestamps");
+          
+          const shiftDate = new Date(req.body.shiftStartDate);
+          const [startHours, startMinutes] = req.body.shiftStartTime.split(':').map(Number);
+          const [endHours, endMinutes] = req.body.shiftEndTime.split(':').map(Number);
+          
+          // Convert to UTC using timezone utilities
+          const startUtc = fromLocalPartsToUtc({
+            year: shiftDate.getFullYear(),
+            month: shiftDate.getMonth(),
+            day: shiftDate.getDate(),
+            hour: startHours,
+            minute: startMinutes
+          }, zone);
+          
+          // Create candidate end time (same day first)
+          const endUtcCandidate = fromLocalPartsToUtc({
+            year: shiftDate.getFullYear(),
+            month: shiftDate.getMonth(),
+            day: shiftDate.getDate(),
+            hour: endHours,
+            minute: endMinutes
+          }, zone);
+          
+          // Use timezone-aware overnight normalization
+          const endUtc = normalizeEndLocal(startUtc, endUtcCandidate, zone);
+          
+          processedBody = {
+            ...processedBody,
+            startTime: startUtc,
+            endTime: endUtc,
+            shiftStartDate: new Date(req.body.shiftStartDate),
+          };
+          
+          console.log(`[SHIFT CREATE] Converted template times - Start: ${startUtc.toISOString()}, End: ${endUtc.toISOString()}`);
+        }
       } else {
         // For single shifts, convert string dates to Date objects
         if (req.body.startTime) processedBody.startTime = new Date(req.body.startTime);
