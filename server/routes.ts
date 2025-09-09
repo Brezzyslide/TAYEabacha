@@ -1497,11 +1497,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add request logging middleware for debugging
-  app.use("/api/shifts/:id", (req, res, next) => {
-    console.log(`[REQUEST DEBUG] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}`);
-    next();
-  });
 
   app.put("/api/shifts/:id", requireAuth, async (req: any, res) => {
     console.log("[SHIFT UPDATE] ✅ ROUTE ENTERED - Starting shift update process");
@@ -2298,6 +2293,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           console.log(`[SERIES EDIT-EXISTING] Updating shift ${shift.id} with:`, shiftUpdateData);
+          
+          // Apply the same Date conversion logic as the single shift update
+          const timestampFields = ['startTime', 'endTime', 'startTimestamp', 'endTimestamp', 'createdAt', 'updatedAt'];
+          timestampFields.forEach(field => {
+            if (shiftUpdateData[field] !== undefined && shiftUpdateData[field] !== null) {
+              const originalValue = shiftUpdateData[field];
+              if (typeof originalValue === 'string') {
+                try {
+                  const dateObj = new Date(originalValue);
+                  if (!isNaN(dateObj.getTime())) {
+                    shiftUpdateData[field] = dateObj;
+                    console.log(`[SERIES EDIT-EXISTING] ✅ CONVERTED ${field}: ${originalValue} → ${dateObj.toISOString()}`);
+                  }
+                } catch (error) {
+                  console.log(`[SERIES EDIT-EXISTING] ❌ DATE CONVERSION ERROR for ${field}:`, error);
+                  delete shiftUpdateData[field];
+                }
+              }
+            }
+          });
           
           const updatedShift = await storage.updateShift(shift.id, shiftUpdateData, req.user.tenantId);
           if (updatedShift) {
