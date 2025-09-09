@@ -31,16 +31,16 @@ const COLORS = {
 export class PDFExportUtility {
   private pdf: jsPDF;
   private currentY: number = 0;
-  private pageHeight: number = 210; // A4 portrait height in mm
-  private pageWidth: number = 297; // A4 portrait width in mm (switch to portrait for readability)
-  private margin: number = 15; // Slightly larger margins for professional look
+  private pageHeight: number = 210; // A4 landscape height in mm
+  private pageWidth: number = 297; // A4 landscape width in mm
+  private margin: number = 15; // Professional margins
   private contentWidth: number;
   private headerHeight: number = 50; // Taller header like invoice
   private footerHeight: number = 20;
   private headerAdded: boolean = false;
 
   constructor() {
-    this.pdf = new jsPDF('p', 'mm', 'a4'); // 'p' for portrait (like invoices)
+    this.pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
     this.contentWidth = this.pageWidth - (this.margin * 2);
     
     // Set cream background for professional look
