@@ -1,0 +1,114 @@
+✅ Fix: add a dedicated single-shift endpoint and use it when the user chooses “Delete this shift only”.
+
+// client
+await apiRequest("DELETE", `/api/shifts/${shift.id}`);
+
+// server (example)
+app.delete("/api/shifts/:id", requireAuth, requireRole(["Coordinator","Admin","ConsoleManager"]), async (req,res)=>{
+  const ok = await storage.deleteShift(Number(req.params.id), req.user.tenantId);
+  if(!ok) return res.status(404).json({message:"Shift not found"});
+  res.json({success:true, deleted:1, shiftIds:[Number(req.params.id)]});
+});
+
+
+seriesId becomes undefined/stale in the modal after you delete the future set.
+You invalidate /api/shifts, close the modal, but if you re-open quickly (or the modal kept shift in state), it may carry a shift.seriesId that’s now undefined or no longer resolvable. That makes your call go to /api/shifts/series/undefined → 404 → “doesn’t work”.
+
+✅ Fix:
+
+After any delete, force a refetch and re-bind the selected shift from the fresh query result before showing the delete modal again.
+
+Guard the mutation: if !shift.seriesId, fall back to the single-shift endpoint.
+
+const onDeleteThisOne = () => {
+  if (!shift.seriesId) return apiRequest("DELETE", `/api/shifts/${shift.id}`);
+  // else show the series options…
+};
+
+
+DELETE body is being dropped by a proxy or not parsed server-side.
+You send deleteType and fromShiftId in the body of a DELETE. Some setups strip bodies on DELETE, and Express only sees an empty req.body. If deleteType is missing, your backend falls into the “entire series” branch or no-op depending on your logs.
+
+✅ Fix (any one):
+
+Ensure app.use(express.json()) is registered before your routes.
+
+Move the parameters to the query string:
+
+DELETE /api/shifts/series/:seriesId?deleteType=future&fromShiftId=123
+
+
+Or switch to POST /api/shifts/series/:seriesId/delete with a JSON body (method semantics are clean and bodies are guaranteed).
+
+UTC cutoff excludes the clicked shift.
+Your “future” logic uses:
+
+return new Date(shift.startTime) >= new Date(fromShift.startTime)
+
+
+If the clicked “current” shift appears as previous day in UTC (e.g., 00:15 local), it can be treated as past, so the filter returns zero matches. That looks like “nothing happens”.
+
+✅ Fix: compute the cutoff in Australia/Sydney first, then convert back to UTC.
+
+const clickedLocal = convertToAustralianTime(fromShift.startTime);
+const cutoffUTC = toUTC(clickedLocal); // build Date.UTC from local Y/M/D H:M
+const shiftsToDelete = seriesShifts.filter(s => new Date(s.startTime) >= cutoffUTC);
+
+
+Role mismatch on single delete vs series delete.
+Your series route is role-gated; if your single delete button (elsewhere) hits a different route with stricter roles, a lower-privilege user will see a quiet failure. (You said series delete works, so this is less likely, but worth checking.)
+
+✅ Fix: align requireRole on both delete paths and surface a clear “not authorised” toast on 403.
+
+Storage layer returns false but you swallow it.
+If storage.deleteShift(id, tenantId) returns falsy (not found, tenant mismatch, already deleted), your code logs and continues. The user sees success for others, but not this one.
+
+✅ Fix: if no shift was deleted, return 404 and show a toast that names the shift/date.
+
+What the user experience should be
+
+When only one shift remains (today’s or a past one), the delete modal should offer “Delete this shift only” and call /api/shifts/:id.
+
+When multiple remain, offer:
+
+Delete this and future (calls the series delete with deleteType=future&fromShiftId=:id)
+
+Delete entire series (calls the series delete with deleteType=series)
+
+Minimal code tweaks (practical)
+
+A. Add single-shift client action
+
+const deleteSingleShift = useMutation({
+  mutationFn: async () => apiRequest("DELETE", `/api/shifts/${shift.id}`),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
+    toast({ title: "Shift Deleted", description: "The shift was deleted." });
+    onClose();
+  },
+  onError: (e:Error) => toast({ title:"Failed to Delete Shift", description:e.message, variant:"destructive" })
+});
+
+
+B. Decide which delete to show
+
+const canSeriesDelete = Boolean(shift.seriesId);
+const handleDeleteThisOnly = () => deleteSingleShift.mutate();
+
+const handleDeleteFuture = () => {
+  if (!canSeriesDelete) return handleDeleteThisOnly();
+  // … existing confirm + mutate("future")
+};
+
+
+C. Make DELETE robust (server)
+
+Ensure express.json() is applied early.
+
+Or accept query params:
+
+app.delete("/api/shifts/series/:seriesId", ..., async (req,res)=>{
+  const deleteType = req.query.deleteType ?? req.body.deleteType;
+  const fromShiftId = Number(req.query.fromShiftId ?? req.body.fromShiftId) || undefined;
+  // …
+});
