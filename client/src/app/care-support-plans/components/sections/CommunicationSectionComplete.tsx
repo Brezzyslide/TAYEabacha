@@ -156,7 +156,7 @@ export function CommunicationSectionComplete({ data, updateData, selectedClient,
         targetField,
         existingContent
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";

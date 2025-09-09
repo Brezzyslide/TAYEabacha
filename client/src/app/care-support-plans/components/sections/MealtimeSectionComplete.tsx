@@ -211,7 +211,7 @@ export function MealtimeSectionComplete({ data, updateData, selectedClient, plan
         targetField,
         existingContent
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.generatedContent || "";
