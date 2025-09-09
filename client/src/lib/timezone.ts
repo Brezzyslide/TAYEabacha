@@ -53,11 +53,11 @@ export function getCurrentAustralianTime(): Date {
 }
 
 /**
- * Convert UTC timestamp to Australian timezone
+ * Parse Australian time string directly (no UTC conversion needed)
  */
-export function convertToAustralianTime(utcDate: Date | string): Date {
-  const dateObj = typeof utcDate === 'string' ? new Date(utcDate) : utcDate;
-  return new Date(dateObj.toLocaleString('en-US', { timeZone: AUSTRALIAN_TIMEZONE }));
+export function parseAustralianTime(australianTimeString: string): Date {
+  // Australian time strings are already in correct timezone
+  return new Date(australianTimeString);
 }
 
 /**
@@ -81,11 +81,9 @@ export function canStartShift(scheduledStartTime: Date | string): { canStart: bo
 export function formatAustralianTimeForInput(date: Date | string): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  // Convert to Australian timezone and format as HH:mm for HTML input
-  const australianTime = new Date(dateObj.toLocaleString('en-US', { timeZone: AUSTRALIAN_TIMEZONE }));
-  
-  const hours = australianTime.getHours().toString().padStart(2, '0');
-  const minutes = australianTime.getMinutes().toString().padStart(2, '0');
+  // Assume date is already in Australian time (no conversion needed)
+  const hours = dateObj.getHours().toString().padStart(2, '0');
+  const minutes = dateObj.getMinutes().toString().padStart(2, '0');
   
   return `${hours}:${minutes}`;
 }
@@ -95,7 +93,7 @@ export function formatAustralianTimeForInput(date: Date | string): string {
  */
 export function getRelativeTimeAustralian(date: Date | string): string {
   const now = getCurrentAustralianTime();
-  const targetDate = convertToAustralianTime(date);
+  const targetDate = parseAustralianTime(date.toString());
   const diffMs = targetDate.getTime() - now.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMins / 60);
