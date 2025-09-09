@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, Plus, Users, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
+import { formatAustralianTimeOnly } from "@/lib/timezone";
 import { useAuth } from "@/hooks/use-auth";
 import { type Shift } from "@shared/schema";
 import NewShiftModal from "./components/NewShiftModal";
@@ -92,7 +93,7 @@ export default function ShiftCalendar() {
   };
 
   const formatTime = (dateTime: string | Date) => {
-    return format(new Date(dateTime), "HH:mm");
+    return formatAustralianTimeOnly(dateTime);
   };
 
   const formatDate = (dateTime: string | Date) => {

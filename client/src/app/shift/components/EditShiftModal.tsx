@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { formatAustralianTimeForInput } from "@/lib/timezone";
 import {
   Dialog,
   DialogContent,
@@ -38,9 +39,9 @@ export default function EditShiftModal({ isOpen, onClose, shift, editType = "sin
   const [clientId, setClientId] = useState(shift.clientId?.toString() || "");
   const [userId, setUserId] = useState(shift.userId?.toString() || "unassigned");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date(shift.startTime));
-  const [startTime, setStartTime] = useState(format(new Date(shift.startTime), "HH:mm"));
+  const [startTime, setStartTime] = useState(formatAustralianTimeForInput(shift.startTime));
   const [endTime, setEndTime] = useState(
-    shift.endTime ? format(new Date(shift.endTime), "HH:mm") : format(new Date(shift.startTime), "HH:mm")
+    shift.endTime ? formatAustralianTimeForInput(shift.endTime) : formatAustralianTimeForInput(shift.startTime)
   );
   const [description, setDescription] = useState(shift.description || "");
   const [showClashWarning, setShowClashWarning] = useState(false);

@@ -76,6 +76,21 @@ export function canStartShift(scheduledStartTime: Date | string): { canStart: bo
 }
 
 /**
+ * Format time for HTML time input (HH:mm) in Australian timezone
+ */
+export function formatAustralianTimeForInput(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Convert to Australian timezone and format as HH:mm for HTML input
+  const australianTime = new Date(dateObj.toLocaleString('en-US', { timeZone: AUSTRALIAN_TIMEZONE }));
+  
+  const hours = australianTime.getHours().toString().padStart(2, '0');
+  const minutes = australianTime.getMinutes().toString().padStart(2, '0');
+  
+  return `${hours}:${minutes}`;
+}
+
+/**
  * Get relative time description in Australian context
  */
 export function getRelativeTimeAustralian(date: Date | string): string {
