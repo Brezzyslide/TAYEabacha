@@ -2179,33 +2179,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Handle START TIME changes (only if explicitly changed)
           if (updateData.shiftStartTime) {
             const [startHours, startMinutes] = updateData.shiftStartTime.split(':').map(Number);
-            const newStartLocal = new Date(year, month, day, startHours, startMinutes, 0, 0);
-            const newStartUTC = new Date(Date.UTC(
-              newStartLocal.getFullYear(),
-              newStartLocal.getMonth(), 
-              newStartLocal.getDate(),
-              newStartLocal.getHours(),
-              newStartLocal.getMinutes(),
-              0, 0
-            ));
-            shiftUpdateData.startTime = newStartUTC;
+            // Store Australian time directly - NO UTC conversion
+            const newStartAustralian = new Date(year, month, day, startHours, startMinutes, 0, 0);
+            shiftUpdateData.startTime = newStartAustralian;
             shiftUpdateData.shiftStartTime = updateData.shiftStartTime;
-            console.log(`[SERIES EDIT-EXISTING] Updated start time for shift ${shift.id}: ${newStartUTC.toISOString()}`);
+            console.log(`[SERIES EDIT-EXISTING] Updated start time for shift ${shift.id}: ${newStartAustralian.toISOString()}`);
           } else if (needsDateRecalculation) {
             // Day changed but start time didn't - preserve original time on new day
             const originalTime = new Date(shift.startTime);
             const originalLocal = new Date(originalTime.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-            const newStartLocal = new Date(year, month, day, originalLocal.getHours(), originalLocal.getMinutes(), 0, 0);
-            const newStartUTC = new Date(Date.UTC(
-              newStartLocal.getFullYear(),
-              newStartLocal.getMonth(),
-              newStartLocal.getDate(), 
-              newStartLocal.getHours(),
-              newStartLocal.getMinutes(),
-              0, 0
-            ));
-            shiftUpdateData.startTime = newStartUTC;
-            console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} to new day, preserved start time: ${newStartUTC.toISOString()}`);
+            // Store Australian time directly - NO UTC conversion
+            const newStartAustralian = new Date(year, month, day, originalLocal.getHours(), originalLocal.getMinutes(), 0, 0);
+            shiftUpdateData.startTime = newStartAustralian;
+            console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} to new day, preserved start time: ${newStartAustralian.toISOString()}`);
           }
           
           // Handle END TIME changes (only if explicitly changed)
@@ -2226,17 +2212,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               newEndLocal = new Date(year, month, day + 1, endHours, endMinutes, 0, 0);
             }
             
-            const newEndUTC = new Date(Date.UTC(
-              newEndLocal.getFullYear(),
-              newEndLocal.getMonth(),
-              newEndLocal.getDate(),
-              newEndLocal.getHours(),
-              newEndLocal.getMinutes(),
-              0, 0
-            ));
-            shiftUpdateData.endTime = newEndUTC;
+            // Store Australian time directly - NO UTC conversion
+            shiftUpdateData.endTime = newEndLocal;
             shiftUpdateData.shiftEndTime = updateData.shiftEndTime;
-            console.log(`[SERIES EDIT-EXISTING] Updated end time for shift ${shift.id}: ${newEndUTC.toISOString()}`);
+            console.log(`[SERIES EDIT-EXISTING] Updated end time for shift ${shift.id}: ${newEndLocal.toISOString()}`);
           } else if (needsDateRecalculation) {
             // Day changed but end time didn't - preserve original time on new day
             const originalEndTime = new Date(shift.endTime);
@@ -2250,17 +2229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               newEndLocal = new Date(year, month, day + 1, originalEndLocal.getHours(), originalEndLocal.getMinutes(), 0, 0);
             }
             
-            // Convert to UTC for storage
-            const newEndUTC = new Date(Date.UTC(
-              newEndLocal.getFullYear(),
-              newEndLocal.getMonth(),
-              newEndLocal.getDate(),
-              newEndLocal.getHours(),
-              newEndLocal.getMinutes(),
-              0, 0
-            ));
-            shiftUpdateData.endTime = newEndUTC;
-            console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} end time to new day: ${newEndUTC.toISOString()}`);
+            // Store Australian time directly - NO UTC conversion
+            shiftUpdateData.endTime = newEndLocal;
+            console.log(`[SERIES EDIT-EXISTING] Moved shift ${shift.id} end time to new day: ${newEndLocal.toISOString()}`);
           }
           
           console.log(`[SERIES EDIT-EXISTING] Updating shift ${shift.id} with:`, shiftUpdateData);
