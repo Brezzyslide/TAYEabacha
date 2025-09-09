@@ -1,0 +1,250 @@
+// src/shared/timezone.ts
+import { utcToZonedTime, zonedTimeToUtc, format } from "date-fns-tz";
+
+export const AU_TZ = "Australia/Sydney";
+const TZ_FALLBACK = "UTC";
+
+// Detect browser zone if available
+export function getBrowserTimeZone(): string {
+  try {
+    // Works in browsers; on Node this throws
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return tz || TZ_FALLBACK;
+  } catch {
+    return TZ_FALLBACK;
+  }
+}
+
+/**
+ * Pick a timezone for business logic.
+ * Priority:
+ *   1) explicit tz argument (e.g., header/query/body from client)
+ *   2) browser tz (frontend)
+ *   3) Australia/Sydney (tenant default)
+ *   4) UTC
+ */
+export function resolveBusinessTimeZone(explicit?: string, preferBrowser = false): string {
+  if (explicit) return explicit;
+  if (preferBrowser) return getBrowserTimeZone() || AU_TZ;
+  return AU_TZ;
+}
+
+/** Convert a UTC Date to a wall-time Date in the zone (no offset added) */
+export function toLocal(utcDate: Date | string, zone: string): Date {
+  const d = typeof utcDate === "string" ? new Date(utcDate) : utcDate;
+  return utcToZonedTime(d, zone);
+}
+
+/** Convert a local wall-time Date (or parts) to a true UTC instant for storage */
+export function fromLocalPartsToUtc(
+  parts: { year: number; month: number; day: number; hour: number; minute: number; second?: number },
+  zone: string
+): Date {
+  const { year, month, day, hour, minute, second = 0 } = parts;
+  // Build a local wall-time Date (JS months are 0-based)
+  const local = new Date(year, month, day, hour, minute, second, 0);
+  return zonedTimeToUtc(local, zone);
+}
+
+/** Convenience: format a UTC instant for display in the zone */
+export function formatInZone(
+  utcDate: Date | string,
+  zone: string,
+  pattern = "dd/MM/yyyy HH:mm"
+): string {
+  const d = typeof utcDate === "string" ? new Date(utcDate) : utcDate;
+  return format(d, pattern, { timeZone: zone });
+}
+
+/** Local weekday (0 Sun..6 Sat) from a UTC instant, in the zone */
+export function localWeekday(utcDate: Date | string, zone: string): number {
+  return toLocal(utcDate, zone).getDay();
+}
+
+/** Move a UTC instant to the next occurrence of target weekday in the zone, preserving time-of-day */
+export function moveToNextWeekday(
+  utcDate: Date | string,
+  targetDow: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+  zone: string
+): Date {
+  const local = toLocal(utcDate, zone);
+  const cur = local.getDay();
+  const add = (targetDow - cur + 7) % 7;
+  const hopped = new Date(local.getFullYear(), local.getMonth(), local.getDate() + add, local.getHours(), local.getMinutes(), local.getSeconds(), 0);
+  return zonedTimeToUtc(hopped, zone);
+}
+
+/** Normalize end that crosses midnight in the zone (ensures end > start) */
+export function normalizeEndLocal(startUtc: Date, endUtcCand: Date, zone: string): Date {
+  const sL = toLocal(startUtc, zone);
+  const eL = toLocal(endUtcCand, zone);
+  if (eL <= sL) {
+    const bumped = new Date(eL);
+    bumped.setDate(bumped.getDate() + 1);
+    return zonedTimeToUtc(bumped, zone);
+  }
+  return endUtcCand;
+}
+2) Server: capture a timezone once, use everywhere
+Read a client-sent timezone (header or query), fall back to browser tz if you proxy it, else default to Australia/Sydney.
+
+ts
+Copy code
+// src/server/middleware/timezone.ts
+import type { Request, Response, NextFunction } from "express";
+import { resolveBusinessTimeZone } from "@/shared/timezone";
+
+declare global {
+  namespace Express {
+    interface Request {
+      tz?: string;
+    }
+  }
+}
+
+export function timezoneMiddleware(req: Request, _res: Response, next: NextFunction) {
+  // Options: Header takes priority, then query, then body, then tenant default
+  const headerTz = req.header("X-Timezone");
+  const queryTz = typeof req.query.tz === "string" ? req.query.tz : undefined;
+  const bodyTz = typeof (req.body?.timezone) === "string" ? req.body.timezone : undefined;
+
+  req.tz = resolveBusinessTimeZone(headerTz || queryTz || bodyTz, false); // prefer AU default on server
+  next();
+}
+Register it early in your server:
+
+ts
+Copy code
+// src/server/app.ts
+app.use(express.json());
+app.use(timezoneMiddleware);
+Now in any route (edit recurring, timesheets, allowances), use req.tz for all day math and conversions to/from UTC.
+
+Example inside your edit route (snippet):
+
+ts
+Copy code
+import { AU_TZ, toLocal, fromLocalPartsToUtc, moveToNextWeekday, normalizeEndLocal } from "@/shared/timezone";
+
+app.put("/api/shifts/series/:seriesId/edit-existing", requireAuth, async (req, res) => {
+  const zone = req.tz || AU_TZ;
+
+  // ... after you pick a target day:
+  const targetDow = 0; // Sunday for example
+  const nextStartUtc = moveToNextWeekday(shift.startTime, targetDow as 0, zone);
+
+  // If user updated HH:mm:
+  const localStart = toLocal(nextStartUtc, zone);
+  const [sh, sm] = (updateData.shiftStartTime ?? "09:00").split(":").map(Number);
+  const startUtc = fromLocalPartsToUtc({
+    year: localStart.getFullYear(),
+    month: localStart.getMonth(),
+    day: localStart.getDate(),
+    hour: sh, minute: sm
+  }, zone);
+
+  // End time, overnight-safe:
+  const [eh, em] = (updateData.shiftEndTime ?? "17:00").split(":").map(Number);
+  const endUtcCand = fromLocalPartsToUtc({
+    year: localStart.getFullYear(),
+    month: localStart.getMonth(),
+    day: localStart.getDate(),
+    hour: eh, minute: em
+  }, zone);
+  const endUtc = normalizeEndLocal(startUtc, endUtcCand, zone);
+
+  await storage.updateShift(shift.id, { startTime: startUtc.toISOString(), endTime: endUtc.toISOString() }, req.user.tenantId);
+  // ...
+});
+Store as timestamptz. Always save ISO UTC (e.g., startUtc.toISOString()), always view in req.tz.
+
+3) Frontend: detect browser tz and send it
+A tiny hook and a fetch helper. The browser timezone reflects the user’s OS region.
+
+ts
+Copy code
+// src/lib/useBrowserTimezone.ts
+import { useMemo } from "react";
+
+export function useBrowserTimezone() {
+  const tz = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
+    }
+  }, []);
+  return tz;
+}
+Attach it to every API call so the server knows what the user is looking at:
+
+ts
+Copy code
+// src/lib/api.ts
+export async function apiRequest(method: string, url: string, body?: any, tz?: string) {
+  const res = await fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(tz ? { "X-Timezone": tz } : {})
+    },
+    credentials: "include",
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  return res.json().catch(() => ({}));
+}
+Usage in your modal:
+
+ts
+Copy code
+import { useBrowserTimezone } from "@/lib/useBrowserTimezone";
+import { apiRequest } from "@/lib/api";
+
+const tz = useBrowserTimezone();
+
+await apiRequest("PUT", `/api/shifts/series/${shift.seriesId}/edit-existing`, {
+  updateData,
+  editType,
+  fromShiftId
+}, tz);
+4) Weekend and penalties: always in zone
+Where you check Saturday/Sunday or public holiday, convert first:
+
+ts
+Copy code
+// src/server/payroll/calculateShiftAllowances.ts (snippet)
+import { toLocal } from "@/shared/timezone";
+
+export function calculateShiftAllowances(input: {
+  startUtc: Date;
+  endUtc: Date;
+  baseRate: number;
+  zone: string;
+  isPublicHoliday?: boolean; // your own calendar
+  isSleepover?: boolean;
+}) {
+  const { startUtc, endUtc, baseRate, zone, isPublicHoliday, isSleepover } = input;
+
+  const startLocal = toLocal(startUtc, zone);
+  const endLocal = toLocal(endUtc, zone);
+
+  const hours = (endLocal.getTime() - startLocal.getTime()) / (1000 * 60 * 60);
+  const dow = startLocal.getDay(); // 0 Sunday .. 6 Saturday
+
+  let basePayment = hours * baseRate;
+  const allowances: { type: string; amount: number; description: string }[] = [];
+
+  if (isPublicHoliday) {
+    allowances.push({ type: "public_holiday", amount: hours * baseRate * 1.5, description: "Public Holiday Penalty (250% total)" });
+  } else {
+    if (dow === 6) allowances.push({ type: "saturday_penalty", amount: hours * baseRate * 0.25, description: "Saturday Penalty (125% total)" });
+    if (dow === 0) allowances.push({ type: "sunday_penalty", amount: hours * baseRate * 0.5, description: "Sunday Penalty (150% total)" });
+  }
+  if (isSleepover) allowances.push({ type: "sleepover", amount: 62.04, description: "Sleepover Allowance" });
+
+  const totalPayment = basePayment + allowances.reduce((s, a) => s + a.amount, 0);
+  return { basePayment, allowances, totalPayment };
+}
