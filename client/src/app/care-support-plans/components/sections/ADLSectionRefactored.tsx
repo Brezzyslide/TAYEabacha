@@ -78,7 +78,7 @@ export function ADLSectionRefactored() {
       console.log("[ADL DEBUG] About to send request to backend with planId:", payload.planId);
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.content || "";

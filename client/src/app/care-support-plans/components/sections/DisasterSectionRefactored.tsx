@@ -156,7 +156,7 @@ export function DisasterSectionRefactored() {
       };
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
-      return { targetField, content: await response.json() };
+      return { targetField, content: response };
     },
     onSuccess: ({ targetField, content }) => {
       const generatedContent = content.generatedContent || content.content || "";
@@ -221,7 +221,7 @@ export function DisasterSectionRefactored() {
       };
       
       const response = await apiRequest("POST", "/api/care-support-plans/generate-ai", payload);
-      return { disasterType, targetField, content: await response.json() };
+      return { disasterType, targetField, content: response };
     },
     onSuccess: ({ disasterType, targetField, content }) => {
       const generatedContent = content.generatedContent || content.content || "";
@@ -288,7 +288,7 @@ export function DisasterSectionRefactored() {
         planId: planData?.id,
         existingContent: {}
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.content || "";
