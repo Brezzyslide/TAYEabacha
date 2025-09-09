@@ -83,7 +83,7 @@ export function GoalsSectionRefactored() {
         maxWords: 200,
         previousSections: planData
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData, variables) => {
       const generatedText = responseData.content || "";

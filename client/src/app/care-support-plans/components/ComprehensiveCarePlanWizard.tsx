@@ -96,9 +96,8 @@ export function ComprehensiveCarePlanWizard({ open, onClose, existingPlan }: Com
         planTitle: data.planTitle || `Draft - ${new Date().toLocaleDateString()}`,
       });
       
-      // Parse the response to get the actual data
-      const responseData = await response.json();
-      return responseData;
+      // Response is already parsed by apiRequest
+      return response;
     },
     onSuccess: (savedPlan) => {
       setLastSaveTime(new Date());

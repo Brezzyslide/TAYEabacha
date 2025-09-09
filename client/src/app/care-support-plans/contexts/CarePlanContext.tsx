@@ -377,7 +377,7 @@ export function CarePlanProvider({
       });
       
       setLastSavedData(currentDataString);
-      return await response.json();
+      return response;
     },
     onMutate: () => {
       setSaveStatus('saving');

@@ -47,7 +47,7 @@ export function AboutMeSectionRefactored() {
         targetField,
         existingContent
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (responseData, { targetField }) => {
       const generatedText = responseData.content || "";
