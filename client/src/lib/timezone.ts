@@ -65,7 +65,7 @@ export function parseAustralianTime(australianTimeString: string): Date {
  */
 export function canStartShift(scheduledStartTime: Date | string): { canStart: boolean; minutesUntil: number } {
   const now = getCurrentAustralianTime();
-  const startTime = convertToAustralianTime(scheduledStartTime);
+  const startTime = parseAustralianTime(scheduledStartTime.toString());
   const timeDiff = startTime.getTime() - now.getTime();
   const minutesDiff = Math.floor(timeDiff / (1000 * 60));
   
