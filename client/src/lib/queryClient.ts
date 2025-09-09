@@ -64,15 +64,24 @@ export async function apiRequest(
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
+  tz?: string;
 }) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+  ({ on401: unauthorizedBehavior, tz }) =>
   async ({ queryKey }) => {
     // Handle base URL for different environments
     const baseUrl = import.meta.env.VITE_API_URL || '';
     const url = queryKey[0] as string;
     const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
     
+    const headers: Record<string, string> = {};
+    
+    // Add timezone header if provided
+    if (tz) {
+      headers["X-Timezone"] = tz;
+    }
+    
     const res = await fetch(fullUrl, {
+      headers,
       credentials: "include",
     });
 
