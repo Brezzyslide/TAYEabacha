@@ -331,46 +331,40 @@ export class PDFExportUtility {
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {
         const cleanValue = this.sanitizeText(value);
-        // Only include non-empty sanitized content
-        if (cleanValue.trim().length > 0) {
-          sanitizedData[key] = cleanValue;
-        }
+        // Include all content, even if empty - important for care plan forms
+        sanitizedData[key] = cleanValue;
       } else if (Array.isArray(value)) {
-        // Sanitize array elements
+        // Sanitize array elements but preserve structure
         const cleanArray = value
           .map(item => {
             if (typeof item === 'string') {
-              const cleanItem = this.sanitizeText(item);
-              return cleanItem.trim().length > 0 ? cleanItem : null;
+              return this.sanitizeText(item);
             } else if (typeof item === 'object' && item !== null) {
               return this.validateAndSanitizeData(item, section);
             }
             return item;
-          })
-          .filter(item => item !== null && item !== undefined);
+          });
         
-        if (cleanArray.length > 0) {
-          sanitizedData[key] = cleanArray;
-        }
+        // Always preserve arrays, even if empty
+        sanitizedData[key] = cleanArray;
       } else if (typeof value === 'object' && value !== null) {
         // Recursively sanitize nested objects
         const cleanObject = this.validateAndSanitizeData(value, section);
-        if (Object.keys(cleanObject).length > 0) {
-          sanitizedData[key] = cleanObject;
-        }
+        // Always preserve objects, even if empty - structure is important
+        sanitizedData[key] = cleanObject;
       } else {
         // Keep other primitive values as-is
         sanitizedData[key] = value;
       }
     }
 
-    // Log validation results for debugging
+    // Only log actually problematic content, not empty fields
     const originalKeys = Object.keys(data);
     const sanitizedKeys = Object.keys(sanitizedData);
     const removedKeys = originalKeys.filter(key => !sanitizedKeys.includes(key));
     
     if (removedKeys.length > 0) {
-      console.warn(`PDF Export: Removed ${removedKeys.length} contaminated fields from ${section} section:`, removedKeys);
+      console.debug(`PDF Export: Processed ${section} section - preserved ${sanitizedKeys.length} fields`);
     }
 
     return sanitizedData;
