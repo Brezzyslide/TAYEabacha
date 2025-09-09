@@ -1560,11 +1560,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'createdAt', 'updatedAt', 'scheduledStartTime', 'scheduledEndTime'
       ];
       
+      console.log(`[SHIFT UPDATE] ✅ RAW UPDATE DATA:`, JSON.stringify(processedUpdateData, null, 2));
+      
       // Convert ISO strings to Date objects for schema validation
       timestampFields.forEach(field => {
-        if (processedUpdateData[field] && typeof processedUpdateData[field] === 'string') {
-          console.log(`[SHIFT UPDATE] ✅ CONVERTING ${field}: ${processedUpdateData[field]}`);
-          processedUpdateData[field] = new Date(processedUpdateData[field]);
+        if (processedUpdateData[field] !== undefined && processedUpdateData[field] !== null) {
+          const originalValue = processedUpdateData[field];
+          const originalType = typeof originalValue;
+          
+          if (originalType === 'string') {
+            try {
+              const dateObj = new Date(originalValue);
+              if (isNaN(dateObj.getTime())) {
+                console.log(`[SHIFT UPDATE] ❌ INVALID DATE STRING for ${field}: ${originalValue}`);
+                delete processedUpdateData[field]; // Remove invalid dates
+              } else {
+                processedUpdateData[field] = dateObj;
+                console.log(`[SHIFT UPDATE] ✅ CONVERTED ${field}: ${originalValue} → ${dateObj.toISOString()}`);
+              }
+            } catch (error) {
+              console.log(`[SHIFT UPDATE] ❌ DATE CONVERSION ERROR for ${field}:`, error);
+              delete processedUpdateData[field]; // Remove problematic fields
+            }
+          } else if (originalValue instanceof Date) {
+            console.log(`[SHIFT UPDATE] ✅ ALREADY DATE ${field}: ${originalValue.toISOString()}`);
+          } else {
+            console.log(`[SHIFT UPDATE] ⚠️ UNEXPECTED TYPE for ${field}: ${originalType} - ${originalValue}`);
+            delete processedUpdateData[field]; // Remove unexpected types
+          }
         }
       });
       
