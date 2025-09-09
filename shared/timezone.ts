@@ -1,5 +1,5 @@
 // shared/timezone.ts
-import { utcToZonedTime, zonedTimeToUtc, format } from "date-fns-tz";
+import { toZonedTime, fromZonedTime, format } from "date-fns-tz";
 
 export const AU_TZ = "Australia/Sydney";
 const TZ_FALLBACK = "UTC";
@@ -32,7 +32,7 @@ export function resolveBusinessTimeZone(explicit?: string, preferBrowser = false
 /** Convert a UTC Date to a wall-time Date in the zone (no offset added) */
 export function toLocal(utcDate: Date | string, zone: string): Date {
   const d = typeof utcDate === "string" ? new Date(utcDate) : utcDate;
-  return utcToZonedTime(d, zone);
+  return toZonedTime(d, zone);
 }
 
 /** Convert a local wall-time Date (or parts) to a true UTC instant for storage */
@@ -43,7 +43,7 @@ export function fromLocalPartsToUtc(
   const { year, month, day, hour, minute, second = 0 } = parts;
   // Build a local wall-time Date (JS months are 0-based)
   const local = new Date(year, month, day, hour, minute, second, 0);
-  return zonedTimeToUtc(local, zone);
+  return fromZonedTime(local, zone);
 }
 
 /** Convenience: format a UTC instant for display in the zone */
@@ -71,7 +71,7 @@ export function moveToNextWeekday(
   const cur = local.getDay();
   const add = (targetDow - cur + 7) % 7;
   const hopped = new Date(local.getFullYear(), local.getMonth(), local.getDate() + add, local.getHours(), local.getMinutes(), local.getSeconds(), 0);
-  return zonedTimeToUtc(hopped, zone);
+  return fromZonedTime(hopped, zone);
 }
 
 /** Normalize end that crosses midnight in the zone (ensures end > start) */
@@ -81,7 +81,7 @@ export function normalizeEndLocal(startUtc: Date, endUtcCand: Date, zone: string
   if (eL <= sL) {
     const bumped = new Date(eL);
     bumped.setDate(bumped.getDate() + 1);
-    return zonedTimeToUtc(bumped, zone);
+    return fromZonedTime(bumped, zone);
   }
   return endUtcCand;
 }

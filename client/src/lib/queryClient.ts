@@ -10,17 +10,25 @@ async function throwIfResNotOk(res: Response) {
 export async function apiRequest(
   method: string,
   url: string,
-  data?: any
+  data?: any,
+  tz?: string
 ): Promise<any> {
   // Handle base URL for different environments
   const baseUrl = import.meta.env.VITE_API_URL || '';
   const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
   
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  
+  // Add timezone header if provided
+  if (tz) {
+    headers["X-Timezone"] = tz;
+  }
+  
   const res = await fetch(fullUrl, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
