@@ -1302,14 +1302,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("[SHIFT CREATE] Request body:", JSON.stringify(req.body, null, 2));
     
     try {
-      // Keep Australian times as strings - NO UTC conversion
-      const processedBody = {
+      // Get timezone from request (middleware sets it)
+      const zone = req.tz || AU_TZ;
+      console.log(`[SHIFT CREATE] Using timezone: ${zone}`);
+      
+      let processedBody = {
         ...req.body,
-        startTime: req.body.startTime || undefined,
-        endTime: req.body.endTime || undefined,
-        shiftStartDate: req.body.shiftStartDate || undefined,
         tenantId: req.user.tenantId,
       };
+      
+      // For recurring shifts, convert time components to proper UTC timestamps
+      if (req.body.isRecurring && req.body.shiftStartDate && req.body.shiftStartTime && req.body.shiftEndTime) {
+        console.log("[SHIFT CREATE] Processing recurring shift time conversion");
+        
+        const shiftDate = new Date(req.body.shiftStartDate);
+        const [startHours, startMinutes] = req.body.shiftStartTime.split(':').map(Number);
+        const [endHours, endMinutes] = req.body.shiftEndTime.split(':').map(Number);
+        
+        // Convert to UTC using timezone utilities
+        const startUtc = fromLocalPartsToUtc({
+          year: shiftDate.getFullYear(),
+          month: shiftDate.getMonth(),
+          day: shiftDate.getDate(),
+          hour: startHours,
+          minute: startMinutes
+        }, zone);
+        
+        // Create candidate end time (same day first)
+        const endUtcCandidate = fromLocalPartsToUtc({
+          year: shiftDate.getFullYear(),
+          month: shiftDate.getMonth(),
+          day: shiftDate.getDate(),
+          hour: endHours,
+          minute: endMinutes
+        }, zone);
+        
+        // Use timezone-aware overnight normalization
+        const endUtc = normalizeEndLocal(startUtc, endUtcCandidate, zone);
+        
+        processedBody = {
+          ...processedBody,
+          startTime: startUtc.toISOString(),
+          endTime: endUtc.toISOString(),
+          shiftStartDate: req.body.shiftStartDate || undefined,
+        };
+        
+        console.log(`[SHIFT CREATE] Converted times - Start: ${startUtc.toISOString()}, End: ${endUtc.toISOString()}`);
+      } else {
+        // For single shifts, use existing logic
+        processedBody = {
+          ...processedBody,
+          startTime: req.body.startTime || undefined,
+          endTime: req.body.endTime || undefined,
+          shiftStartDate: req.body.shiftStartDate || undefined,
+        };
+      }
       
       console.log("[SHIFT CREATE] Processed body:", JSON.stringify(processedBody, null, 2));
       
