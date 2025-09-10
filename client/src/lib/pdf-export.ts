@@ -1013,36 +1013,7 @@ export class PDFExportUtility {
     this.addDisasterManagementTable(disasterData);
   }
 
-  private detectMealtimeDataContamination(disasterData: any): boolean {
-    // Check if disaster data contains mealtime risk assessment keys/content
-    if (!disasterData || typeof disasterData !== 'object') return false;
-    
-    // Check for mealtime-specific risk assessment keys
-    const mealtimeRiskKeys = ['choking', 'aspiration', 'swallowing', 'allergies', 'medications', 'behavioral', 'cultural', 'texture'];
-    const riskAssessments = disasterData.riskAssessments || {};
-    
-    // If riskAssessments contains mealtime risk types, this is contaminated data
-    if (typeof riskAssessments === 'object' && Object.keys(riskAssessments).length > 0) {
-      for (const riskType of Object.keys(riskAssessments)) {
-        if (mealtimeRiskKeys.includes(riskType)) {
-          return true; // Contamination detected
-        }
-      }
-    }
-    
-    // Check for direct mealtime risk assessment fields in disaster data
-    for (const mealtimeKey of mealtimeRiskKeys) {
-      if (disasterData[mealtimeKey] && typeof disasterData[mealtimeKey] === 'object') {
-        const riskData = disasterData[mealtimeKey];
-        // If it has mealtime-specific fields, it's contaminated
-        if (riskData.preventionStrategy || riskData.responseStrategy || riskData.equipmentNeeded || riskData.staffTraining) {
-          return true; // Contamination detected
-        }
-      }
-    }
-    
-    return false; // No contamination detected
-  }
+  // Removed contamination detection - was too aggressive and prevented valid content from displaying
 
   private addDisasterManagementTable(disasterData: any) {
     this.checkPageBreak(30);
@@ -1263,24 +1234,23 @@ export class PDFExportUtility {
     const riskParameters = mealtimeData.riskParameters || [];
     const hasRiskParameters = Array.isArray(riskParameters) && riskParameters.length > 0;
     
-    // Also check for other mealtime data fields
+    // Check for actual field names used by the forms
     const hasDietaryRequirements = mealtimeData.dietaryRequirements;
     const hasTextureModifications = mealtimeData.textureModifications;
     const hasAssistanceLevel = mealtimeData.assistanceLevel;
     const hasMealtimeEnvironment = mealtimeData.mealtimeEnvironment;
     const hasEmergencyProcedures = mealtimeData.emergencyProcedures;
-    
-    // Also check for legacy individual fields
-    const hasChokingRisk = mealtimeData.chokingRisk;
-    const hasAspirationRisk = mealtimeData.aspirationRisk;
-    const hasSwallowingRisk = mealtimeData.swallowingRisk;
-    const hasDietaryRisk = mealtimeData.dietaryRisk;
-    const hasAssistanceRisk = mealtimeData.assistanceRisk;
-    const hasEnvironmentalRisk = mealtimeData.environmentalRisk;
+    const hasStaffGuidance = mealtimeData.staffGuidance;
+    const hasMonitoringRequirements = mealtimeData.monitoringRequirements;
+    const hasEquipmentNeeds = mealtimeData.equipmentNeeds;
+    const hasSocialAspects = mealtimeData.socialAspects;
+    const hasNutritionalConsiderations = mealtimeData.nutritionalConsiderations;
+    const hasUserInput = mealtimeData.userInput;
+    const hasGeneratedContent = mealtimeData.generatedContent;
     
     if (!hasRiskParameters && !hasDietaryRequirements && !hasTextureModifications && !hasAssistanceLevel && 
-        !hasMealtimeEnvironment && !hasEmergencyProcedures && !hasChokingRisk && !hasAspirationRisk && 
-        !hasSwallowingRisk && !hasDietaryRisk && !hasAssistanceRisk && !hasEnvironmentalRisk) {
+        !hasMealtimeEnvironment && !hasEmergencyProcedures && !hasStaffGuidance && !hasMonitoringRequirements && 
+        !hasEquipmentNeeds && !hasSocialAspects && !hasNutritionalConsiderations && !hasUserInput && !hasGeneratedContent) {
       this.addEmptyCalloutBox('Mealtime Management');
       return;
     }
@@ -1577,12 +1547,16 @@ export class PDFExportUtility {
     
     // Then handle legacy individual fields (old format)
     const mealtimeCategories = [
-      { key: 'chokingRisk', label: 'Choking Risk Management', color: [220, 38, 127] }, // Red/Protective
-      { key: 'aspirationRisk', label: 'Aspiration Risk Management', color: [220, 38, 127] }, // Red/Protective
-      { key: 'swallowingRisk', label: 'Swallowing Assessment', color: [245, 158, 11] }, // Amber/Reactive
-      { key: 'dietaryRisk', label: 'Dietary Requirements', color: [34, 197, 94] }, // Green/Proactive
-      { key: 'assistanceRisk', label: 'Assistance Level', color: [245, 158, 11] }, // Amber/Reactive
-      { key: 'environmentalRisk', label: 'Environmental Setup', color: [34, 197, 94] } // Green/Proactive
+      { key: 'dietaryRequirements', label: 'Dietary Requirements', color: [220, 38, 127] }, // Red/Protective
+      { key: 'textureModifications', label: 'Texture Modifications', color: [245, 158, 11] }, // Amber/Reactive
+      { key: 'assistanceLevel', label: 'Assistance Level', color: [34, 197, 94] }, // Green/Proactive
+      { key: 'mealtimeEnvironment', label: 'Mealtime Environment', color: [168, 85, 247] }, // Purple
+      { key: 'emergencyProcedures', label: 'Emergency Procedures', color: [220, 38, 127] }, // Red/Protective
+      { key: 'staffGuidance', label: 'Staff Guidance', color: [99, 102, 241] }, // Blue
+      { key: 'monitoringRequirements', label: 'Monitoring Requirements', color: [14, 165, 233] }, // Light Blue
+      { key: 'equipmentNeeds', label: 'Equipment Needs', color: [245, 158, 11] }, // Amber
+      { key: 'socialAspects', label: 'Social Aspects', color: [99, 102, 241] }, // Blue
+      { key: 'nutritionalConsiderations', label: 'Nutritional Considerations', color: [14, 165, 233] } // Light Blue
     ];
     
     mealtimeCategories.forEach((category) => {
