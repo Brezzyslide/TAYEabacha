@@ -987,28 +987,25 @@ export class PDFExportUtility {
   }
 
   private addDisasterManagementBoxes(disasterData: any) {
-    // CRITICAL BUG FIX: Detect if disaster data is contaminated with mealtime risk assessment data
-    // This prevents mealtime risk assessments from appearing in disaster management section
-    const isContaminatedWithMealtimeData = this.detectMealtimeDataContamination(disasterData);
-    
-    if (isContaminatedWithMealtimeData) {
-      console.warn('DISASTER DATA CONTAMINATION DETECTED: Mealtime risk assessment data found in disaster section, showing empty section to prevent confusion');
-      this.addEmptyCalloutBox('Disaster Management');
-      return;
-    }
-    
     // Check if there are any disaster plans to display
     const disasterPlans = disasterData.disasterPlans || [];
     const hasDisasterPlans = Array.isArray(disasterPlans) && disasterPlans.length > 0;
     
-    // Also check for legacy individual fields
-    const hasEvacuationPlan = disasterData.evacuationPlan;
+    // Check for actual field names used by the forms
+    const hasEvacuationProcedures = disasterData.evacuationProcedures;
     const hasEmergencyContacts = disasterData.emergencyContacts;
-    const hasCommunicationMethod = disasterData.communicationMethod;
-    const hasMedicalInformation = disasterData.medicalInformation;
-    const hasRecoveryPlan = disasterData.recoveryPlan;
+    const hasCommunicationPlan = disasterData.communicationPlan;
+    const hasMedicationManagement = disasterData.medicationManagement;
+    const hasPostDisasterSupport = disasterData.postDisasterSupport;
+    const hasGeneralPreparedness = disasterData.generalPreparedness;
+    const hasSpecialEquipment = disasterData.specialEquipment;
+    const hasShelterArrangements = disasterData.shelterArrangements;
+    const hasUserInput = disasterData.userInput;
+    const hasGeneratedContent = disasterData.generatedContent;
     
-    if (!hasDisasterPlans && !hasEvacuationPlan && !hasEmergencyContacts && !hasCommunicationMethod && !hasMedicalInformation && !hasRecoveryPlan) {
+    if (!hasDisasterPlans && !hasEvacuationProcedures && !hasEmergencyContacts && !hasCommunicationPlan && 
+        !hasMedicationManagement && !hasPostDisasterSupport && !hasGeneralPreparedness && !hasSpecialEquipment && 
+        !hasShelterArrangements && !hasUserInput && !hasGeneratedContent) {
       this.addEmptyCalloutBox('Disaster Management');
       return;
     }
@@ -1180,11 +1177,11 @@ export class PDFExportUtility {
     
     // Then handle legacy individual fields (old format)
     const disasterCategories = [
-      { key: 'evacuationPlan', label: 'Evacuation Plan', color: [220, 38, 127] }, // Red/Protective
+      { key: 'evacuationProcedures', label: 'Evacuation Procedures', color: [220, 38, 127] }, // Red/Protective
       { key: 'emergencyContacts', label: 'Emergency Contacts', color: [220, 38, 127] }, // Red/Protective
-      { key: 'communicationMethod', label: 'Communication Method', color: [245, 158, 11] }, // Amber/Reactive
-      { key: 'medicalInformation', label: 'Medical Information', color: [220, 38, 127] }, // Red/Protective
-      { key: 'recoveryPlan', label: 'Recovery Plan', color: [34, 197, 94] } // Green/Proactive
+      { key: 'communicationPlan', label: 'Communication Plan', color: [245, 158, 11] }, // Amber/Reactive
+      { key: 'medicationManagement', label: 'Medication Management', color: [220, 38, 127] }, // Red/Protective
+      { key: 'postDisasterSupport', label: 'Post-Disaster Support', color: [34, 197, 94] } // Green/Proactive
     ];
     
     disasterCategories.forEach((category) => {
