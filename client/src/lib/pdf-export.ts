@@ -1384,9 +1384,10 @@ export class PDFExportUtility {
           // Draw row border
           this.pdf.setDrawColor(200, 200, 200);
           this.pdf.setLineWidth(0.2);
-          this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'S');
+          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+          this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
           
-          this.currentY = rowStartY + actualRowHeight;
+          this.currentY += rowHeight;
           rowIndex++;
         }
       });
@@ -1398,6 +1399,9 @@ export class PDFExportUtility {
       Object.entries(riskAssessments).forEach(([riskType, riskData]: [string, any]) => {
         if (riskData && (riskData.preventionStrategy || riskData.responseStrategy || riskData.equipmentNeeded || riskData.staffTraining)) {
           this.checkPageBreak(rowHeight + 2);
+          
+          // Store the row start position
+          const rowStartY = this.currentY;
           
           const isEvenRow = rowIndex % 2 === 0;
           if (isEvenRow) {
@@ -1471,6 +1475,7 @@ export class PDFExportUtility {
           // Draw row border
           this.pdf.setDrawColor(200, 200, 200);
           this.pdf.setLineWidth(0.2);
+          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
           this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'S');
           
           this.currentY = rowStartY + actualRowHeight;
