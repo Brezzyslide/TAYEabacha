@@ -1065,14 +1065,28 @@ export class PDFExportUtility {
         if (plan.preparation || plan.evacuation || plan.postEvent || plan.clientNeeds) {
           this.checkPageBreak(rowHeight + 2);
           
+          // Store the row start position
+          const rowStartY = this.currentY;
+          
+          // Calculate actual content height first
+          this.pdf.setFont('helvetica', 'normal');
+          let contentText = '';
+          if (plan.preparation) contentText += `Preparation: ${plan.preparation}`;
+          if (plan.evacuation) contentText += (contentText ? ' | ' : '') + `Evacuation: ${plan.evacuation}`;
+          if (plan.postEvent) contentText += (contentText ? ' | ' : '') + `Post-Event: ${plan.postEvent}`;
+          if (plan.clientNeeds) contentText += (contentText ? ' | ' : '') + `Client Needs: ${plan.clientNeeds}`;
+          
+          const contentLines = this.pdf.splitTextToSize(contentText, colWidths.content - 4);
+          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+          
           const isEvenRow = rowIndex % 2 === 0;
           if (isEvenRow) {
             this.pdf.setFillColor(248, 250, 252); // Very light blue background
-            this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+            this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'F');
           }
           
           currentX = tableStartX;
-          const textY = this.currentY + 6;
+          const textY = rowStartY + 6;
           
           // Category column with colored indicator
           const disasterTypeColors = {
@@ -1085,7 +1099,7 @@ export class PDFExportUtility {
           
           const categoryColor = disasterTypeColors[plan.type as keyof typeof disasterTypeColors] || [220, 38, 127];
           this.pdf.setFillColor(categoryColor[0], categoryColor[1], categoryColor[2]);
-          this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+          this.pdf.rect(currentX + 1, rowStartY + 2, 3, actualRowHeight - 4, 'F');
           
           this.pdf.setFontSize(8);
           this.pdf.setFont('helvetica', 'bold');
@@ -1103,15 +1117,8 @@ export class PDFExportUtility {
           this.pdf.text(categoryLabel, currentX + 6, textY);
           currentX += colWidths.category;
           
-          // Content column with combined plan details
+          // Content column with text wrapping
           this.pdf.setFont('helvetica', 'normal');
-          let contentText = '';
-          if (plan.preparation) contentText += `Preparation: ${plan.preparation}`;
-          if (plan.evacuation) contentText += (contentText ? ' | ' : '') + `Evacuation: ${plan.evacuation}`;
-          if (plan.postEvent) contentText += (contentText ? ' | ' : '') + `Post-Event: ${plan.postEvent}`;
-          if (plan.clientNeeds) contentText += (contentText ? ' | ' : '') + `Client Needs: ${plan.clientNeeds}`;
-          
-          const contentLines = this.pdf.splitTextToSize(contentText, colWidths.content - 4);
           
           if (contentLines.length > 1) {
             // Handle multi-line content
@@ -1128,8 +1135,7 @@ export class PDFExportUtility {
               }
               this.pdf.text(line, currentX + 2, lineY);
             });
-            // Adjust current Y for multi-line content
-            this.currentY += (contentLines.length - 1) * 4;
+
           } else {
             this.pdf.text(contentText, currentX + 2, textY);
           }
@@ -1137,10 +1143,9 @@ export class PDFExportUtility {
           // Draw row border
           this.pdf.setDrawColor(200, 200, 200);
           this.pdf.setLineWidth(0.2);
-          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
-          this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+          this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'S');
           
-          this.currentY += rowHeight;
+          this.currentY = rowStartY + actualRowHeight;
           rowIndex++;
         }
       });
@@ -1160,18 +1165,26 @@ export class PDFExportUtility {
       if (content) {
         this.checkPageBreak(rowHeight + 2);
         
+        // Store the row start position
+        const rowStartY = this.currentY;
+        
+        // Calculate actual content height first
+        this.pdf.setFont('helvetica', 'normal');
+        const contentLines = this.pdf.splitTextToSize(content, colWidths.content - 4);
+        const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+        
         const isEvenRow = rowIndex % 2 === 0;
         if (isEvenRow) {
           this.pdf.setFillColor(248, 250, 252); // Very light blue background
-          this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+          this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'F');
         }
         
         currentX = tableStartX;
-        const textY = this.currentY + 6;
+        const textY = rowStartY + 6;
         
         // Category column with colored indicator
         this.pdf.setFillColor(category.color[0], category.color[1], category.color[2]);
-        this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+        this.pdf.rect(currentX + 1, rowStartY + 2, 3, actualRowHeight - 4, 'F');
         
         this.pdf.setFontSize(8);
         this.pdf.setFont('helvetica', 'bold');
@@ -1181,7 +1194,6 @@ export class PDFExportUtility {
         
         // Content column with text wrapping
         this.pdf.setFont('helvetica', 'normal');
-        const contentLines = this.pdf.splitTextToSize(content, colWidths.content - 4);
         
         if (contentLines.length > 1) {
           // Handle multi-line content
@@ -1190,16 +1202,9 @@ export class PDFExportUtility {
             if (lineIndex > 0) {
               this.checkPageBreak(5);
               lineY += 4;
-              // Extend row height for multi-line content
-              if (isEvenRow) {
-                this.pdf.setFillColor(248, 250, 252);
-                this.pdf.rect(tableStartX, this.currentY + (lineIndex * 4), tableWidth, 4, 'F');
-              }
             }
             this.pdf.text(line, currentX + 2, lineY);
           });
-          // Adjust current Y for multi-line content
-          this.currentY += (contentLines.length - 1) * 4;
         } else {
           this.pdf.text(content, currentX + 2, textY);
         }
@@ -1207,10 +1212,9 @@ export class PDFExportUtility {
         // Draw row border
         this.pdf.setDrawColor(200, 200, 200);
         this.pdf.setLineWidth(0.2);
-        const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
-        this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+        this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'S');
         
-        this.currentY += rowHeight;
+        this.currentY = rowStartY + actualRowHeight;
         rowIndex++;
       }
     });
@@ -1372,8 +1376,7 @@ export class PDFExportUtility {
               }
               this.pdf.text(line, currentX + 2, lineY);
             });
-            // Adjust current Y for multi-line content
-            this.currentY += (contentLines.length - 1) * 4;
+
           } else {
             this.pdf.text(contentText, currentX + 2, textY);
           }
@@ -1381,10 +1384,9 @@ export class PDFExportUtility {
           // Draw row border
           this.pdf.setDrawColor(200, 200, 200);
           this.pdf.setLineWidth(0.2);
-          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
-          this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+          this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'S');
           
-          this.currentY += rowHeight;
+          this.currentY = rowStartY + actualRowHeight;
           rowIndex++;
         }
       });
@@ -1461,8 +1463,7 @@ export class PDFExportUtility {
               }
               this.pdf.text(line, currentX + 2, lineY);
             });
-            // Adjust current Y for multi-line content
-            this.currentY += (contentLines.length - 1) * 4;
+
           } else {
             this.pdf.text(contentText, currentX + 2, textY);
           }
@@ -1470,10 +1471,9 @@ export class PDFExportUtility {
           // Draw row border
           this.pdf.setDrawColor(200, 200, 200);
           this.pdf.setLineWidth(0.2);
-          const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
-          this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+          this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'S');
           
-          this.currentY += rowHeight;
+          this.currentY = rowStartY + actualRowHeight;
           rowIndex++;
         }
       });
@@ -1564,18 +1564,26 @@ export class PDFExportUtility {
       if (content) {
         this.checkPageBreak(rowHeight + 2);
         
+        // Store the row start position
+        const rowStartY = this.currentY;
+        
+        // Calculate actual content height first
+        this.pdf.setFont('helvetica', 'normal');
+        const contentLines = this.pdf.splitTextToSize(content, colWidths.content - 4);
+        const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
+        
         const isEvenRow = rowIndex % 2 === 0;
         if (isEvenRow) {
           this.pdf.setFillColor(248, 250, 252); // Very light blue background
-          this.pdf.rect(tableStartX, this.currentY, tableWidth, rowHeight, 'F');
+          this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'F');
         }
         
         currentX = tableStartX;
-        const textY = this.currentY + 6;
+        const textY = rowStartY + 6;
         
         // Category column with colored indicator
         this.pdf.setFillColor(category.color[0], category.color[1], category.color[2]);
-        this.pdf.rect(currentX + 1, this.currentY + 2, 3, rowHeight - 4, 'F');
+        this.pdf.rect(currentX + 1, rowStartY + 2, 3, actualRowHeight - 4, 'F');
         
         this.pdf.setFontSize(8);
         this.pdf.setFont('helvetica', 'bold');
@@ -1585,7 +1593,6 @@ export class PDFExportUtility {
         
         // Content column with text wrapping
         this.pdf.setFont('helvetica', 'normal');
-        const contentLines = this.pdf.splitTextToSize(content, colWidths.content - 4);
         
         if (contentLines.length > 1) {
           // Handle multi-line content
@@ -1594,16 +1601,9 @@ export class PDFExportUtility {
             if (lineIndex > 0) {
               this.checkPageBreak(5);
               lineY += 4;
-              // Extend row height for multi-line content
-              if (isEvenRow) {
-                this.pdf.setFillColor(248, 250, 252);
-                this.pdf.rect(tableStartX, this.currentY + (lineIndex * 4), tableWidth, 4, 'F');
-              }
             }
             this.pdf.text(line, currentX + 2, lineY);
           });
-          // Adjust current Y for multi-line content
-          this.currentY += (contentLines.length - 1) * 4;
         } else {
           this.pdf.text(content, currentX + 2, textY);
         }
@@ -1611,10 +1611,9 @@ export class PDFExportUtility {
         // Draw row border
         this.pdf.setDrawColor(200, 200, 200);
         this.pdf.setLineWidth(0.2);
-        const actualRowHeight = rowHeight + ((contentLines.length - 1) * 4);
-        this.pdf.rect(tableStartX, this.currentY, tableWidth, actualRowHeight, 'S');
+        this.pdf.rect(tableStartX, rowStartY, tableWidth, actualRowHeight, 'S');
         
-        this.currentY += rowHeight;
+        this.currentY = rowStartY + actualRowHeight;
         rowIndex++;
       }
     });
