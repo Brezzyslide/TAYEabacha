@@ -74,7 +74,7 @@ export class PDFExportUtility {
     this.pdf.setTextColor('#FFFFFF');
     this.pdf.setFontSize(20);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.text('NeedCareAI+', this.margin, 20);
+    this.pdf.text(options.companyName || 'NeedCareAI+', this.margin, 20);
     
     this.pdf.setFontSize(9);
     this.pdf.setFont('helvetica', 'normal');
@@ -1668,18 +1668,28 @@ export class PDFExportUtility {
 }
 
 export async function exportCarePlanToPDF(plan: any, client: any, user: any): Promise<void> {
-  // Always fetch fresh company name from API to ensure we have the latest data
-  let companyName = 'CareConnect'; // Default fallback
+  // Always fetch fresh company name from API to ensure we have the latest tenant-specific data
+  let companyName = 'NeedCareAI+'; // Default fallback
   
   try {
-    const response = await fetch('/api/user');
+    // Use the company API endpoint to get tenant-specific company name
+    const response = await fetch('/api/company');
     if (response.ok) {
-      const userData = await response.json();
-      if (userData?.companyName) {
-        companyName = userData.companyName;
+      const companyData = await response.json();
+      if (companyData?.name) {
+        companyName = companyData.name;
+        console.log('PDF Export: Using tenant company name:', companyName);
       }
     } else {
-      console.warn('API user endpoint returned:', response.status);
+      console.warn('API company endpoint returned:', response.status);
+      // Fallback to user endpoint if company endpoint fails
+      const userResponse = await fetch('/api/user');
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        if (userData?.companyName) {
+          companyName = userData.companyName;
+        }
+      }
     }
   } catch (error) {
     console.warn('Could not fetch company name, using default:', error);
